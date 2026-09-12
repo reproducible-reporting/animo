@@ -47,44 +47,14 @@ between machines. Animo itself uses only the fonts typst embeds.
 | Handout PDF       | one page per slide, for printing                     |
 | Handout SVG       | the handout pages, for embedding in another document |
 
-In this version a slide has exactly one step,
-so the presentation and the handout are the same pages.
-They stop being the same as soon as a slide has subslides.
+A slide with no `sub` call has one state, so it is one page in both paged outputs.
+The two stop being the same as soon as a slide has subslides:
+the presentation gets a page per step and the handout keeps the states that asked for one.
 
-## Live Preview
+## Presenting and the Live Preview
 
-Typst serves the HTML and reloads the browser itself, so animo ships nothing for this:
-
-```bash
-typst watch --format html --features html --open talk.typ talk.html
-```
-
-Every successful recompile pushes a reload to the browser.
-The reload is a plain `location.reload()`, so the URL survives it, fragment included,
-and a deck comes back on the slide the author was looking at.
-
-The flags of the built-in server are `--port` (the first free port in 3000-3005 by
-default), `--no-serve` and `--no-reload`.
-
-## Presenting
-
-The HTML deck is stepped with the keyboard or with a click:
-
-| Key                                                     | Does                |
-| ------------------------------------------------------- | ------------------- |
-| `→`, `↓`, `Page Down`, `Space`, `Enter`, `n`, any click | one step forward    |
-| `←`, `↑`, `Page Up`, `Backspace`, `p`                   | one step backward   |
-| `Home`, `End`                                           | the first, the last |
-
-The position is in the URL fragment as `#<slide>.<state>`,
-written with `history.replaceState` so that stepping through a deck
-leaves no browser history behind.
-Opening a fragment restores that position without animating into it,
-which is what makes a deep link and a live-preview reload land on the same picture.
-
-The slide fills the browser window at the deck's aspect ratio,
-and everything inside it is measured in typst points at any window size,
-because the canvas is scaled as a whole rather than laid out in pixels.
+The keys, the position in the URL and the `typst watch` loop are on their own page:
+[Presenting](presenting.md).
 
 ## An Example
 

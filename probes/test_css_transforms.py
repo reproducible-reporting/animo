@@ -8,8 +8,9 @@ positioning, and `scale` without `transform-box: fill-box` scales about the wron
 Both fail silently, by moving content rather than by raising anything.
 """
 
+import numpy as np
 import pytest
-from harness import TypstRunner
+from harness import TypstRunner, screenshot
 from htmldoc import document
 from measuring import rect
 from svgtools import group, parse
@@ -240,3 +241,96 @@ def test_a_paused_animation_interpolates_smoothly(typst: TypstRunner, open_page)
     assert len({sample["transform"] for sample in samples}) == 1, (
         "typst's own transform attribute changed during the animation"
     )
+
+
+def test_a_running_animation_rasterises_as_the_same_inline_style(
+    typst: TypstRunner, open_page
+):
+    """The end of a transition is not a moment the audience can see.
+
+    A step writes its display state as inline style and animates from the old values to
+    it, so at the end the animation stops applying and the style takes over. If a value
+    that comes from a running animation rasterised differently from the same value in a
+    style declaration, every step would pop at its end, at the moment the audience is
+    looking hardest.
+
+    The two paths are compared directly, with an animation that holds one value from
+    beginning to end, so that nothing but the path differs. They agree bit for bit in
+    chromium 151 and firefox 153.
+    """
+    style = {"translate": "40px 12px", "scale": "1.6"}
+
+    page = open_page(build(typst, ""))
+    page.evaluate(
+        """style => {
+            Object.assign(
+                document.querySelector('[data-typst-label="x"] > g').style, style
+            );
+        }""",
+        style,
+    )
+    settled = screenshot(page)
+
+    page = open_page(build(typst, ""))
+    page.evaluate(
+        """style => {
+            const inner = document.querySelector('[data-typst-label="x"] > g');
+            const animation = inner.animate([style, style], {duration: 1000});
+            animation.pause();
+            animation.currentTime = 500;
+        }""",
+        style,
+    )
+    animating = screenshot(page, animations="allow")
+
+    difference = np.abs(settled.astype(np.int16) - animating.astype(np.int16))
+    assert difference.max() == 0, (
+        "a value under a running animation does not rasterise as the same value in a "
+        f"style declaration, deviating by {difference.max()} over "
+        f"{int((difference.max(axis=2) > 0).sum())} pixels"
+    )
+
+
+# A glyph long enough to have a lot of edge, so that the band around it is a real number.
+GLYPHS = '#html.frame[#v(20pt)#box(box[Hamburgefonstiv])#label("x")]\n'
+
+
+def edge_band(image: np.ndarray) -> float:
+    """How much antialiasing edge a rendering carries, per unit of ink.
+
+    Ink is what is nearly black, the band is everything in between, and the ratio is what
+    tells a re-rasterised glyph from an upscaled picture of one: ink grows with the square
+    of a scale factor while an edge grows with the factor, so the ratio halves at every
+    doubling if the glyph is drawn afresh, and stays put if it is stretched.
+    """
+    grey = image.mean(axis=2)
+    ink = int((grey < 64).sum())
+    band = int(((grey >= 64) & (grey <= 200)).sum())
+    assert ink > 0, "the probe found no ink to measure the edge of"
+    return band / ink
+
+
+def test_a_scaled_glyph_is_drawn_afresh_rather_than_stretched(typst: TypstRunner, open_page):
+    """What a `scale` looks like, which is the half of this finding that is not a number.
+
+    Text under a CSS scale stays as sharp as text at its own size, because the browser
+    rasterises the glyph outline at the scale it ends up at. Measured over a doubling and
+    a quadrupling, the edge per unit of ink halves each time, in chromium 151 and firefox
+    153: 0.20, 0.10 and 0.05.
+    """
+    page = open_page(typst.html(document(GLYPHS, "body { margin: 0; background: #fff; }")))
+    ratios = []
+    for factor in (1, 2, 4):
+        page.evaluate(
+            """factor => {
+                document.querySelector('[data-typst-label="x"] > g').style.scale =
+                    String(factor);
+            }""",
+            factor,
+        )
+        ratios.append(edge_band(screenshot(page)))
+    for coarse, fine in zip(ratios, ratios[1:], strict=False):
+        assert fine < 0.7 * coarse, (
+            "a doubled glyph carries as much antialiasing edge per unit of ink as the "
+            f"glyph at its own size, so it is being stretched rather than drawn: {ratios}"
+        )

@@ -37,13 +37,15 @@ Animo builds decks to all four outputs, and a slide has a timeline.
 A deck has a shape, its slides have a viewport, a canvas and a background,
 tagged parts of a slide appear, move and scale over its subslides,
 and the presentation PDF renders one page per step.
-The browser does not animate any of it yet:
-the HTML output carries the groups and the state count and applies no display state.
-That runtime, regions and panning are the versions after this one.
+The HTML deck **animates**: stepping through subslides in a browser reveals, hides,
+moves and scales the tagged parts smoothly, forwards and backwards,
+and every position is addressable by URL.
+Regions, the structural primitives and panning are the versions after this one.
 
 - [Slides](slides.md) is what a deck and a slide are today.
 - [Tags](tags.md) is what may be addressed, and what marking it costs.
-- [Animation](animation.md) is the timeline and the state model it resolves into.
-- [The Four Outputs](outputs.md) has the command lines and the live preview.
+- [Animation](animation.md) is the timeline, the state model and what the browser does with it.
+- [The Four Outputs](outputs.md) has the command lines.
+- [Presenting](presenting.md) is the keys, the deep links and the live preview loop.
 - [Development Environment](environment.md) describes how to get from a clone
   to a green test suite.

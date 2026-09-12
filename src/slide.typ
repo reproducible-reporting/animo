@@ -24,6 +24,7 @@
 #import "plan.typ": (
   continuous-names, html-view, inside, provide, resolve, view-of,
 )
+#import "runtime.typ": browser-plan, hidden-names
 
 // Where a slide sits in the deck, counting every slide.
 // This is what addresses a slide in the URL and in the DOM, so it counts the slides
@@ -112,9 +113,9 @@
     // and with a view that exists whatever the outputs ask for.
     // Any view gives the same answer, because a display state is layout-neutral.
     let measuring = if target() == "html" {
-      html-view(names)
+      html-view(names, index)
     } else {
-      view-of(plan, names, 0)
+      view-of(plan, names, index, 0)
     }
     let extent = if canvas == auto {
       auto-extent(index, provide(measuring, body), viewport, shape.margin)
@@ -142,6 +143,14 @@
           class: "animo-slide",
           data-animo-slide: str(index),
           data-animo-states: str(plan.states.len()),
+          // What the browser runtime applies: the resolved display state of every state,
+          // with the initial visibility each tag site reported folded in.
+          // The reports come from the frame below, which is one introspection pass away,
+          // and the attribute changes no layout, so the document converges.
+          data-animo-plan: json.encode(
+            browser-plan(plan, names, hidden-names(index)),
+            pretty: false,
+          ),
           ..if style == none { (:) } else { (style: style) },
         ),
         html.elem(
@@ -167,13 +176,18 @@
       // the author's decision to make: `handout:` is the only thing that says what a
       // handout holds.
       let views = if paged-mode() == "presentation" {
-        range(plan.states.len()).map(index => view-of(plan, names, index))
+        range(plan.states.len()).map(state => view-of(
+          plan,
+          names,
+          index,
+          state,
+        ))
       } else {
         plan
           .states
           .enumerate()
-          .filter(((index, state)) => state.handout)
-          .map(((index, state)) => view-of(plan, names, index))
+          .filter(((state, resolved)) => resolved.handout)
+          .map(((state, resolved)) => view-of(plan, names, index, state))
       }
       for view in views {
         page(

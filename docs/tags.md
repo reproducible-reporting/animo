@@ -45,6 +45,11 @@ A tag marks a part of a slide so that the [timeline](animation.md) can address i
 The same name may be used several times within one slide.
 The timeline then addresses all of them together, as if they were one element.
 
+Give every site of one name the same `hidden:`, or give them different names.
+In the browser one rule addresses every site of a name at once, so they cannot differ
+there: if any site is hidden, all of them start out hidden, while on paper each site
+honours its own argument. That is the one place the four outputs do not agree.
+
 The same name may also be used in different slides without interfering.
 A tag is scoped to the slide it appears in:
 it reads the plan of that slide and of no other,
@@ -149,8 +154,8 @@ which is a later version.
 so every tag is its own area for now and a structural change has nothing to reflow inside.
 The structural primitives, `removed: true` and `#region` arrive together.
 
-In the HTML output a tag site is emitted with its groups and its label,
-and **no display state is applied**:
-a `hidden: true` tag is visible there, and nothing moves between subslides.
-The browser runtime is the next version.
-The presentation PDF shows the whole state model today.
+A tag site is the same structure in both targets, and only one thing differs:
+in the HTML output an initially hidden tag is rendered normally and hidden by the runtime,
+because typst's own `hide()` emits nothing that a stylesheet could bring back.
+[Animation](animation.md#hide-versus-hidden-which-differ-by-target) says what follows
+from that.

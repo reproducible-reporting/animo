@@ -19,6 +19,7 @@ nav = [
     { "Tags" = "tags.md" },
     { "Animation" = "animation.md" },
     { "The Four Outputs" = "outputs.md" },
+    { "Presenting" = "presenting.md" },
   ] },
   { "Development" = [
     { "Development Environment" = "environment.md" },

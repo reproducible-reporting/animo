@@ -111,7 +111,7 @@ def state_hash(slide: int, state: int = 0) -> str:
 class Deck:
     """An animo HTML presentation, open in a browser page.
 
-    The contract with the runtime, which phase 05 implements, is three lines long:
+    The contract with the runtime is four lines long:
 
     - the current position lives in `location.hash` as `#<slide>.<state>`,
       is restored on load and followed on `hashchange`, and the restore *snaps*
@@ -120,10 +120,11 @@ class Deck:
       `data-animo` attribute of the root element, so that a test can wait for the snap
       instead of racing it;
     - every slide container carries `data-animo-slide="<slide>"`, which is what scopes
-      a tag name to one slide, in the tests as in the runtime's own CSS.
+      a tag name to one slide, in the tests as in the runtime's own CSS;
+    - that container also carries the resolved plan, as JSON, in `data-animo-plan`.
 
-    Until that runtime exists, the harness is exercised against a stand-in document
-    that implements exactly these three lines.
+    The first three are also what `tests/documents/stand_in_deck.html` implements,
+    which is what the harness's own tests are exercised against.
     """
 
     page: Page = attrs.field()
@@ -168,6 +169,134 @@ class Deck:
             )"""
         )
         return [Rect(**box) for box in boxes]
+
+    def styles(self, label: str) -> list[dict[str, str]]:
+        """The three properties the runtime writes, per occurrence of a tag.
+
+        They are read from the inner group, which is the continuous slot,
+        and computed rather than inline, so a value an animation is currently
+        driving is the one that comes back.
+        """
+        slide, _ = self.position
+        return self.page.evaluate(
+            f"""() => Array.from(
+                document.querySelectorAll(
+                    '[data-animo-slide="{slide}"] [data-typst-label="{label}"] > g'
+                ),
+                node => {{
+                    const computed = getComputedStyle(node);
+                    return {{
+                        opacity: computed.opacity,
+                        translate: computed.translate,
+                        scale: computed.scale,
+                    }};
+                }},
+            )"""
+        )
+
+    @property
+    def plan(self) -> dict:
+        """The resolved plan the slide being shown carries, as the runtime reads it."""
+        slide, _ = self.position
+        return self.page.evaluate(
+            f"""() => JSON.parse(
+                document.querySelector('[data-animo-slide="{slide}"]').dataset.animoPlan
+            )"""
+        )
+
+    @property
+    def unit(self) -> float:
+        """CSS pixels per typst point, on the slide being shown.
+
+        A length animo writes inside a frame is a user unit of that frame's SVG,
+        which is a typst point, so this is what turns a length in the source into the
+        displacement a test can assert, at whatever size the window happens to be.
+        """
+        slide, _ = self.position
+        return self.page.evaluate(
+            f"""() => {{
+                const svg = document.querySelector('[data-animo-slide="{slide}"] svg');
+                return svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
+            }}"""
+        )
+
+    def press(self, key: str, times: int = 1) -> Deck:
+        """Press a key, which is how a presenter steps through the deck."""
+        for _ in range(times):
+            self.page.keyboard.press(key)
+        return self
+
+    @property
+    def animating(self) -> list[set[str]]:
+        """The properties each animation now in flight is driving, one set per animation.
+
+        What a step animates is not the same question as what it changes: a property that
+        holds still in the keyframes is invisible in every state and still costs the step
+        its motion in chromium 151. See *Findings*.
+        """
+        timing = ("offset", "computedOffset", "easing", "composite")
+        return [
+            set(names)
+            for names in self.page.evaluate(
+                """timing => document.getAnimations().map((animation) => {
+                    const properties = new Set();
+                    for (const frame of animation.effect.getKeyframes()) {
+                        for (const name of Object.keys(frame)) {
+                            if (!timing.includes(name)) {
+                                properties.add(name);
+                            }
+                        }
+                    }
+                    return [...properties];
+                })""",
+                timing,
+            )
+        ]
+
+    @property
+    def flight(self) -> list[float]:
+        """How far into the step each animation now in flight is, in milliseconds.
+
+        Read after a frame has been drawn, because an animation measures its own current
+        time against the document timeline and not against real time, and firefox 153
+        refreshes that timeline only when it draws. Read any sooner and an animation that
+        was told it began long ago still reports zero. See *Findings*.
+        """
+        return self.page.evaluate(
+            """async () => {
+                await new Promise((done) =>
+                    requestAnimationFrame(() => requestAnimationFrame(done)));
+                return document.getAnimations().map((animation) => animation.currentTime);
+            }"""
+        )
+
+    def settle(self, timeout: float = 5000) -> Deck:
+        """Wait until nothing is in flight any more.
+
+        A step animates, so a test that asserts about the state it lands in has to wait
+        for the motion to end rather than measure halfway through it.
+        """
+        self.page.wait_for_function(
+            "() => document.getAnimations().length === 0", timeout=timeout
+        )
+        return self
+
+    def scrub(self, moment: float) -> Deck:
+        """Pause everything in flight at one moment of the transition, in milliseconds.
+
+        This is what makes a mid-flight assertion reproducible:
+        the test states the moment instead of racing the animation to it.
+        """
+        self.page.evaluate(
+            """moment => {
+                for (const animation of document.getAnimations()) {
+                    animation.pause();
+                    animation.currentTime = moment;
+                }
+            }""",
+            moment,
+        )
+        return self
 
     def screenshot(self, **kwargs) -> np.ndarray:
         """A screenshot of the whole page, as an RGB array."""

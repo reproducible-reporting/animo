@@ -189,7 +189,14 @@ animation.
 - The same tag name may also be used in **different slides without interfering**: tags
   are scoped to the slide they appear in (see *Scoping* below).
 - `hidden: true` means the element is invisible on the first subslide, but **still occupies
-  its space**. It is the initial-state counterpart of `hide`.
+  its space**. It is the initial-state counterpart of `hide`. Where one name has several sites
+  in a slide, its initial visibility is the **union** over them in the HTML target: one CSS rule
+  addresses every site of a name at once, so the two cannot differ there, and hiding the lot is
+  the half of that which withholds content rather than leaking it. The paged outputs honour
+  each site's own argument, so two sites of one name that disagree are the one place the four
+  outputs differ, and the manual says to give them the same `hidden:` or two names. Refusing
+  the disagreement instead is not available: the check can only be made from `query`, and a
+  panic there is swallowed (see *Findings*).
 - `removed: true` means the element is not laid out at all on the first subslide, so it
   contributes nothing to the layout of the epoch. It is the initial-state counterpart of
   `remove`, and only differs from `hidden` inside an *explicit* region: in an implicit one the
@@ -549,6 +556,35 @@ Five rules make this work:
    though `translate` is used there too, for consistency and to leave `scale` free for a future
    zoom.
 
+**How the plan reaches the browser.** The resolved display state of every state of a slide
+travels as compact JSON in a `data-animo-plan` attribute on the slide container, keyed by tag
+name, beside the `data-animo-slide` and `data-animo-states` attributes the runtime already
+reads. An attribute rather than a `<script>` element, because the HTML parser escapes and
+unescapes an attribute value while typst writes script content raw, so a tag name can never
+break the page; and because a browser's element inspector shows it beside the slide it belongs
+to, which is what makes a step that misbehaves a question about one value rather than about the
+whole runtime. Every state holds every addressed tag, even the ones it leaves at the identity:
+the browser keeps a display state as inline style until something overwrites it, so a state
+that said nothing about a tag would leave the previous state's style in place and stepping
+backwards would not undo what stepping forwards did. The fallback to a tag's own `hidden:` is
+taken before the plan leaves typst, out of what the tag sites reported, so the runtime applies
+what it is given and resolves nothing.
+
+**Motion is driven by the Web Animations API**, not by CSS transitions. A step writes the new
+display state as inline style and animates from what the element was showing to that, so the
+style is the state and the animation is only how it got there. That is what makes an
+interrupted step continue from where it is, a backward step land on exactly the geometry the
+earlier state had, and a restore need no transition to suppress. Every animation of a step is
+created in one task and none of them is told when it began, so the browser starts them all at
+the same frame: the step has one clock, which is the clock an epoch crossfade joins. Reading
+that clock off `document.timeline` instead would be wrong, because the timeline stands still
+while the page does (see *Findings*). A step animates only the properties it changes, and not
+the ones it leaves alone, because a property that holds still in the keyframes stops chromium
+from drawing the ones beside it (see *Findings*). A step takes 400 ms and eases in and
+out; both are custom properties on `:root`, so the values are in the stylesheet rather than in
+the runtime, a deck can restate them, and `prefers-reduced-motion: reduce` sets the duration to
+zero, which is also what a deep link and the first paint get.
+
 Because a frame covers all subslides of its epoch, stepping within an epoch needs no
 re-rendering and motion is genuinely smooth. The cost of structural steps is paid in compile
 time and page weight, not in interaction.
@@ -592,8 +628,12 @@ argument of `#slide` and does not depend on the body.
 The plan is **provided**, not published.
 `#slide` installs a show rule over its body,
 and every tag emits a marker that the rule replaces with the tag's rendering for the view it is
-given. A view has four entries:
+given. A view has five entries:
 
+- the **position of the slide in the deck**. A tag needs it to report anything back out of the
+  frame it sits in, because `query` is document-wide while a tag name means nothing outside its
+  own slide. In the HTML target the tag site reports its own `hidden:` this way, which the
+  timeline cannot know and the browser has to be told (see *Architecture*);
 - the **state index**, which is `none` in the HTML target, where a frame covers a whole run of
   states and the browser is what applies their display state;
 - the **epoch**;
@@ -793,6 +833,29 @@ These were the open questions of the earlier drafts. They are settled; the evide
   measurement needs, and no amount of care with document order fixes that. See *Scoping* and
   *Findings*.
 
+- **Is the Web Animations API the right driver, and what are the easing and duration
+  defaults?** Yes, and 400 ms with `ease-in-out`. A step writes the state's display state as
+  inline style on the tag's inner group and animates from what the element was showing to that,
+  so the style is the state and the animation is only the route. Reversible stepping, an
+  interrupted step that continues from where it is, and a deep link that needs no transition to
+  suppress all fall out of that rather than being arranged; CSS transitions handle none of the
+  three well. It is also what makes a mid-flight assertion reproducible, because a test pauses
+  the animation and states a `currentTime` instead of racing it, and it is where the future
+  `time:` parameter and the epoch crossfade's shared clock belong. The two values live in CSS,
+  as `--animo-duration` and `--animo-easing` on `:root`, which is what lets a deck restate them
+  without a `#slide` argument and lets `prefers-reduced-motion: reduce` set the duration to
+  zero. A duration of zero is a step that snaps, which is the same path a deep link takes.
+
+- **How do CSS-animated typst SVG groups look in motion?** Well enough that nothing about the
+  defaults changes. Measured in chromium 151 and firefox 153 (see *Findings*): a scaled glyph
+  is drawn afresh at the scale it ends up at rather than stretched, so text stays as sharp at
+  200% as at its own size, and strokes scale geometrically with it, which is what a figure
+  wants and what makes `scale` usable on text after all. A value under a running animation
+  rasterises bit for bit as the same value in a style declaration, so the hand-off at the end of
+  a step is invisible and there is no antialiasing seam at a subslide boundary. What a `scale`
+  does still has to be understood rather than merely accepted: it is about the element's own
+  centre and nothing reflows, so a doubled paragraph overlaps its neighbours.
+
 - **Is `sub` the right structure?** Yes. A code block of `sub(...)` calls joins into a
   list of steps. It already carries `handout:` and extends cleanly to the future `time:` and
   `wait:` keywords in the same way.
@@ -868,9 +931,6 @@ These need the prototype to answer.
   any show rule or `context` can act on it, so a tag inside one may have no way to resolve its
   content for the current epoch. This is why the tag-site table says *unverified* for that row.
 
-- How do CSS-animated typst SVG groups actually *look* in motion: stroke scaling under
-  `scale`, text rendering during transforms, and antialiasing seams at subslide boundaries.
-
 - How a crossfade between two epoch frames *reads* when the region's content really reflows.
   Ghosting of two text layouts at once is acceptable for a replacement but may look wrong for
   a small edit in a large paragraph. If it does, the answer is the morph in
@@ -897,13 +957,6 @@ These need the prototype to answer.
 - Whether `pan(relto:)` resolved in the browser (from the group's bounding box) and resolved
   in typst (from element positions, available in paged output) agree closely enough that
   the HTML and PDF presentations look the same.
-
-- Easing and duration defaults, and whether the Web Animations API (paused animations with
-  an explicit `currentTime`) is the right driver. It would give reversible stepping and
-  correct snap-to-state on deep links, which CSS transitions handle poorly, and it is the
-  natural home for the future `time:` parameter. Epoch crossfades must share that clock.
-  It is also what makes a mid-crossfade assertion reproducible, because a test can set
-  `currentTime` instead of racing a transition.
 
 - Whether a FLIP morph should ever scale. Non-uniform `scale` distorts glyph strokes, so text
   morphs probably want translate-only, with the size change carried by the crossfade, leaving
@@ -1593,6 +1646,72 @@ Units: CSS lengths inside a group are **user units (pt), scaled by the SVG's ren
 size** — 50 user units measured as 72.7 px at the test slide scale. A move expressed in
 typst lengths therefore stays the same fraction of the slide at any screen size, for free.
 
+Two further measurements, on chromium 151 and firefox 153, answer what a transform *looks*
+like rather than where it lands:
+
+- **A scaled glyph is drawn afresh, not stretched.** The antialiasing band around the ink of a
+  line of text, per unit of ink, is 0.20 at scale 1, 0.10 at scale 2 and 0.05 at scale 4: the
+  ink grows with the square of the factor while the edge grows with the factor, which is the
+  signature of a glyph outline rasterised at the size it ends up at. A picture of the glyph,
+  stretched, would keep the ratio constant. Both engines agree to a hundredth. So text under a
+  `scale` stays as sharp as text at its own size, and strokes scale geometrically with it.
+- **A value under a running animation rasterises as the same value in a style declaration**,
+  bit for bit, over a whole 1280 by 720 window. This is what makes the end of a transition
+  invisible: a step writes its display state as inline style and animates from the old values
+  to it, so at the end the animation stops applying and the style takes over, and nothing about
+  the picture changes at that moment. Measured with an animation that holds one value from
+  beginning to end, so that nothing but the path through the engine differs.
+
+### A keyframe property that does not change suppresses the ones that do
+
+Measured on chromium 151 and firefox 153, on a deck whose reveal refused to fade.
+
+An effect that animates `opacity` from 0 to 1 alongside a `translate` or a `scale` that is
+equal at both ends is not drawn while it runs in chromium. The element stays exactly as it
+was for the whole duration and appears in one frame at the end, when the animation is removed
+and the style underneath it takes over. Firefox draws every row below.
+
+| Keyframes of one effect                         | Drawn while running |
+| ----------------------------------------------- | ------------------- |
+| `opacity` alone                                 | yes                 |
+| `opacity` with a `translate` equal at both ends | no                  |
+| `opacity` with a `scale` equal at both ends     | no                  |
+| `opacity` with a `translate` that changes       | yes                 |
+| `opacity` with a `scale` that changes           | yes                 |
+
+Nothing in the DOM says so. Every value the animation computes is correct at every moment and
+`getComputedStyle` interpolates exactly as it should, so the state model and every assertion
+about it are unaffected: only the drawing is missing. Anything that makes the page draw brings
+it back, including a `requestAnimationFrame` loop and a screenshot, so `page.screenshot` and
+`Page.captureScreenshot` cannot see this at all and a recorded video can. That is also what
+makes it look like a timing or engine problem rather than a keyframe problem.
+
+So a step animates only the properties it changes.
+
+### The document timeline is not a clock
+
+Measured on chromium 151 and firefox 153, while making a step animate after a pause.
+
+`document.timeline.currentTime` is the time of the last frame the browser drew, and a browser
+with nothing to draw draws nothing. Measured inside a key handler, firefox reports a time 442
+ms old after a 250 ms pause and 3181 ms old after a 3 s one, which is the pause itself;
+chromium refreshes the time on a read from outside a frame and never lags by more than one.
+Standing still is what the specification describes, since it says the time is updated once
+per frame, so chromium is the exception here and not firefox.
+
+Giving that time to an animation as its `startTime` therefore starts the animation as far
+into its own duration as the page stood still. With a step of 400 ms, anything longer than
+that is over before it is first drawn. What a presenter sees is a deck that animates while it
+is being clicked through and jumps whenever a slide has been talked over first.
+
+None of this is visible until a frame is drawn, because an animation measures its own current
+time against the same timeline: immediately after being stamped it reports zero, and only the
+next frame shows where it really is. A test that reads any sooner sees nothing wrong.
+
+So the runtime names no start time at all. Animations created in one task are pending until
+the same frame and are then started with that frame's time, which is a shared clock for the
+step, arrived at by saying nothing rather than by stamping.
+
 ### Styling from CSS: what is and is not reachable
 
 Measured on a labelled group whose glyphs carry typst's `fill="#000000"` presentation
@@ -1654,6 +1773,25 @@ CSS `opacity: 0`; only the paged outputs may use `hide()`.
 Note the asymmetry with `remove`/`removed:`, which is a *content state*: it is resolved by
 typst when the epoch is rendered, so it needs no browser support and cannot be undone within
 an epoch — by construction, undoing it starts a new one.
+
+### A panic that depends on `query` can be swallowed
+
+Measured on 0.15.1, while building a check that two sites of one tag name agree.
+
+A value read with `query` is read once per introspection pass, so a check on such a value
+is a check on one pass and not on the document. If that check panics, the panic may never
+be reported: the pass that panics produces nothing, the next pass therefore queries a
+different document and does not panic, and the two alternate until the iteration limit.
+What surfaces is `document did not converge within five attempts` plus a warning that an
+element count did not stabilise, pointing at the `query` and saying nothing about the
+panic. The compilation succeeds.
+
+A panic in a document that *does* converge is reported normally, so this is not about
+panics inside `context` blocks in general. It is about panics whose own effect changes
+what the next pass sees, which is what every check on a document animo also emits amounts
+to. So a diagnostic that depends on `query` has to be a value animo resolves rather than a
+refusal. This is why the initial visibility of a tag name is the union over its sites
+instead of a refused disagreement (see *Tags*).
 
 ### Introspection: positions
 

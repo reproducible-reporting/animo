@@ -9,6 +9,24 @@ SPDX-License-Identifier: Apache-2.0
   so everything below is the same for every deck.
 */
 
+/*
+  What a subslide step costs in time, stated as values rather than as adjectives.
+  A deck that wants other ones restates them in a stylesheet of its own,
+  and the runtime reads them at every step, so a change takes effect immediately.
+  A duration of zero means a step snaps, which is what a reader who asked for less
+  motion gets below, and what a deep link and a reload get in any case.
+*/
+:root {
+  --animo-duration: 400ms;
+  --animo-easing: ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animo-duration: 0ms;
+  }
+}
+
 html,
 body {
   margin: 0;
@@ -78,4 +96,16 @@ body {
   display: block;
   width: 100% !important;
   height: 100% !important;
+}
+
+/*
+  The continuous slot of a tag site: the unlabelled group inside the labelled one.
+  The runtime writes `opacity`, `translate` and `scale` here and never the `transform`
+  shorthand, which would clobber the positioning typst wrote on the labelled group.
+  `scale` needs both of these to grow the element in place rather than about the origin
+  of the whole frame, and they are stated once here rather than per animated element.
+*/
+.animo-canvas [data-typst-label] > g {
+  transform-box: fill-box;
+  transform-origin: center;
 }

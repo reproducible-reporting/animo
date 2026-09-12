@@ -120,6 +120,66 @@ The presentation PDF renders **one page per state**, which is the whole model on
 `move` and `scale` become discrete jumps between pages.
 The HTML presentation steps through the same states in the browser.
 
+## In the Browser
+
+The HTML presentation is where a timeline actually moves.
+Stepping to the next subslide animates every tag the step changed,
+from what it was showing to what the new state says, and stepping back animates it back.
+
+| Primitive        | What the browser animates                                |
+| ---------------- | -------------------------------------------------------- |
+| `reveal`, `hide` | `opacity` between 0 and 1                                |
+| `move`           | the CSS `translate` property                             |
+| `scale`          | the CSS `scale` property, about the element's own centre |
+
+A step takes **400 ms** and eases **in and out**.
+Both are custom properties on `:root`, so a deck that wants other values restates them:
+
+```html
+<style>
+  :root {
+    --animo-duration: 250ms;
+    --animo-easing: linear;
+  }
+</style>
+```
+
+A duration of zero means a step lands without motion,
+and that is what a reader who has asked their system for reduced motion gets:
+animo's own stylesheet sets it to zero under `prefers-reduced-motion: reduce`.
+
+Three things never animate, and all three for the same reason:
+the state they would animate into is one the audience has not been shown a route to.
+
+- **Arriving on another slide.** A step across a slide boundary snaps.
+- **A deep link**, including the one `typst watch` reloads into.
+- **The first paint**, which is a deep link to wherever the fragment points.
+
+A length in a timeline is a typst length, and it stays one in the browser:
+`move("a", x: 2cm)` moves the element two centimetres of the slide,
+whatever size the window has.
+
+## `hide` Versus `hidden:`, Which Differ by Target
+
+These two are the same state, and it is worth knowing that they are reached differently,
+because the difference shows in the page source.
+
+On paper, an invisible element is typst's own `hide()`: it is laid out and nothing of it
+is drawn. In the browser that would be a dead end, because `hide()` emits nothing to draw
+at all, and no stylesheet can bring back ink that was never written.
+So the HTML output renders an initially hidden element **normally** and the runtime hides
+it with `opacity: 0`.
+
+Two consequences:
+
+- the text of a hidden element is in the HTML file, and a reader who looks at the source
+  or searches the page finds it, which a punchline should not rely on;
+- the element occupies exactly the same space in both, which is what keeps the four
+  outputs laying out identically;
+- a name whose sites disagree about `hidden:` starts out hidden everywhere in the browser,
+  because one rule addresses every site of a name at once.
+  [Tags](tags.md#one-name-several-places) says what to do instead.
+
 ## What the Handout Keeps
 
 The handout shows one page per slide, and `handout:` on a step is what says which one.
@@ -135,12 +195,6 @@ Animo cannot warn about that, because typst offers packages no way to emit a war
 so it is said here instead.
 
 ## What Is Not Here Yet
-
-The HTML output carries the state count and steps through it,
-and **applies no display state**:
-nothing moves in the browser yet, and a `hidden: true` tag is visible there.
-The browser runtime is the next version.
-The presentation PDF is the output that shows the state model today.
 
 `pan`, which moves the viewport over the canvas,
 and the structural primitives `replace`, `remove`, `apply` and `reset`,

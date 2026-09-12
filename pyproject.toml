@@ -26,6 +26,10 @@ python-downloads = "auto"
 # running only the tests does not build `pre-commit`, `stepup` or `zensical`.
 tests = [
     "attrs>=25.0.0",
+    # A static ffmpeg binary, for the one probe that has to read a recorded video back.
+    # What a browser draws while an animation runs cannot be screenshotted: the capture
+    # repaints the page and the behaviour under test disappears. See *Findings*.
+    "imageio-ffmpeg>=0.5.0",
     "numpy>=2.0.0",
     "pillow>=11.0.0",
     # The bundled browsers keep the pixels identical on every machine,

@@ -70,6 +70,30 @@
 
   #tag("second", hidden: true)[This one starts out invisible.]
 
-  The presentation PDF has one page per step.
-  The browser does not animate any of this yet.
+  In the browser each step takes 400 ms, forwards as well as backwards.
+  The presentation PDF has one page per step and no motion at all.
+]
+
+#slide(animation: {
+  import anim: *
+  // Every occurrence of a name moves together, and operations accumulate:
+  // the square ends up three centimetres to the right and twice as large.
+  sub(move("box", x: 2cm, y: 1cm))
+  sub(move("box", x: 1cm), scale("box", 2), hide("gone"))
+})[
+  = What the browser animates
+
+  #tag("gone")[This line fades out on the last step, and keeps its space.]
+
+  #place(dx: 2cm, dy: 3cm, tag(
+    "box",
+    wrap: box,
+    rect(width: 2cm, height: 2cm, fill: rgb("#4f46e5")),
+  ))
+
+  #place(bottom + left)[
+    #text(size: 0.7em, fill: gray)[
+      A scale is about the element's own centre, and nothing reflows around it.
+    ]
+  ]
 ]

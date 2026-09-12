@@ -12,10 +12,12 @@
 // parameters inside it change: `move`, `scale` and `hide` inside the tag's own wrapper are
 // layout-neutral, which is what makes "nothing moves between two states except what the
 // timeline moves" an invariant rather than a hope.
-// In the HTML target no display state is applied at all;
-// the browser runtime of a later version is what puts it on the groups as CSS.
+// In the HTML target no display state is applied at all:
+// one frame covers every state of the slide, and the browser runtime is what puts a
+// state's display state on the groups as CSS.
 
 #import "plan.typ": ask, identity
+#import "runtime.typ": record-site
 #import "wrap.typ": choose-wrapper, slots
 
 // What a tag site is in one rendering: the state's display state, or its own `hidden:`.
@@ -49,6 +51,12 @@
     body
   } else {
     let current = display-of(name, hidden, view)
+    if view.state == none {
+      // The HTML target, where the browser hides what `hidden:` hides, and has to be
+      // told which tags those are: the timeline does not know, and typst's `hide()`
+      // would leave nothing for CSS to bring back.
+      record-site(view, name, hidden)
+    }
     slots(
       name,
       wrapper,

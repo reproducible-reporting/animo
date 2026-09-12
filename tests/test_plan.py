@@ -15,6 +15,7 @@ from harness import TypstRunner
 
 PRELUDE = """\
 #import "/src/plan.typ": continuous-names, identity, resolve
+#import "/src/runtime.typ": browser-plan
 #import "/src/anim.typ"
 """
 
@@ -379,3 +380,67 @@ def test_the_structural_primitives_say_they_are_not_implemented(typst: TypstRunn
         ('reset("a")', "reset"),
     ):
         typst.fails(resolved(f"sub({call})"), f"{name} is not implemented yet")
+
+
+# What the browser is handed.
+
+
+def test_every_state_of_the_browser_plan_holds_every_addressed_tag(typst: TypstRunner):
+    """A state that said nothing about a tag would leave the previous state's CSS in place.
+
+    The browser keeps a display state as inline style until something overwrites it,
+    so stepping backwards would not undo what stepping forwards did.
+    """
+    typst.ok(
+        resolved(
+            '''sub(move("a", x: 1cm))
+sub(scale("b", 2))''',
+            "#context {",
+            "  let states = browser-plan(plan, names, ()).states",
+            "  assert.eq(states.len(), 3)",
+            "  assert(states.all(state => state.tags.keys().sorted() == (\"a\", \"b\")))",
+            "  assert.eq(states.at(0).tags.a, (hidden: false, x: 0.0, y: 0.0, scale: 1.0))",
+            "  assert.eq(states.at(2).tags.a.x, 28.3465)",
+            "  assert.eq(states.at(2).tags.b.scale, 2.0)",
+            "}",
+        )
+    )
+
+
+def test_a_tag_hidden_by_its_own_argument_reaches_the_browser_as_hidden(typst: TypstRunner):
+    """The fallback the timeline cannot take, taken before the plan leaves typst.
+
+    `hidden:` is written at the tag site, so the tag site reports it and the slide folds
+    it in. The runtime then applies what it is given and resolves nothing.
+    """
+    typst.ok(
+        resolved(
+            '''sub(reveal("h"))''',
+            "#context {",
+            '  let states = browser-plan(plan, names, ("h", "other")).states',
+            "  assert.eq(states.at(0).tags.h.hidden, true)",
+            "  assert.eq(states.at(1).tags.h.hidden, false)",
+            '  // A hidden tag the timeline never mentions is in the plan all the same.',
+            "  assert.eq(states.at(0).tags.other.hidden, true)",
+            "  assert.eq(states.at(1).tags.other.hidden, true)",
+            "}",
+        )
+    )
+
+
+def test_a_length_reaches_the_browser_as_a_number_of_typst_points(typst: TypstRunner):
+    """The user unit of a frame's SVG is a typst point, which is what the runtime writes.
+
+    Rounded, because typst's own numbers run to fifteen digits that no renderer can tell
+    apart and that make the emitted page hard to read and hard to diff.
+    """
+    typst.ok(
+        resolved(
+            'sub(move("a", x: 1in, y: 3pt))',
+            "#context {",
+            "  let tags = browser-plan(plan, names, ()).states.at(1).tags",
+            "  assert.eq(tags.a.x, 72.0)",
+            "  assert.eq(tags.a.y, 3.0)",
+            "}",
+        )
+    )

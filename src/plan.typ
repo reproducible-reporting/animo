@@ -101,10 +101,15 @@
 //
 // A dictionary rather than the display state alone, because later phases add the content
 // state and a real epoch number to the same value.
-#let view-of(plan, names, index) = (
-  state: index,
-  epoch: plan.states.at(index).epoch,
-  display: plan.states.at(index).display,
+//
+// `slide` is the position of the slide in the deck.
+// A tag needs it to report anything back out of the frame it sits in,
+// because introspection is document-wide and a tag name means nothing outside its slide.
+#let view-of(plan, names, slide, state) = (
+  slide: slide,
+  state: state,
+  epoch: plan.states.at(state).epoch,
+  display: plan.states.at(state).display,
   continuous: names,
 )
 
@@ -112,7 +117,13 @@
 //
 // `state: none` says "not one of the S+1 states": an HTML frame covers a whole run of
 // them, and the browser is what puts a state's display state on the groups.
-#let html-view(names) = (state: none, epoch: 0, display: (:), continuous: names)
+#let html-view(names, slide) = (
+  slide: slide,
+  state: none,
+  epoch: 0,
+  display: (:),
+  continuous: names,
+)
 
 // The label of the marker a tag emits to ask for the view of its slide.
 #let ask-label = label("animo-ask")
