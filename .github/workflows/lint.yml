@@ -41,7 +41,7 @@ jobs:
   package-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # The checker runs as a container rather than through its own GitHub Action,
       # because that action expects credentials for a GitHub App
       # that a personal repository does not have.
