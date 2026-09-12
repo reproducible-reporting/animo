@@ -23,12 +23,15 @@ PAUSE = 500
 # never in danger of being confused and the allowance can be generous.
 FRAME = 100
 
-# Whether an engine's document timeline stands still while the page draws no frames,
-# measured on chromium 151 and firefox 153. Freezing is what the specification describes,
-# since it says the time is updated once per frame; chromium is the one that updates it on
-# a read from outside a frame. Webkit has no row because it cannot be launched on the
-# machine this was measured on: either behaviour passes below until someone fills it in.
-FREEZES_WHILE_IDLE = {"chromium": False, "firefox": True, "webkit": None}
+# Whether an engine's document timeline stands still while the page draws no frames.
+#
+# Freezing is what the specification describes, since it says the time is updated once per
+# frame, so firefox 153 is the one that follows it. Chromium 151 refreshes the time on a
+# read from outside a frame, and so does playwright's webkit 26.5, measured in a container
+# because no webkit build runs on every contributor's distribution: it reported a lag of
+# exactly zero after a 500 ms pause and after a 3 s one alike.
+# A changed value here is a finding that changed, not a probe that needs fixing.
+FREEZES_WHILE_IDLE = {"chromium": False, "firefox": True, "webkit": False}
 
 # Start an animation after a pause, twice: once left to the browser, and once told to have
 # begun at the document timeline's current time, which is what this finding is about.
@@ -80,7 +83,10 @@ def test_a_start_time_from_the_document_timeline_can_lie_in_the_past(measured, b
     )
     freezes = FREEZES_WHILE_IDLE[browser_name]
     if freezes is None:
-        assert 0 <= measured["lag"] <= PAUSE + FRAME, (
+        # The lower bound sits below zero because an engine that refreshes the time on a
+        # read can report it a tick ahead of `performance.now()`, which is not a third
+        # behaviour.
+        assert -FRAME <= measured["lag"] <= PAUSE + FRAME, (
             f"{browser_name} lags the timeline by {measured['lag']:.0f} ms after a "
             f"{PAUSE} ms pause, which is neither engine's behaviour"
         )
@@ -90,6 +96,9 @@ def test_a_start_time_from_the_document_timeline_can_lie_in_the_past(measured, b
             f"lagging {measured['lag']:.0f} ms after a {PAUSE} ms pause"
         )
     else:
+        # One-sided on purpose. Webkit rounds both clocks to whole milliseconds and reads a
+        # lag of zero, so a tick falling between the two reads in `MEASURE` reports -1, as
+        # it did in continuous integration.
         assert measured["lag"] < FRAME, (
             f"{browser_name} now freezes its timeline while the page is idle, "
             f"lagging {measured['lag']:.0f} ms after a {PAUSE} ms pause"

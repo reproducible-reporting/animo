@@ -40,10 +40,14 @@ DURATION = 800
 # this occasionally does, which is the same sensitivity the finding is about.
 DRAWN = 4
 
-# Whether an engine draws an effect that carries a property equal at both ends, measured
-# on chromium 151 and firefox 153. Webkit has no row because it cannot be launched on the
-# machine this was measured on: either behaviour passes below until someone fills it in.
-DRAWS_A_STANDING_PROPERTY = {"chromium": False, "firefox": True, "webkit": None}
+# Whether an engine draws an effect that carries a property equal at both ends.
+#
+# Chromium 151 is the one that does not, which is the finding. Firefox 153 draws it, and so
+# does playwright's webkit 26.5, measured in a container because no webkit build runs on
+# every contributor's distribution: it drew both spellings of the standing value in 18 of
+# the recording's frames, against the 20 of a plain fade.
+# A changed value here is a finding that changed, not a probe that needs fixing.
+DRAWS_A_STANDING_PROPERTY = {"chromium": False, "firefox": True, "webkit": True}
 
 
 def intermediate(browser, folder: Path, keyframes: list[dict[str, str]]) -> int:

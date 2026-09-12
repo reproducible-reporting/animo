@@ -1664,12 +1664,13 @@ like rather than where it lands:
 
 ### A keyframe property that does not change suppresses the ones that do
 
-Measured on chromium 151 and firefox 153, on a deck whose reveal refused to fade.
+Measured on chromium 151, firefox 153 and playwright's webkit 26.5, on a deck whose reveal
+refused to fade.
 
 An effect that animates `opacity` from 0 to 1 alongside a `translate` or a `scale` that is
 equal at both ends is not drawn while it runs in chromium. The element stays exactly as it
 was for the whole duration and appears in one frame at the end, when the animation is removed
-and the style underneath it takes over. Firefox draws every row below.
+and the style underneath it takes over. Firefox and webkit draw every row below.
 
 | Keyframes of one effect                         | Drawn while running |
 | ----------------------------------------------- | ------------------- |
@@ -1690,14 +1691,16 @@ So a step animates only the properties it changes.
 
 ### The document timeline is not a clock
 
-Measured on chromium 151 and firefox 153, while making a step animate after a pause.
+Measured on chromium 151, firefox 153 and playwright's webkit 26.5, while making a step
+animate after a pause.
 
 `document.timeline.currentTime` is the time of the last frame the browser drew, and a browser
 with nothing to draw draws nothing. Measured inside a key handler, firefox reports a time 442
 ms old after a 250 ms pause and 3181 ms old after a 3 s one, which is the pause itself;
-chromium refreshes the time on a read from outside a frame and never lags by more than one.
+chromium refreshes the time on a read from outside a frame and never lags by more than one,
+and webkit reads a lag of exactly zero, after a 3 s pause as much as after a 500 ms one.
 Standing still is what the specification describes, since it says the time is updated once
-per frame, so chromium is the exception here and not firefox.
+per frame, so firefox is the one that follows it and the other two are the exception.
 
 Giving that time to an animation as its `startTime` therefore starts the animation as far
 into its own duration as the page stood still. With a step of 400 ms, anything longer than
