@@ -2,25 +2,24 @@
 # SPDX-License-Identifier: Apache-2.0
 """Read geometry out of a browser page, without the harness's deck abstraction.
 
-A probe reports on typst and on chromium, so it queries the document directly.
+A probe reports on typst and on a browser, so it queries the document directly.
 `harness.Deck` addresses an animo presentation and assumes the runtime's contract,
 which a probe document deliberately does not implement.
+
+The measurement itself is the harness's, because reading the box of an SVG group is the
+one piece of browser geometry that is not obvious, and a probe that read it its own way
+would be probing the wrong thing.
 """
 
-from harness import Rect
+from harness import MEASURE, Rect
 
 __all__ = ("rect", "rects")
-
-_READ = """node => {
-    const r = node.getBoundingClientRect();
-    return {x: r.x, y: r.y, width: r.width, height: r.height};
-}"""
 
 
 def rects(page, selector: str) -> list[Rect]:
     """The bounding boxes of every element matching the selector, in document order."""
     found = page.evaluate(
-        f"() => Array.from(document.querySelectorAll({selector!r}), {_READ})",
+        f"() => Array.from(document.querySelectorAll({selector!r}), {MEASURE})",
     )
     return [Rect(**box) for box in found]
 

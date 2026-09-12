@@ -28,8 +28,9 @@ tests = [
     "attrs>=25.0.0",
     "numpy>=2.0.0",
     "pillow>=11.0.0",
-    # The bundled chromium keeps the pixels identical on every machine.
-    # `setup.sh` downloads it into `.venv/playwright`.
+    # The bundled browsers keep the pixels identical on every machine,
+    # and the browser tier runs in each of them.
+    # `setup.sh` downloads them into `.venv/playwright`.
     "playwright>=1.50.0",
     # The few assertions that are about the PDF writer rather than about the layout.
     # It is the same engine chromium renders PDFs with, and it ships self-contained wheels.

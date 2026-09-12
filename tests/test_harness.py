@@ -228,9 +228,17 @@ def test_the_update_flag_rewrites_without_failing(tmp_path):
 # Tier 3: the browser.
 
 
-def test_the_browser_tier_actually_launches_chromium(page):
-    """If this skips or fails, a third of the suite is not running."""
-    assert page.evaluate("() => navigator.userAgent")
+def test_the_browser_tier_actually_launches_every_engine(page, browser_name):
+    """If this skips or fails, a third of the suite is not running.
+
+    The engine is asserted rather than assumed, because a parametrisation that silently
+    collapsed onto one browser would leave the suite green and half blind.
+    """
+    agent = page.evaluate("() => navigator.userAgent")
+    # Every one of these strings claims to be `AppleWebKit`, and chromium's claims to be
+    # `Safari` as well, so the token has to be the one only that engine writes.
+    expected = {"chromium": "Chrome/", "firefox": "Firefox/", "webkit": "Version/"}[browser_name]
+    assert expected in agent, f"asked for {browser_name}, got {agent}"
 
 
 def test_a_deck_is_addressed_by_url(deck_at, page):

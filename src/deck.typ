@@ -34,26 +34,35 @@
 // A CSS colour for a typst colour.
 #let css-color(value) = value.to-hex()
 
-// A length as a CSS or an HTML length, rounded to a tenth of a thousandth of a point.
+// A length as a bare number of typst points, rounded to a tenth of a thousandth.
 // Typst's own numbers run to fifteen digits, which no renderer can tell apart
 // and which makes the emitted page hard to read and hard to diff.
-#let pt-string(value) = (
-  str(calc.round(value.to-absolute().pt(), digits: 4)) + "pt"
-)
+#let pt-number(value) = str(calc.round(value.to-absolute().pt(), digits: 4))
+
+// A length as a CSS length that covers that many typst points at any window size.
+//
+// `--animo-unit` is one typst point as the window currently renders it, so every length
+// animo emits is that unit times a number and never one length divided by another.
+// Chromium computes `calc(<length> / <length>)` to a number and firefox 153 does not,
+// dropping the whole declaration, so nothing may lean on it. See *Findings*.
+#let unit-length(value) = "calc(var(--animo-unit) * " + pt-number(value) + ")"
 
 // The custom properties that turn a deck's shape into the geometry of the HTML page.
 //
-// Only the slide size ever reaches CSS. The canvas size stays in typst, because the
-// canvas element is scaled as a whole and every length inside it is then a typst point.
-// The scale is a plain length-by-length division, which resolves the pt of the frame
-// against the px of the window without the runtime having to measure anything.
+// The viewport is the slide's visible box, as large as the window allows at the deck's
+// aspect ratio, and `--animo-unit` is that width divided by the slide width in points:
+// one typst point, as a CSS length, at whatever size the window currently has.
+// Dividing a length by a *number* is the oldest arithmetic CSS has, so this resolves the
+// pt of a frame against the px of a window in every engine,
+// and without the runtime having to measure anything or listen for a resize.
 #let properties(shape) = {
   let aspect = shape.width.to-absolute() / shape.height.to-absolute()
   (
     "--animo-aspect": str(calc.round(aspect, digits: 6)),
-    "--animo-width": pt-string(shape.width),
     "--animo-viewport": "min(100vw, 100vh * " + str(aspect) + ")",
-    "--animo-fit": "calc(var(--animo-viewport) / var(--animo-width))",
+    "--animo-unit": "calc(var(--animo-viewport) / "
+      + pt-number(shape.width)
+      + ")",
   )
 }
 

@@ -1029,6 +1029,7 @@ half of the matrix, and two test frameworks side by side cost more than they sav
 1. **Plan resolution.** Compile-only documents full of `#assert`, run as subprocesses. The same
    shape covers the `import *` footgun: a document that hands `sub()` something that is not an
    animo operation must fail to compile, with the explanation on stderr.
+
 1. **Paged outputs.** `typst compile -f png --ppi` rasterises the presentation and handout
    directly, so no PDF has to be rendered for a layout assertion, and `--input animo=presentation`
    selects the mode exactly as in ordinary use. Comparison is `numpy` and `Pillow` on decoded
@@ -1036,8 +1037,23 @@ half of the matrix, and two test frameworks side by side cost more than they sav
    PDF rendered, and use `pypdfium2`: permissively licensed, self-contained wheels, and the same
    engine chromium renders PDFs with. (`stepup.reprep`'s `raster_pdf` is not that tool; it
    rasterises PDF to PDF for flattening, not to arrays.)
-1. **HTML.** `playwright` with its bundled chromium, which keeps the pixels identical on every
-   machine. Geometry comes from `page.evaluate`, images from
+
+1. **HTML.** `playwright` with the browsers it bundles, which keep the pixels identical on every
+   machine. Every test of this tier runs in **chromium, firefox and webkit**, parametrised on the
+   engine so that a failure names it, because the CSS animo emits has to be the CSS all of them
+   agree on and one of them accepting it proves nothing.
+
+   The three are not equally available, so the tier splits them. Chromium and firefox run
+   wherever playwright runs and are **required**: a launch failure is a broken bootstrap and an
+   error. Playwright builds webkit for ubuntu only, against libraries other distributions do not
+   carry, so elsewhere it runs only in a container. Requiring a container of every contributor is
+   too much and dropping an engine is too little, so webkit is **best effort locally and required
+   in continuous integration**, which is ubuntu. Naming an engine with `--browser` makes it
+   required, which is how the workflows ask for all three, so the engine can never be skipped
+   everywhere at once and leave the suite green.
+
+   Geometry comes from `page.evaluate`, through `getBBox` and `getScreenCTM` rather than
+   `getBoundingClientRect` (see *Findings*), and images from
    `locator.screenshot(animations="disabled")`.
 
 Stored reference images stay the exception, for the cases where a picture is the only statement
@@ -1163,8 +1179,10 @@ happens.
 
 Verified behaviour of typst 0.15.1 that this design relies on. Recorded here so it does not
 have to be rediscovered. Checked against the installed `typst 0.15.1` binary and the
-v0.15.1 source checkout (`../typst`, commit `9dfd3a085`), with chromium for the browser
-measurements.
+v0.15.1 source checkout (`../typst`, commit `9dfd3a085`), with chromium 151, firefox 153 and
+playwright's webkit 26.5 for the browser measurements. Where the engines differ, the entry
+says so, because a deck that only works in one of them is not a presentation format.
+Webkit is measured in a container, for the reason under *Testing*.
 
 ### Element identity in the output: `data-typst-label`
 
@@ -1257,6 +1275,14 @@ So `plus-lighter` is not a nicety, it is what makes the containment claim true *
 transition and not only at its endpoints. `slipst` uses the same blend mode for its
 whole-slip crossfades.
 
+**The sum is exact in two of the three engines.** Chromium 151 and firefox 153 add the two
+half-opacity layers back to one opaque layer bit for bit. Playwright's webkit 26.5 does
+not: ten pixels on antialiased glyph edges drift by up to 42/255, measured in a container.
+That does not change the choice, because the plain crossfade is worse in kind rather than
+in degree: it moves every pixel outside the region, where webkit moves ten of roughly a
+million. It does mean the exactness claim is engine-dependent, which the region-scoped
+variant below would settle by not relying on a blend at all.
+
 **What is measured here is the whole-frame crossfade.** *Architecture* scopes the crossfade to
 the changed regions instead: both frames stay opaque, and only the regions' labelled groups
 animate, which makes the containment exact rather than 1/255. That variant needs the same blend
@@ -1343,20 +1369,33 @@ rather than clipped. The viewport element is what clips a slide.
 
 ### Fitting the slide to the browser window
 
-Measured in playwright's chromium 151.
+Measured in playwright's chromium 151 and firefox 153.
 
-- **`calc()` divides a length by a length and yields a number**: `calc(100px / 40px)`
-  computes to `2.5`. So the scale that maps a deck's points onto the window is a plain CSS
-  expression over the slide width, and the runtime never has to measure the window or
-  listen for a resize.
-- Scaling the canvas element as a whole, rather than sizing its contents in pixels, is
-  what makes a typst point the unit of everything inside it at any window size. The
-  individual `scale` property is used, never the `transform` shorthand, for the reason
-  under *CSS animation of typst SVG groups*, and it leaves `translate` free for `pan`.
+- **`calc()` does not divide a length by a length in firefox.** `calc(100px / 40px)`
+  computes to `2.5` in chromium 151 and in playwright's webkit 26.5, which is what CSS
+  Values 4 type checking asks for, so firefox is the outlier rather than chromium the
+  exception. Firefox 153 does not parse it: `CSS.supports("scale", "calc(100px / 40px)")`
+  is false,
+  and the declaration it appears in is dropped whole, with nothing on the console.
+  A deck whose fit was written that way rendered unscaled in the top-left corner of the
+  window in firefox, at roughly half size, with the content beyond the viewport visible
+  because the element that clips had nothing left to clip.
+  So the fit may not be expressed as one length over another.
+- **A length over a number is portable**, and that is what animo emits.
+  `--animo-unit` is `calc(var(--animo-viewport) / <slide width in points>)`: one typst
+  point, as a CSS length, at whatever size the window currently has.
+  Every length animo writes is then that unit times a number computed at compile time,
+  and the runtime still never has to measure the window or listen for a resize.
+- **Sizing the canvas, rather than scaling it,** is what makes a typst point the unit of
+  everything inside it at any window size. This is a change from the first version, which
+  scaled the canvas element as a whole, and it is an improvement beyond portability: the
+  canvas keeps both its `translate` and its `scale` free, which is what *Architecture*
+  rule 5 asks for when it reserves `scale` on that element for a future zoom.
 - The two targets then agree to **0.0017 of the slide** on every edge of a placed square,
   comparing a 454-pixel handout raster with a 908-pixel browser screenshot. That is one
   pixel of the coarser raster, which is the floor of the measurement rather than a layout
-  difference.
+  difference. Chromium and firefox agree with each other to **0.01 CSS pixel** on the
+  canvas box at a 1280 by 720 window.
 
 ### SVG `<defs>` ids are content hashes
 
@@ -1399,6 +1438,13 @@ Consequences: use the individual `translate`/`scale` properties, never the `tran
 shorthand; set `transform-box: fill-box` for scaling. A stray `transform` in user CSS will
 silently break positioning.
 
+Firefox 153 agrees on every row of the table, including that `fill-box` is what makes a
+scale happen in place. It resolves the fill box itself slightly differently: the centre it
+scales about sits about **0.7 CSS pixels** from the centre `getBBox` reports, so doubling
+an 11-pixel line moves it by that much where chromium moves it by under a tenth of a
+pixel. That is invisible in a transition, and it is why the probe for this row allows a
+pixel rather than half of one.
+
 Units: CSS lengths inside a group are **user units (pt), scaled by the SVG's rendered
 size** — 50 user units measured as 72.7 px at the test slide scale. A move expressed in
 typst lengths therefore stays the same fraction of the slide at any screen size, for free.
@@ -1434,6 +1480,17 @@ one `scale`, and nesting supplies the second. `#box(box[Hello world])#label("out
 transform of its own. A single `#box[..]` instead emits `<g label><g transform="matrix(..)">`,
 whose child is content-dependent and therefore not a slot to rely on. So `tag` wraps its body in
 a nested box, which makes `[data-typst-label="x"] > g` a reliable second slot.
+
+**How that geometry is read is not free.** `getBoundingClientRect()` on a labelled group
+gives the tight box in chromium 151 and a box inflated to roughly the width of the whole
+frame in firefox 153, which paints its ink outside the viewBox because typst writes
+`overflow: visible` on the `<svg>`. On the same group chromium reported `19.57 x 13.86`
+and firefox `358 x 13.90`. What both engines agree on exactly is `getBBox()`, in the
+group's own user units, which are typst points; mapping its corners through
+`getScreenCTM()` puts it back in CSS pixels and the two then agree to **0.02 CSS pixels**
+on an untransformed group and to **0.7** on one under a CSS scale. So a FLIP morph, and
+every test that reads a tag's geometry, uses `getBBox` and the CTM, never
+`getBoundingClientRect`.
 
 Which slot takes which class of animation is fixed by the measurement, not by taste: a FLIP delta
 is read in the frame's coordinates, so it must be applied above anything that already transforms

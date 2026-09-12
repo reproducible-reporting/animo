@@ -9,7 +9,7 @@ If the two drift, nothing downstream can be trusted, so the agreement is tested 
 rather than inferred from the features that depend on it.
 
 It is expressed in numbers rather than in pixels.
-Typst's own rasteriser and chromium's SVG renderer do not have to agree on the pixels of
+Typst's own rasteriser and a browser's SVG renderer do not have to agree on the pixels of
 a glyph, and asking them to would make this test fail on an unrelated upgrade.
 They do have to agree on where a filled square lands, to a fraction of the slide.
 """
@@ -23,11 +23,23 @@ from harness import TypstRunner, screenshot
 # comparison is between two pictures of the same rectangle at two resolutions.
 WINDOW = {"width": 908, "height": 511}
 
-# The floor is one pixel of the coarser of the two rasters, which is 454 pixels wide,
-# so 0.0022 of the slide. Measured on typst 0.15.1 and playwright's chromium 151,
-# the two targets disagree by at most 0.0017 of the slide on any edge of any mark,
-# which is that floor and not a layout difference.
-TOLERANCE = 0.0025
+# The floor of this measurement is two pixels of the raster the edge is read out of,
+# and the two axes do not share it: the handout page is 454 by 255 pixels at 72 ppi,
+# so a pixel is 0.0022 of the slide across and 0.0039 down, while the screenshot is twice
+# that in each direction.
+#
+# Two pixels rather than one, for two reasons that each cost up to one.
+# An edge quantised into a raster lands on a pixel boundary, so the same edge read out of
+# two rasters of different resolution differs by up to a pixel of the coarser one.
+# And the box is the extent of the *exact* mark colour, so a row of edge pixels that a
+# renderer antialiases is not counted at all.
+# Neither is a layout difference, and a real one is far larger: a lost margin would be
+# 0.11 of the slide and the `em` sizing bug of *Findings* was 0.08.
+#
+# Measured on typst 0.15.1, chromium 151 and firefox 153, the largest disagreement is one
+# pixel of the coarser raster. The only place the two engines differ from each other is
+# the bottom edge of the red mark, by one pixel of the 511-pixel screenshot, which is a
+# row of edge pixels firefox blends and chromium does not.
 
 
 def color_box(image: np.ndarray, hexcolor: str) -> tuple[float, float, float, float]:
@@ -65,9 +77,22 @@ def declared_box(dx: str, dy: str) -> tuple[float, float, float, float]:
     return (left, top, left + size / 16.0, top + size / 9.0)
 
 
+def floor(image: np.ndarray) -> tuple[float, float]:
+    """Two pixels of a raster, horizontally and vertically, as fractions of it."""
+    height, width = image.shape[:2]
+    return 2 / width, 2 / height
+
+
+def assert_boxes_agree(got, expected, coarser: np.ndarray, what: str):
+    """Compare two boxes edge by edge, each axis against the floor of `coarser`."""
+    across, down = floor(coarser)
+    assert (got[0], got[2]) == pytest.approx((expected[0], expected[2]), abs=across), what
+    assert (got[1], got[3]) == pytest.approx((expected[1], expected[3]), abs=down), what
+
+
 @pytest.fixture
 def rendered(page, typst: TypstRunner, paged):
-    """The same one-slide deck, rasterised from the handout and screenshotted in chromium."""
+    """The same one-slide deck, rasterised from the handout and screenshotted in a browser."""
     source = typst.source(marks_deck())
     paper = paged.png(source)
     assert len(paper) == 1
@@ -81,9 +106,12 @@ def test_the_two_targets_put_the_same_content_in_the_same_place(rendered):
     """The invariant itself, as a number per edge of every mark."""
     paper, browser = rendered
     for name, (hexcolor, _, _) in MARKS.items():
-        assert color_box(browser, hexcolor) == pytest.approx(
-            color_box(paper, hexcolor), abs=TOLERANCE
-        ), f"the {name} mark lands elsewhere in the browser than on paper"
+        assert_boxes_agree(
+            color_box(browser, hexcolor),
+            color_box(paper, hexcolor),
+            paper,
+            f"the {name} mark lands elsewhere in the browser than on paper",
+        )
 
 
 @pytest.mark.parametrize("side", ["paper", "browser"])
@@ -95,8 +123,11 @@ def test_both_targets_agree_with_the_geometry_the_source_declares(rendered, side
     """
     image = rendered[0] if side == "paper" else rendered[1]
     for name, (hexcolor, dx, dy) in MARKS.items():
-        assert color_box(image, hexcolor) == pytest.approx(declared_box(dx, dy), abs=TOLERANCE), (
-            f"the {name} mark is not where the source places it"
+        assert_boxes_agree(
+            color_box(image, hexcolor),
+            declared_box(dx, dy),
+            image,
+            f"the {name} mark is not where the source places it",
         )
 
 

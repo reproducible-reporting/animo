@@ -305,9 +305,12 @@ and left for the author.
   and nothing about the addressing. The self-tests of the harness still run against
   `tests/documents/stand_in_deck.html`, as phase 02 asked, and now also against a real
   deck.
-- **Phase 06** moves `.animo-canvas`, which already has `transform-origin: 0 0` and uses
-  the individual `scale` property, leaving `translate` free for the pan. The canvas size
-  is readable from `<animo-canvas>` metadata in both targets.
+- **Phase 06** moves `.animo-canvas`, which has neither a `transform-origin` nor a
+  `scale` of its own, so both `translate` and `scale` are free for the pan and a future
+  zoom. See the follow-up below: this is not what this phase built. A pan offset is
+  written as `calc(var(--animo-unit) * <points>)`, which is what `unit-length` in
+  `src/deck.typ` produces. The canvas size is readable from `<animo-canvas>` metadata in
+  both targets.
 - **Phase 09** stacks its epoch frames in `.animo-canvas`, which is a single grid cell
   with `isolation: isolate` and `grid-row: 1 / grid-column: 1` on its children, asserted
   in `tests/test_deck_html.py`. The `!important` override on the frame size applies to
@@ -316,3 +319,80 @@ and left for the author.
   `PagedRunner.svg` is new next to `png` and `pdf`.
 - `ruff` is still not a `pre-commit` hook. All Python written in this phase is
   `ruff check` and `ruff format` clean, by hand, as in phase 02.
+
+## Follow-Up: Firefox
+
+Out of phase, after the author tested a built deck in firefox by hand and found the slide
+rendered at about half size in the top-left corner of the window, with the content beyond
+the viewport visible because the element that clips had nothing left to clip.
+
+### What Was Wrong
+
+The fit this phase built was `scale: calc(var(--animo-viewport) / var(--animo-width))` on
+`.animo-canvas`, a length divided by a length. Chromium 151 computes that to a number.
+Firefox 153 does not parse it at all, so it dropped the whole declaration, silently:
+`CSS.supports("scale", "calc(100px / 40px)")` is false there.
+
+This contradicted the *Fitting the slide to the browser window* finding, which recorded
+the division as usable and had been measured in chromium only. The author was asked before
+anything was changed, and chose the replacement below.
+
+### What Changed
+
+- **The fit is a length over a number.** `--animo-unit` is
+  `calc(var(--animo-viewport) / <slide width in points>)`, one typst point as a CSS length
+  at the current window size, and the canvas is *sized* in it rather than scaled.
+  Every length animo emits is now that unit times a compile-time number.
+  The runtime still measures nothing and listens for no resize.
+  This also frees `scale` on the canvas, which *Architecture* rule 5 had asked for and
+  this phase had occupied.
+- **The browser tier runs in chromium, firefox and webkit**, parametrised on the engine
+  through a `browser_name` fixture, so a failure names the engine and `-k firefox` selects
+  one. The first two are required everywhere. Playwright builds webkit for ubuntu only, so
+  it is best effort locally, where it skips with a reason, and required in continuous
+  integration, which is ubuntu. Naming an engine with `--browser` makes it required, which
+  is both how the workflows ask for all three and how a contributor gets playwright's own
+  diagnosis instead of a skip.
+- **Geometry is read with `getBBox` and `getScreenCTM`**, never with
+  `getBoundingClientRect`, which is not the same box in the two engines. `harness.MEASURE`
+  is the single expression, used by `Deck.rects` and by the probes' `measuring.rects`.
+
+### New Findings, All Recorded in the Design Document
+
+1. *Fitting the slide to the browser window*, rewritten: the division is chromium-only and
+   fails silently, a length over a number is portable, and the canvas is sized rather than
+   scaled. Probed by the new `probes/test_fitting.py`, which had no probe before.
+1. *Cross-frame geometry is readable*, extended: `getBoundingClientRect` on a labelled
+   group gives `19.57 x 13.86` in chromium and `358 x 13.90` in firefox, because typst
+   writes `overflow: visible` on the `<svg>`. `getBBox` agrees exactly in both, and
+   through `getScreenCTM` the two engines agree to 0.02 CSS pixels.
+1. *CSS animation of typst SVG groups*, extended: firefox agrees on every row of the
+   table, but resolves `transform-box: fill-box` to a centre about 0.7 CSS pixels from the
+   one `getBBox` reports.
+1. *Crossfading epoch frames*, extended: `mix-blend-mode: plus-lighter` is exact in
+   chromium and firefox and not in webkit, where ten pixels on antialiased glyph edges
+   drift by up to 42/255. This does not change the choice of blend mode, because the plain
+   crossfade moves every pixel outside the region rather than ten, but it does make the
+   exactness claim engine-dependent, and phase 09 should know that before it leans on it.
+   The region-scoped variant *Architecture* prefers would settle it by not blending at
+   all.
+
+### What a Follow-Up Phase Should Know
+
+- Three probe failures in firefox all traced to `getBoundingClientRect`, not to three
+  separate engine differences. A probe that reads geometry should go through
+  `harness.MEASURE` rather than query the DOM its own way.
+- `tests/test_cross_target.py` now takes its tolerance as two pixels of the raster an edge
+  is read out of, per axis, instead of one number for both. The old single tolerance was
+  tighter than one pixel of the *vertical* floor and passed in chromium by luck.
+- `probes/test_watch.py` had a race that only showed up under the load of three engines:
+  it waited for `typst watch` to *serve* and then read the file from disk, which the
+  server answers before the first compilation has written. It now waits for the file too.
+- Webkit was measured by mounting the working tree into an `ubuntu:24.04` container at the
+  same absolute path, because the virtual environment holds absolute symlinks, with a musl
+  typst binary because the host's is built against a newer glibc than the image has.
+  The recipe is in `docs/testing.md`. In that container the full suite is 255 passed and
+  4 skipped, where the four are the two documented skips plus the two Typst Universe
+  packages, which the container cannot download and continuous integration can.
+- The changelog was left alone. Nothing here changes a released version, and the phase
+  entries are not tracked there yet.

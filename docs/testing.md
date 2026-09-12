@@ -16,11 +16,13 @@ Animo has one test runner, `pytest`, and three tiers underneath it.
 The weight is deliberately on the cheapest one.
 
 ```bash
-pytest                # everything
-pytest -m plan        # tier 1 only
-pytest -m paged       # tier 2 only
-pytest -m browser     # tier 3 only
-pytest probes         # the behaviour probes, in all three tiers
+pytest                        # everything
+pytest -m plan                # tier 1 only
+pytest -m paged               # tier 2 only
+pytest -m browser             # tier 3 only, in every engine available
+pytest --browser firefox      # tier 3 in firefox only, the rest unchanged
+pytest -k firefox             # only the firefox share of tier 3
+pytest probes                 # the behaviour probes, in all three tiers
 pytest tests/test_harness.py::test_identical_rasters_compare_identical    # one test
 ```
 
@@ -32,7 +34,7 @@ so a test cannot claim to be in a tier it is not in.
 | ---- | --------- | ------- | ------------------------------------------------------------ |
 | 1    | `plan`    | `typst` | whether a document compiles, and what it says with `#assert` |
 | 2    | `paged`   | `paged` | the rasterised presentation and handout outputs              |
-| 3    | `browser` | `page`  | the HTML output, in chromium                                 |
+| 3    | `browser` | `page`  | the HTML output, in chromium, firefox and webkit             |
 
 `tests/` holds the feature tests and the harness itself.
 `probes/` holds one probe per entry in the *Findings* section of the design document;
@@ -111,10 +113,88 @@ the same engine chromium renders PDFs with.
 
 ## Tier 3: The HTML Output
 
-`playwright` drives the chromium it bundles, which is what keeps the pixels identical
-on every machine. `./setup.sh` downloads it into `.venv/playwright`,
+`playwright` drives the browsers it bundles, which is what keeps the pixels identical
+on every machine. `./setup.sh` downloads them into `.venv/playwright`,
 and a missing browser is an error rather than a skip:
 a suite that is green because a third of it never ran is worse than a red one.
+
+**Every test of this tier runs in chromium, firefox and webkit.**
+A deck that only works in one engine is not a presentation format,
+and they disagree on more than pixels:
+firefox does not implement `calc(<length> / <length>)` at all
+and drops the declaration it appears in, silently,
+while webkit is the one whose `plus-lighter` crossfade is not pixel-exact.
+The engine is a fixture, so a failure names it and `-k firefox` selects one of them.
+
+```bash
+pytest -m browser             # every engine this machine can run
+pytest --browser firefox      # one of them; repeatable
+```
+
+### Which Engines Run Where
+
+The three are not equally available, so the tier treats them differently.
+
+| Engine     | Locally                        | In CI    |
+| ---------- | ------------------------------ | -------- |
+| `chromium` | required                       | required |
+| `firefox`  | required                       | required |
+| `webkit`   | where the platform has a build | required |
+
+Chromium and firefox run wherever playwright runs,
+so a launch failure there is a broken bootstrap and an error, never a skip.
+
+Playwright builds one webkit for linux, against the libraries debian and ubuntu carry,
+so on any other distribution it runs only inside a container.
+Asking every contributor for a container is too much
+and dropping a whole engine is too little,
+so webkit skips where it cannot run, says so, and is required in CI, which is ubuntu.
+
+**Where webkit cannot run, `./setup.sh` does not download it at all.**
+It is a 300 MB download that could never launch,
+so the engine list is decided before the download rather than after,
+from `uname` and the `ID` and `ID_LIKE` fields of `/etc/os-release`.
+The script ends by printing which engines run on your machine, and webkit reads as
+`no build for this platform` there rather than as an installed browser that will not start.
+
+**Naming an engine makes it required.**
+`pytest --browser webkit` turns the skip into an error carrying playwright's own
+diagnosis, and it is how the workflows ask for all three at once:
+
+```bash
+pytest --browser chromium --browser firefox --browser webkit
+```
+
+So the engine can never be skipped everywhere at once and leave the suite green.
+
+What that error says depends on why the engine is unavailable.
+On debian or ubuntu without the system packages, it is playwright's missing-library box,
+and `playwright install-deps webkit` is the fix.
+On a platform `./setup.sh` skipped, it is `Executable doesn't exist`,
+because there is no local build to launch:
+run `playwright install webkit` first if you want the launch error itself.
+
+To run webkit by hand where there is no build for it,
+mount the working tree into an ubuntu container at the same absolute path,
+because the virtual environment holds absolute symlinks:
+
+```bash
+podman run --rm --security-opt label=disable \
+  -v "$PWD":"$PWD" -w "$PWD" \
+  -e PLAYWRIGHT_BROWSERS_PATH=/tmp/playwright \
+  -e TYPST_PACKAGE_PATH="$PWD/.typst-packages" \
+  ubuntu:24.04 bash -c '
+    apt-get update -qq
+    .venv/bin/python -m playwright install --with-deps webkit
+    .venv/bin/python -m pytest -m browser --browser webkit'
+```
+
+The browsers go to a path inside the container, not to `.venv/playwright`,
+so the download leaves with the container and the working tree keeps no build
+that the host cannot launch.
+The cost is that each run downloads webkit again.
+A typst binary has to be on the container's path as well,
+and the one on the host will not do if its glibc is newer than the image's.
 
 Geometry is preferred over pixels wherever it can say the same thing,
 because a number survives a glyph rasterisation change and a screenshot does not.
@@ -125,6 +205,13 @@ def test_a_tag_outside_a_region_does_not_move_between_epochs(open_page, page):
     first, second = deck.rects("caption")
     assert first.approx(second)
 ```
+
+That geometry is read with `getBBox()` and `getScreenCTM()`, never with
+`getBoundingClientRect()`, which is not the same box in every engine:
+on a labelled group chromium reports the tight box and firefox one inflated
+to roughly the width of the whole frame.
+`harness.MEASURE` is the one expression that does it, and both `Deck.rects`
+and the probes' own `measuring.rects` go through it.
 
 Tests deep-link to a state instead of clicking their way to it.
 That is a contract with the runtime, spelled out in `harness.browser.Deck`:
@@ -198,7 +285,8 @@ because a failed compilation is worth looking at.
 
 | Workflow   | Trigger          | Does                                                           |
 | ---------- | ---------------- | -------------------------------------------------------------- |
-| `pytest`   | push to main, PR | the three tiers and the probes, against the pinned typst       |
+| `pytest`   | push to main, PR | the three tiers and the probes, against the pinned typst,      |
+|            |                  | with tier 3 in all three engines                               |
 | `probes`   | weekly schedule  | the probes against the newest typst release, non-blocking      |
 | `zensical` | push to main, PR | builds the site with `--strict`, deploys to Pages on main only |
 | `lint`     | push to main, PR | runs the Universe package checker over the package             |

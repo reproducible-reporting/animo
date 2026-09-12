@@ -41,9 +41,17 @@ pytest
 ```
 
 `setup.sh` installs `uv` and a pinned interpreter under `.venv/`,
-runs `uv sync`, downloads the chromium the browser tests drive,
+runs `uv sync`, downloads the browsers the browser tests drive,
 repairs the local package directory and installs the `pre-commit` hook.
-Removing `.venv/` undoes all of it, the browser included.
+Removing `.venv/` undoes all of it, the browsers included.
+
+Chromium and firefox are always downloaded.
+Webkit is downloaded only where playwright has a build that can run,
+which is macOS and the debian family, because it is 300 MB that would never launch
+anywhere else.
+The script ends by printing which engines run on your machine.
+Where webkit is absent the browser tier skips it and continuous integration covers it,
+as [Testing](testing.md) explains.
 
 Animo is a typst package, not a Python package.
 Nothing in `pyproject.toml` is ever built or published:

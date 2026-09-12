@@ -62,6 +62,19 @@ def fetch(port: int, attempts: int = 100) -> str:
     raise AssertionError(f"typst watch did not serve anything on port {port}")
 
 
+def written(output: Path, attempts: int = 100) -> str:
+    """Read the file typst watch writes, waiting for it to appear.
+
+    Serving and writing are not the same moment: the server answers before the first
+    compilation has reached the disk, so waiting for the one does not wait for the other.
+    """
+    for _ in range(attempts):
+        if output.exists():
+            return output.read_text()
+        time.sleep(0.1)
+    raise AssertionError(f"typst watch served a document but never wrote {output}")
+
+
 @pytest.mark.parametrize("flag", ["--port", "--no-serve", "--no-reload"])
 def test_the_server_flags_exist(flag):
     """The three flags the manual has to be able to mention."""
@@ -82,10 +95,11 @@ def test_the_reload_script_is_injected_into_the_served_document_only(typst: Typs
     process = serve(source, output, port)
     try:
         served = fetch(port)
+        on_disk = written(output)
     finally:
         process.terminate()
         process.wait(timeout=20)
     assert RELOAD_SCRIPT in served
     assert "</body>" in served
     assert served.index(RELOAD_SCRIPT) < served.index("</body>")
-    assert RELOAD_SCRIPT not in output.read_text()
+    assert RELOAD_SCRIPT not in on_disk

@@ -45,8 +45,11 @@ body {
 
 /*
   The canvas: what the body is laid out on, at least as large as the viewport.
-  It sits at the viewport's origin and is scaled as a whole, which is what makes a
-  typst point the unit of everything inside it, at any window size.
+  It sits at the viewport's origin and is sized in `--animo-unit`, one typst point as the
+  window currently renders it, which is what makes a typst point the unit of everything
+  inside it at any window size.
+  Sizing rather than scaling leaves both `translate` and `scale` free on this element,
+  which is where `pan` and a future zoom belong.
   The epoch frames are stacked in its single grid cell, in document order,
   on a stacking context of their own so that a crossfade between them stays contained.
 */
@@ -56,8 +59,6 @@ body {
   left: 0;
   display: grid;
   isolation: isolate;
-  transform-origin: 0 0;
-  scale: var(--animo-fit);
 }
 
 .animo-canvas > * {

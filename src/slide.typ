@@ -16,7 +16,7 @@
 #import "canvas.typ": (
   auto-extent, canvas-label, explicit-extent, record-placements,
 )
-#import "deck.typ": css-color, deck-shape, paged-mode, pt-string
+#import "deck.typ": css-color, deck-shape, paged-mode, unit-length
 
 // Where a slide sits in the deck, counting every slide.
 // This is what addresses a slide in the URL and in the DOM, so it counts the slides
@@ -130,9 +130,9 @@
           attrs: (
             class: "animo-canvas",
             style: "width: "
-              + pt-string(size.width)
+              + unit-length(size.width)
               + "; height: "
-              + pt-string(size.height),
+              + unit-length(size.height),
           ),
           html.frame(block(width: size.width, height: size.height, laid-out)),
         ),

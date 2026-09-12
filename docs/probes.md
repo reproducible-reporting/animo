@@ -12,7 +12,8 @@ SPDX-License-Identifier: Apache-2.0
 
 # Behaviour Probes
 
-Animo rests on some twenty verified behaviours of typst 0.15.1 and of chromium.
+Animo rests on some twenty verified behaviours of typst 0.15.1 and of the browsers it
+targets.
 They are recorded in the *Findings* section of
 [the design document](https://github.com/reproducible-reporting/animo/blob/main/planning/design.md),
 and any of them could change under the package.
@@ -36,7 +37,7 @@ through the same fixtures. See [Testing](testing.md) for the tiers.
 
 ```bash
 pytest probes             # all of them, against the pinned typst
-pytest probes -m browser  # the ones that need chromium
+pytest probes -m browser  # the ones that need a browser, in every engine available
 ```
 
 They also run in a workflow of their own, weekly, against the **newest** typst release.
@@ -118,6 +119,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Crossfading epoch frames                                 | `test_crossfade.py`      |
 | Automatic canvas sizing: `#place` and `show place:`      | `test_canvas.py`         |
 | Recording placements: what a `show place:` rule may do   | `test_place_rule.py`     |
+| Fitting the slide to the browser window                  | `test_fitting.py`        |
 | SVG `<defs>` ids are content hashes                      | `test_defs.py`           |
 | CSS animation of typst SVG groups                        | `test_css_transforms.py` |
 | Styling from CSS: what is and is not reachable           | `test_css_styling.py`    |

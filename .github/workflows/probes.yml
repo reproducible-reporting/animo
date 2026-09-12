@@ -30,12 +30,14 @@ jobs:
         with:
           typst-version: latest
       - run: uv sync --no-default-groups --group tests
-      - run: uv run playwright install --with-deps chromium
+      # Every engine: this runner is ubuntu, which is the one platform all three run on.
+      - run: uv run playwright install --with-deps chromium firefox webkit
       - name: Run the probes
         id: run
         run: |
           set -o pipefail
-          uv run pytest probes --tb=line -q -rs | tee probes.log
+          uv run pytest probes --browser chromium --browser firefox --browser webkit \
+            --tb=line -q -rs | tee probes.log
       - name: Report
         if: always()
         run: |

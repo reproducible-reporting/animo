@@ -8,12 +8,12 @@ so that a probe and a feature test share every fixture.
 
 - `harness.typst` compiles a document and asserts that it did or did not compile.
 - `harness.raster` renders the paged outputs and compares them as arrays.
-- `harness.browser` drives the HTML output in the chromium `playwright` bundles.
+- `harness.browser` drives the HTML output in each browser `playwright` bundles.
 - `harness.references` implements the stored-image policy and its regeneration path.
 - `harness.fixtures` is the pytest plugin that ties them to fixture names.
 """
 
-from .browser import Deck, Rect, open_local, screenshot, state_hash
+from .browser import MEASURE, Deck, Rect, open_local, screenshot, state_hash
 from .raster import (
     Box,
     PagedRunner,
@@ -30,6 +30,7 @@ from .references import Reference
 from .typst import ROOT, TypstResult, TypstRunner, compile_typst, manifest, write_typst
 
 __all__ = (
+    "MEASURE",
     "ROOT",
     "Box",
     "Deck",

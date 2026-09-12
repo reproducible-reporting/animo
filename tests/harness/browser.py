@@ -1,9 +1,11 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Tier 3: the HTML output, in the chromium that `playwright` bundles.
+"""Tier 3: the HTML output, in the browsers that `playwright` bundles.
 
-The bundled browser is what keeps the pixels identical on every machine,
-so `setup.sh` downloads it into `.venv/` and a missing one is an error rather than a skip:
+Every test here runs in each engine of `fixtures.ENGINES`, because a deck that only works
+in one of them is not a presentation format.
+The bundled browsers are what keep the pixels identical on every machine,
+so `setup.sh` downloads them into `.venv/` and a missing one is an error rather than a skip:
 a suite that is green because a third of it never ran is worse than a red one.
 
 Geometry comes from `page.evaluate` and is preferred over pixels wherever it can say the same
@@ -19,12 +21,45 @@ from playwright.sync_api import Locator, Page
 
 from .raster import decode
 
-__all__ = ("Deck", "Rect", "open_local", "screenshot", "state_hash")
+__all__ = ("MEASURE", "Deck", "Rect", "open_local", "screenshot", "state_hash")
+
+
+# How the geometry of an SVG group is read, as a `playwright` argument expression.
+#
+# `getBBox()` gives the box in the group's own user units, which are typst points, and
+# `getScreenCTM()` maps that onto the page, so the result is in CSS pixels either way.
+# `getBoundingClientRect()` cannot be used on a group: firefox 153 inflates it to roughly
+# the width of the whole frame where chromium returns the tight box. See *Findings*.
+# All four corners are mapped, so the box stays right under a matrix that rotates.
+MEASURE = """node => {
+    if (typeof node.getBBox !== "function") {
+        // Not an SVG graphics element, so there is no user space to map out of and
+        // no disagreement between the engines to avoid.
+        const r = node.getBoundingClientRect();
+        return {x: r.x, y: r.y, width: r.width, height: r.height};
+    }
+    const box = node.getBBox();
+    const m = node.getScreenCTM();
+    const corners = [
+        [box.x, box.y],
+        [box.x + box.width, box.y],
+        [box.x, box.y + box.height],
+        [box.x + box.width, box.y + box.height],
+    ];
+    const xs = corners.map(([x, y]) => m.a * x + m.c * y + m.e);
+    const ys = corners.map(([x, y]) => m.b * x + m.d * y + m.f);
+    const x = Math.min(...xs);
+    const y = Math.min(...ys);
+    return {x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y};
+}"""
 
 
 @attrs.frozen
 class Rect:
-    """A `getBoundingClientRect`, in CSS pixels."""
+    """The box of an SVG group on the page, in CSS pixels.
+
+    Measured with `MEASURE`, not with `getBoundingClientRect`.
+    """
 
     x: float = attrs.field()
     y: float = attrs.field()
@@ -129,10 +164,7 @@ class Deck:
         boxes = self.page.evaluate(
             f"""() => Array.from(
                 {scope}.querySelectorAll({selector!r}),
-                node => {{
-                    const r = node.getBoundingClientRect();
-                    return {{x: r.x, y: r.y, width: r.width, height: r.height}};
-                }},
+                {MEASURE},
             )"""
         )
         return [Rect(**box) for box in boxes]
