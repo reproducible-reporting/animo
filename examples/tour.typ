@@ -53,3 +53,23 @@
 
   #place(bottom + right)[#text(size: 0.7em, fill: gray)[a placed corner mark]]
 ]
+
+#slide(animation: {
+  // The primitives are imported inside this block, so `move`, `scale` and `hide`
+  // keep their built-in meaning everywhere else, the slide body included.
+  import anim: *
+  sub(reveal("second"))
+  sub(move("first", x: 2cm), scale("second", 1.3))
+})[
+  = Tags and a timeline
+
+  The body says what is on the slide and tags the parts a timeline may address.
+  The animation argument says when and how those parts move.
+
+  #tag("first")[This line slides to the right on the last step.]
+
+  #tag("second", hidden: true)[This one starts out invisible.]
+
+  The presentation PDF has one page per step.
+  The browser does not animate any of this yet.
+]

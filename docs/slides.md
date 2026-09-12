@@ -143,8 +143,17 @@ Navigation does not use this counter.
 A presenter walks through a title slide whether or not it carries a number,
 so the position in the deck is counted separately, over every slide.
 
+## The Timeline
+
+`animation:` is the slide's timeline, and it is read before the body is laid out.
+[Tags](tags.md) is how the parts of the body it may address are marked,
+and [Animation](animation.md) is what it may say about them.
+
+A slide with no `animation:` has one state and is what the previous sections describe.
+
 ## What Is Not Here Yet
 
-`animation:`, `#tag` and `#region` are in the signature and do nothing.
-A deck that hands `#slide` a non-empty `animation:` is told so rather than
-having it silently ignored.
+`#region` is in the signature and does nothing,
+so nothing is relaid out between subslides yet.
+`pan` is named and says so when it is used,
+so the canvas beyond the viewport stays out of view.

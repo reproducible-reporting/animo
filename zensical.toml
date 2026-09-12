@@ -16,6 +16,8 @@ nav = [
   { "Home" = "index.md" },
   { "Manual" = [
     { "Slides" = "slides.md" },
+    { "Tags" = "tags.md" },
+    { "Animation" = "animation.md" },
     { "The Four Outputs" = "outputs.md" },
   ] },
   { "Development" = [

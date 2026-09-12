@@ -161,18 +161,18 @@ def test_numbered_counts_slides_and_position_counts_all_of_them(typst: TypstRunn
     typst.ok(source)
 
 
-# The arguments that phase 04 fills in.
+# The arguments a later version fills in.
 
 
-def test_a_non_empty_animation_is_refused_for_now(typst: TypstRunner):
-    """The signature is already the final one, so phase 04 does not change it.
+def test_a_timeline_that_is_not_one_is_refused_by_the_slide(typst: TypstRunner):
+    """The slide hands its argument to the resolver before it lays out its body.
 
-    Until the timeline exists, a deck that hands one over must be told so rather than
-    have it silently ignored.
+    What a timeline may hold is asserted in `test_plan.py`; this is the one assertion
+    that `#slide` is on that path at all rather than ignoring the argument.
     """
     typst.fails(
         deck("slide(animation: (1,))[body]"),
-        "`animation` argument is not implemented yet",
+        "step 1 of the animation argument is not a sub(..) call",
     )
 
 

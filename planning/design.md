@@ -45,7 +45,7 @@ The initial version has the following (non)features:
 - Background color and background image support
 - Zero templating or styling features
 - No footer or header support, just use `#place` and wrap `#slide` to implement recurring elements
-- Extra handout snapshots with `sub(handout: true)`
+- Handout pages chosen per step with `sub(handout: ..)`, defaulting to the final state
 - Output formats:
   - HTML presentation export suitable for presenting in a browser, with animation features
   - Presentation PDF export suitable for presenting when HTML presentation is not supported at the venue.
@@ -96,9 +96,9 @@ Example usage:
       apply("caveat", text.with(fill: red)),
     )
     /*
-      `handout: true` asks for an extra handout page at this step. The handout
-      otherwise shows only the final state of the slide, which would lose the
-      caveat that the next step removes.
+      `handout: true` asks for a handout page at this step. The default, `auto`,
+      gives a page to the last step of the slide and to no other, which here
+      would lose the caveat that this step removes.
     */
     sub(
       handout: true,
@@ -228,12 +228,24 @@ such as a stream of raw cetz draw commands, which a box would destroy.
 It is also the way to say "this tag is only ever addressed structurally":
 with no label there is no group, so the continuous primitives have nothing to animate,
 and animo panics when the timeline asks for one anyway.
+`hidden: true` is refused there for the same reason:
+it is the initial state of a display state, and honouring it in the paged outputs alone
+would break the invariant that all four outputs look the same.
+
+The body is then returned exactly as it came in, and "exactly" is measured:
+the marker and the show rule that carry the plan to a tag site contribute nothing to the
+layout, not even where a wrapper would trim a heading's block spacing (see *Findings*).
+A body that is not content is the one case animo can say nothing else about.
+It cannot carry a marker, and a `context` block cannot return one either,
+so such a tag reaches no view, and not even the panic above can fire for it.
 
 Wrapping is not free, and the manual has to say so rather than let an author find out:
 a tagged inline phrase can no longer break across lines, so its paragraph may reflow,
 and a tagged heading shifts by a few points, because a heading's own block spacing is trimmed
 at the wrapper's edge and replaced by the generic one (measured; see *Findings*).
-Tagging the heading's text instead, `= #tag("t")[Head]`, avoids the shift.
+Tagging the heading's text instead, `= #tag("t")[Head]`, avoids the shift exactly:
+the wrapper is then inside the heading rather than around it, and the page is unchanged to
+the pixel (measured; see *Findings*).
 
 The wrapping is not cosmetic in the other direction either: only labelled `box` and `block`
 elements become addressable groups in the SVG/HTML output (see *Findings*). That is what decides
@@ -348,11 +360,24 @@ All primitives return a plain description (a dictionary); they perform no action
 `sub(..ops)` groups the operations that happen together in one subslide step. An empty `sub()`
 advances one step without changing anything.
 
-`sub` takes one keyword argument of its own: `sub(handout: true, ..ops)` asks for an extra
-handout page at that step, on top of the final state that every slide contributes. It is a
-keyword rather than a free-standing `handout()` call between `sub` calls, so that its meaning
-does not depend on its position in the block — the same reasoning that puts the future `wait:`
-on `sub`, and one fewer name at the top level.
+`sub` takes one keyword argument of its own, `handout:`, which says whether the handout
+shows that step. It is three-valued:
+
+- `handout: auto`, the default, resolves to `true` for the **last** step of the slide and to
+  `false` for every other one, which is the one page per slide the handout shows anyway.
+  A slide with no `sub` at all has only state 0, and that state is its last one.
+- `handout: true` asks for an extra page at that step, which is how a step that a later step
+  destroys is kept.
+- `handout: false` takes a page away, including the final state, so a slide can be left out
+  of the handout entirely.
+
+The resolver therefore resolves the flag to a boolean per state, and the handout renders the
+states whose resolved flag is true. This makes `handout:` the only thing that says what a
+handout holds, rather than a set of exceptions to a rule written elsewhere.
+
+It is a keyword rather than a free-standing `handout()` call between `sub` calls, so that its
+meaning does not depend on its position in the block, which is the same reasoning that puts
+the future `wait:` on `sub`, and one fewer name at the top level.
 
 The primitives are cut two ways, and both cuts matter.
 
@@ -378,6 +403,11 @@ they are pure CSS on the existing frame, so they animate smoothly and cost nothi
 The first four are element primitives; `pan` is the slide primitive, which is why it takes no
 tag name and why `relto` — "pan so that this tag comes into view" — is optional rather than
 positional.
+
+`x` and `y` are lengths, since a ratio has nothing here to be a ratio of. `factor` is a number
+or a ratio, so `scale("a", 2)` and `scale("a", 200%)` are the same operation: factors multiply
+along the timeline, and a number is the form that survives the multiplication, so the ratio is
+resolved to one when the operation is built.
 
 **Structural primitives** change what typst has to lay out or paint. Only typst can render
 the result, so each of them forces a fresh rendering of the slide (an *epoch*, below) and is
@@ -409,9 +439,9 @@ Notes and consequences:
   regions give it a bounded meaning. Outside a region there is nothing for `remove` to reflow —
   the implicit region reserves the footprint of the element's largest state either way — so
   there it costs an epoch and buys nothing, and `hide` is the right primitive.
-- Structural primitives work at any tag site, including a `draw: true` tag over raw cetz draw
+- Structural primitives work at any tag site, including a `wrap: none` tag over raw cetz draw
   commands, because typst renders the epoch. Continuous primitives need a labelled group and so
-  need a boxed tag site. See the table under *Tags*.
+  need a wrapped tag site. See the table under *Tags*.
 - Because `replace` and `apply` carry content and functions, plan descriptors are no longer
   pure data in the strict sense. Tier-1 tests should therefore assert on the *resolved
   structure* (tag names, per-state flags, epoch boundaries and counts) rather than on the
@@ -453,11 +483,11 @@ is not a feasibility question, and is settled on other grounds below.
 
 Renderings required per slide:
 
-| Output            | Renderings                             |
-| ----------------- | -------------------------------------- |
-| HTML presentation | one per epoch                          |
-| Presentation PDF  | one per state (S+1)                    |
-| Handout PDF/SVG   | one, plus one per `sub(handout: true)` |
+| Output            | Renderings                                    |
+| ----------------- | --------------------------------------------- |
+| HTML presentation | one per epoch                                 |
+| Presentation PDF  | one per state (S+1)                           |
+| Handout PDF/SVG   | one per state with `handout` resolved to true |
 
 ### Architecture
 
@@ -529,12 +559,14 @@ and `replace`, `remove` and `apply` are simply rendered in place. A panned step 
 page showing a different part of the canvas, which is what makes panning survive into the paged
 output at all.
 
-**Handout PDF.** One page per slide, showing the **final state of the slide** — the viewport at
-its final position, like the presentation PDF. Additional snapshots are requested with
-`sub(handout: true, ..)`. This is lossy by construction for slides
-that overwrite content: a `replace` destroys what it replaces, and only an explicit
-`handout: true` keeps it. Animo cannot warn about this, because typst offers packages no way to
-emit a warning; the manual must.
+**Handout PDF.** One page per state whose `handout` flag resolves to true, which by default is
+the **final state of the slide** and no other: the viewport at its final position, like the
+presentation PDF. Extra pages are asked for with `sub(handout: true, ..)` and pages are given up
+with `sub(handout: false, ..)`, so an ordinary slide contributes one page and an author who says
+so contributes any number, the empty one included. This is lossy by construction for slides that
+overwrite content: a `replace` destroys what it replaces, and only an explicit `handout: true`
+keeps it. Animo cannot warn about this, because typst offers packages no way to emit a warning;
+the manual must.
 
 **Handout SVG.** The handout pages, exported as SVG for embedding elsewhere. Multi-page
 SVG export requires a page-number template in the output path.
@@ -560,7 +592,18 @@ argument of `#slide` and does not depend on the body.
 The plan is **provided**, not published.
 `#slide` installs a show rule over its body,
 and every tag emits a marker that the rule replaces with the tag's rendering for the view it is
-given: the state index, the epoch, and the resolved display state of that state.
+given. A view has four entries:
+
+- the **state index**, which is `none` in the HTML target, where a frame covers a whole run of
+  states and the browser is what applies their display state;
+- the **epoch**;
+- the **resolved display state** of that state, keyed by tag name, holding only the tags the
+  timeline addressed, so that a tag the timeline never revealed or hid falls back to its own
+  `hidden:` argument;
+- the **names a continuous primitive addresses anywhere in the slide**. A tag site that cannot
+  be animated at all has to say so in state 0 rather than in the state that moves it, and a
+  `wrap: none` tag only learns that it is being animated from this entry.
+
 A state variable cannot do this,
 because `state.get()` inside `measure(..)` resolves at the enclosing context's location,
 so a caller cannot set a state, measure, set it again and measure again,
@@ -569,6 +612,12 @@ A show rule does reach inside `measure`, providers nest with the innermost winni
 and the marker's own label does not reach the output (measured; see *Findings*).
 A view being an argument rather than a document position also means
 that a deck wrapping `#slide` in its own function changes nothing.
+
+One thing about a slide is published rather than provided, and it is not the plan:
+`#slide` marks with a state that a body is being laid out, so that a tag outside any slide can
+be diagnosed at the tag site. That diagnosis cannot come afterwards, because a marker nobody
+replaced is indistinguishable from one that was (measured; see *Findings*), and a tag whose
+marker is never replaced would simply drop its content.
 
 Duplicate labels across a document are permitted by typst and cause no error.
 
@@ -662,12 +711,19 @@ These were the open questions of the earlier drafts. They are settled; the evide
 
   If per-site content is ever genuinely wanted, the answer is distinct tag names, not variants.
 
-- **Does the handout show intermediate content?** No, the handout keeps showing the final state
-  of each slide, and `sub(handout: true, ..)` opts into extra pages. One page per epoch was
-  considered and rejected: it makes the page count of a handout depend on an implementation
-  concept (epochs) rather than on an authorial decision, and it silently inflates handouts for
-  slides that merely restyle something. The manual must instead be explicit that `replace` and
-  `remove` destroy content and that `handout: true` is how it is kept.
+- **Does the handout show intermediate content?** Only where the timeline says so. The flag
+  defaults to `auto`, which gives a page to the final state of each slide and to no other, and
+  `sub(handout: true, ..)` and `sub(handout: false, ..)` override it in either direction. One
+  page per epoch was considered and rejected: it makes the page count of a handout depend on an
+  implementation concept (epochs) rather than on an authorial decision, and it silently inflates
+  handouts for slides that merely restyle something. The manual must instead be explicit that
+  `replace` and `remove` destroy content and that `handout: true` is how it is kept.
+
+  Why a three-valued flag rather than a boolean that defaults to `false`, with the final state
+  added on top: because then the final state is a rule written somewhere else, and there is no
+  way to say that a slide's last state is a punchline the audience should not read ahead. With
+  `auto` the flag is the whole answer, the default costs nothing, and every page of the handout
+  is one a step asked for.
 
   It is a **keyword argument on `sub`**, not a free-standing `handout()` between `sub` calls.
   The same argument settles it as settles `wait:` under *Potential Future Features*: a marker
@@ -1688,7 +1744,10 @@ A `heading` shifts under *every* wrapper, by about 5 pt. A heading carries its o
 sits at the wrapper's edge and is trimmed there, and the wrapper contributes the generic 1.2em
 instead. Neither `heading.above` nor `block.spacing` is readable from a `context` block, while
 `text.size`, `par.spacing` and `heading.numbering` are, so animo cannot copy the value it would
-have to restore. Tagging the heading's text rather than the heading is the way around it.
+have to restore. Tagging the heading's text rather than the heading is the way around it,
+and it is exact: `= #tag("t")[A heading]` rasterises identically to `= A heading` at 144 ppi,
+zero pixels differing over the page. The wrapper is then inside the heading, so nothing sits at
+the edge where the spacing lives.
 
 A tagged inline phrase stops breaking across lines, so its paragraph can reflow. That one is
 inherent: a group that CSS can translate cannot be split over two lines.
@@ -1747,6 +1806,12 @@ inside a `context` block, and on a marker inside the content that another marker
 tags may be nested. The marker's own label does not leak: a tag built this way emits exactly one
 `data-typst-label`, its own.
 
+The channel is also **layout-neutral to the pixel**, which is what lets a tag that emits no
+wrapper hand its body back untouched. A body routed through `context`, `metadata` and the show
+rule, with no wrapper around it, rasterises identically to the bare body at 144 ppi, zero pixels
+differing: measured with a heading between two paragraphs, which is the case a wrapper would
+betray, since a wrapper trims the heading's own block spacing at its edge.
+
 One thing does not work. A marker that no provider replaced is **not** distinguishable
 afterwards: `query(<animo-ask>)` returns replaced and unreplaced markers alike. So "this tag is
 outside any slide" has to be diagnosed at the tag site, from a state that `slide` sets around its
@@ -1763,6 +1828,31 @@ This is what lets the presentation PDF apply a state's display state with typst'
 without disturbing the layout, and it is what makes "nothing moves between states except what the
 timeline moves" an invariant rather than a hope. A tag site emits the same structure in every
 state and in both targets; only the parameters inside it change.
+
+### Introspection: the fields of a nested structure, and one occurrence per page
+
+`query` hands back the element it found, and its fields are readable all the way down, so a
+structure that a package emitted can be walked from the label that names it:
+
+| Expression                   | Is                                  |
+| ---------------------------- | ----------------------------------- |
+| `query(label(name)).first()` | the labelled outer `box` or `block` |
+| `.body`                      | whatever that wrapper holds         |
+| `.body.body`                 | one level further, and so on        |
+| `.func() == hide`            | how the leaf kind is recognised     |
+
+Two field values are worth recording, because both are the kind of thing that is guessed wrong
+once. A `scale` element reports `x` and `y` as **ratios** and has no `factor` field, so a factor
+of 2 reads back as `200%`. An unset `stroke` on a `box` reads back as an **empty dictionary** of
+sides, `(:)`, rather than as `none` or `auto`.
+
+`query` returns one occurrence of an element **per page** it was laid out on, in document order.
+Content bound once and placed on several pages is therefore several elements to `query`, not one.
+
+Together these make the display state that a tag site actually applied assertable at tier 1,
+with nothing exported: in the presentation mode, where each state is a page, occurrence *i* of a
+tag in a one-slide document is its rendering in state *i*, and `move`'s `dx`, `scale`'s `x` and
+the presence of a `hide` say what that state did to it.
 
 ### Other verified behaviour
 
@@ -1781,7 +1871,9 @@ state and in both targets; only the parameters inside it change.
   path.
 - A code block joins array-returning calls, so `animation: { sub(..) sub(..) }` yields a
   list of steps with no side effects and no accumulator. An empty `sub()` yields an empty
-  step.
+  step. A code block that joins **nothing** yields `none` rather than an empty array, so
+  `{ }` and a block whose every `sub` sits behind a false condition are timelines with no
+  steps, and the resolver has to accept `none` as one.
 - The cetz-style block-scoped import works exactly as hoped: inside
   `{ import anim: * ... }` the primitives win, while `move`, `scale` and `hide`
   outside the block remain the typst built-ins.
@@ -1827,7 +1919,7 @@ With reflow bounded by regions rather than either forbidden or global:
 - **`sanor`** separates declaration from animation, as animo does, and its `apply`/`case`
   mechanism is the direct ancestor of animo's `apply`. It also tags raw cetz draw commands
   (`test/draw.typ` tags a `draw.grid(..)` with `hider: draw.hide`), which animo matches with
-  `tag(.., draw: true)` for the structural primitives; being PDF-only, `sanor` has no continuous
+  `tag(.., wrap: none)` for the structural primitives; being PDF-only, `sanor` has no continuous
   class for which the limitation would bite. It is PDF-only, which is what lets it
   restyle and reflow freely: every step is a fresh page anyway. It pays for the separation with
   the `s => ([body], s)` threading, because it accumulates actions while the body is evaluated.

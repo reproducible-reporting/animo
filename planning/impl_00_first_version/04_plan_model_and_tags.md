@@ -430,8 +430,186 @@ can reach a view at all, given that the stream is built before any provider can 
 
 ## Session Log
 
-To be written at the end of the implementation session, per the rules in [README.md](README.md).
-
-A review session preceded it.
+A review session preceded this one.
 It measured what is in *Ground Truth*, rewrote this file,
 and left the implementation untouched.
+What follows is the implementation session.
+
+### What Was Built
+
+`src/plan.typ` holds the resolver, the view, the provider and the marker.
+`resolve` returns `(states: (..), epochs: ((:),))` in the shape this file states,
+`continuous-names` is a second pass over the same timeline,
+and `view-of` and `html-view` build the dictionary a tag receives.
+The provider is the measured mechanism verbatim:
+a `metadata` element carrying a closure, labelled `<animo-ask>`,
+and a show rule that calls the closure with the view.
+
+`src/wrap.typ` holds the wrapping decision and the two slots.
+`choose-wrapper` answers with a function, which is `box`, `block.with(width: 100%)`,
+the author's own function, or `none`.
+`slots` applies it and derives the outer wrapper from what the inner one turned out to be,
+so the `box` case, the `block` case and the function case go through one code path
+and there is no bookkeeping to disagree with the result.
+
+`src/tag.typ` validates its arguments, decides the wrapper in a context block at the tag
+site, and hands a closure to the provider.
+The measurement happens outside the closure, because the wrapper depends on the body alone
+and not on the view, so the decision is made once per layout rather than once per view.
+
+`src/anim.typ` holds the four continuous primitives, `sub`, and the validation of both.
+The not-implemented primitives panic in the constructor rather than in the resolver,
+so the message points at the call in the timeline.
+
+`src/slide.typ` resolves before it lays out, provides a view per rendering,
+and emits one page per state in the presentation and one page per asking state in the
+handout. `data-animo-states` carries S+1.
+
+Tests: `tests/test_plan.py` (26 tier-1 assertions on the resolver and the validation),
+`tests/test_tags.py` (35 tier-1 assertions on the wrapping, the emitted structure, the
+scoping and every failure), `tests/test_subslides.py` (11 tier-2 assertions on the paged
+outputs), `tests/test_tags_html.py` (3 tier-3 assertions on the groups and the state count).
+Documentation: `docs/tags.md` and `docs/animation.md`, both in the `nav`,
+with `docs/slides.md` and `docs/index.md` brought up to date and the four new probe modules
+added to the map in `docs/probes.md`.
+`examples/tour.typ` gained one slide with two tags and a two-step timeline,
+so the four-output build exercises the new code.
+
+### What Was Decided
+
+- **`sub(handout: auto)` rather than `sub(handout: false)`.**
+  Asked, and the author chose `auto` as the default:
+  it resolves to `true` for the last step and `false` for the others,
+  and stating `true` or `false` overrides it in either direction.
+  The resolver therefore resolves the flag, and the handout renders the states whose
+  resolved flag is true.
+  For every timeline that says nothing about the handout this is exactly the one page per
+  slide the earlier behaviour produced, which is why the deferral the author also asked for
+  costs nothing to honour: no page appears that `handout:` did not ask for.
+  The consequence worth stating is that `handout: false` on the last step drops a slide
+  from the handout entirely, which is what "full control in all cases" means.
+- **The `wrap: none` tag is checked when its body is content, and not otherwise.**
+  A value that is not content cannot carry a marker, and a `context` block cannot return
+  one either, so such a tag reaches no view and no diagnosis is possible.
+  When the body *is* content, the tag goes through the provider like any other,
+  which is what lets the continuous-primitive panic fire.
+  The body is returned rather than wrapped, and that turned out to be exact rather than
+  approximate; see the findings below.
+- **`hidden: true` with `wrap: none` panics.**
+  This is one more panic than this file lists.
+  `hidden:` is the initial state of a display state, `wrap: none` means there is no group
+  to carry one, and honouring it in the paged outputs alone would break the invariant that
+  the four outputs look the same.
+- **`scale` accepts a number or a ratio and resolves to a number.**
+  Factors multiply along the timeline, so one form has to win,
+  and a number is the form that survives the multiplication.
+- **An empty timeline is `none` as well as `()`.**
+  A code block that joins nothing yields `none`, so `{ }` and `{ if false { sub() } }`
+  are timelines with no steps rather than mistakes.
+- **The validation lives in `anim.typ`**, as this file asks, which leaves its helpers
+  visible inside `{ import anim: * }`.
+  They shadow nothing in the standard library, so the only cost is namespace noise in a
+  block scope. A third module would have kept it clean and is not worth a file.
+
+### Open Questions Answered
+
+Both were answered by the review session and only confirmed here:
+
+1. The plan is **provided** through a marker and a show rule, not published to a state.
+   Confirmed in use: `slide` provides a different view to each of the S+1 renderings,
+   and the canvas measurement provides one of its own before any page exists.
+1. `tag` **detects**, by measuring whether the body breaks the line,
+   and chooses between `box` and `block(width: 100%)`.
+   Confirmed over thirteen constructs in `tests/test_tags.py`,
+   including the two that only a measurement gets right: a `context` block and a body that
+   is itself several paragraphs.
+
+### New Findings
+
+Measured in this session, and not in the design document yet.
+
+- **A replaced marker is layout-neutral to the pixel.**
+  A `wrap: none` tag around a heading, between two paragraphs, rasterises identically to
+  the untagged heading at 144 ppi (0 differing pixels).
+  So the `context` block plus `metadata` plus show-rule replacement that carries the view
+  contributes no spacing of its own, not even where a wrapper would trim a heading's block
+  spacing. This is what makes "the body is returned untouched" a true statement rather than
+  a close one, and it is the stronger form of the existing *Providing a value down the tree*
+  finding. `tests/test_subslides.py` asserts it.
+- **Tagging a heading's text is exact.**
+  `= #tag("t")[A heading]` rasterises identically to `= A heading` at 144 ppi.
+  The design document recommends this as the way around the shift a wrapper around a whole
+  heading costs, without having measured that it costs nothing itself. It does not.
+- **What a tag site emits is fully introspectable.**
+  `query(label(name)).first()` is the outer wrapper, `.body` the inner one,
+  `.body.body` the `move` element with its `dx` and `dy`,
+  and `.body.body.body` the `scale` element, which reports `x` and `y` as ratios and has no
+  `factor` field.
+  So the display state a tag site actually applied is assertable at tier 1, per state, with
+  nothing exported: in the presentation mode `query` returns one occurrence per page.
+  This is what `tests/test_tags.py` uses instead of rastering,
+  and it is worth knowing in phase 07, where the content state is the thing to assert.
+- **An unset `stroke` on a `box` reads back as `(:)`**, not as `none` or `auto`,
+  which is how a test tells the outer slot from an inner slot built by a `wrap` function.
+- **A code block that joins nothing yields `none`.**
+  Recorded because `sub` returning a one-element array makes the array case the expected
+  one, and `none` then looks like a mistake rather than an empty timeline.
+
+### What Changed in the Design Document
+
+Nothing measured in this session contradicts a finding.
+Three descriptions of behaviour had moved, and the author asked for the design document to be
+brought back in sync, which was done in these places:
+
+1. **`handout:` is three-valued.**
+   *Animation primitives* now states `auto`, `true` and `false` and what each resolves to,
+   *Architecture* describes the handout as one page per state whose flag resolves to true,
+   the renderings table says the same, the feature list at the top and the example's comment
+   follow, and the resolved decision *Does the handout show intermediate content?* records why
+   a three-valued flag beats a boolean with the final state added on top.
+1. **The view has four entries.**
+   *Scoping* lists them, says why the fourth exists, and records that the one thing a slide
+   publishes rather than provides is the mark that a body is being laid out.
+1. **`wrap: none` refuses `hidden: true`,** and a body that is not content cannot be diagnosed
+   at all. Both are in *Tags*, with the reason for each.
+
+Two further mentions of the retired `draw:` argument, in *Animation primitives* and in the
+comparison with `sanor`, now say `wrap: none`.
+*Animation primitives* also states the argument types of the four primitives, since `scale`
+accepts a ratio as well as a number.
+
+Three findings were added or extended, and each is probed:
+
+- *Wrapping a tag site* records that tagging a heading's text is exact rather than merely
+  better, which `probes/test_wrapping.py` already asserted.
+- *Providing a value down the tree* records that the channel is layout-neutral to the pixel,
+  with a new probe in `probes/test_providing.py` that rasterises a heading routed through it.
+- *Introspection: the fields of a nested structure, and one occurrence per page* is a new entry,
+  with `probes/test_element_fields.py` and a row in the map in `docs/probes.md`.
+  It is written as the typst behaviour rather than as animo's structure, so that a failure there
+  names what typst changed.
+- *Other verified behaviour* records that a code block joining nothing yields `none`.
+
+### What a Follow-Up Phase Should Know
+
+- **The view is a dictionary with four entries**, `state`, `epoch`, `display` and
+  `continuous`. `state` is `none` in the HTML target, which is how a tag knows that the
+  browser owns the display state. Phase 05 replaces that branch with the real thing, and
+  the paged branch is the one to keep.
+- **The two nested groups are in the output**, with the label on the outer one:
+  `[data-typst-label="x"] > g` is the continuous slot phase 05 addresses,
+  and the labelled group is the boundary slot phase 09 needs.
+  Verified in all three engines that this is what the browser sees.
+- **`slide` renders the body once per view**, which means `record-placements` runs once per
+  state as well, so `query(<animo-place>)` holds S+1 copies of every placement in the
+  presentation mode. `auto-extent` takes a maximum, so duplicates are harmless,
+  but a later phase that counts placements rather than maximising over them has to filter.
+  The canvas itself is measured once, with a view of its own, and its metadata is emitted
+  once per slide.
+- **The wrapping decision costs two `measure` calls per tag site per rendering** and is not
+  cached, as this file asks. That is S+1 times per tag site in the presentation mode,
+  which is the number phase 11 should look at.
+- **`wrap: auto` is decided before the view is known**, deliberately.
+  Phase 07 must keep it that way: a wrapper that depended on the content state would reflow
+  a paragraph when a timeline step is added, which is the invariant `wrap` exists to protect.
+- **The four probes of *Ground Truth* were left untouched and are green.**
