@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# The three tiers and the probes, against the typst release the manifest pins.
+name: pytest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: pytest-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    env:
+      # The same place `setup.sh` and `.envrc` put it,
+      # so that one rule locates the browser on a contributor's machine and here.
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.venv/playwright
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: typst-community/setup-typst@v5
+        with:
+          typst-version: "0.15.1"
+      # The test suite needs `pytest` and nothing else,
+      # so it does not build `pre-commit`, StepUp or Zensical.
+      - run: uv sync --no-default-groups --group tests
+      - run: uv run playwright install --with-deps chromium
+      - run: uv run pytest

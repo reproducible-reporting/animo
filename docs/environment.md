@@ -1,6 +1,9 @@
-______________________________________________________________________
-
-## description: >- How to get from a clone of animo to a green test suite: the uv environment, the local package directory, and the commands that run without StepUp.
+---
+description: >-
+  How to get from a clone of animo to a green test suite:
+  the uv environment, the local package directory,
+  and the commands that run without StepUp.
+---
 
 <!--
 SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
@@ -13,11 +16,13 @@ SPDX-License-Identifier: Apache-2.0
 
 A typst binary, of exactly the release the manifest pins:
 
-```text
 <!-- snipwise.md BEGIN typst-version -->
+
+```text
 0.15.1
-<!-- snipwise.md END typst-version -->
 ```
+
+<!-- snipwise.md END typst-version -->
 
 The test suite asserts that `typst --version` agrees with the `compiler` field of `typst.toml`,
 so a mismatched toolchain fails loudly instead of producing confusing errors much later.
@@ -36,8 +41,9 @@ pytest
 ```
 
 `setup.sh` installs `uv` and a pinned interpreter under `.venv/`,
-runs `uv sync`, repairs the local package directory and installs the `pre-commit` hook.
-Removing `.venv/` undoes all of it.
+runs `uv sync`, downloads the chromium the browser tests drive,
+repairs the local package directory and installs the `pre-commit` hook.
+Removing `.venv/` undoes all of it, the browser included.
 
 Animo is a typst package, not a Python package.
 Nothing in `pyproject.toml` is ever built or published:
@@ -98,6 +104,9 @@ pytest                        # the test suite
 pre-commit run --all-files    # formatting and hygiene, including reuse and snipwise
 zensical serve                # the documentation site, with live reload
 ```
+
+[Testing](testing.md) describes the three tiers, how to run one of them,
+and the policy on stored reference images.
 
 Previewing a deck is typst's own job.
 It serves the HTML and reloads the browser itself, so animo ships nothing for live preview:

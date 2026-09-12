@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# The Universe package checker, over the package as it would be submitted.
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  package-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      # The checker runs as a container rather than through its own GitHub Action,
+      # because that action expects credentials for a GitHub App
+      # that a personal repository does not have.
+      - run: docker run -v ${{ github.workspace }}:/data ghcr.io/typst/package-check check

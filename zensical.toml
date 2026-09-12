@@ -16,6 +16,8 @@ nav = [
   { "Home" = "index.md" },
   { "Development" = [
     { "Development Environment" = "environment.md" },
+    { "Testing" = "testing.md" },
+    { "Behaviour Probes" = "probes.md" },
   ] },
 ]
 

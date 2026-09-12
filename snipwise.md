@@ -31,7 +31,7 @@ snippets = ["typst-version"]
 # One rule covers both forms, because two narrowed rules holding the same snippet
 # in the same file are refused as a conflict.
 # A pattern that matches no file is refused as well,
-# so `examples/`, `probes/` and `benchmarks/` join this list when they exist.
+# so `examples/` and `benchmarks/` join this list when they exist.
 [[targets]]
 patterns = [
   "*.md",
@@ -39,6 +39,7 @@ patterns = [
   "plan.py",
   "docs/**/*.md",
   "planning/**/*.md",
+  "probes/**/*.typ",
   "tests/**/*.typ",
 ]
 scanner = "regex"
@@ -56,11 +57,25 @@ snippets = ["version"]
 render = "{{ content | unwrap }}"
 
 # The typst release, which is a bare version number wherever it is repeated,
-# so it is marked rather than matched: there is no expression that tells
+# so in prose it is marked rather than matched: there is no expression that tells
 # the pinned release apart from a mention of some other release.
-# The workflows join this list when they exist.
+# The `codeblock` filter writes the fences, so the marker comments stay outside the block
+# instead of being shown as text by the documentation site.
+# The blank lines around the block are what `mdformat` writes between an HTML comment
+# and a fence, and rendering them here is what stops the two hooks from undoing each other.
 [[targets]]
 patterns = ["docs/**/*.md"]
+render = "\n{{ content | codeblock }}\n\n"
+
+# In the workflows the same release is an argument of `setup-typst`,
+# which is specific enough to anchor an expression on
+# and leaves the file readable as ordinary YAML.
+[[targets]]
+patterns = [".github/workflows/*.yml"]
+scanner = "regex"
+regex = 'typst-version: "(?P<content>[0-9]+\.[0-9]+\.[0-9]+)"'
+snippets = ["typst-version"]
+render = "{{ content | unwrap }}"
 ```
 
 ## `version`

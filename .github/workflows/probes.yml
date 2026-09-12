@@ -1,0 +1,58 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# The probes against the newest typst release, as an early warning rather than a post-mortem.
+# It is decoupled from the pinned build: nothing here gates a pull request,
+# and a red run means a finding the design rests on may have changed under it.
+name: probes
+
+on:
+  schedule:
+    # Weekly, on Monday morning. Typst releases are not frequent enough to warrant more.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probes:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.venv/playwright
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      # Deliberately not the pinned release: that is the whole point of this workflow.
+      - uses: typst-community/setup-typst@v5
+        with:
+          typst-version: latest
+      - run: uv sync --no-default-groups --group tests
+      - run: uv run playwright install --with-deps chromium
+      - name: Run the probes
+        id: run
+        run: |
+          set -o pipefail
+          uv run pytest probes --tb=line -q -rs | tee probes.log
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "## Probes against $(typst --version)"
+            echo
+            if [ "${{ steps.run.outcome }}" = "success" ]; then
+              echo "Every finding the design rests on still holds."
+            else
+              echo "A probe failed, which means a *finding* changed, not a feature."
+              echo "Each probe names the section of \`planning/design.md\` it asserts."
+              echo "Decide whether the finding was wrong or has legitimately changed,"
+              echo "update that section, and then update or retire the probe in the same commit."
+              echo "A probe is never relaxed to make this job green."
+            fi
+            echo
+            echo '```'
+            tail -n 60 probes.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

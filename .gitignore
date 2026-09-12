@@ -27,3 +27,6 @@ tmp/
 # Compiled decks
 *.pdf
 *.html
+# The one hand-written HTML in the repository:
+# the stand-in deck the browser tier is exercised against.
+!tests/documents/*.html

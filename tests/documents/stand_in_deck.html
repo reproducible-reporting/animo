@@ -1,0 +1,71 @@
+<!--
+SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+SPDX-License-Identifier: Apache-2.0
+-->
+<!--
+  A deck that implements the two lines of contract in `harness.browser.Deck` and nothing else.
+
+  It exists so that the tier-3 fixtures are exercised before the runtime of phase 05 is
+  written, and so that the contract is stated in something that runs rather than only in a
+  docstring. When that runtime lands, this file stops being the only thing `Deck` is tested
+  against; it should not stop being tested against it.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Stand-in deck</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: sans-serif;
+      }
+      .slide {
+        display: none;
+        width: 320px;
+        height: 180px;
+        outline: 1px solid #cccccc;
+      }
+      .slide.current {
+        display: block;
+      }
+      [data-typst-label] {
+        display: inline-block;
+        opacity: 0;
+      }
+      [data-typst-label].shown {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="slide" data-animo-slide="1">
+      <p>First slide</p>
+      <span data-typst-label="alpha">alpha</span>
+      <span data-typst-label="alpha">alpha again</span>
+    </div>
+    <div class="slide" data-animo-slide="2">
+      <p>Second slide</p>
+      <span data-typst-label="beta">beta</span>
+    </div>
+    <script>
+      // The restore snaps rather than animating, which is what a deep link and a
+      // live-preview reload both need.
+      function snap() {
+        const match = /^#(\d+)\.(\d+)$/.exec(location.hash) || [null, "1", "0"];
+        const slide = Number(match[1]);
+        const state = Number(match[2]);
+        for (const node of document.querySelectorAll(".slide")) {
+          const current = Number(node.dataset.animoSlide) === slide;
+          node.classList.toggle("current", current);
+          for (const tagged of node.querySelectorAll("[data-typst-label]")) {
+            tagged.classList.toggle("shown", current && state > 0);
+          }
+        }
+        document.documentElement.dataset.animo = `${slide}.${state}`;
+      }
+      addEventListener("hashchange", snap);
+      snap();
+    </script>
+  </body>
+</html>

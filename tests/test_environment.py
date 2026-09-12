@@ -12,7 +12,7 @@ import shutil
 import subprocess
 
 import pytest
-from helpers import ROOT, compile_typst, manifest
+from harness import ROOT, compile_typst, manifest, write_typst
 
 
 def test_typst_on_path_matches_the_manifest():
@@ -48,9 +48,7 @@ def test_import_path_compiles_to_html(name, tmp_path):
 
 
 def test_compile_helper_reports_failure_instead_of_raising(scratch):
-    """Phase 02 builds the tier-1 runner on this: a failure is a value, not an exception."""
-    from helpers import write_typst
-
+    """The tier-1 runner is built on this: a failure is a value, not an exception."""
     source = write_typst(scratch, '#import "/src/lib.typ": *\n#assert(false, message: "boom")\n')
     result = compile_typst(source, scratch / "out.pdf")
     assert not result.ok

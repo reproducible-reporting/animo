@@ -33,6 +33,9 @@ pre-commit run --all-files
 zensical build --strict
 ```
 
+[Testing](https://reproducible-reporting.github.io/animo/testing/) describes the three tiers,
+how to run one of them, and the policy on stored reference images.
+
 `pre-commit` formats as well as checks,
 so a run that changes files is a run that has to be repeated until it is quiet.
 
@@ -55,5 +58,7 @@ and [planning/impl_00_first_version/](planning/impl_00_first_version/) is the or
 in which it is being built.
 A change in behaviour is a change to the design document first.
 Its *Findings* section records verified behaviour of typst that animo depends on,
-and every entry there has, or will have, a probe under `probes/` that asserts it.
-An observation that was expensive to make belongs in that section.
+and every entry there has a probe under `probes/` that asserts the behaviour itself,
+or a recorded reason why it cannot have one.
+An observation that was expensive to make belongs in that section, and then in a probe;
+[Behaviour Probes](https://reproducible-reporting.github.io/animo/probes/) says how.

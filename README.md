@@ -45,6 +45,8 @@ The package resolves and compiles, and does nothing else yet.
 - The order in which it is being built:
   [planning/impl_00_first_version/](planning/impl_00_first_version/)
 - How to get from a clone to a green test suite: [CONTRIBUTING.md](CONTRIBUTING.md)
+- The three test tiers and the behaviour probes:
+  <https://reproducible-reporting.github.io/animo/testing/>
 
 ## License
 

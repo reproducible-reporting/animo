@@ -22,6 +22,12 @@ export UV_PYTHON_INSTALL_DIR=.venv/uv-python
 # Install the development environment.
 .venv/bin/uv sync
 
+# The chromium the browser tier of the test suite drives.
+# `PLAYWRIGHT_BROWSERS_PATH` keeps it under `.venv/`, like everything else this script
+# installs, and `.envrc` exports the same value so that `pytest` finds it.
+export PLAYWRIGHT_BROWSERS_PATH="${PWD}/.venv/playwright"
+.venv/bin/uv run playwright install chromium
+
 # The repository-local package directory that makes the working tree resolve
 # as `@preview/animo:0.1.0`. It is committed, so this only repairs a lost symlink.
 mkdir -p .typst-packages/preview/animo

@@ -26,6 +26,14 @@ python-downloads = "auto"
 # running only the tests does not build `pre-commit`, `stepup` or `zensical`.
 tests = [
     "attrs>=25.0.0",
+    "numpy>=2.0.0",
+    "pillow>=11.0.0",
+    # The bundled chromium keeps the pixels identical on every machine.
+    # `setup.sh` downloads it into `.venv/playwright`.
+    "playwright>=1.50.0",
+    # The few assertions that are about the PDF writer rather than about the layout.
+    # It is the same engine chromium renders PDFs with, and it ships self-contained wheels.
+    "pypdfium2>=4.30.0",
     "pytest>=8.0.0",
     "pytest-timeout>=2.3.1",
 ]
@@ -46,9 +54,19 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "-W error -W ignore::ResourceWarning"
+addopts = "-W error -W ignore::ResourceWarning --strict-markers"
 # Compiling a typst document in a subprocess is the slowest thing the suite does.
 timeout = 60
+# `tests/` holds the feature tests and the harness itself, `probes/` the behaviour probes.
+# One runner covers both, so that a probe and a feature test share every fixture.
+testpaths = ["tests", "probes"]
+# The harness lives in `tests/harness/` and is imported as `harness` from both directories.
+pythonpath = ["tests"]
+markers = [
+    "plan: tier 1, a document full of `#assert` that is compiled and never exported",
+    "paged: tier 2, a rasterised comparison of the presentation or handout output",
+    "browser: tier 3, a check on the HTML output in chromium",
+]
 
 [tool.ruff]
 line-length = 100
