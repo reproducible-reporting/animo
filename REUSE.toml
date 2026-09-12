@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+version = 1
+
+# Files that cannot carry a comment header.
+# JSON has no comment syntax, and the local package directory is a symlink
+# whose content is the path it points at.
+[[annotations]]
+path = [
+    ".zenodo.json",
+    ".typst-packages/preview/animo/**",
+]
+SPDX-FileCopyrightText = "2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>"
+SPDX-License-Identifier = "Apache-2.0"

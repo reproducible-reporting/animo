@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# Software environment
+.venv/
+uv.lock
+
+# Development tools
+.idea/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.stepup/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Documentation
+.cache/
+site/
+
+# Scratch space, including the directory pytest compiles its documents in,
+# which has to lie inside the repository because typst refuses a source outside its root.
+tmp/
+
+# Compiled decks
+*.pdf
+*.html

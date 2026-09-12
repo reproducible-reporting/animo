@@ -1,0 +1,79 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# Animo is a typst package, not a Python package.
+# Nothing here is ever built or published:
+# `[project]` exists only to give `uv` a name and an interpreter floor,
+# and the development environment lives in `[dependency-groups]`.
+[project]
+name = "animo"
+version = "0.1.0"
+description = "Presentation package that separates slide content from slide animation"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.14"
+
+[tool.uv]
+package = false
+# Everything `setup.sh` installs has to stay under `.venv/`,
+# so that removing that directory undoes the whole bootstrap.
+cache-dir = "./.venv/cache"
+# `setup.sh` asks for an interpreter that the system may not have.
+python-downloads = "auto"
+
+[dependency-groups]
+# What the test suite needs, and nothing more, so that a continuous integration job
+# running only the tests does not build `pre-commit`, `stepup` or `zensical`.
+tests = [
+    "attrs>=25.0.0",
+    "pytest>=8.0.0",
+    "pytest-timeout>=2.3.1",
+]
+docs = [
+    # Zensical is a `0.0.x` on a near-daily release cadence,
+    # and every release is a `0.0.x`, so a range pins nothing.
+    # The exact version is what keeps a documentation build from breaking
+    # without a change in this repository.
+    "zensical==0.0.61",
+]
+dev = [
+    { include-group = "tests" },
+    { include-group = "docs" },
+    "pre-commit>=4.6.0",
+    "reuse>=6.2.0",
+    "stepup>=4.0.0",
+    "stepup-reprep>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-W error -W ignore::ResourceWarning"
+# Compiling a typst document in a subprocess is the slowest thing the suite does.
+timeout = 60
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "A", "B", "BLE", "C4", "E", "EXE", "F", "I", "ICN", "ISC", "N", "NPY", "PERF", "PIE", "PL",
+    "PT", "PYI", "RET", "RSE", "RUF", "SIM", "TRY", "UP", "W"
+]
+ignore = [
+    "ISC004",  # https://docs.astral.sh/ruff/rules/isc004/
+    "PLR0904",  # https://docs.astral.sh/ruff/rules/too-many-public-methods/
+    "PLR0911",  # https://docs.astral.sh/ruff/rules/too-many-return-statements/
+    "PLR0912",  # https://docs.astral.sh/ruff/rules/too-many-branches/
+    "PLR0913",  # https://docs.astral.sh/ruff/rules/too-many-arguments/
+    "PLR0914",  # https://docs.astral.sh/ruff/rules/too-many-locals/
+    "PLR0915",  # https://docs.astral.sh/ruff/rules/too-many-statements/
+    "PLR0916",  # https://docs.astral.sh/ruff/rules/too-many-boolean-expressions/
+    "PLR0917",  # https://docs.astral.sh/ruff/rules/too-many-positional/
+    "PLR2004",  # https://docs.astral.sh/ruff/rules/magic-value-comparison/
+    "PLW2901",  # https://docs.astral.sh/ruff/rules/redefined-loop-name/
+    "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
+    "RET503",  # https://docs.astral.sh/ruff/rules/implicit-return/
+    "TRY003",  # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+    "TRY300",  # https://docs.astral.sh/ruff/rules/try-consider-else/
+    "TRY301",  # https://docs.astral.sh/ruff/rules/raise-within-try/
+]

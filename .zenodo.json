@@ -1,0 +1,41 @@
+{
+  "upload_type": "software",
+  "title": "Animo",
+  "description": "Animo is a proof-of-concept presentation package for typst in which the content of a slide and its animation are separated. The body of a slide declares what is on it and tags the parts a timeline may address, while the animation argument declares when and how those parts appear, move, scale, change style and change content. One source file compiles to an HTML presentation, a presentation PDF, a handout PDF and handout SVG pages.",
+  "creators": [
+    {
+      "name": "Verstraelen, Toon",
+      "orcid": "0000-0001-9288-5608",
+      "affiliation": "Center for Molecular Modeling (CMM), Ghent University"
+    }
+  ],
+  "license": "apache-2.0",
+  "access_right": "open",
+  "communities": [
+    {
+      "identifier": "ugent"
+    }
+  ],
+  "language": "eng",
+  "keywords": [
+    "animation",
+    "beamer",
+    "handout",
+    "HTML",
+    "presentation",
+    "reproducibility",
+    "reproducible research",
+    "slide",
+    "slides",
+    "slipshow",
+    "talk",
+    "typst"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://reproducible-reporting.github.io/animo",
+      "relation": "isDocumentedBy",
+      "resource_type": "publication-softwaredocumentation"
+    }
+  ]
+}

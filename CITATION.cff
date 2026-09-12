@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+cff-version: 1.2.0
+message: If you use this software, please cite it using these metadata.
+title: Animo
+type: software
+url: https://reproducible-reporting.github.io/animo
+abstract: >-
+  Animo is a proof-of-concept presentation package for typst
+  in which the content of a slide and its animation are separated.
+  The body of a slide declares what is on it and tags the parts a timeline may address,
+  while the animation argument declares when and how those parts
+  appear, move, scale, change style and change content.
+  One source file compiles to an HTML presentation, a presentation PDF,
+  a handout PDF and handout SVG pages.
+authors:
+  - family-names: Verstraelen
+    given-names: Toon
+    orcid: https://orcid.org/0000-0001-9288-5608
+    affiliation: Center for Molecular Modeling (CMM), Ghent University
+    address: Technologiepark-Zwijnaarde 46
+    post-code: 9052
+    city: Zwijnaarde
+    country: BE
+license: Apache-2.0
+repository-code: https://github.com/reproducible-reporting/animo
+keywords:
+  - animation
+  - beamer
+  - handout
+  - HTML
+  - presentation
+  - reproducibility
+  - reproducible research
+  - slide
+  - slides
+  - slipshow
+  - talk
+  - typst

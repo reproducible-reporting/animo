@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+[package]
+name = "animo"
+version = "0.1.0"
+entrypoint = "src/lib.typ"
+authors = ["Toon Verstraelen <Toon.Verstraelen@UGent.be>"]
+license = "Apache-2.0"
+description = "Presentation package that separates slide content from slide animation"
+homepage = "https://reproducible-reporting.github.io/animo/"
+repository = "https://github.com/reproducible-reporting/animo"
+keywords = [
+  "presentation",
+  "slide",
+  "slides",
+  "talk",
+  "animation",
+  "html",
+  "handout",
+  "beamer",
+  "slipshow",
+]
+categories = ["presentation"]
+compiler = "0.15.1"
+# Everything a reader of the repository needs but a user of the package does not.
+# Tests, probes, benchmarks and build scripts are not committed to `typst/packages` at all,
+# so they are listed here as well as being absent from the submitted subtree.
+exclude = [
+  ".envrc",
+  ".github",
+  ".gitignore",
+  ".pre-commit-config.yaml",
+  ".typst-packages",
+  ".zenodo.json",
+  "benchmarks",
+  "CITATION.cff",
+  "CLAUDE.md",
+  "CONTRIBUTING.md",
+  "docs",
+  "examples",
+  "plan.py",
+  "planning",
+  "probes",
+  "pyproject.toml",
+  "snipwise.md",
+  "tests",
+  "tools",
+  "uv.lock",
+  "zensical.toml",
+]
