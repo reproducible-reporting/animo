@@ -27,7 +27,9 @@ compiler = "0.15.1"
 # Tests, probes, benchmarks and build scripts are not committed to `typst/packages` at all,
 # so they are listed here as well as being absent from the submitted subtree.
 exclude = [
+  ".editorconfig",
   ".envrc",
+  ".git",
   ".github",
   ".gitignore",
   ".pre-commit-config.yaml",
@@ -36,6 +38,7 @@ exclude = [
   "benchmarks",
   "CITATION.cff",
   "CLAUDE.md",
+  "conftest.py",
   "CONTRIBUTING.md",
   "docs",
   "examples",
