@@ -54,6 +54,12 @@ jobs:
       - uses: typst-community/setup-typst@v5
         with:
           typst-version: "0.15.1"
+      # `setup-uv` restores its cache into the `cache-dir` of `pyproject.toml`,
+      # which is `.venv/cache`, so `.venv` already exists here as a plain directory
+      # and `uv sync` refuses to adopt it.
+      # Creating the environment first is what `setup.sh` does on a contributor's machine.
+      # Observed with `astral-sh/setup-uv@v10.1.0` and `uv` 0.12.13.
+      - run: uv venv --allow-existing
       # The test suite needs `pytest` and nothing else,
       # so it does not build `pre-commit`, StepUp or Zensical.
       - run: uv sync --no-default-groups --group tests
