@@ -181,7 +181,7 @@ Question*, and `canvas:` is the answer when it bites.
 
 ### Tags
 
-`tag(name, body, hidden: false, removed: false, block: false, draw: false)` marks content for
+`tag(name, body, hidden: false, removed: false, wrap: auto)` marks content for
 animation.
 
 - The same tag name may be used in **several places within one slide**. The animation
@@ -195,21 +195,57 @@ animation.
   `remove`, and only differs from `hidden` inside an *explicit* region: in an implicit one the
   footprint is the maximum over the tag's states either way, so the space is reserved
   regardless. `reset(name)` brings it in, with reflow.
-- `block: true` wraps the body in a `block` instead of a `box`, for block-level content
-  such as multiple paragraphs or lists.
-- `draw: true` does **not** wrap at all. It is for tagging raw cetz draw commands, which are a
-  draw-command stream rather than content and would be destroyed by a box.
+- `wrap` decides what container the tag site becomes.
 
-The wrapping is not cosmetic: only labelled `box` and `block` elements become addressable
-groups in the SVG/HTML output (see *Findings*). That is what decides which primitives a tag
-site supports, and it is worth stating as a table rather than leaving it implied:
+A tag **always** wraps, unless `wrap: none` says otherwise.
+The decision is a property of the body alone and never of the timeline,
+so that adding an animation step cannot reflow a paragraph,
+and so that the four outputs and all of a slide's states lay out the same.
+
+| `wrap`     | Wrapper                                                                     |
+| ---------- | --------------------------------------------------------------------------- |
+| `auto`     | `box` for an inline body, `block(width: 100%)` for a block-level one        |
+| `box`      | `box`, the hugging wrapper                                                  |
+| `block`    | `block(width: 100%)`, since a hugging block loses the container's alignment |
+| `none`     | no wrapper and no label, the body is returned untouched                     |
+| a function | the function builds the inner slot, animo matches the outer one to it       |
+
+`auto` decides by **measuring** whether the body breaks the line it is put in,
+not by inspecting what kind of element it is:
+inspection cannot see into a `context` block, and the measurement can (see *Findings*).
+The axis it decides is hugging versus filling rather than inline versus block,
+because a `box` and a `block` render identically for content that already sits between
+paragraph breaks, while a wrapper at `width: auto` left-aligns anything the container was
+centring, such as a `figure` or a block equation (measured; see *Findings*).
+
+A function is accepted so that the inner slot can carry ink of its own,
+`box.with(inset: 4pt, stroke: red)` for instance, which then moves and scales with the element.
+Animo requires the result to be a `box` or a `block` and panics naming the tag otherwise,
+because nothing else becomes an addressable group.
+
+`wrap: none` is for a body that is not content at all,
+such as a stream of raw cetz draw commands, which a box would destroy.
+It is also the way to say "this tag is only ever addressed structurally":
+with no label there is no group, so the continuous primitives have nothing to animate,
+and animo panics when the timeline asks for one anyway.
+
+Wrapping is not free, and the manual has to say so rather than let an author find out:
+a tagged inline phrase can no longer break across lines, so its paragraph may reflow,
+and a tagged heading shifts by a few points, because a heading's own block spacing is trimmed
+at the wrapper's edge and replaced by the generic one (measured; see *Findings*).
+Tagging the heading's text instead, `= #tag("t")[Head]`, avoids the shift.
+
+The wrapping is not cosmetic in the other direction either: only labelled `box` and `block`
+elements become addressable groups in the SVG/HTML output (see *Findings*). That is what decides
+which primitives a tag site supports, and it is worth stating as a table rather than leaving it
+implied:
 
 | Tag site                                    | Structural primitives | Continuous primitives |
 | ------------------------------------------- | --------------------- | --------------------- |
 | ordinary content                            | yes                   | yes                   |
 | inside math                                 | yes                   | yes                   |
 | a cetz `content()` element or fletcher node | yes                   | yes                   |
-| raw cetz draw commands (`draw: true`)       | yes                   | no                    |
+| raw cetz draw commands (`wrap: none`)       | unverified            | no                    |
 
 The asymmetry has one cause. Structural primitives are resolved by typst when the epoch is
 rendered, so they work wherever a tag can wrap something at all — which is the parity with
@@ -217,6 +253,12 @@ rendered, so they work wherever a tag can wrap something at all — which is the
 Continuous primitives are resolved by the browser and need a `<g data-typst-label>` to address,
 which typst emits only for labelled boxes and blocks. So `apply`, `replace`, `remove` and
 `reset` reach a cetz `grid`; `move`, `scale`, `reveal` and `hide` do not.
+
+The last row says *unverified* rather than *yes* because that parity is doubtful:
+a cetz draw-command stream is built eagerly, before any show rule or `context` can act on it,
+so a tag inside one cannot resolve its content for the current epoch the way a content tag does.
+`sanor` reaches it by threading its `s` through the slide body, which this design rejects
+elsewhere. Phase 10 settles what is possible there.
 
 ### Regions
 
@@ -253,8 +295,26 @@ subslides**. It is the unit of reflow and the unit of redrawing.
   the slide still.
 - `name` makes the region itself addressable, so the *region* can be moved, scaled, hidden or
   revealed like any tag. An unnamed region is invisible to the animation.
-- A region is **block-level**. Its footprint is computed against the width of its container,
-  which makes it usable inside grids, columns and `#place`d boxes, but not inside a paragraph.
+- A region is **block-level**, and is always a `block(width: 100%, ..)`, so no detection is
+  needed: unlike a tag, a region knows what container it has to be. It does **not** reuse a
+  `box` or a `block` that its body happens to be already. Reuse would save nothing, since two
+  nested `block(width: 100%)` render identically to one (measured), and it would cost the
+  region control over `width`, `height`, `clip` and `align`, which it would then have to merge
+  into the author's element by rebuilding it from `fields()`, losing whatever a `set` rule
+  contributed.
+- **Why block-level**, since the reason is not the one the word suggests. It is not that the
+  surroundings have to stay still: a box whose footprint is fixed at the maximum over its
+  epochs holds its paragraph as still as a block holds its flow, because constant size means
+  constant line breaking. It is that a region at `width: auto` has to know its container's
+  width, and `layout(size => ..)` is the only way to learn it, and `layout` is block-level: it
+  breaks the line it is put in (measured). Inline, the best available is an unbounded
+  `measure`, which reports the natural width of content that never got the chance to wrap. A
+  box itself wraps correctly once it has a width, so what is missing inside a paragraph is the
+  width, not the box. An explicitly sized region could therefore be a box; 0.1.0 does not offer
+  one, because the inline case already exists as the implicit region around a bare tag.
+- That implicit region inherits the same limit: its footprint can only come from unbounded
+  measurements, so content replaced at an *inline* tag site cannot wrap, it can only run on.
+  Inline tag sites are for short content, and the manual says so.
 
 Why a fixed footprint, rather than letting the slide reflow around a growing region? Three
 reasons, in decreasing order of importance:
@@ -278,8 +338,9 @@ not impossible (see *Potential Future Features*).
 cetz canvas (which consumes draw commands, not content) and is awkward inside math. In those
 places, use a bare tag: the implicit-region rule above gives it a fixed footprint of its own,
 and `replace` on a tag inside math or inside a cetz `content` element still works. A
-`draw: true` tag has no box to bound, so its implicit region is the canvas element it sits in:
-structural changes there redraw the enclosing cetz canvas, which is a region-sized unit already.
+`wrap: none` tag has no box to bound, so the region that bounds it is the one *around* the cetz
+canvas: `#region[#cetz.canvas(..)]`, with unwrapped tags inside it. A structural change then
+redraws the whole figure, which is the price of a construct that is not content.
 
 ### Animation primitives
 
@@ -437,18 +498,20 @@ Five rules make this work:
 1. Animo must emit **only** the individual transform properties (`translate`, `scale`) and
    never the `transform` shorthand, which would clobber typst's own positioning (see
    *Findings*).
-1. Continuous state and boundary state get **separate nested slots**. `tag` wraps its body in an
-   extra box, so every tag site emits a labelled outer group with an unlabelled inner group
-   inside it (see *Findings*). Continuous primitives address the inner group
-   (`[data-typst-label="x"] > g`); anything belonging to an epoch *boundary* — the region
-   crossfade today, the morph later — addresses the labelled outer group. CSS gives each element
-   only one `translate` and one `scale`, so the split is what keeps the two classes from
-   clobbering each other. The order is not arbitrary: a boundary effect is measured in the frame's own
-   coordinates and must sit *above* the continuous transforms rather than inside them, or a tag
-   that is being scaled or (later) rotated while its region reflows moves by the wrong amount in
-   the wrong direction. The morph under *Potential Future Features* works this out. Opacity is
-   exempt from the ordering argument, since the two slots simply multiply, but it follows the
-   same convention.
+1. Continuous state and boundary state get **separate nested slots**. `tag` wraps its body
+   twice, in two wrappers of the same kind, so every tag site emits a labelled outer group with
+   an unlabelled inner group inside it (see *Findings*). Continuous primitives address the
+   inner group (`[data-typst-label="x"] > g`); anything belonging to an epoch *boundary*,
+   the region crossfade today and the morph later, addresses the labelled outer group.
+   CSS gives each element only one `translate` and one `scale`,
+   so the split is what keeps the two classes from clobbering each other.
+   The order is not arbitrary: a boundary effect is measured in the frame's own coordinates
+   and must sit *above* the continuous transforms rather than inside them,
+   or a tag that is being scaled or (later) rotated while its region reflows
+   moves by the wrong amount in the wrong direction.
+   The morph under *Potential Future Features* works this out.
+   Opacity is exempt from the ordering argument, since the two slots simply multiply,
+   but it follows the same convention.
 1. **`pan` belongs to the canvas element, not to the frames.** It is a slide primitive, so it
    must not be applied per frame: the frames are stacked in the canvas, and moving the canvas
    moves all of them together and keeps the crossfade registered. This is also the one place
@@ -486,13 +549,26 @@ the body:
   with the same tag inside one slide is the natural behaviour of such a selector, which is
   exactly the "several places, one tag" requirement, and it is also what applies continuous
   state to every epoch frame of the slide at once.
-- In the **paged** outputs, `#slide` publishes its own animation plan to a state before
-  rendering its subslides, so each tag site reads the plan of the slide it sits in.
+- In the **paged** outputs, `#slide` resolves its own animation plan before rendering its
+  subslides and hands the result to the body, so each tag site sees the plan of the slide it
+  sits in.
 
-The plan must now be readable in the **HTML** output as well, because regions and implicit
-regions need to measure their states while the body is laid out. `#slide` therefore publishes
-the plan in both targets, and `tag` and `region` read it in a `context` block. There is no
-cycle: the plan is an argument of `#slide` and does not depend on the body.
+The plan must be readable in the **HTML** output as well, because regions and implicit regions
+need to measure their states while the body is laid out. There is no cycle: the plan is an
+argument of `#slide` and does not depend on the body.
+
+The plan is **provided**, not published.
+`#slide` installs a show rule over its body,
+and every tag emits a marker that the rule replaces with the tag's rendering for the view it is
+given: the state index, the epoch, and the resolved display state of that state.
+A state variable cannot do this,
+because `state.get()` inside `measure(..)` resolves at the enclosing context's location,
+so a caller cannot set a state, measure, set it again and measure again,
+which is exactly what a region has to do to size its footprint over its epochs.
+A show rule does reach inside `measure`, providers nest with the innermost winning,
+and the marker's own label does not reach the output (measured; see *Findings*).
+A view being an argument rather than a document position also means
+that a deck wrapping `#slide` in its own function changes nothing.
 
 Duplicate labels across a document are permitted by typst and cause no error.
 
@@ -646,6 +722,21 @@ These were the open questions of the earlier drafts. They are settled; the evide
   `kino` or `tanim` — so the name is kept simply because it is short and free, not because
   it encodes anything.
 
+- **Does `tag` default to `box`, or detect block-level bodies?** It detects, and the axis it
+  detects on is not the expected one. A `box` and a `block` render identically for content that
+  already sits between paragraph breaks; what differs is hugging versus filling, so `wrap: auto`
+  chooses between `box` and `block(width: 100%)`. The detection is a measurement, not an
+  inspection of element kinds: a zero-sized box on each side of the body, and a comparison of
+  heights. Over 31 constructs the separation was exactly 0 pt for every inline case and at least
+  12 pt for every block-level one, and it sees through a `context` block, which inspection
+  cannot. `wrap:` overrides it and replaces the earlier `block:` and `draw:` arguments.
+
+- **Is the per-slide plan published as a state or passed down through a show rule?** Passed
+  down, as a view, through a marker element and a show rule over the slide body. A state cannot
+  carry anything that has to vary inside `measure`, which is what a region's footprint
+  measurement needs, and no amount of care with document order fixes that. See *Scoping* and
+  *Findings*.
+
 - **Is `sub` the right structure?** Yes. A code block of `sub(...)` calls joins into a
   list of steps. It already carries `handout:` and extends cleanly to the future `time:` and
   `wait:` keywords in the same way.
@@ -714,9 +805,12 @@ These need the prototype to answer.
   labelled `<g>` elements in two different inline SVGs, inside one isolated stacking context,
   is not yet measured. The whole-frame crossfade is measured and is the fallback.
 
-- Whether a `draw: true` tag over raw cetz draw commands survives every cetz construct, and how
-  it should behave when it wraps commands that change the draw *state* (`stroke`, `set-style`)
-  rather than emitting geometry. `sanor`'s `test/draw.typ` is the reference case.
+- Whether a `wrap: none` tag over raw cetz draw commands can be made to work at all, and how it
+  should behave when it wraps commands that change the draw *state* (`stroke`, `set-style`)
+  rather than emitting geometry. `sanor`'s `test/draw.typ` is the reference case, and it reaches
+  the result by threading `s`, which this design rejects. A draw-command stream is built before
+  any show rule or `context` can act on it, so a tag inside one may have no way to resolve its
+  content for the current epoch. This is why the tag-site table says *unverified* for that row.
 
 - How do CSS-animated typst SVG groups actually *look* in motion: stroke scaling under
   `scale`, text rendering during transforms, and antialiasing seams at subslide boundaries.
@@ -760,12 +854,6 @@ These need the prototype to answer.
   scaling for figures. This has to be seen in motion before it is decided; the extra nested box
   under *Findings* is needed either way, since the two slots are separated by coordinate space
   and not merely by how many properties each one uses.
-
-- Whether `tag` should default to `box` with `block: true` as the escape hatch, or detect
-  block-level bodies automatically.
-
-- Whether the per-slide plan is better published as a state or passed down through a show
-  rule, once real decks exercise nested wrappers around `#slide`.
 
 ## Potential Future Features
 
@@ -1577,6 +1665,104 @@ Because the reload is a plain `location.reload()`, the URL survives it, fragment
 whose subslide state lives in `location.hash` therefore comes back on the same subslide after
 every recompile. This is what makes the built-in server sufficient for authoring, and it is why
 animo ships no reload machinery of its own (see *Development Infrastructure*).
+
+### Wrapping a tag site: what it changes and what it does not
+
+A page was rasterised at 144 ppi with and without a wrapper around one element, at 11 pt text,
+and the rasters compared pixel by pixel.
+
+| Tagged body                 | `box(box(x))` | `block(block(x))` | `block(width: 100%)`, twice |
+| --------------------------- | ------------- | ----------------- | --------------------------- |
+| markup list, grid, table    | identical     | identical         | identical                   |
+| a paragraph that wraps      | identical     | identical         | identical                   |
+| `figure`, `$ .. $`, `align` | left-aligned  | left-aligned      | identical                   |
+| `= Heading`                 | shifts        | shifts            | shifts                      |
+
+For content that already sits between paragraph breaks, a `box` and a `block` render
+**identically**. The axis that decides the rendering is not inline versus block but hugging
+versus filling: a wrapper at `width: auto` hugs, which left-aligns anything the container was
+centring, and `block(width: 100%)` reproduces the original.
+
+A `heading` shifts under *every* wrapper, by about 5 pt. A heading carries its own block spacing
+(1.8em above and 0.75em below at level 1, `typst-library/src/model/heading.rs`), that spacing
+sits at the wrapper's edge and is trimmed there, and the wrapper contributes the generic 1.2em
+instead. Neither `heading.above` nor `block.spacing` is readable from a `context` block, while
+`text.size`, `par.spacing` and `heading.numbering` are, so animo cannot copy the value it would
+have to restore. Tagging the heading's text rather than the heading is the way around it.
+
+A tagged inline phrase stops breaking across lines, so its paragraph can reflow. That one is
+inherent: a group that CSS can translate cannot be split over two lines.
+
+### Inline versus block, decided by measurement
+
+```typ
+let nothing = box(width: 0pt, height: 0pt)
+let is-block = measure([#nothing#body#nothing]).height > measure(body).height
+```
+
+Block-level content pushes the two neighbours onto lines of their own, inline content does not.
+Over 31 constructs the separation was **exactly 0.0 pt** for every inline case and **at least
+12 pt** for every block-level one, so the comparison needs no tolerance. It needs no available
+width either: an unbounded `measure` resolves a `100%` width to zero rather than to infinity, and
+every verdict was the same as with a width given.
+
+It sees what inspection cannot. A `context` block reports the block-ness of whatever it
+produces. Its one blind spot is content that is itself several paragraphs, which measures as
+inline because the neighbours merge into the first and the last paragraph instead of being pushed
+off; a scan for a `parbreak` in the body's own sequence covers it.
+
+Inspection was recorded as well, because it is what a reader expects to reach for first:
+
+- a markup list or enum is a **`sequence` of `item`**, not a `list`; `list.item`, `enum.item` and
+  `terms.item` all report as `item`;
+- `#text(red)[..]` and a `#set` block are both `styled`, with the real element at `.child`;
+- `image`, `rect`, `circle`, `line`, `stack`, `grid`, `columns`, `place`, and also `move`, `scale`
+  and `layout`, are block-level;
+- `box`, `hide`, `footnote`, `metadata`, inline math and inline raw are inline;
+- `context` has no fields at all, so inspection stops there.
+
+The set of element functions is closed, because a package cannot define one, but it is only
+closed per typst release and it does not cover `context`. That is why animo measures.
+
+### Providing a value down the tree: a show rule reaches into `measure`, a state does not
+
+`state.get()` inside `measure(..)` resolves at the location of the **enclosing** context block,
+not at a position inside the measured content. A caller therefore cannot set a state, measure,
+set it again and measure again: both measurements see the same value. That rules the state out as
+the channel for anything a region varies while it sizes its footprint.
+
+A marker plus a show rule does work:
+
+```typ
+#let ask(f) = context [#metadata(f)<animo-ask>]
+#let provide(value, body) = {
+  show <animo-ask>: it => (it.value)(value)
+  body
+}
+```
+
+Measured: two `measure` calls in one context block, with different values provided, give
+different results. Providers nest and the innermost wins. The rule fires on a marker produced
+inside a `context` block, and on a marker inside the content that another marker produced, so
+tags may be nested. The marker's own label does not leak: a tag built this way emits exactly one
+`data-typst-label`, its own.
+
+One thing does not work. A marker that no provider replaced is **not** distinguishable
+afterwards: `query(<animo-ask>)` returns replaced and unreplaced markers alike. So "this tag is
+outside any slide" has to be diagnosed at the tag site, from a state that `slide` sets around its
+body, and not by a sweep at the end of the document.
+
+### Transforms inside a tag's wrappers are layout-neutral
+
+`box(move(dx: .., dy: .., ..))`, `box(scale(.., reflow: false, ..))` and `box(hide(..))` measure
+identically to `box(..)`, in width, in height and in their effect on the line around them, even
+though `move` and `scale` are themselves block-level elements. The same holds for
+`block(width: 100%, move(..))` against `block(width: 100%, ..)`.
+
+This is what lets the presentation PDF apply a state's display state with typst's own elements
+without disturbing the layout, and it is what makes "nothing moves between states except what the
+timeline moves" an invariant rather than a hope. A tag site emits the same structure in every
+state and in both targets; only the parameters inside it change.
 
 ### Other verified behaviour
 
