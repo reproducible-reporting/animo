@@ -222,6 +222,22 @@ class PagedRunner:
         pages = sorted(slot.glob("page-*.png"), key=_page_number)
         return [load_image(path) for path in pages]
 
+    def svg(self, source: str | Path, mode: str | None = None, **kwargs) -> list[Path]:
+        """Export every page of a document as SVG and return the files, in page order.
+
+        Multi-page SVG export fails without a page number template in the output path,
+        which is why the handout SVG is the one output whose command line differs.
+        """
+        if isinstance(source, str):
+            source = self.typst.source(source)
+        slot = self._slot()
+        sysinp = dict(kwargs.pop("sysinp", None) or {})
+        if mode is not None:
+            sysinp["animo"] = mode
+        template = slot / "page-{p}.svg"
+        compile_typst(source, template, fmt="svg", sysinp=sysinp, **kwargs).check()
+        return sorted(slot.glob("page-*.svg"), key=_page_number)
+
     def pdf(self, source: str | Path, mode: str | None = None, **kwargs) -> Path:
         """Compile a document to PDF and return the path, for the PDF-writer assertions."""
         if isinstance(source, str):

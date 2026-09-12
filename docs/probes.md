@@ -117,6 +117,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Regions: fixed footprints across epochs                  | `test_regions.py`        |
 | Crossfading epoch frames                                 | `test_crossfade.py`      |
 | Automatic canvas sizing: `#place` and `show place:`      | `test_canvas.py`         |
+| Recording placements: what a `show place:` rule may do   | `test_place_rule.py`     |
 | SVG `<defs>` ids are content hashes                      | `test_defs.py`           |
 | CSS animation of typst SVG groups                        | `test_css_transforms.py` |
 | Styling from CSS: what is and is not reachable           | `test_css_styling.py`    |

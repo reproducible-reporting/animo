@@ -33,5 +33,12 @@ is the design document in the repository:
 
 ## Status
 
-The package resolves and compiles, and does nothing else yet.
-[Development Environment](environment.md) describes how to get from a clone to a green test suite.
+Animo builds static decks to all four outputs, and animates nothing yet.
+A deck has a shape, its slides have a viewport, a canvas and a background,
+and the HTML deck is navigable in a browser.
+Tags, the timeline, regions and panning are the versions after this one.
+
+- [Slides](slides.md) is what a deck and a slide are today.
+- [The Four Outputs](outputs.md) has the command lines and the live preview.
+- [Development Environment](environment.md) describes how to get from a clone
+  to a green test suite.

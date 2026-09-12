@@ -1297,6 +1297,67 @@ Measured on 0.15.1, for the canvas rule under *Canvas and viewport*.
   distinguish them, so the automatic union is exact for top-level placements and approximate
   below that. Recorded under *Open Questions*; `canvas:` is the explicit override.
 
+### Recording placements: what a `show place:` rule may and may not do
+
+Measured on 0.15.1 while building the automatic canvas, which needs the placements as
+*data* and not merely as content the rule passes through.
+
+- **A show rule cannot return a value, so the numbers travel as introspection.** The rule
+  emits a `metadata` element carrying a label beside the placement it sees, and the union
+  is taken from `query`. This works **inside `html.frame`** as well: `query` sees into a
+  frame even though positions do not exist there, which is what lets one canvas rule serve
+  both targets.
+- **A block sized from its own `query` converges.** The canvas depends on the layout of
+  the very block it sizes: the first pass records nothing and the block comes out at its
+  floor, and typst's introspection loop then runs the document again with the placements
+  in reach. It terminates because the body is laid out at a width that does not depend on
+  the answer. Measured: a block whose width is the maximum of `200pt` and a placement at
+  `dx: 400pt` comes out at 419.4pt in the emitted frame.
+- **The recording may not disturb the layout it is watching.** A `context` block holding
+  nothing but `metadata` is inline and changes no measurement. `layout(size => ..)` is
+  block-level and breaks the paragraph the placement sits in: the same body measures
+  `76.89pt` tall without it and `103.29pt` with it.
+- **That last point closes the one route to telling a nested placement apart.**
+  `layout(size => ..)` inside the rule does report the placement's own containing block
+  (`400 x 300pt` at top level, `113.39 x 56.69pt` inside a 4 cm box, `200 x 300pt` in a
+  grid column), which would make the automatic union exact. It cannot be used, because
+  the price is a body that lays out differently from the one the author wrote. So the
+  union stays approximate below the top level, as *Open Questions* has it, and the reason
+  is not that typst hides the container but that asking for it costs the layout.
+
+### `html.frame` sizes its SVG in `em`, as an inline style
+
+Measured on 0.15.1. `html.frame` writes `width` and `height` on the `<svg>` as an inline
+style in `em`, dividing the frame's size in points by the text size in effect: a 200pt
+block is `18.181818182em` at the default 11pt text and `9.090909091em` at 22pt.
+
+Two consequences for the HTML shell. An inline style outranks a stylesheet rule, so a deck
+that sizes its frames from CSS renders them at the ratio between the page's font size and
+typst's text size, which is 16/11 by default and looks like an 8% scaling bug. And the
+frame's own size is not a reliable unit for anything, since it moves with a `set text` the
+author is free to write. Animo therefore sizes the canvas element itself and overrides the
+frame with `width: 100% !important`.
+
+The SVG also carries `overflow: visible`, so ink outside the frame's viewBox is painted
+rather than clipped. The viewport element is what clips a slide.
+
+### Fitting the slide to the browser window
+
+Measured in playwright's chromium 151.
+
+- **`calc()` divides a length by a length and yields a number**: `calc(100px / 40px)`
+  computes to `2.5`. So the scale that maps a deck's points onto the window is a plain CSS
+  expression over the slide width, and the runtime never has to measure the window or
+  listen for a resize.
+- Scaling the canvas element as a whole, rather than sizing its contents in pixels, is
+  what makes a typst point the unit of everything inside it at any window size. The
+  individual `scale` property is used, never the `transform` shorthand, for the reason
+  under *CSS animation of typst SVG groups*, and it leaves `translate` free for `pan`.
+- The two targets then agree to **0.0017 of the slide** on every edge of a placed square,
+  comparing a 454-pixel handout raster with a 908-pixel browser screenshot. That is one
+  pixel of the coarser raster, which is the floor of the measurement rather than a layout
+  difference.
+
 ### SVG `<defs>` ids are content hashes
 
 Relevant because stacking several frames in one document puts duplicate ids in one DOM.

@@ -1,0 +1,80 @@
+/*
+SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+SPDX-License-Identifier: Apache-2.0
+*/
+
+/*
+  The stylesheet of an animo deck.
+  The deck's own geometry is appended to this file as custom properties on `:root`,
+  so everything below is the same for every deck.
+*/
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* The window: the current slide, centred on a surround that is not part of any slide. */
+.animo-deck {
+  display: grid;
+  place-items: center;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000000;
+}
+
+/*
+  The viewport: the slide's visible box.
+  It is as large as the window allows at the deck's aspect ratio, and it clips,
+  because content outside it belongs to the canvas and is reached by panning.
+*/
+.animo-slide {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  width: var(--animo-viewport);
+  aspect-ratio: var(--animo-aspect);
+  background: #ffffff;
+}
+
+.animo-slide[data-animo-current] {
+  display: block;
+}
+
+/*
+  The canvas: what the body is laid out on, at least as large as the viewport.
+  It sits at the viewport's origin and is scaled as a whole, which is what makes a
+  typst point the unit of everything inside it, at any window size.
+  The epoch frames are stacked in its single grid cell, in document order,
+  on a stacking context of their own so that a crossfade between them stays contained.
+*/
+.animo-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  isolation: isolate;
+  transform-origin: 0 0;
+  scale: var(--animo-fit);
+}
+
+.animo-canvas > * {
+  grid-row: 1;
+  grid-column: 1;
+}
+
+/*
+  The frame fills the canvas exactly, because the canvas is the size animo computed and
+  the frame's viewBox is that same rectangle in typst points.
+  `html.frame` writes the frame's size as an inline style in `em`, against the text size
+  of the document rather than against the font size of the page, so a plain rule loses to
+  it and the frame comes out a few percent too large. Overriding an inline style that
+  animo does not control is what `!important` is for.
+*/
+.animo-canvas > svg {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}

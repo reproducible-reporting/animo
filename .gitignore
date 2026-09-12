@@ -30,3 +30,6 @@ tmp/
 # The one hand-written HTML in the repository:
 # the stand-in deck the browser tier is exercised against.
 !tests/documents/*.html
+
+# Everything the StepUp plan writes
+build/

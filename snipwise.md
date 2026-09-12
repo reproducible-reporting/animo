@@ -38,6 +38,7 @@ patterns = [
   "*.sh",
   "plan.py",
   "docs/**/*.md",
+  "examples/**/*.typ",
   "planning/**/*.md",
   "probes/**/*.typ",
   "tests/**/*.typ",

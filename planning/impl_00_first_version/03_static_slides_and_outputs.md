@@ -144,4 +144,175 @@ so the isolation and stacking context must already be right.
 
 ## Session Log
 
-To be written at the end of the session, per the rules in [README.md](README.md).
+### What Was Built
+
+The frame everything later sits in, and the first deck anyone can look at.
+
+- **`src/deck.typ`**: the document-level show rule `animo(body, width:, height:, margin:)`,
+  the state that carries the deck's shape to the slides, the paged mode selection,
+  and the HTML page shell with its stylesheet and its runtime.
+- **`src/canvas.typ`**: the automatic canvas.
+  A `show place:` rule records every placement as `metadata` under one label,
+  and `query` turns it back into data that the union is computed from.
+- **`src/slide.typ`**: `slide(body, animation: (), canvas: auto, background: none, numbered: true)`, in both targets, with the viewport, the canvas, the background and the
+  two counters.
+- **`src/animo.css`** and **`src/animo.js`**: the page shell and the runtime,
+  inlined with `read()` as the design requires.
+- **`examples/tour.typ`**, built by `plan.py` to all four outputs under `build/examples/`.
+- **`docs/slides.md`** and **`docs/outputs.md`**, in the `nav`, with the example included
+  from the real file through `pymdownx.snippets`.
+- Tests: `tests/test_slides.py` (tier 1), `tests/test_outputs.py` (tier 2),
+  `tests/test_deck_html.py` (tier 3) and `tests/test_cross_target.py` (the invariant),
+  with `tests/decks.py` holding the sources the tiers share.
+  `probes/test_place_rule.py` is the new probe module.
+  161 passed, 2 skipped; `pre-commit run --all-files` and `zensical build --strict` green.
+
+`tests/documents/import_preview.typ` and `import_root.typ` had to be rewritten:
+they passed a non-empty `animation:`, which this phase refuses.
+
+### Decisions
+
+**Asked, and answered by the author.**
+
+1. *The deck entry point is `#show: animo.with(width: .., height: .., margin: ..)`*,
+   a document-level show rule named after the package, which is exactly what `slipst`
+   does. A show rule rather than an init call because it receives the whole document,
+   which is what lets it be the HTML page, the stylesheet, the runtime and the paged
+   `set page` at once. Verified before asking that this works in both targets.
+1. *Its arguments are `width`, `height` and `margin`, with a non-zero margin default of
+   1 cm.* There is no `paper:` argument: typst does not expose its paper-size table to
+   scripts, so a paper name cannot be resolved to two lengths in the HTML target, and an
+   argument that works in three outputs out of four is worse than no argument.
+1. *The automatic canvas counts every placement*, resolving offsets from the canvas
+   origin, rather than counting only the placements animo can attribute to the slide body.
+
+**Taken in the session.**
+
+- **A deck without the show rule still has slides**, at the defaults.
+  A forgotten show rule is then a cosmetic mistake rather than a broken deck,
+  and `#slide` stays usable on its own.
+- **The canvas size never reaches CSS.** The canvas element is scaled as a whole by a
+  factor computed in CSS from the deck's slide width, so a typst point is the unit of
+  everything inside it at any window size, and `pan` will later be a translate in points
+  with no unit conversion. Only the slide width, the aspect ratio and that factor are
+  emitted as custom properties.
+- **Every slide publishes its canvas as `metadata` under `<animo-canvas>`.**
+  Introspection is the only channel that reaches both targets, tier 1 asserts through it,
+  and phase 06 needs the number as well.
+- **A background is a colour or content, and nothing else.** A colour is a page fill on
+  paper and CSS in the browser; content is drawn into the slide behind the body, covering
+  the viewport, which is the only form an image can take since typst has no image page
+  fill either. A gradient or a tiling is refused with a message naming the form that
+  works in all four outputs, rather than silently working in one target only.
+- **`numbered:` and the position are two counters.** `animo-slide` is what `numbered:`
+  counts; `animo-position` counts every slide and is what addresses a slide in the URL and
+  in the DOM, because a presenter walks through a title slide whether or not it is
+  numbered.
+- **The runtime already carries the state half of the position.** The fragment is
+  `#<slide>.<state>` as the tier-3 contract requires, every slide carries
+  `data-animo-states="1"`, and stepping crosses a slide boundary when the state runs out.
+  With one state per slide this is slide-to-slide navigation, and phase 05 only has to
+  raise the count.
+
+### Open Questions Answered
+
+**How exact is the automatic canvas?** Every placement counts, with its offsets taken
+from the canvas origin and its ratios and alignment resolved against the slide body.
+For a placement written directly in the body this is exact. For one nested inside another
+container it is short by wherever that container sits, because a container never sits at a
+negative coordinate: the canvas comes out **too small rather than too large**, which is
+the failure `canvas:` can fix. Documented in `docs/slides.md` with the failure case
+spelled out, and pinned by a tier-1 test.
+
+The phase file offered a second option, counting only the placements animo can attribute
+to the slide body. **That option turned out not to be implementable**, which is the most
+important thing this session measured; see the first finding below.
+
+**Where does the deck's shape come from?** The show rule above.
+
+### New Findings
+
+Three new sections in the design document's *Findings*, and one measurement that retires
+an idea rather than confirming one. None of them contradicts the design document.
+
+1. **`layout(size => ..)` inside a `show place:` rule reveals the placement's own
+   container, and cannot be used.** It reports `400 x 300pt` for a top-level placement,
+   `113.39 x 56.69pt` for one inside a 4 cm box and `200 x 300pt` for one in a grid
+   column, so it is exactly the discriminator the open question wanted. But it is
+   block-level and breaks the paragraph the placement sits in: the same body measures
+   `76.89pt` tall without it and `103.29pt` with it. The price is a body that lays out
+   differently from the one the author wrote, which no canvas is worth. A `context` block
+   holding nothing but `metadata` is inline and changes no measurement, and that is what
+   animo uses. Probed both ways, including the negative case, because it looks like the
+   obvious fix and is not.
+1. **A show rule cannot return a value, so the placements travel as introspection**, and
+   this works inside `html.frame`: `query` sees into a frame even though positions do not
+   exist there. **A block sized from its own `query` converges**, because the body is laid
+   out at a width that does not depend on the answer, so typst's introspection loop
+   settles on the second pass. Measured: a block whose width is the maximum of `200pt` and
+   a placement at `dx: 400pt` comes out at 419.4pt in the emitted frame.
+1. **`html.frame` sizes its `<svg>` in `em` as an inline style**, dividing the frame's
+   size in points by the text size in effect: a 200pt block is `18.181818182em` at 11pt
+   text and `9.090909091em` at 22pt. An inline style outranks a stylesheet rule, so the
+   first version of the HTML shell rendered every frame 16/11 too large, which looked like
+   a scaling bug and was a specificity bug. Animo sizes the canvas element itself and
+   overrides the frame with `width: 100% !important`. The frame also carries
+   `overflow: visible`, so ink outside its viewBox paints and the viewport is what clips.
+1. **`calc()` divides a length by a length and yields a number** in chromium 151:
+   `calc(100px / 40px)` computes to `2.5`. That is what lets the window fit be a plain CSS
+   expression over the slide width, with no resize listener and no measuring in the
+   runtime.
+1. **The two targets agree to 0.0017 of the slide** on every edge of a placed square,
+   comparing a 454-pixel handout raster with a 908-pixel browser screenshot. That is one
+   pixel of the coarser raster, so the invariant is exact to the limit of the measurement.
+   `tests/test_cross_target.py` asserts it at a tolerance of 0.0025, which is that limit.
+
+Two tooling observations, which do not belong in the design document:
+
+- **StepUp 4.0.1 refuses a build product inside a static tree**
+  ("a static tree is the sole owner of the files under it"), so the example decks cannot
+  be built into `examples/`. They go to `build/examples/`, which `.gitignore` covers.
+- **`stepup.core.api` has no `mkdir` in 4.0.1**, unlike the sibling deck repositories,
+  and output directories are created by the step itself.
+
+### A Refinement the Design Document Does Not State
+
+*Canvas and viewport* says "the canvas origin is the body's origin" and "the viewport
+starts at `(0pt, 0pt)`". With the `margin:` argument this session added, those two cannot
+both hold, because the body's origin is inset by the margin. What is implemented, and what
+`docs/slides.md` documents: **the canvas origin is the viewport origin, and the body sits
+inside the canvas at the deck's margin.** The canvas extent therefore counts the margin as
+well. Nothing else changes, and `pan` in phase 06 still moves the viewport over a canvas
+whose origin is `(0pt, 0pt)`.
+
+Two smaller points in the same paragraph: a negative `dx` or `dy` does not extend the
+canvas, since the canvas is anchored at the origin, so content at a negative offset is out
+of reach of `pan`; and the in-flow extent counts as well, so a body taller than the
+viewport makes the canvas taller rather than being silently clipped.
+
+**Should `planning/design.md` be updated to say this?** It is a consequence of an API
+decision taken in this session, not a contradiction of a finding, so it is recorded here
+and left for the author.
+
+### What a Follow-Up Phase Should Know
+
+- **Phase 04** fills in `animation:`, which `slide` currently asserts is empty, and `tag`
+  and `region`, which are still the phase-01 stubs. The plan can be published next to
+  `deck-shape` in `src/deck.typ`, which is the same mechanism and the same open question.
+- **Phase 05** raises `data-animo-states` above `"1"` and animates inside the frames.
+  The runtime's `step`, `clamp` and `show` already treat the state as a real coordinate,
+  and `tests/test_deck_html.py` covers navigation, so what is missing is the animation
+  and nothing about the addressing. The self-tests of the harness still run against
+  `tests/documents/stand_in_deck.html`, as phase 02 asked, and now also against a real
+  deck.
+- **Phase 06** moves `.animo-canvas`, which already has `transform-origin: 0 0` and uses
+  the individual `scale` property, leaving `translate` free for the pan. The canvas size
+  is readable from `<animo-canvas>` metadata in both targets.
+- **Phase 09** stacks its epoch frames in `.animo-canvas`, which is a single grid cell
+  with `isolation: isolate` and `grid-row: 1 / grid-column: 1` on its children, asserted
+  in `tests/test_deck_html.py`. The `!important` override on the frame size applies to
+  every frame in the cell.
+- **Every phase**: `tests/decks.py` builds the deck sources the tiers share, and
+  `PagedRunner.svg` is new next to `png` and `pdf`.
+- `ruff` is still not a `pre-commit` hook. All Python written in this phase is
+  `ruff check` and `ruff format` clean, by hand, as in phase 02.

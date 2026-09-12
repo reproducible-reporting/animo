@@ -5,9 +5,14 @@
 // shows it. It resolves through the repository-local package directory.
 #import "@preview/animo:0.1.0": *
 
-#slide(animation: {
-  import anim: *
-  sub(reveal("greeting"))
-})[
-  #tag("greeting", hidden: true)[Hello from the working tree.]
+#show: animo.with(width: 16cm, height: 9cm)
+
+// The timeline arrives in phase 04, so the vocabulary is only checked to be reachable:
+// a star import of the package has to carry the `anim` module along as a name.
+#assert.eq(type(anim), module)
+
+#slide[
+  = Hello from the working tree
+
+  #tag("greeting")[A tag site, which does nothing yet.]
 ]
