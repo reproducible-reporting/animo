@@ -18,10 +18,19 @@ import pytest
 # Long enough to dwarf a frame, short enough to pay for in three engines.
 PAUSE = 500
 
-# What a single frame may cost, in milliseconds, at the 60 Hz the engines run headless at.
-# Every measurement here is either "this frame" or "a whole pause ago", so the two are
-# never in danger of being confused and the allowance can be generous.
+# How far the head start of a stamped animation may be read from the lag it was taken off,
+# in milliseconds, which is a frame at the 60 Hz the engines run headless at.
+# The two are either the same instant or a whole pause apart, so they are never in danger
+# of being confused and the allowance can be generous.
 FRAME = 100
+
+# How much further into itself an animation may report than the time that really passed
+# since it was created, in milliseconds.
+# It cannot have begun before it existed, so real time is the bound, and the allowance
+# covers the rounding of the two clocks that bound is read from.
+# A budget for the frames instead would measure the machine rather than the engine:
+# a loaded continuous integration runner spent 111 ms on the two frames of a deck test.
+SLACK = 50
 
 # Whether an engine's document timeline stands still while the page draws no frames.
 #
@@ -39,20 +48,29 @@ FREEZES_WHILE_IDLE = {"chromium": False, "firefox": True, "webkit": False}
 # Both are read after a frame has been drawn. Before that they read the same, because an
 # animation's current time is measured against the timeline rather than against real time,
 # so a stale timeline hides its own staleness until it is refreshed.
+#
+# The real time those two frames took is measured alongside them, because it is what the
+# scheduled animation's own reading is held against.
 MEASURE = """async () => {
     const target = document.body;
-    const lag = performance.now() - document.timeline.currentTime;
+    const began = performance.now();
+    const lag = began - document.timeline.currentTime;
     const scheduled = target.animate([{opacity: 1}, {opacity: 0}], 10000);
     const stamped = target.animate([{opacity: 1}, {opacity: 0}], 10000);
     stamped.startTime = document.timeline.currentTime;
     await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
-    return {lag, scheduled: scheduled.currentTime, stamped: stamped.currentTime};
+    return {
+        lag,
+        elapsed: performance.now() - began,
+        scheduled: scheduled.currentTime,
+        stamped: stamped.currentTime,
+    };
 }"""
 
 
 @pytest.fixture
 def measured(page, open_page):
-    """The three numbers, taken after the page has been left alone for `PAUSE`."""
+    """The four numbers, taken after the page has been left alone for `PAUSE`."""
     page.set_content("<!doctype html><p>still</p>")
     page.wait_for_timeout(PAUSE)
     return page.evaluate(MEASURE)
@@ -63,9 +81,12 @@ def test_an_animation_the_browser_schedules_begins_at_its_beginning(measured):
 
     A pending animation is started at the next frame, which is a fresh one however long
     the page stood still, so a step taken after a pause plays from the beginning.
+    How far in it is by the time it is read is bounded by the time that really passed
+    since it was created, and not by what a frame is expected to cost.
     """
-    assert measured["scheduled"] < FRAME, (
-        "an animation created without a start time did not begin at its beginning"
+    assert measured["scheduled"] < measured["elapsed"] + SLACK, (
+        f"an animation created without a start time was {measured['scheduled']:.0f} ms in, "
+        f"{measured['elapsed']:.0f} ms after it was created"
     )
 
 

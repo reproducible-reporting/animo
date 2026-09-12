@@ -27,13 +27,19 @@ CM = 28.3465
 # because the smallest length a timeline states here is a centimetre, which is 28 points.
 TOLERANCE = 0.5
 
-# How long a presenter leaves the deck alone before stepping, in milliseconds, and how far
-# into the step the runtime may already be by the time the key is pressed.
+# How long a presenter leaves the deck alone before stepping, in milliseconds.
 # Firefox 153 freezes `document.timeline` while the page draws nothing, so a runtime that
 # takes a start time off it is a whole `PAUSE` into the step it has just begun,
 # and with animo's own 400 ms it would be past the end of it. See *Findings*.
 PAUSE = 500
-BEGINNING = 100
+
+# How much further into a step it may report itself than the time that really passed since
+# the key was pressed, in milliseconds.
+# A step cannot have begun before the key that asked for it, so real time is the bound,
+# and the allowance covers the rounding of the two clocks that bound is read from.
+# It stays far below `PAUSE`, which is where a start time taken off the document timeline
+# would put the step.
+SLACK = 50
 
 # How far the centre of a group may move under a scale about its own centre.
 # Zero is the claim. Firefox 153 resolves `fill-box` to a box whose centre sits about
@@ -252,15 +258,23 @@ def test_a_step_taken_after_a_pause_starts_at_its_beginning(page, deck_at, movin
     and the assertion is about the clock rather than about the geometry: an animation that
     began too early is not wrong about where it is going, only about when it set off, and
     that is invisible in every state it passes through and in the one it lands on.
+
+    How far along the step is when it is read is bounded by the time that really passed
+    since the key, and not by what a frame is expected to cost:
+    a loaded continuous integration runner spent 111 ms on the two frames this reads
+    across, which says nothing about when the step set off.
     """
     presentation: Deck = deck_at(moving)
     page.add_style_tag(content=":root { --animo-duration: 4000ms; --animo-easing: linear }")
     page.wait_for_timeout(PAUSE)
+    clock = "() => performance.now()"
+    pressed = page.evaluate(clock)
     presentation.press("ArrowRight")
     flight = presentation.flight
+    elapsed = page.evaluate(clock) - pressed
     assert flight, "the step animated nothing at all"
-    assert max(flight) < BEGINNING, (
-        f"the step was already {max(flight):.0f} ms along when it began, "
+    assert max(flight) < elapsed + SLACK, (
+        f"the step was {max(flight):.0f} ms along {elapsed:.0f} ms after the key was pressed, "
         f"which is the {PAUSE} ms the page stood still"
     )
 
