@@ -6,8 +6,21 @@ name: zensical
 
 on:
   push:
-    branches: [main]
+    branches:
+      # Every commit on the main branch republishes the site,
+      # so that the documentation never lags behind the code.
+      - main
   pull_request:
+    # Build without publishing on pull requests ...
+    paths:
+      # ... only if relevant files have changed.
+      # `docs/` includes the examples verbatim through `pymdownx.snippets`.
+      - docs/**
+      - examples/**
+      - zensical.toml
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/zensical.yml
 
 concurrency:
   group: zensical-${{ github.ref }}

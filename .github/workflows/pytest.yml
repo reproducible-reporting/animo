@@ -6,8 +6,31 @@ name: pytest
 
 on:
   push:
-    branches: [main]
+    branches:
+      # Run the suite for a change on the main branch ...
+      - main
+    paths:
+      # ... and only if relevant files have changed.
+      - src/**
+      - tests/**
+      - probes/**
+      - conftest.py
+      - typst.toml
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/pytest.yml
   pull_request:
+    # Run the suite on pull requests ...
+    paths:
+      # ... only if relevant files have changed.
+      - src/**
+      - tests/**
+      - probes/**
+      - conftest.py
+      - typst.toml
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/pytest.yml
 
 concurrency:
   group: pytest-${{ github.ref }}

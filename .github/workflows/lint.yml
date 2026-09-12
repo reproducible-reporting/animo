@@ -6,8 +6,29 @@ name: lint
 
 on:
   push:
-    branches: [main]
+    branches:
+      # Check the package for a change on the main branch ...
+      - main
+    paths:
+      # ... and only if relevant files have changed.
+      # The checker reads the subtree that is submitted to `typst/packages`,
+      # so this list must stay consistent with the `exclude` field of `typst.toml`.
+      - src/**
+      - typst.toml
+      - README.md
+      - CHANGELOG.md
+      - LICENSES/**
+      - .github/workflows/lint.yml
   pull_request:
+    # Check the package on pull requests ...
+    paths:
+      # ... only if relevant files have changed.
+      - src/**
+      - typst.toml
+      - README.md
+      - CHANGELOG.md
+      - LICENSES/**
+      - .github/workflows/lint.yml
 
 concurrency:
   group: lint-${{ github.ref }}
