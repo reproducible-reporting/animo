@@ -22,7 +22,7 @@ jobs:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.venv/playwright
     steps:
       - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           enable-cache: true
       # Deliberately not the pinned release: that is the whole point of this workflow.
