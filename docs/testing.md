@@ -300,16 +300,16 @@ because a failed compilation is worth looking at.
 
 ## Continuous Integration
 
-| Workflow     | Trigger          | Does                                                           |
-| ------------ | ---------------- | -------------------------------------------------------------- |
-| `pytest`     | push to main, PR | the three tiers and the probes, against the pinned typst,      |
-|              |                  | with tier 3 in all three engines                               |
-| `pre-commit` | push to main, PR | every hook, so `reuse` and `snipwise check` gate a merge       |
-| `probes`     | weekly schedule  | the probes against the newest typst release, non-blocking      |
-| `zensical`   | push to main, PR | compiles the example decks, builds the site with `--strict`,   |
-|              |                  | and deploys to Pages on main only                              |
-| `lint`       | push to main, PR | the Universe package checker, over the built subtree           |
-| `release`    | tag `v*`         | builds and checks that subtree, and publishes a GitHub release |
+| Workflow     | Trigger          | Does                                                         |
+| ------------ | ---------------- | ------------------------------------------------------------ |
+| `pytest`     | push to main, PR | the three tiers and the probes, against the pinned typst,    |
+|              |                  | with tier 3 in all three engines                             |
+| `pre-commit` | push to main, PR | every hook, so `reuse` and `snipwise check` gate a merge     |
+| `probes`     | weekly schedule  | the probes against the newest typst release, non-blocking    |
+| `zensical`   | push to main, PR | compiles the example decks, builds the site with `--strict`, |
+|              |                  | and deploys to Pages on main only                            |
+| `release`    | push to main, PR | builds the publishable subtree, checks it with the Universe  |
+|              | tag `v*`         | package checker, and publishes a GitHub release on a tag     |
 
 Typst is installed with `typst-community/setup-typst`, pinned to the `compiler` field
 of `typst.toml` by Snipwise, except in the `probes` workflow, which tests the newest
@@ -323,5 +323,12 @@ the checker is pointed at the copy.
 The `release` workflow stops at the artefact.
 Copying the subtree into a sparse checkout of `typst/packages` and opening the pull request
 stays manual, because a submission cannot be taken back.
-Its steps are exercisable without a tag through `workflow_dispatch`, which builds and checks
-the subtree and publishes nothing.
+Everything up to the artefact runs on every push to main and every pull request
+that changes a file of the published subtree,
+so that a tag reaches steps that have already run on the same content.
+A push to main and a pull request publish nothing.
+Two steps are specific to a tag.
+The first compares the tag with the `version` field of `typst.toml`
+and fails the workflow when the two disagree,
+and the second creates the GitHub release.
+The version is read from the manifest and the tag, so the workflow takes no version input.

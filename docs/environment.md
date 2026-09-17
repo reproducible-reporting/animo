@@ -161,3 +161,8 @@ and of the typst release it is compiled with.
 into every file that repeats them, as `snipwise.md` in the repository root spells out.
 Bumping a release is therefore an edit of the manifest followed by
 `pre-commit run --all-files`.
+
+One version number sits in a file name rather than in text.
+The package directory under `.typst-packages` carries the version in the name of its symlink,
+which Snipwise cannot rewrite, so `git mv` renames it in the same commit.
+A rename that is forgotten fails `test_package_symlink_points_at_the_working_tree`.

@@ -9,23 +9,13 @@ SPDX-License-Identifier: Apache-2.0
 it is compiled with.
 Snipwise copies both into every file that repeats them,
 so that bumping a release is an edit of the manifest followed by `pre-commit run --all-files`.
-Also the body of the README is copied into the front page of the documentation,
-so that the two stay in sync.
 The keyword list is metadata of three release descriptions,
 which Snipwise writes in the syntax each of them uses.
 
 ```toml
-# The body of the readme pag is also the contents of the documentation front page
-[[sources]]
-patterns = ["README.md"]
-snippets = ["readme_body"]
-
-[[targets]]
-patterns = ["docs/index.md"]
-snippets = ["readme_body"]
-
 # The Animo tagline is repeated in several places.
-# The two Markdown pages show it as it is written, links and all.
+# `README.md` shows it as it is written, links and all,
+# and `docs/index.md` is a symlink to it, so both paths name the same bytes.
 # Everywhere else it is metadata, so the markup is stripped and the sentence is put on one line.
 # The blank lines around the paragraph are what `mdformat` writes between an HTML comment
 # and a paragraph, and rendering them here stops the two hooks from undoing each other.
@@ -130,6 +120,34 @@ scanner = "json"
 insert = [{ snippet = "version", pointer = "/version" }]
 render = "{{ content | unwrap }}"
 
+# The package version is repeated in two shapes, and both are matched rather than marked.
+# A link from `README.md` into the repository names the tag of the release it documents,
+# because the Universe package checker asks a README to link to a resource
+# that matches the version of the package.
+# An import string names the release a reader fetches from Typst Universe,
+# and the repository-local package directory gives that same release a path.
+# The two shapes are anchored in one rule rather than two,
+# because two narrowed rules holding the same snippet in the same file are refused,
+# and `README.md` carries both.
+# A placeholder such as `@preview/animo:X.Y.Z` has no digits, so neither anchor matches it.
+[[targets]]
+patterns = [
+  "*.md",
+  ".envrc",
+  "benchmarks/*.typ",
+  "docs/**/*.md",
+  "examples/*.typ",
+  "planning/*.md",
+  "setup.sh",
+  "tests/*.py",
+  "tests/documents/*.typ",
+  "tools/*.py",
+]
+scanner = "regex"
+regex = '(?:animo/blob/v|preview/animo[:/])(?P<content>[0-9]+\.[0-9]+\.[0-9]+)'
+snippets = ["version"]
+render = "{{ content | unwrap }}"
+
 # The typst release, which is a bare version number wherever it is repeated,
 # so in prose it is marked rather than matched: there is no expression that tells
 # the pinned release apart from a mention of some other release.
@@ -139,6 +157,7 @@ render = "{{ content | unwrap }}"
 # and a fence, and rendering them here stops the two hooks from undoing each other.
 [[targets]]
 patterns = ["docs/**/*.md"]
+snippets = ["typst-version"]
 render = "\n{{ content | codeblock }}\n\n"
 
 # In `README.md` the same release appears twice in the badge row,

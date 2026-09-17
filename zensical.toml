@@ -100,8 +100,6 @@ pymdownx.superfences = {}
 pymdownx.tabbed.alternate_style = true
 pymdownx.tasklist.custom_checkbox = true
 
-
-zensical.extensions.macros.include_dir = "examples"
 zensical.extensions.macros.render_by_default = false  # set `render_macros: true` in the frontmatter
 zensical.extensions.macros.on_error_fail = true
 zensical.extensions.macros.on_undefined = "strict"

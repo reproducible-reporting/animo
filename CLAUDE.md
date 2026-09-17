@@ -245,6 +245,12 @@ because the site has no copy of the rest of the repository.
 Such a link points at `main`, as in
 `https://github.com/reproducible-reporting/animo/blob/main/examples/hello.typ`.
 
+The file `README.md`, which `docs/index.md` is a symlink to, is the one exception.
+Its links into the repository point at the tag of the release,
+because the Universe package checker asks a README to link to a resource
+that matches the version of the package.
+Snipwise copies that tag from `typst.toml`, so it is never edited by hand.
+
 A page of the Presentation Author Guide opens with the deck it draws on,
 in the form the other pages use:
 the source on GitHub, then the three built outputs in parentheses,

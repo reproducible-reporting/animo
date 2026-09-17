@@ -9,18 +9,54 @@
 # It stops at the artefact.
 # Copying that subtree into a sparse checkout of `typst/packages` and opening the pull
 # request stays manual, because a submission cannot be taken back.
+#
+# Everything up to the artefact runs on every change that would alter what is released,
+# so that a tag reaches steps that have already run on the same content.
+# The version comes from `typst.toml` and the tag, and never from an input.
 name: release
 
 on:
-  push:
-    tags:
-      - v*
-  # So that the steps below can be exercised before a tag exists.
   workflow_dispatch:
-    inputs:
-      version:
-        description: The version to build, as it stands in typst.toml
-        required: true
+  push:
+    branches:
+      # Build and check the release for a change on the main branch ...
+      - main
+    tags:
+      # ... and for the tag that publishes it.
+      # A path filter is not evaluated for a tag push, as observed on GitHub Actions in
+      # September 2026, so the list below cannot keep a tag from publishing.
+      - v*
+    paths:
+      # ... and only if relevant files have changed.
+      # These are the files that end up in the published subtree,
+      # so this list must stay consistent with the `exclude` field of `typst.toml`.
+      # The scripts and the workflow that build and publish the subtree are included,
+      # because a change to them changes the release as well.
+      - src/**
+      - LICENSES/**
+      - README.md
+      - CHANGELOG.md
+      - typst.toml
+      - tools/build_package.py
+      - tools/release_notes.py
+      - .github/workflows/release.yml
+  pull_request:
+    # Build and check the release on pull requests ...
+    paths:
+      # ... only if relevant files have changed.
+      - src/**
+      - LICENSES/**
+      - README.md
+      - CHANGELOG.md
+      - typst.toml
+      - tools/build_package.py
+      - tools/release_notes.py
+      - .github/workflows/release.yml
+
+concurrency:
+  # A tag has a ref of its own, so a run that publishes is never cancelled by a push.
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -33,37 +69,65 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The agreement between the tag and the manifest is a mapping rather than a copy,
-      # so it is checked here instead of being written by `snipwise`.
-      # The script refuses the build when the two disagree.
+      # `typst.toml` is the only place the version lives,
+      # so the steps below read it from there.
+      - name: Read the version from the manifest
+        id: manifest
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import tomllib
+
+          with open("typst.toml", "rb") as handle:
+              print("version=" + tomllib.load(handle)["package"]["version"])
+          PY
+
       - name: Build the publishable subtree
-        run: >-
-          ./tools/build_package.py
-          --destination build/package
-          --expect-version ${{ inputs.version || github.ref }}
+        run: ./tools/build_package.py --destination build/package
 
       # The checker reads the subtree that is submitted, which is not the working tree,
       # so it is pointed at the copy above rather than at the checkout.
+      # It runs as a container rather than through its own GitHub Action,
+      # because that action expects credentials for a GitHub App
+      # that a personal repository does not have.
       - name: Check the package as it would be submitted
         run: >-
           docker run -v ${{ github.workspace }}/build/package:/data
           ghcr.io/typst/package-check check
 
+      # A manifest whose version has no section in the changelog fails here,
+      # which is the point at which the notes are still an edit away.
       - name: Extract the release notes
         run: >-
-          ./tools/release_notes.py ${{ inputs.version || github.ref }}
+          ./tools/release_notes.py ${{ steps.manifest.outputs.version }}
           > build/release-notes.md
 
       - name: Pack the subtree
-        run: tar -czf build/animo-${{ inputs.version || github.ref_name }}.tar.gz -C build/package .
+        run: >-
+          tar -czf build/animo-${{ steps.manifest.outputs.version }}.tar.gz
+          -C build/package .
 
       - uses: actions/upload-artifact@v5
         with:
           name: package
           path: build/package
 
-      # Only a tag publishes. A manual run stops at the artifact above, which is what
-      # makes the steps exercisable without creating a release.
+      # The agreement between the tag and the manifest is a mapping rather than a copy,
+      # so it is checked here instead of being written by `snipwise`.
+      - name: Check the tag against the manifest
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          VERSION: ${{ steps.manifest.outputs.version }}
+        run: |
+          tagged="${GITHUB_REF_NAME#v}"
+          if [ "$tagged" != "$VERSION" ]; then
+            echo "::error::the tag says $tagged and typst.toml says $VERSION"
+            exit 1
+          fi
+          echo "the tag and typst.toml both say $VERSION"
+
+      # Only a tag publishes.
+      # A push to main and a pull request stop at the artefact above,
+      # which is what makes the steps exercisable without creating a release.
       - name: Publish the GitHub release
         if: startsWith(github.ref, 'refs/tags/v')
         env:
@@ -72,4 +136,4 @@ jobs:
           gh release create ${{ github.ref_name }}
           --title ${{ github.ref_name }}
           --notes-file build/release-notes.md
-          build/animo-${{ github.ref_name }}.tar.gz
+          build/animo-${{ steps.manifest.outputs.version }}.tar.gz

@@ -96,21 +96,7 @@ def main() -> int:
         default=ROOT / "build" / "package",
         help="where to write the subtree, emptied first",
     )
-    parser.add_argument(
-        "--expect-version",
-        help="a version, or a `v`-prefixed tag, that has to match the manifest",
-    )
     args = parser.parse_args()
-
-    version = manifest()["version"]
-    if args.expect_version is not None:
-        expected = args.expect_version.removeprefix("refs/tags/").removeprefix("v")
-        if expected != version:
-            print(
-                f"the tag says {expected} and typst.toml says {version}",
-                file=sys.stderr,
-            )
-            return 1
 
     files = build(args.destination)
     entrypoint = args.destination / manifest()["entrypoint"]
