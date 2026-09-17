@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 
 <!-- snipwise.md BEGIN tagline -->
 
-Animo powers both dynamic HTML and static PDF presentations.
+Animo builds both dynamic HTML and static PDF presentations using [typst](https://typst.app/).
 
 <!-- snipwise.md END tagline -->
 

@@ -3,7 +3,7 @@
   "title": "Animo",
   "version": "0.1.0",
   "publication_date": "2026-09-16",
-  "description": "Animo powers both dynamic HTML and static PDF presentations.",
+  "description": "Animo builds both dynamic HTML and static PDF presentations using typst.",
   "creators": [
     {
       "name": "Verstraelen, Toon",

@@ -33,12 +33,15 @@ snippets = ["tagline"]
 render = "{{ content | plain | unwrap }}"
 
 # The description of the package manifest, which Typst Universe shows next to the package name.
+# It is a snippet of its own rather than the tagline,
+# because Typst Universe asks a description to be one imperative sentence
+# of about forty to sixty characters that does not repeat the name of the package.
 [[targets]]
 patterns = ["typst.toml"]
 scanner = "regex"
 regex = '(?m)^description = "(?P<content>[^"]*)"$'
-snippets = ["tagline"]
-render = "{{ content | plain | unwrap }}"
+snippets = ["description"]
+render = "{{ content | unwrap }}"
 
 # The meta description that every page of the documentation site carries.
 [[targets]]
@@ -71,10 +74,15 @@ snippets = ["keywords"]
 render = "{{ content | prefix('- ') }}"
 
 # The keywords of the package manifest, which Typst Universe uses to find the package.
+# The keyword `typst` is dropped here, because every package on Typst Universe is a typst package
+# and a keyword that fits them all narrows a search by nothing.
+# The other release descriptions keep it, because they are read outside the typst ecosystem.
 [[targets]]
 patterns = ["typst.toml"]
 snippets = ["keywords"]
-render = '''{{ content | prefix('"') | suffix('",') }}'''
+render = '''{{
+  content.split("\n") | reject("equalto", "typst") | join("\n") | prefix('"') | suffix('",')
+}}'''
 
 # The keywords of the Zenodo metadata, which is an array of strings and carries no markers.
 [[targets]]
@@ -197,7 +205,13 @@ render = "{{ content | unwrap }}"
 ## `tagline`
 
 ```markdown
-Animo powers both dynamic HTML and static PDF presentations.
+Animo builds both dynamic HTML and static PDF presentations using [typst](https://typst.app/).
+```
+
+## `description`
+
+```text
+Build dynamic HTML and static PDF presentations.
 ```
 
 ## `keywords`
