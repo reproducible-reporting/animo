@@ -26,14 +26,21 @@ def manifest() -> dict:
         return tomllib.load(handle)["package"]
 
 
-def tracked() -> list[Path]:
-    """Every file git tracks, as paths relative to the repository root.
+def ls_files(*arguments: str) -> list[Path]:
+    """The files `git ls-files` reports, as paths relative to the repository root.
 
-    Tracked files rather than a directory walk, because a build product is never part of a
-    release and a directory walk would have to learn `.gitignore` to know that.
+    Parameters
+    ----------
+    arguments
+        Further arguments for `git ls-files`.
+
+    Returns
+    -------
+    paths
+        The reported files, in the order git reports them.
     """
     result = subprocess.run(
-        ["git", "-C", str(ROOT), "ls-files", "-z"],
+        ["git", "-C", str(ROOT), "ls-files", "-z", *arguments],
         capture_output=True,
         check=True,
         text=True,
@@ -41,26 +48,41 @@ def tracked() -> list[Path]:
     return [Path(name) for name in result.stdout.split("\0") if name]
 
 
-def included(path: Path, exclude: list[str]) -> bool:
-    """Whether a tracked file belongs in the published archive.
+def tracked() -> list[Path]:
+    """Every file git tracks, as paths relative to the repository root.
+
+    Tracked files rather than a directory walk, because a build product is never part of a
+    release and a directory walk would have to learn `.gitignore` to know that.
+    """
+    return ls_files()
+
+
+def excluded(patterns: list[str]) -> set[Path]:
+    """The tracked files that the `exclude` list of the manifest matches.
 
     Parameters
     ----------
-    path
-        The file, relative to the repository root.
-    exclude
-        The `exclude` list of the manifest, whose entries are files or directories.
+    patterns
+        The `exclude` list of the manifest.
 
     Returns
     -------
-    included
-        Whether the file is neither excluded itself nor inside an excluded directory.
+    excluded
+        The matching files, relative to the repository root.
+
+    Notes
+    -----
+    An entry of that list is a glob with the semantics of a line of a `.gitignore` file, as
+    the manifest format of typst defines it.
+    A pattern matches at any depth, and a leading slash anchors it to the repository root,
+    so the matching is left to git rather than reimplemented here.
+    The standard exclude sources are left out, because a file that `.gitignore` covers is
+    untracked and therefore already absent.
     """
-    parts = path.parts
-    return not any(
-        path == Path(entry) or parts[: len(Path(entry).parts)] == Path(entry).parts
-        for entry in exclude
-    )
+    if len(patterns) == 0:
+        return set()
+    arguments = ["--cached", "--ignored", *(f"--exclude={pattern}" for pattern in patterns)]
+    return set(ls_files(*arguments))
 
 
 def build(destination: Path) -> list[Path]:
@@ -76,8 +98,8 @@ def build(destination: Path) -> list[Path]:
     files
         The files that were copied, relative to the repository root.
     """
-    exclude = manifest().get("exclude", [])
-    files = [path for path in tracked() if included(path, exclude)]
+    dropped = excluded(manifest().get("exclude", []))
+    files = [path for path in tracked() if path not in dropped]
     if destination.exists():
         shutil.rmtree(destination)
     for path in files:
