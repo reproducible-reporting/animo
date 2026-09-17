@@ -14,7 +14,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 (no changes yet)
 
-## [0.1.0] - 2024-09-17
+## [0.1.0] - 2026-09-17
 
 This is the initial release of Animo.
 

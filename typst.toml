@@ -44,7 +44,7 @@ exclude = [
   "CLAUDE.md",
   "conftest.py",
   "CONTRIBUTING.md",
-  "docs",
+  "/docs",
   "examples",
   "planning",
   "probes",
@@ -52,7 +52,8 @@ exclude = [
   "REUSE.toml",
   "setup.sh",
   "snipwise.md",
-  "tests",
+  "/tests",
   "tools",
+  "uv.lock",
   "zensical.toml",
 ]
