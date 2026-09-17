@@ -14,8 +14,7 @@ SPDX-License-Identifier: Apache-2.0
 
 <!-- snipwise.md BEGIN tagline -->
 
-Animo is a presentation package for [typst](https://typst.app/)
-that supports both dynamic HTML and static PDF outputs.
+Animo powers both dynamic HTML and static PDF presentations.
 
 <!-- snipwise.md END tagline -->
 

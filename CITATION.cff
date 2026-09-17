@@ -8,7 +8,7 @@ title: Animo
 type: software
 url: https://reproducible-reporting.github.io/animo
 abstract: >-
-  Animo is a presentation package for typst that supports both dynamic HTML and static PDF outputs.
+  Animo powers both dynamic HTML and static PDF presentations.
 authors:
   - family-names: Verstraelen
     given-names: Toon

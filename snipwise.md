@@ -178,8 +178,7 @@ render = "{{ content | unwrap }}"
 ## `tagline`
 
 ```markdown
-Animo is a presentation package for [typst](https://typst.app/)
-that supports both dynamic HTML and static PDF outputs.
+Animo powers both dynamic HTML and static PDF presentations.
 ```
 
 ## `keywords`

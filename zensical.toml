@@ -4,7 +4,7 @@
 [project]
 site_name = "Animo"
 site_url = "https://reproducible-reporting.github.io/animo/"
-site_description = "Animo is a presentation package for typst that supports both dynamic HTML and static PDF outputs."
+site_description = "Animo powers both dynamic HTML and static PDF presentations."
 site_author = "Toon Verstraelen"
 copyright = "Copyright &copy; 2026 Toon Verstraelen"
 

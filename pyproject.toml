@@ -8,7 +8,7 @@
 [project]
 name = "animo"
 version = "0.1.0"
-description = "Animo is a presentation package for typst that supports both dynamic HTML and static PDF outputs."
+description = "Animo powers both dynamic HTML and static PDF presentations."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.14"

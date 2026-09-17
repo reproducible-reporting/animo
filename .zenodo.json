@@ -3,7 +3,7 @@
   "title": "Animo",
   "version": "0.1.0",
   "publication_date": "2026-09-16",
-  "description": "Animo is a presentation package for typst that supports both dynamic HTML and static PDF outputs.",
+  "description": "Animo powers both dynamic HTML and static PDF presentations.",
   "creators": [
     {
       "name": "Verstraelen, Toon",
