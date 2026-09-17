@@ -5,6 +5,7 @@
 name: zensical
 
 on:
+  workflow_dispatch:
   push:
     branches:
       # Every commit on the main branch republishes the site,

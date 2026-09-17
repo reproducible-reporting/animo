@@ -5,6 +5,7 @@
 name: pytest
 
 on:
+  workflow_dispatch:
   push:
     branches:
       # Run the suite for a change on the main branch ...
