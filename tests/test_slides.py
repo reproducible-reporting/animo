@@ -62,9 +62,7 @@ def test_a_slide_without_placements_has_canvas_equal_to_viewport(typst: TypstRun
 
 
 @pytest.mark.parametrize("html", [False, True])
-def test_a_slide_that_never_pans_takes_the_viewport_whatever_it_places(
-    typst: TypstRunner, html
-):
+def test_a_slide_that_never_pans_takes_the_viewport_whatever_it_places(typst: TypstRunner, html):
     """The canvas of such a slide is unobservable, so animo does not pay to compute it.
 
     `pan` is the only reader of the canvas, and the viewport clips in both targets, so a
@@ -270,7 +268,7 @@ def test_a_transition_that_is_none_of_them_is_refused(typst: TypstRunner, html):
 @pytest.mark.parametrize("mode", ["handout", "presentation"])
 @pytest.mark.parametrize("value", ["auto", "none", '"crossfade"'])
 def test_a_transition_leaves_the_paged_outputs_byte_identical(typst: TypstRunner, value, mode):
-    """"Ignored in the paged outputs" means the bytes and not merely the look.
+    """ "Ignored in the paged outputs" means the bytes and not merely the look.
 
     Two consecutive pages have nothing between them to describe, so a transition may not
     reach either paged output at all. SVG rather than PDF, because a PDF carries the

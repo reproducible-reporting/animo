@@ -162,12 +162,7 @@ def test_a_region_inside_a_cetz_canvas_is_refused(typst: TypstRunner):
 
     The message names the way out, which is a region around the canvas rather than in it.
     """
-    body = (
-        "#cetz.canvas({\n"
-        "    import cetz.draw: *\n"
-        "    region(grid((0, 0), (4, 2)))\n"
-        "  })"
-    )
+    body = "#cetz.canvas({\n    import cetz.draw: *\n    region(grid((0, 0), (4, 2)))\n  })"
     result = typst.fails(
         cetz_deck(typst, f"slide[\n  {body}\n]"),
         "is not content, but array",
@@ -196,9 +191,7 @@ def test_replacing_part_of_an_equation_reflows_only_that_equation(paged: PagedRu
         '  $ a + #tag("b")[$b$] = c $\n\n'
         "  A paragraph below the equation."
     )
-    pages = paged.png(
-        deck(f"slide(animation: {animation})[\n  {body}\n]"), mode="presentation"
-    )
+    pages = paged.png(deck(f"slide(animation: {animation})[\n  {body}\n]"), mode="presentation")
     assert len(pages) == 2
     changed = difference_box(*pages)
     assert_identical_outside(pages[0], pages[1], band_of(pages, changed), what="the two states")

@@ -28,6 +28,9 @@ DURATION = 1000
 PAGE = """<!doctype html>
 <div id="target" style="width: 50px; height: 50px; background: red; opacity: 1"></div>"""
 
+# The JavaScript below is full of braces,
+# so percent formatting is what keeps it readable as JavaScript:
+# an f-string or `str.format` would have to double every one of them.
 DURING_THE_DELAY = """fill => {
     const target = document.getElementById("target");
     const animation = target.animate(
@@ -37,7 +40,7 @@ DURING_THE_DELAY = """fill => {
     animation.pause();
     animation.currentTime = %d;
     return getComputedStyle(target).opacity;
-}""" % (DURATION, DELAY, DELAY / 2)
+}""" % (DURATION, DELAY, DELAY / 2)  # noqa: UP031
 
 AFTER_IT_FINISHES = """fill => {
     const target = document.getElementById("target");
@@ -47,7 +50,7 @@ AFTER_IT_FINISHES = """fill => {
     );
     animation.finish();
     return document.getAnimations().length;
-}""" % (DURATION, DELAY)
+}""" % (DURATION, DELAY)  # noqa: UP031
 
 
 @pytest.fixture

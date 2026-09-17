@@ -463,9 +463,7 @@ def test_how_far_a_groups_blend_reaches_past_its_frame_differs_by_engine(
     )
 
 
-def test_isolating_the_frame_confines_a_groups_blend_in_every_engine(
-    typst: TypstRunner, open_page
-):
+def test_isolating_the_frame_confines_a_groups_blend_in_every_engine(typst: TypstRunner, open_page):
     """Where the isolation has to sit for the containment to hold in all three engines.
 
     The probe above measures a blend on a group escaping to the page in webkit 26.5, past an

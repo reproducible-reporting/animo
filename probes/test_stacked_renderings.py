@@ -69,7 +69,7 @@ def test_opacity_selects_within_the_frame_that_is_shown(typst: TypstRunner, open
     of one `per-subslide` are, and only the selected one has any ink.
     """
     frames = [
-        '#box(width: 30pt, height: 30pt)[\n'
+        "#box(width: 30pt, height: 30pt)[\n"
         "  #place(dx: 0pt, dy: 0pt)[#box(rect(width: 30pt, height: 30pt, fill: red))"
         '#label("front")]\n'
         "  #place(dx: 0pt, dy: 0pt)[#box(rect(width: 30pt, height: 30pt, fill: blue))"

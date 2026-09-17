@@ -231,9 +231,7 @@ class Deck:
         the page weight follows, since typst defines a glyph once per frame that uses it.
         """
         slide, _ = self.position
-        return self.page.locator(
-            f'[data-animo-slide="{slide}"] > .animo-canvas > svg'
-        ).count()
+        return self.page.locator(f'[data-animo-slide="{slide}"] > .animo-canvas > svg').count()
 
     @property
     def painting(self) -> list[bool]:
@@ -412,9 +410,7 @@ class Deck:
         A step animates, so a test that asserts about the state it lands in has to wait
         for the motion to end rather than measure halfway through it.
         """
-        self.page.wait_for_function(
-            "() => document.getAnimations().length === 0", timeout=timeout
-        )
+        self.page.wait_for_function("() => document.getAnimations().length === 0", timeout=timeout)
         return self
 
     def scrub(self, moment: float) -> Deck:

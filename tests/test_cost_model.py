@@ -49,8 +49,7 @@ SLIDES = {
         2,
     ),
     "unwanted": (
-        "slide(animation: {import anim: *\n"
-        'sub(handout: false, reveal("d"))})[#tag("d")[d]]',
+        'slide(animation: {import anim: *\nsub(handout: false, reveal("d"))})[#tag("d")[d]]',
         2,
         1,
         0,

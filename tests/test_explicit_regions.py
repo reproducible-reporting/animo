@@ -102,7 +102,7 @@ def test_a_region_with_a_width_measures_its_epochs_at_that_width(typst: TypstRun
 def test_a_ratio_width_is_a_ratio_of_the_container(typst: TypstRunner):
     """Half of the body's 14 cm."""
     body = '#region(width: 50%)[#tag("t")[x]]'
-    source = deck(f"slide(animation: {timeline('sub(remove(\"t\"))')})[{body}]") + check(
+    source = deck(f"slide(animation: {timeline('sub(remove("t"))')})[{body}]") + check(
         "assert(footprints(1).all(it => close(it.width, 7cm)))",
     )
     typst.ok(source, **PRESENTATION)
@@ -197,10 +197,7 @@ def test_measurements_are_linear_in_epochs(typst: TypstRunner):
         'sub(move("a", dx: 1cm))',
         'sub(apply("c", emph), reset("d"))',
     )
-    body = (
-        '#region[#tag("a")[a] #tag("b")[b]\n'
-        '#region[#tag("c")[c] #tag("d")[d]]]'
-    )
+    body = '#region[#tag("a")[a] #tag("b")[b]\n#region[#tag("c")[c] #tag("d")[d]]]'
     source = deck(f"slide(animation: {animation})[{body}]") + check(
         "for id in (1, 2) {",
         "  let found = footprints(id)",
@@ -246,11 +243,11 @@ CHANGED_REGIONS = (
     "let members = members-of(1)",
     "let holders(e) = changed-members(plan.epochs, e, members)",
     "let changed = range(1, 7).map(e => holders(e).map(it => it.key))",
-    "let region(id) = (kind: \"region\", id: id)",
-    "let implicit(name) = (kind: \"tag\", name: name)",
+    'let region(id) = (kind: "region", id: id)',
+    'let implicit(name) = (kind: "tag", name: name)',
     "assert.eq(changed.at(0), (region(1),))",
     "assert.eq(changed.at(1), (region(2),))",
-    "assert.eq(changed.at(2), (region(1),), message: \"the inner region is redrawn by the outer\")",
+    'assert.eq(changed.at(2), (region(1),), message: "the inner region is redrawn by the outer")',
     'assert.eq(changed.at(3), (implicit("free"),))',
     'assert.eq(changed.at(4), (implicit("slot"),))',
 )
@@ -286,7 +283,7 @@ def test_a_named_region_is_a_site_the_timeline_can_address(typst: TypstRunner):
     animation = timeline('sub(move("r", dx: 1cm), pan(relto: "r"))', 'sub(replace("t")[longer])')
     body = 'Above.\n#region(name: "r")[#tag("t")[short]]'
     source = deck(f"slide(animation: {animation})[{body}]") + check(
-        'assert.eq(query(<r>).len(), 3)',
+        "assert.eq(query(<r>).len(), 3)",
         # The outer slot holds the anchor, the footprint report and then the display state.
         "assert.eq(query(<r>).map(it => it.body.children.last().dx), (0pt, 1cm, 1cm))",
     )
@@ -296,7 +293,9 @@ def test_a_named_region_is_a_site_the_timeline_can_address(typst: TypstRunner):
 
 def test_a_region_outside_a_slide_is_refused(typst: TypstRunner):
     """The diagnosis names the region."""
-    typst.fails(deck("slide[x]") + '#region(name: "lost")[x]', "the region lost is not inside a #slide")
+    typst.fails(
+        deck("slide[x]") + '#region(name: "lost")[x]', "the region lost is not inside a #slide"
+    )
 
 
 def test_a_region_around_something_that_is_not_content_is_refused(typst: TypstRunner):
@@ -307,9 +306,7 @@ def test_a_region_around_something_that_is_not_content_is_refused(typst: TypstRu
 def test_a_structural_step_on_a_region_name_is_refused(typst: TypstRunner):
     """A region's name is for the continuous primitives; its content is changed through tags."""
     animation = timeline('sub(replace("r")[new])')
-    typst.fails(
-        deck(f'slide(animation: {animation})[#region(name: "r")[old]]'), "names a region"
-    )
+    typst.fails(deck(f'slide(animation: {animation})[#region(name: "r")[old]]'), "names a region")
 
 
 def test_region_arguments_are_checked(typst: TypstRunner):
@@ -325,7 +322,7 @@ def test_a_region_measured_without_a_width_takes_its_natural_size(typst: TypstRu
     animation = timeline('sub(replace("t")[longer content])')
     body = '#tag("outer")[#region[#tag("t")[short]]]'
     source = deck(f"slide(animation: {animation})[{body}]") + check(
-        'assert.eq(query(<outer>).first().func(), block)',
+        "assert.eq(query(<outer>).first().func(), block)",
     )
     typst.ok(source, **PRESENTATION)
 
@@ -339,7 +336,8 @@ def test_nothing_outside_a_region_changes_while_its_inside_reflows(paged: PagedR
     animation = timeline(f'sub(replace("t")[{long}])', 'sub(remove("t"))')
     body = (
         f"#{colored('#0000ff', '2cm', '5mm')}\n"
-        f'#region[#tag("t", wrap: block)[A short paragraph.]\n#{colored("#ff0000", "2cm", "5mm")}]\n'
+        '#region[#tag("t", wrap: block)[A short paragraph.]\n'
+        f"#{colored('#ff0000', '2cm', '5mm')}]\n"
         f"#{colored('#00ff00', '2cm', '5mm')}\n"
         "A paragraph after the region."
     )
@@ -374,7 +372,8 @@ def test_a_nested_region_redraws_only_its_own_band(paged: PagedRunner):
     band = Box(0, above.y1, pages[0].shape[1], below.y0)
     assert_identical_outside(pages[0], pages[1], band, what="the two states")
     changed = difference_box(pages[0], pages[1])
-    assert changed is not None and changed.y1 - changed.y0 > 20, f"nothing reflowed: {changed}"
+    assert changed is not None, "nothing reflowed"
+    assert changed.y1 - changed.y0 > 20, f"the reflow was too small: {changed}"
 
 
 def test_a_region_with_a_height_clips_what_does_not_fit(paged: PagedRunner):

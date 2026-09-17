@@ -168,10 +168,13 @@ def test_reduced_motion_snaps_a_boundary(page, browser_name, deck_at, typst: Typ
     """
     page.emulate_media(reduced_motion="reduce")
     presentation: Deck = deck_at(typst.html(DECK, name="reduced.html")).goto(2)
-    assert page.evaluate(
-        "() => getComputedStyle(document.documentElement)"
-        ".getPropertyValue('--animo-transition-duration').trim()"
-    ) == "0s"
+    assert (
+        page.evaluate(
+            "() => getComputedStyle(document.documentElement)"
+            ".getPropertyValue('--animo-transition-duration').trim()"
+        )
+        == "0s"
+    )
     presentation.press("ArrowRight")
     assert presentation.position == (3, 0)
     assert presentation.animating == []

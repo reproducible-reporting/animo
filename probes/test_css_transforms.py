@@ -9,6 +9,8 @@ the `transform-box` that fixes it moves any group that carries a transform of ty
 All three fail silently, by moving content rather than by raising anything.
 """
 
+from itertools import pairwise
+
 import numpy as np
 import pytest
 from harness import TypstRunner, screenshot
@@ -244,9 +246,7 @@ def test_a_paused_animation_interpolates_smoothly(typst: TypstRunner, open_page)
     )
 
 
-def test_a_running_animation_rasterises_as_the_same_inline_style(
-    typst: TypstRunner, open_page
-):
+def test_a_running_animation_rasterises_as_the_same_inline_style(typst: TypstRunner, open_page):
     """The end of a transition is not a moment the audience can see.
 
     A step writes its display state as inline style and animates from the old values to
@@ -330,7 +330,7 @@ def test_a_scaled_glyph_is_drawn_afresh_rather_than_stretched(typst: TypstRunner
             factor,
         )
         ratios.append(edge_band(screenshot(page)))
-    for coarse, fine in zip(ratios, ratios[1:], strict=False):
+    for coarse, fine in pairwise(ratios):
         assert fine < 0.7 * coarse, (
             "a doubled glyph carries as much antialiasing edge per unit of ink as the "
             f"glyph at its own size, so it is being stretched rather than drawn: {ratios}"

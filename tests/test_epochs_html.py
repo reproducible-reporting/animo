@@ -156,9 +156,7 @@ def test_a_slide_has_one_rendering_per_epoch_in_one_frame(deck_at, reflowing):
     assert len(presentation.plan["epochs"]) == 3
 
 
-def test_a_slide_without_structural_steps_has_exactly_one_rendering(
-    deck_at, typst: TypstRunner
-):
+def test_a_slide_without_structural_steps_has_exactly_one_rendering(deck_at, typst: TypstRunner):
     """The cost claim: a deck that changes no content pays nothing for epochs existing."""
     presentation: Deck = deck_at(
         animated(typst, REFLOWING, 'sub(move("claim", x: 1cm))', 'sub(hide("foot"))')
@@ -366,10 +364,7 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
 # A mark of an exact colour on the canvas, at the top left of the body, which is one deck
 # margin in from the corner of the viewport. A blend that reached the slide's own white
 # ground would sum the two and take the mark to white.
-GROUND = (
-    '#place(top + left, rect(width: 2cm, height: 2cm, fill: rgb("#ff0000")))\n\n  '
-    + REFLOWING
-)
+GROUND = '#place(top + left, rect(width: 2cm, height: 2cm, fill: rgb("#ff0000")))\n\n  ' + REFLOWING
 
 
 def test_the_blend_does_not_reach_the_ground_the_slide_is_painted_on(deck_at, typst: TypstRunner):
@@ -466,9 +461,7 @@ def test_a_change_no_region_bounds_redraws_the_whole_rendering(deck_at, unbounde
     ]
 
 
-def test_the_whole_rendering_crossfades_rather_than_cutting(
-    page, deck_at, unbounded, browser_name
-):
+def test_the_whole_rendering_crossfades_rather_than_cutting(page, deck_at, unbounded, browser_name):
     """Both renderings paint while the boundary runs, and the midpoint is their sum.
 
     This is the arithmetic the region crossfade is measured by, over the whole slide
@@ -485,9 +478,7 @@ def test_the_whole_rendering_crossfades_rather_than_cutting(
     )
     shots = crossing(presentation, 1, MIDPOINT, DURATION - 1)
     before, halfway, after = (shot.astype(int) for shot in shots)
-    assert (before != after).any(), (
-        "the slide showed the same thing at both ends of the step"
-    )
+    assert (before != after).any(), "the slide showed the same thing at both ends of the step"
     difference = abs((before + after) / 2 - halfway)
     deviation, pixels = BLEND[browser_name]
     assert difference.max() <= deviation, (

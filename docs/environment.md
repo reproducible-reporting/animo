@@ -61,6 +61,13 @@ A continuous integration job that only runs the test suite uses
 `uv sync --no-default-groups --group tests` instead,
 so it does not build tools it never invokes.
 
+The resolution `uv` arrives at is recorded in `uv.lock`, which is committed.
+The browser tier compares rendered pixels, and the browser a rendering comes from is the
+one the pinned playwright release bundles,
+so a resolution that drifted would move the pixels a test compares.
+Run `uv lock` after editing a dependency, and commit the result with it.
+The `uv-lock` hook fails a commit that leaves the two out of step.
+
 ## The Two Import Paths
 
 Both of these resolve from a single working tree, at the same time.
@@ -100,7 +107,7 @@ Everything a contributor normally needs is a single command:
 
 ```bash
 pytest                        # the test suite
-pre-commit run --all          # formatting and hygiene, including reuse and snipwise
+pre-commit run --all          # formatting and hygiene, from ruff to reuse and snipwise
 ./tools/build_examples.py     # every example deck, to every output type
 zensical build --strict       # the documentation site, decks included
 zensical serve                # the same site, with live reload

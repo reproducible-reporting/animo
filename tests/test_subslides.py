@@ -143,7 +143,7 @@ def test_the_slide_flag_hands_out_the_initial_state(paged: PagedRunner):
 
 
 def test_the_slide_flag_and_the_step_flag_choose_their_pages_independently(paged: PagedRunner):
-    """"Keep the first" and "drop the last" are the same slide's business, and neither
+    """ "Keep the first" and "drop the last" are the same slide's business, and neither
     says anything about the other."""
     animation = timeline('sub(handout: false, move("m", dx: 3cm))')
     source = paged.typst.source(
@@ -182,9 +182,7 @@ def test_the_static_presentation_ignores_the_slide_flag(paged: PagedRunner, flag
         mode="presentation",
     )
     stated = paged.png(
-        paged.typst.source(
-            deck(f"slide(handout: {flag}, animation: {animation})[{body}]")
-        ),
+        paged.typst.source(deck(f"slide(handout: {flag}, animation: {animation})[{body}]")),
         mode="presentation",
     )
     assert len(stated) == len(plain)

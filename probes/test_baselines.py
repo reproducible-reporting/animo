@@ -90,9 +90,7 @@ def test_a_fixed_size_box_still_takes_its_baseline_from_its_content(typst: Typst
 
 
 @pytest.mark.parametrize("label", ["after", "next"])
-def test_a_box_with_placed_content_and_a_pinned_baseline_holds_its_line(
-    typst: TypstRunner, label
-):
+def test_a_box_with_placed_content_and_a_pinned_baseline_holds_its_line(typst: TypstRunner, label):
     """The rest of the line and the next paragraph are where they are in every epoch."""
     typst.ok(
         PRELUDE

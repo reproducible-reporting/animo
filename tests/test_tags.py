@@ -459,7 +459,7 @@ def test_a_label_of_the_documents_own_is_not_a_tag_site(typst: TypstRunner):
     animation = timeline('sub(move("nowhere", dx: 3cm))')
     source = deck(
         'slide[#tag("here")[here]]',
-        f'slide(animation: {animation})[A paragraph with #box[a labelled box]<nowhere>.]',
+        f"slide(animation: {animation})[A paragraph with #box[a labelled box]<nowhere>.]",
     )
     result = typst.fails(source, NO_GROUP, html=True)
     assert "a label the document wrote itself is not a tag site" in result.stderr
@@ -487,10 +487,7 @@ def test_a_move_relative_to_a_tag_without_a_wrapper_is_refused(typst: TypstRunne
     """With no group there is no corner, in the browser as on paper."""
     animation = timeline('sub(move("here", relto: "plain"))')
     result = typst.fails(
-        deck(
-            f'slide(animation: {animation})'
-            '[#tag("here")[here] #tag("plain", [x], wrap: none)]'
-        ),
+        deck(f'slide(animation: {animation})[#tag("here")[here] #tag("plain", [x], wrap: none)]'),
         "the timeline addresses the tag plain with a continuous primitive",
     )
     assert "its wrap is none" in result.stderr
@@ -498,10 +495,7 @@ def test_a_move_relative_to_a_tag_without_a_wrapper_is_refused(typst: TypstRunne
 
 BELOW = "reads the anchor of the tag inner, which sits inside the tag outer"
 
-NESTED = (
-    '#place(dx: 2cm, dy: 2cm, tag("outer", wrap: box)'
-    '[before #tag("inner")[middle] after])'
-)
+NESTED = '#place(dx: 2cm, dy: 2cm, tag("outer", wrap: box)[before #tag("inner")[middle] after])'
 
 
 @pytest.mark.parametrize(

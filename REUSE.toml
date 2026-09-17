@@ -8,11 +8,13 @@ version = 1
 # whose content is the path it points at.
 # The recorded benchmarks are JSON as well, and are written by a step rather than by hand,
 # so a header could not survive being rewritten even if the format allowed one.
+# The same holds for `uv.lock`, which `uv` rewrites whenever it resolves.
 [[annotations]]
 path = [
     ".zenodo.json",
     ".typst-packages/preview/animo/**",
     "benchmarks/results/**",
+    "uv.lock",
 ]
 SPDX-FileCopyrightText = "2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>"
 SPDX-License-Identifier = "Apache-2.0"

@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Software environment
+# `uv.lock` is committed, because the test suite compares rendered pixels
+# and the bundled browser a rendering comes from is the one this lock file names.
 .venv/
-uv.lock
 
 # Development tools
 .idea/

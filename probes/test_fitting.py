@@ -89,9 +89,9 @@ def test_a_length_over_a_number_fits_the_canvas_in_every_engine(page):
     assert slide["width"] == pytest.approx(WINDOW["width"], abs=0.05)
     assert canvas["x"] == pytest.approx(0, abs=0.05)
     assert canvas["y"] == pytest.approx(0, abs=0.05)
-    assert canvas["width"] == pytest.approx(
-        WINDOW["width"] * CANVAS / WIDTH, abs=0.05
-    ), "the canvas is not the width its size in typst points asks for"
+    assert canvas["width"] == pytest.approx(WINDOW["width"] * CANVAS / WIDTH, abs=0.05), (
+        "the canvas is not the width its size in typst points asks for"
+    )
 
 
 def test_the_unit_follows_the_window(page):

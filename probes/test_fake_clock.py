@@ -54,7 +54,7 @@ PAGE = """<!doctype html>
     setTimeout(advance, %d);
   }
   setTimeout(advance, %d);
-</script>""" % (STEP, STEP)
+</script>""" % (STEP, STEP)  # noqa: UP031
 
 COUNT = "() => Number(document.documentElement.dataset.count ?? 0)"
 
@@ -67,7 +67,9 @@ ARMING = """<!doctype html>
   window.fired = [];
   window.arm = (delay) => setTimeout(() => window.fired.push(delay), delay);
   %s
-</script>""" % "\n  ".join(f"arm({length});" for length in LENGTHS)
+</script>""" % "\n  ".join(  # noqa: UP031
+    f"arm({length});" for length in LENGTHS
+)
 
 FIRED = "() => window.fired"
 

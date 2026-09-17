@@ -61,10 +61,7 @@ LINE = '#tag("a", wrap: block)[A line that starts out hidden.]'
 SECOND = 1000
 
 PLAYING = deck(
-    'slide(animation: { import anim: *\n'
-    '  sub(wait: 1, reveal("a"))\n'
-    "  sub()\n"
-    f"}})[\n  {LINE}\n]",
+    f'slide(animation: {{ import anim: *\n  sub(wait: 1, reveal("a"))\n  sub()\n}})[\n  {LINE}\n]',
     "slide(wait: 1)[= Second]",
 )
 
@@ -78,7 +75,7 @@ def playing(typst: TypstRunner):
 # The same deck timed from the other side: `hold:` names the gap after the step it is
 # written on, where `wait:` names the gap before it, so these two decks run identically.
 HELD = deck(
-    'slide(hold: 1, animation: { import anim: *\n'
+    "slide(hold: 1, animation: { import anim: *\n"
     '  sub(hold: 1, reveal("a"))\n'
     "  sub()\n"
     f"}})[\n  {LINE}\n]",
@@ -94,7 +91,7 @@ def held(typst: TypstRunner):
 
 # Two automatic gaps in a row, which is what backward travel has to get through.
 CHAINED = deck(
-    'slide(animation: { import anim: *\n'
+    "slide(animation: { import anim: *\n"
     '  sub(wait: 1, reveal("a"))\n'
     "  sub(wait: 1)\n"
     "  sub()\n"
@@ -128,7 +125,7 @@ def joined(typst: TypstRunner):
 # it is passing through, because a zero-length timer armed while the page loads is not held
 # by the fake clock. See *Findings*.
 RUN_ON = deck(
-    'slide(animation: { import anim: *\n'
+    "slide(animation: { import anim: *\n"
     '  sub(reveal("a"))\n'
     "  sub(hold: 0)\n"
     "  sub()\n"
@@ -148,7 +145,7 @@ def run_on(typst: TypstRunner):
 # A join with a gap of a second in front of it, which gives the pause key a clock to stop:
 # a stopped deck arms no timer at all, so a zero-length gap can be rested on here.
 PACED = deck(
-    'slide(animation: { import anim: *\n'
+    "slide(animation: { import anim: *\n"
     '  sub(hold: 1, reveal("a"))\n'
     "  sub(hold: 0)\n"
     "  sub()\n"
@@ -165,7 +162,7 @@ def paced(typst: TypstRunner):
 # A gap the presenter owns, and a run of three automatic gaps behind it. One press forward
 # takes the deck over the whole run, and one press back has to bring it back over.
 TRAVELLED = deck(
-    'slide(animation: { import anim: *\n'
+    "slide(animation: { import anim: *\n"
     '  sub(reveal("a"))\n'
     "  sub(wait: 1)\n"
     "  sub(wait: 1)\n"
@@ -290,9 +287,7 @@ def test_backward_travel_carries_on_over_an_automatic_gap(timed_deck_at, travell
     assert presentation.position == (1, 1)
 
 
-def test_backward_travel_stops_where_the_deck_waits_for_the_presenter(
-    timed_deck_at, playing
-):
+def test_backward_travel_stops_where_the_deck_waits_for_the_presenter(timed_deck_at, playing):
     """A gap the presenter owns is one the clock never crosses, in either direction.
 
     This is the shape of a build that runs into the next slide on a timer. The boundary is
@@ -335,9 +330,7 @@ def test_backward_travel_stops_at_the_first_state_of_the_deck(timed_deck_at, pla
     assert presentation.position == (1, 0), "the clock took the deck back forward"
 
 
-def test_a_forward_step_puts_back_the_clock_backward_travel_stopped(
-    timed_deck_at, chained
-):
+def test_a_forward_step_puts_back_the_clock_backward_travel_stopped(timed_deck_at, chained):
     """A reader carried back to the first state expects the deck to play on when they move on."""
     presentation: Deck = timed_deck_at(chained).goto(1, 1)
     presentation.press("ArrowLeft")
@@ -360,9 +353,7 @@ def test_space_puts_back_the_clock_backward_travel_stopped(timed_deck_at, chaine
     assert presentation.position == (1, 1)
 
 
-def test_a_backward_step_over_a_manual_gap_leaves_the_clock_alone(
-    timed_deck_at, playing
-):
+def test_a_backward_step_over_a_manual_gap_leaves_the_clock_alone(timed_deck_at, playing):
     """Only a gap on the clock can defeat backward travel, so only that one stops it.
 
     A deck with no number in it therefore keeps the forward key every presentation remote
@@ -418,9 +409,7 @@ def test_a_backward_step_walks_back_over_a_run_of_joins(timed_deck_at, run_on):
     assert presentation.position == (1, 3), "walking back cost more presses than going did"
 
 
-def test_a_backward_step_walks_back_over_a_slide_the_deck_runs_through(
-    timed_deck_at, flashed
-):
+def test_a_backward_step_walks_back_over_a_slide_the_deck_runs_through(timed_deck_at, flashed):
     """A join spans whatever lies between its two ends, a whole slide included."""
     presentation: Deck = timed_deck_at(flashed)
     presentation.press("ArrowRight").run_for(SECOND)
@@ -429,9 +418,7 @@ def test_a_backward_step_walks_back_over_a_slide_the_deck_runs_through(
     assert presentation.position == (1, 0), "the deck rested on the slide it ran through"
 
 
-def test_a_stopped_clock_does_not_change_where_a_backward_step_lands(
-    timed_deck_at, paced
-):
+def test_a_stopped_clock_does_not_change_where_a_backward_step_lands(timed_deck_at, paced):
     """Where a deck rests is what its timeline says, not what its clock is doing.
 
     A state the deck runs through stays addressable all the same, which is what makes the
@@ -580,9 +567,7 @@ def delayed(typst: TypstRunner):
     )
 
 
-def test_a_delayed_operation_holds_its_first_keyframe_until_it_starts(
-    page, deck_at, delayed
-):
+def test_a_delayed_operation_holds_its_first_keyframe_until_it_starts(page, deck_at, delayed):
     """The trap a delayed effect has to avoid, and the reason the effect fills backwards.
 
     The display state is written as inline style before the animation is created, so an
@@ -659,9 +644,7 @@ def timings(page, field: str) -> list:
     the browser for, and the browser is what says whether it was asked.
     """
     return sorted(
-        page.evaluate(
-            f"() => document.getAnimations().map(a => a.effect.getTiming().{field})"
-        )
+        page.evaluate(f"() => document.getAnimations().map(a => a.effect.getTiming().{field})")
     )
 
 
@@ -699,9 +682,7 @@ def test_an_operation_that_states_nothing_takes_the_decks_own_step(
     So a deck that restates `--animo-primitive-duration` reaches this operation and the one above
     goes on taking what it asked for, which is what `auto` rather than a number is for.
     """
-    presentation: Deck = deck_at(
-        animated(typst, LINE, 'sub(reveal("a"))', name="auto.html")
-    )
+    presentation: Deck = deck_at(animated(typst, LINE, 'sub(reveal("a"))', name="auto.html"))
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
     assert timings(page, "duration") == [DURATION]
@@ -712,9 +693,7 @@ def test_an_operation_that_states_nothing_takes_the_decks_own_step(
     assert timings(page, "duration") == [250]
 
 
-def test_a_stated_duration_still_follows_a_delay_of_its_own(
-    page, deck_at, typst: TypstRunner
-):
+def test_a_stated_duration_still_follows_a_delay_of_its_own(page, deck_at, typst: TypstRunner):
     """The two are one record and become one effect, so a step may say both."""
     presentation: Deck = deck_at(
         animated(
@@ -730,9 +709,7 @@ def test_a_stated_duration_still_follows_a_delay_of_its_own(
     assert timings(page, "duration") == [OWN]
 
 
-def test_a_step_ends_when_the_last_of_its_operations_does(
-    page, deck_at, typst: TypstRunner
-):
+def test_a_step_ends_when_the_last_of_its_operations_does(page, deck_at, typst: TypstRunner):
     """Two durations in one step are two effects, and the step lasts as long as the longer.
 
     Read as the audience sees it: at a moment past the end of the short one and inside the
@@ -742,8 +719,7 @@ def test_a_step_ends_when_the_last_of_its_operations_does(
         animated(
             typst,
             LINE + '\n  #tag("b", wrap: block)[And a second line.]',
-            f'sub(reveal("a", duration: {MIDPOINT / 1000}),'
-            f' reveal("b", duration: {OWN / 1000}))',
+            f'sub(reveal("a", duration: {MIDPOINT / 1000}), reveal("b", duration: {OWN / 1000}))',
             name="two-durations.html",
         )
     )
@@ -776,9 +752,7 @@ def schedule(page) -> dict[str, float]:
     )
 
 
-LINES = "\n  ".join(
-    f'#tag("{name}", wrap: block)[Line {name}.]' for name in "abc"
-)
+LINES = "\n  ".join(f'#tag("{name}", wrap: block)[Line {name}.]' for name in "abc")
 
 # Three operations of one step, arriving one after another, the last of them slower than
 # the deck's own step. The delays alone would not say which order they leave in: what does
@@ -816,9 +790,7 @@ def test_a_backward_step_mirrors_the_schedule(page, deck_at, delayed):
     assert timings(page, "delay") == [0]
 
 
-def test_a_backward_step_reverses_the_order_its_operations_arrived_in(
-    page, deck_at, staggered
-):
+def test_a_backward_step_reverses_the_order_its_operations_arrived_in(page, deck_at, staggered):
     """The last thing the audience saw arrive is the first thing they see leave.
 
     Each operation keeps its own duration and is mirrored about the length of the step, so
@@ -964,9 +936,7 @@ def test_a_delayed_structural_operation_holds_back_its_regions_crossfade(
     ]
 
 
-def test_a_structural_duration_holds_its_regions_crossfade_open(
-    page, deck_at, typst: TypstRunner
-):
+def test_a_structural_duration_holds_its_regions_crossfade_open(page, deck_at, typst: TypstRunner):
     """A long `replace` keeps two frames laid out, and both paint the region while it runs.
 
     The moment sampled is past the end of the deck's own step, so a crossfade that had not
@@ -1022,7 +992,10 @@ def test_a_boundary_overtaken_mid_crossfade_keeps_its_region_opaque(
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
     presentation.scrub(MIDPOINT)
-    ink = lambda: sum(frame["opacity"] for frame in region_paint(presentation, "claim"))
+
+    def ink():
+        return sum(frame["opacity"] for frame in region_paint(presentation, "claim"))
+
     assert ink() == pytest.approx(1, abs=0.01), "the first crossfade did not add to one"
     presentation.press("ArrowRight")
     assert ink() == pytest.approx(1, abs=0.01), "the region dipped when it was overtaken"
@@ -1081,16 +1054,14 @@ JOINING = f"{SLOW}\n:root {{ --animo-transition-duration: {BOUNDARY}ms }}"
 # A build that spills into the next slide: one press starts the step's own motion and the
 # boundary, which is what `hold: 0` is written on a step for.
 SPILLING = deck(
-    'slide(animation: { import anim: *\n'
-    '  sub(hold: 0, reveal("a"))\n'
-    f"}})[\n  {LINE}\n]",
+    f'slide(animation: {{ import anim: *\n  sub(hold: 0, reveal("a"))\n}})[\n  {LINE}\n]',
     "slide[= Second]",
 )
 
 # The same join with something to lay out again on the way, so that walking back over it
 # has an epoch boundary to hand back as well as a display state to undo.
 SPILLING_REGION = deck(
-    'slide(animation: { import anim: *\n'
+    "slide(animation: { import anim: *\n"
     f'  sub(hold: 0, replace("claim")[{LONGER}])\n'
     f"}})[\n  {CLAIM}\n]",
     "slide[= Second]",
@@ -1109,9 +1080,7 @@ def spilling_region(typst: TypstRunner):
     return typst.html(SPILLING_REGION, name="spilling-region.html")
 
 
-def test_a_backward_step_over_a_join_rewinds_the_slide_it_lands_on(
-    page, deck_at, spilling
-):
+def test_a_backward_step_over_a_join_rewinds_the_slide_it_lands_on(page, deck_at, spilling):
     """The slide being entered is below its own last state, and the way back says so.
 
     Going forward the audience saw one motion: the step running inside the slide while the
@@ -1134,9 +1103,7 @@ def test_a_backward_step_over_a_join_rewinds_the_slide_it_lands_on(
     assert 0.4 < halfway < 0.6, f"the line was {halfway} halfway back out"
 
 
-def test_a_backward_step_over_a_join_hands_the_region_back(
-    page, deck_at, spilling_region
-):
+def test_a_backward_step_over_a_join_hands_the_region_back(page, deck_at, spilling_region):
     """The epoch boundary such a step walks back over is crossed rather than snapped.
 
     It is the same handover an ordinary backward step makes, on a slide the deck is
@@ -1159,15 +1126,11 @@ def test_a_backward_step_over_a_join_hands_the_region_back(
 
 STEPPED = deck(
     "slide[= First]",
-    'slide(animation: { import anim: *\n'
-    '  sub(reveal("a"))\n'
-    f"}})[\n  {LINE}\n]",
+    f'slide(animation: {{ import anim: *\n  sub(reveal("a"))\n}})[\n  {LINE}\n]',
 )
 
 
-def test_a_forward_step_snaps_a_slide_that_was_left_further_on(
-    page, deck_at, typst: TypstRunner
-):
+def test_a_forward_step_snaps_a_slide_that_was_left_further_on(page, deck_at, typst: TypstRunner):
     """Only a backward step rewinds the slide it enters, and this is why it is only that one.
 
     A slide keeps the state it was last shown in, so a forward step may enter one that is

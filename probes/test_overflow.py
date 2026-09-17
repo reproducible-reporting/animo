@@ -33,7 +33,9 @@ def blocks(kind: str = "block", height: str = "100pt", count: int = 24) -> str:
     block(width: 100%)[#metadata(i)#label("blk")Block #i]
   }
 }))
-""".replace("KIND", kind).replace("HEIGHT", height).replace("COUNT", str(count))
+""".replace("KIND", kind)
+        .replace("HEIGHT", height)
+        .replace("COUNT", str(count))
     )
 
 

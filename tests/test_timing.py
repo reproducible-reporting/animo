@@ -32,9 +32,7 @@ PRELUDE = """\
 """
 
 
-def resolved(
-    timeline: str, *assertions: str, wait: str = "none", hold: str = "none"
-) -> str:
+def resolved(timeline: str, *assertions: str, wait: str = "none", hold: str = "none") -> str:
     """A document that resolves a timeline and asserts about the result.
 
     Parameters
@@ -149,13 +147,9 @@ def test_every_primitive_takes_a_duration(typst: TypstRunner, operation):
 
 
 @pytest.mark.parametrize("value", ['"slow"', "200%", "true"])
-def test_a_duration_that_is_neither_a_number_nor_auto_is_refused(
-    typst: TypstRunner, value
-):
+def test_a_duration_that_is_neither_a_number_nor_auto_is_refused(typst: TypstRunner, value):
     """`auto` is the one non-number it takes, and a ratio is not a multiple of anything."""
-    typst.fails(
-        resolved(f'sub(reveal("a", duration: {value}))'), "as a number of seconds"
-    )
+    typst.fails(resolved(f'sub(reveal("a", duration: {value}))'), "as a number of seconds")
 
 
 def test_a_negative_duration_is_refused(typst: TypstRunner):
@@ -425,8 +419,7 @@ def test_a_duration_lands_beside_the_delay_of_the_same_operation(typst: TypstRun
     typst.ok(
         resolved(
             'sub(reveal("a", delay: 0.5, duration: 2))',
-            "#assert.eq(plan.states.at(1).timing.tags.a.opacity,"
-            " (delay: 0.5, duration: 2.0))",
+            "#assert.eq(plan.states.at(1).timing.tags.a.opacity, (delay: 0.5, duration: 2.0))",
         )
     )
 
@@ -488,7 +481,7 @@ def test_a_timeline_that_times_nothing_carries_no_timing(typst: TypstRunner):
         resolved(
             'sub(reveal("a"), pan(dx: 1cm))',
             "#context {",
-            '  let states = browser-plan(plan, names, ()).states',
+            "  let states = browser-plan(plan, names, ()).states",
             '  assert.eq(states.at(1).keys(), ("tags", "pan", "epoch"))',
             "}",
         )
@@ -501,7 +494,7 @@ def test_a_timed_timeline_carries_both_numbers_in_seconds(typst: TypstRunner):
         resolved(
             'sub(wait: 2, reveal("a", delay: 0.2))',
             "#context {",
-            '  let states = browser-plan(plan, names, ()).states',
+            "  let states = browser-plan(plan, names, ()).states",
             "  assert.eq(states.at(1).wait, 2.0)",
             "  assert.eq(states.at(1).timing, (tags: (a: (opacity: (delay: 0.2)))))",
             '  assert.eq(states.at(0).keys(), ("tags", "pan", "epoch"))',

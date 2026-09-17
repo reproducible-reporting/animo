@@ -118,9 +118,7 @@ FRONT = '#place(dx: 3cm, dy: 3cm, rect(width: 2cm, height: 2cm, fill: rgb("#0000
 def layered(body: str = "", timeline: str = "") -> str:
     """The three overlapping layers, with whatever else the slide needs in its body."""
     extra = f", animation: {timeline}" if timeline else ""
-    return (
-        f"slide(background: [{BACKDROP}], overlay: [{FRONT}]{extra})[{body}{MIDDLE}]"
-    )
+    return f"slide(background: [{BACKDROP}], overlay: [{FRONT}]{extra})[{body}{MIDDLE}]"
 
 
 def test_the_overlay_is_drawn_over_the_body_and_the_background_under_it(paged: PagedRunner):
@@ -170,7 +168,10 @@ def test_a_layer_is_drawn_identically_on_every_page_of_a_slide(paged: PagedRunne
     # sampled, so that "identically" is the claim and not "present".
     crops = {
         "background": (slice(0, round(CM)), slice(0, round(CM))),
-        "overlay": (slice(round(3.5 * CM), round(4.5 * CM)), slice(round(3.5 * CM), round(4.5 * CM))),
+        "overlay": (
+            slice(round(3.5 * CM), round(4.5 * CM)),
+            slice(round(3.5 * CM), round(4.5 * CM)),
+        ),
     }
     for index, page in enumerate(pages[1:], start=2):
         for layer, (rows, columns) in crops.items():

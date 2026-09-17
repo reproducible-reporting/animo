@@ -35,19 +35,19 @@ def test_a_draw_command_is_an_array_of_closures(typst: TypstRunner):
     package = require(typst, CETZ)
     typst.ok(
         f'#import "{package}"\n'
-        + "#let commands = {\n"
-        + "  import cetz.draw: *\n"
-        + "  grid((0, 0), (4, 2))\n"
-        + "}\n"
-        + "#let state-change = {\n"
-        + "  import cetz.draw: *\n"
-        + "  stroke(red)\n"
-        + "}\n"
-        + "#assert.eq(type(commands), array)\n"
-        + "#assert(commands.all(it => type(it) == function), "
-        + 'message: "a draw command is not a stream of closures")\n'
-        + "#assert.eq(type(state-change), array)\n"
-        + "#assert(state-change.all(it => type(it) == function))\n"
+        "#let commands = {\n"
+        "  import cetz.draw: *\n"
+        "  grid((0, 0), (4, 2))\n"
+        "}\n"
+        "#let state-change = {\n"
+        "  import cetz.draw: *\n"
+        "  stroke(red)\n"
+        "}\n"
+        "#assert.eq(type(commands), array)\n"
+        "#assert(commands.all(it => type(it) == function), "
+        'message: "a draw command is not a stream of closures")\n'
+        "#assert.eq(type(state-change), array)\n"
+        "#assert(state-change.all(it => type(it) == function))\n"
     )
 
 

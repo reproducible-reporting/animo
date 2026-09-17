@@ -73,6 +73,10 @@ markers = [
     "browser: tier 3, a check on the HTML output in chromium",
 ]
 
+[tool.codespell]
+# "retuned" is the past participle of "retune" and not a misspelling of "returned".
+ignore-words-list = "retuned"
+
 [tool.ruff]
 line-length = 100
 target-version = "py314"

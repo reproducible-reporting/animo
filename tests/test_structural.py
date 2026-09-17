@@ -18,7 +18,13 @@ That asserts which content is where without comparing any content.
 
 import pytest
 from decks import deck
-from harness import PagedRunner, TypstRunner, assert_identical, assert_identical_outside
+from harness import (
+    PagedRunner,
+    TypstRunner,
+    assert_identical,
+    assert_identical_outside,
+    difference_box,
+)
 from test_subslides import GREEN, RED, Box, color_box, timeline
 
 BLUE = (0, 0, 255)
@@ -92,9 +98,7 @@ def test_a_tag_that_lays_nothing_out_on_a_page_still_reports_that_page(typst: Ty
 def test_a_wrap_none_tag_changes_its_content_too(typst: TypstRunner):
     """Structural primitives reach a tag site that becomes no group."""
     animation = timeline(f'sub(replace("t")[{marker("new")}])', 'sub(remove("t"))')
-    source = deck(
-        f'slide(animation: {animation})[#tag("t", wrap: none)[{marker("old")}]]'
-    ) + check(
+    source = deck(f'slide(animation: {animation})[#tag("t", wrap: none)[{marker("old")}]]') + check(
         "assert.eq(pages(<old>), (1,))",
         "assert.eq(pages(<new>), (2,))",
     )
@@ -215,7 +219,7 @@ def test_each_tag_measures_every_epoch_once(typst: TypstRunner):
     )
     body = '#tag("a")[a] #tag("b")[b] #tag("c", wrap: block)[c] #tag("d")[d]'
     source = deck(f"slide(animation: {animation})[{body}]") + check(
-        "for name in (\"a\", \"b\", \"c\", \"d\") {",
+        'for name in ("a", "b", "c", "d") {',
         "  let found = footprints(name)",
         "  assert.eq(found.len(), 4, message: name)",
         "  assert(found.all(it => it.measured.len() == 3), message: name)",
@@ -378,7 +382,7 @@ def test_an_inline_footprint_in_the_html_target_is_the_line_it_holds(typst: Typs
     body = 'Before #tag("t", box(width: 1cm, height: 5mm)) after.'
     source = deck(f"slide(animation: {animation})[{body}]") + check(
         'let found = footprints("t")',
-        'assert.eq(found.len(), 2)',
+        "assert.eq(found.len(), 2)",
         "assert(found.all(it => close(it.height, 5mm)), message: repr(found.first()))",
         "assert(found.all(it => close(it.width, 1cm)), message: repr(found.first()))",
     )
@@ -419,7 +423,9 @@ def test_nothing_outside_a_replaced_block_tag_changes(paged: PagedRunner):
     assert color_box(pages[0], GREEN) == color_box(pages[1], GREEN)
 
 
-@pytest.mark.parametrize("step", ["replace(\"w\", box(fill: rgb(\"#ff0000\"), width: 2cm, height: 6mm))", 'remove("w")'])
+@pytest.mark.parametrize(
+    "step", ['replace("w", box(fill: rgb("#ff0000"), width: 2cm, height: 6mm))', 'remove("w")']
+)
 def test_the_line_around_an_inline_tag_holds_still(paged: PagedRunner, step):
     """Taller, wider or gone, the rest of the line and the next paragraph do not move."""
     animation = timeline(f"sub({step})")
@@ -466,8 +472,6 @@ def test_a_replacement_that_wraps_reflows_inside_its_footprint(paged: PagedRunne
     assert below == color_box(pages[1], GREEN)
     band = Box(0, above.y1, pages[0].shape[1], below.y0)
     assert_identical_outside(pages[0], pages[1], band, what="the two states")
-    from harness import difference_box
-
     changed = difference_box(pages[0], pages[1])
     assert changed.y1 - changed.y0 > 30, f"the replacement did not wrap: {changed}"
 

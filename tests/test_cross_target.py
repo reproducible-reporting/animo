@@ -196,7 +196,7 @@ def test_relto_resolves_to_the_same_anchor_in_both_targets(deck_at, typst: Typst
     asserts the agreement inside the document that resolved its own.
     """
     slides = [
-        f"slide(animation: {{ import anim: *\n  sub(pan(relto: \"a\")) }})[\n  {body}\n]"
+        f'slide(animation: {{ import anim: *\n  sub(pan(relto: "a")) }})[\n  {body}\n]'
         for body in RELTO_SITES.values()
     ]
     source = typst.source(deck(*slides))
@@ -207,13 +207,13 @@ def test_relto_resolves_to_the_same_anchor_in_both_targets(deck_at, typst: Typst
         inputs[f"x{index}"], inputs[f"y{index}"] = repr(x), repr(y)
     lines = []
     for index, kind in enumerate(RELTO_SITES, start=1):
-        for axis in "xy":
-            lines.append(
-                f"  let paper = pans.at({index - 1}).at(1).{axis}.pt()\n"
-                f'  let browser = float(sys.inputs.{axis}{index})\n'
-                f"  assert(calc.abs(paper - browser) < {RELTO_TOLERANCE}, message: "
-                f'"{kind} {axis}: paper " + repr(paper) + ", browser " + repr(browser))'
-            )
+        lines.extend(
+            f"  let paper = pans.at({index - 1}).at(1).{axis}.pt()\n"
+            f"  let browser = float(sys.inputs.{axis}{index})\n"
+            f"  assert(calc.abs(paper - browser) < {RELTO_TOLERANCE}, message: "
+            f'"{kind} {axis}: paper " + repr(paper) + ", browser " + repr(browser))'
+            for axis in "xy"
+        )
     check = (
         "#context {\n"
         "  let pans = query(<animo-geometry>).map(it => it.value.pans)\n"
@@ -258,13 +258,13 @@ def test_a_move_resolves_to_the_same_translation_in_both_targets(deck_at, typst:
         inputs[f"x{index}"], inputs[f"y{index}"] = repr(x), repr(y)
     lines = []
     for index, kind in enumerate(RELTO_SITES, start=1):
-        for axis in "xy":
-            lines.append(
-                f"  let paper = displays.at({index - 1}).at(1).m.{axis}.pt()\n"
-                f"  let browser = float(sys.inputs.{axis}{index})\n"
-                f"  assert(calc.abs(paper - browser) < {MOVE_TOLERANCE}, message: "
-                f'"{kind} {axis}: paper " + repr(paper) + ", browser " + repr(browser))'
-            )
+        lines.extend(
+            f"  let paper = displays.at({index - 1}).at(1).m.{axis}.pt()\n"
+            f"  let browser = float(sys.inputs.{axis}{index})\n"
+            f"  assert(calc.abs(paper - browser) < {MOVE_TOLERANCE}, message: "
+            f'"{kind} {axis}: paper " + repr(paper) + ", browser " + repr(browser))'
+            for axis in "xy"
+        )
     check = (
         "#context {\n"
         "  let displays = query(<animo-geometry>).map(it => it.value.displays)\n"

@@ -115,7 +115,8 @@ EPOCHS = """\
 // A region receives its body as opaque content, and measures it once per epoch by providing a
 // copy of the view with only the epoch changed.
 #let region(body, id) = ask(view => layout(size => context {
-  let heights = range(3).map(e => measure(provide((..view, epoch: e), body), width: size.width).height)
+  let epoch-height(e) = measure(provide((..view, epoch: e), body), width: size.width).height
+  let heights = range(3).map(epoch-height)
   [#metadata((id: id, heights: heights, height: calc.max(..heights)))<probe-footprint>]
   block(width: size.width, height: calc.max(..heights), body)
 }))
@@ -228,7 +229,7 @@ def test_a_replaced_marker_costs_no_layout(paged: PagedRunner):
         "= A Heading\n\nBefore.\n\nBODY\n\n"
         "After the body there is a paragraph of text that says something."
     )
-    document = PRELUDE + "#let pass-through(body) = ask(v => body)\n#provide(\"V\", [\n" + flow
+    document = PRELUDE + '#let pass-through(body) = ask(v => body)\n#provide("V", [\n' + flow
     plain = document.replace("BODY", "= Another Heading") + "\n])\n"
     routed = document.replace("BODY", "#pass-through[= Another Heading]") + "\n])\n"
     assert_identical(

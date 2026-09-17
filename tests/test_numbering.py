@@ -155,9 +155,7 @@ def test_a_per_subslide_outside_a_slide_is_refused(typst: TypstRunner, html):
 
 
 @pytest.mark.parametrize("html", [False, True])
-def test_a_callback_that_returns_something_other_than_content_is_refused(
-    typst: TypstRunner, html
-):
+def test_a_callback_that_returns_something_other_than_content_is_refused(typst: TypstRunner, html):
     """Every rendering is laid out and stacked, so a value that is not content reaches none."""
     typst.fails(
         deck("slide[#per-subslide(it => it.number)]"),
@@ -284,10 +282,7 @@ def test_a_stack_whose_renderings_differ_really_renders_each_of_them(paged: Page
     inside it.
     """
     stack = 'per-subslide(it => [#("9" * it.number)])'
-    source = deck(
-        "slide(animation: { import anim: *\n  sub()\n  sub()\n })"
-        f"[\n  #{stack}\n]"
-    )
+    source = deck(f"slide(animation: {{ import anim: *\n  sub()\n  sub()\n }})[\n  #{stack}\n]")
     pages = paged.png(source, mode="presentation")
     assert_differs(pages[0], pages[1], what="subslide 1 and subslide 2")
     assert_differs(pages[1], pages[2], what="subslide 2 and subslide 3")

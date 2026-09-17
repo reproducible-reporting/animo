@@ -80,9 +80,7 @@ def pans_check(*expected: tuple[str, str], slide: int = 1) -> str:
                 f"assert(near(pans.at({state}).{axis}, {value}), "
                 f'message: "state {state} {axis}: " + repr(pans.at({state}).{axis}))'
             )
-    return (
-        PANS.replace("SLIDE", str(slide)).replace("ASSERTIONS", "\n  ".join(lines))
-    )
+    return PANS.replace("SLIDE", str(slide)).replace("ASSERTIONS", "\n  ".join(lines))
 
 
 @pytest.mark.parametrize("mode", ["handout", "presentation"])
@@ -104,10 +102,7 @@ def test_offsets_and_relative_steps_add_to_the_anchor(typst: TypstRunner):
         "sub(pan(dx: 2cm, y: 1cm))",
         "sub(pan(x: 0cm, y: 0cm))",
     )
-    typst.ok(
-        source
-        + pans_check(("0pt", "0pt"), ("19cm", "3cm"), ("21cm", "1cm"), ("0cm", "0cm"))
-    )
+    typst.ok(source + pans_check(("0pt", "0pt"), ("19cm", "3cm"), ("21cm", "1cm"), ("0cm", "0cm")))
 
 
 def test_an_inline_tag_is_anchored_at_its_corner_and_not_at_its_baseline(typst: TypstRunner):
@@ -162,8 +157,8 @@ def test_a_relto_the_slide_does_not_tag_is_refused(typst: TypstRunner, target):
     after it, and on the absence of the second error the swallowing would bring along.
     """
     source = deck(
-        f"slide(animation: {timeline('sub(pan(relto: \"far\"))')})[\n  {far()}\n]",
-        f"slide(animation: {timeline('sub(pan(relto: \"nowhere\"))')})[\n  {far()}\n]",
+        f"slide(animation: {timeline('sub(pan(relto: "far"))')})[\n  {far()}\n]",
+        f"slide(animation: {timeline('sub(pan(relto: "nowhere"))')})[\n  {far()}\n]",
         'slide[#tag("after")[after]]',
     )
     result = typst.fails(source, MISSING, **target)
@@ -175,7 +170,7 @@ def test_a_tag_of_that_name_on_another_slide_does_not_count(typst: TypstRunner):
     """A tag name means nothing outside its own slide, and that includes a `relto`."""
     source = deck(
         f"slide[\n  {far('nowhere', dx='5cm')}\n]",
-        f"slide(animation: {timeline('sub(pan(relto: \"nowhere\"))')})[\n  {far()}\n]",
+        f"slide(animation: {timeline('sub(pan(relto: "nowhere"))')})[\n  {far()}\n]",
     )
     typst.fails(source, MISSING)
 
@@ -184,7 +179,7 @@ def test_the_same_name_on_another_slide_is_no_anchor(typst: TypstRunner):
     """Each slide pans to its own site of a name, and a deck that does so converges."""
     source = deck(
         f"slide[\n  {far('t', dx='5cm')}\n]",
-        f"slide(animation: {timeline('sub(pan(relto: \"t\"))')})[\n  {far('t', dx='10cm')}\n]",
+        f"slide(animation: {timeline('sub(pan(relto: "t"))')})[\n  {far('t', dx='10cm')}\n]",
     )
     result = typst.ok(source + pans_check(("0pt", "0pt"), ("10cm", "2cm"), slide=2))
     assert "did not converge" not in result.stderr, result.stderr
@@ -197,7 +192,7 @@ def test_a_slide_without_a_handout_page_is_not_refused_for_its_relto(typst: Typs
     the deck refuses for its own reasons.
     """
     source = deck(
-        f"slide(animation: {timeline('sub(handout: false, pan(relto: \"far\"))')})[\n  {far()}\n]",
+        f"slide(animation: {timeline('sub(handout: false, pan(relto: "far"))')})[\n  {far()}\n]",
         "slide[plain]",
     )
     result = typst.ok(source)
@@ -231,8 +226,9 @@ def test_a_panned_step_is_a_page_showing_another_part_of_the_canvas(paged: Paged
     pages = paged.png(panned(far(), 'sub(pan(relto: "far"))'), mode="presentation")
     assert len(pages) == 2
     assert color_box(pages[0]) is None, "content beyond the viewport reached the page"
-    x0, y0, x1, y1 = color_box(pages[1])
-    assert abs(x0 - ORIGIN) <= 1.5 and abs(y0 - ORIGIN) <= 1.5, (x0, y0)
+    x0, y0, x1, _ = color_box(pages[1])
+    assert abs(x0 - ORIGIN) <= 1.5, x0
+    assert abs(y0 - ORIGIN) <= 1.5, y0
     assert abs((x1 - x0) - 2 * CM) <= 1.5
 
 
@@ -275,7 +271,8 @@ def test_both_layers_stay_with_the_viewport_while_the_canvas_pans(paged: PagedRu
     pages = paged.png(source, mode="presentation")
     assert color_box(pages[0], BLUE) == color_box(pages[1], BLUE) is not None
     assert color_box(pages[0], GREEN) == color_box(pages[1], GREEN) is not None
-    assert color_box(pages[0], RED) is None and color_box(pages[1], RED) is not None
+    assert color_box(pages[0], RED) is None
+    assert color_box(pages[1], RED) is not None
 
 
 # Tier 3: the canvas element in the browser.
@@ -344,7 +341,9 @@ def test_a_deep_link_to_a_panned_state_snaps(page, deck_at, beyond):
 def test_a_pan_step_animates_the_canvas_translate_and_nothing_else(page, deck_at, beyond):
     """A step animates only what it changes, and halfway through it is halfway along."""
     presentation: Deck = deck_at(beyond)
-    page.add_style_tag(content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }")
+    page.add_style_tag(
+        content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }"
+    )
     presentation.press("ArrowRight")
     assert presentation.animating == [{"translate"}]
     presentation.scrub(2000)

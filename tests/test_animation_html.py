@@ -134,9 +134,7 @@ def test_an_absolute_move_puts_the_corner_at_a_point_on_the_canvas(deck_at, typs
     move to 2 cm produces is 2 cm less that margin, and the runtime is what subtracts the
     anchor it measured.
     """
-    presentation: Deck = deck_at(
-        animated(typst, mark("m"), 'sub(move("m", x: 2cm, y: 3cm))')
-    )
+    presentation: Deck = deck_at(animated(typst, mark("m"), 'sub(move("m", x: 2cm, y: 3cm))'))
     unit = presentation.unit
     before = presentation.rects("m")[0]
     after = presentation.goto(1, 1).rects("m")[0]
@@ -220,9 +218,7 @@ def test_every_site_of_a_name_takes_the_translation_of_the_first(deck_at, typst:
     )
 
 
-def test_the_anchor_is_read_from_the_first_epoch_that_lays_the_tag_out(
-    deck_at, typst: TypstRunner
-):
+def test_the_anchor_is_read_from_the_first_epoch_that_lays_the_tag_out(deck_at, typst: TypstRunner):
     """Which site is the first one, when a tag is not laid out in every epoch.
 
     The rule both targets read: the first site in document order, in the first rendering
@@ -329,26 +325,20 @@ def test_reveal_and_hide_are_opacity_on_the_inner_slot(deck_at, typst: TypstRunn
 
     That is what leaves the boundary slot to the epoch crossfade of a later version.
     """
-    presentation: Deck = deck_at(
-        animated(typst, mark("m"), 'sub(hide("m"))', 'sub(reveal("m"))')
-    )
+    presentation: Deck = deck_at(animated(typst, mark("m"), 'sub(hide("m"))', 'sub(reveal("m"))'))
     assert [style["opacity"] for style in presentation.styles("m")] == ["1"]
     assert [style["opacity"] for style in presentation.goto(1, 1).styles("m")] == ["0"]
     assert [style["opacity"] for style in presentation.goto(1, 2).styles("m")] == ["1"]
 
 
-def test_an_initially_hidden_tag_has_ink_in_the_dom_and_zero_opacity(
-    deck_at, typst: TypstRunner
-):
+def test_an_initially_hidden_tag_has_ink_in_the_dom_and_zero_opacity(deck_at, typst: TypstRunner):
     """The asymmetry between the HTML output and the paged ones, in one assertion.
 
     Typst's `hide()` lays content out and emits nothing to draw, so no CSS could ever
     bring it back. The HTML target therefore renders an initially hidden element normally
     and the runtime hides it, while only the paged outputs may use `hide()`.
     """
-    presentation: Deck = deck_at(
-        animated(typst, mark("m"), 'sub(reveal("m"))')
-    )
+    presentation: Deck = deck_at(animated(typst, mark("m"), 'sub(reveal("m"))'))
     painted = presentation.page.evaluate(
         """() => document
             .querySelector('[data-typst-label="m"]')
@@ -370,7 +360,9 @@ def test_a_step_interpolates_at_a_stated_moment(page, deck_at, moving):
     through the step the element is halfway along, and the test says which halfway.
     """
     presentation: Deck = deck_at(moving)
-    page.add_style_tag(content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }")
+    page.add_style_tag(
+        content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }"
+    )
     unit = presentation.unit
     before = presentation.rects("m")[0]
     presentation.press("ArrowRight").scrub(2000)
@@ -420,7 +412,9 @@ def test_a_step_taken_after_a_pause_starts_at_its_beginning(page, deck_at, movin
     across, which says nothing about when the step set off.
     """
     presentation: Deck = deck_at(moving)
-    page.add_style_tag(content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }")
+    page.add_style_tag(
+        content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }"
+    )
     page.wait_for_timeout(PAUSE)
     clock = "() => performance.now()"
     pressed = page.evaluate(clock)
@@ -496,7 +490,7 @@ def test_one_tag_at_two_sites_moves_as_one_element(deck_at, typst: TypstRunner):
 def test_a_timeline_moves_only_the_tags_of_its_own_slide(deck_at, typst: TypstRunner):
     """A tag name means nothing outside the slide it sits in."""
     source = deck(
-        f"slide(animation: {timeline('sub(move(\"m\", dx: 3cm))')})[\n  {mark('m')}\n]",
+        f"slide(animation: {timeline('sub(move("m", dx: 3cm))')})[\n  {mark('m')}\n]",
         f"slide[\n  {mark('m')}\n]",
     )
     presentation: Deck = deck_at(typst.html(source, name="two.html"))
@@ -554,8 +548,7 @@ def test_the_slide_carries_the_resolved_plan(deck_at, moving):
     # A position is an anchor and an offset per axis, and a tag the timeline has not moved
     # is anchored at itself, which is the pair the runtime resolves to the identity.
     assert [state["tags"]["m"]["x"] for state in states] == [
-        {"relto": "m", "offset": pytest.approx(offset, abs=0.01)}
-        for offset in (0, 3 * CM, 4 * CM)
+        {"relto": "m", "offset": pytest.approx(offset, abs=0.01)} for offset in (0, 3 * CM, 4 * CM)
     ]
     assert [state["tags"]["m"]["scale"] for state in states] == [
         {"x": 1, "y": 1},

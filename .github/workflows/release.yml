@@ -106,7 +106,7 @@ jobs:
           tar -czf build/animo-${{ steps.manifest.outputs.version }}.tar.gz
           -C build/package .
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         with:
           name: package
           path: build/package

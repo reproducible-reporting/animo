@@ -80,8 +80,16 @@ def intermediate(browser, folder: Path, keyframes: list[dict[str, str]]) -> int:
     images = folder / "frames"
     images.mkdir()
     subprocess.run(
-        [get_ffmpeg_exe(), "-loglevel", "error", "-i", video, "-vsync", "0",
-         str(images / "f%04d.png")],
+        [
+            get_ffmpeg_exe(),
+            "-loglevel",
+            "error",
+            "-i",
+            video,
+            "-vsync",
+            "0",
+            str(images / "f%04d.png"),
+        ],
         check=True,
     )
     ink = [

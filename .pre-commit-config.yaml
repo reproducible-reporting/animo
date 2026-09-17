@@ -2,13 +2,19 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Formatting and hygiene run on pre-commit.ci rather than in a workflow of their own,
-# because every hook below installs there and the service pushes the fixes that
-# `mdformat` and `snipwise fix` make instead of failing a pull request with a diff.
+# because the service pushes the fixes that `mdformat`, `ruff` and `snipwise fix` make
+# instead of failing a pull request with a diff.
 ci:
-  # `typstyle` is pinned to the typst release that `typst.toml` declares,
-  # so bumping that hook is a decision about the compiler rather than a formatting bump.
-  # A quarterly pull request is rare enough to be read rather than waved through.
-  autoupdate_schedule: quarterly
+  # `typstyle` 0.15.1 is built from source and needs rustc 1.92,
+  # while the pre-commit.ci image provided rustc 1.89 in September 2026.
+  # Setting `language_version` on the hook does not help,
+  # because that image pins rustup 1.28.0, which installs no missing toolchain on demand,
+  # and its toolchain directory is read only.
+  # See https://github.com/pre-commit-ci/issues/issues/267.
+  # A contributor's machine still formats every `.typ` file through the hook.
+  # `uv lock` resolves against the package index, and pre-commit.ci runs a hook without
+  # network access, so `uv-lock` is left to a contributor's machine and to the workflows.
+  skip: [typstyle, uv-lock]
 
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -21,6 +27,7 @@ repos:
     - id: check-executables-have-shebangs
     - id: check-json
     - id: check-merge-conflict
+    - id: check-shebang-scripts-are-executable
     - id: check-symlinks
     - id: check-toml
     - id: check-vcs-permalinks
@@ -34,7 +41,6 @@ repos:
     - id: pretty-format-json
       args: ["--autofix", "--no-sort-keys"]
     - id: trailing-whitespace
-      exclude: \.aux$
 - repo: https://github.com/Lucas-C/pre-commit-hooks
   rev: v1.5.6
   hooks:
@@ -51,6 +57,29 @@ repos:
       # Without this plugin, `mdformat` reads the `---` of a YAML front matter block
       # as a thematic break and rewrites the metadata into a heading.
       - mdformat-frontmatter
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.16.8
+  hooks:
+    # The rule set and the line length live in `pyproject.toml`,
+    # so both hooks below read their configuration from there.
+    - id: ruff-check
+      args: [--fix]
+    - id: ruff-format
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.4.3
+  hooks:
+    - id: codespell
+      # The one entry under `.typst-packages/` is a symlink to the root of the repository,
+      # so a hook that follows it reads every file a second time,
+      # including the build output that `.gitignore` keeps out of the checkout.
+      exclude: ^\.typst-packages/
+      # Without this dependency, `codespell` cannot read `[tool.codespell]`
+      # from `pyproject.toml` on an interpreter older than 3.11.
+      additional_dependencies: [tomli]
+- repo: https://github.com/shellcheck-py/shellcheck-py
+  rev: v0.11.0.1
+  hooks:
+    - id: shellcheck
 - repo: https://github.com/fsfe/reuse-tool
   rev: v6.2.0
   hooks:
@@ -68,3 +97,28 @@ repos:
   hooks:
     - id: snipwise
       args: [fix]
+- repo: https://github.com/astral-sh/uv-pre-commit
+  rev: 0.12.15
+  hooks:
+    # `uv sync` silently rewrites an out-of-date lock file instead of failing,
+    # so a dependency edit that was never locked reaches a contributor's machine
+    # as a resolution of its own rather than as the one continuous integration ran.
+    - id: uv-lock
+- repo: local
+  hooks:
+    # `CLAUDE.md` asks for prose without en or em dashes.
+    - id: no-en-or-em-dashes
+      name: no en or em dashes in prose
+      language: pygrep
+      # `pygrep` compiles its pattern as bytes and reads each file as bytes,
+      # so a character class holding these two characters is a class of the six bytes
+      # they encode to, which matches any other character encoding to one of them.
+      # An alternation is what keeps the two sequences whole.
+      entry: "\u2013|\u2014"
+      types_or: [markdown, toml, yaml]
+- repo: meta
+  hooks:
+    # The configuration above carries excludes written by hand,
+    # and an exclude that matches nothing hides the fact that its hook covers everything.
+    - id: check-useless-excludes
+    - id: check-hooks-apply

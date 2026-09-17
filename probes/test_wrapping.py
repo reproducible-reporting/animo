@@ -28,10 +28,18 @@ WRAPPERS = {
 }
 
 # Bodies whose rendering does not depend on the width they are given.
-WIDTH_BLIND = ("list([one], [two])", "grid(columns: 2, gutter: 4pt)[a][b]", "table(columns: 2)[a][b]")
+WIDTH_BLIND = (
+    "list([one], [two])",
+    "grid(columns: 2, gutter: 4pt)[a][b]",
+    "table(columns: 2)[a][b]",
+)
 
 # Bodies the container was centring, which only a filling wrapper keeps centred.
-CENTRED = ("figure(rect(width: 2cm, height: 1cm), caption: [cap])", "$ x^2 + y^2 = z^2 $", "align(center)[centred]")
+CENTRED = (
+    "figure(rect(width: 2cm, height: 1cm), caption: [cap])",
+    "$ x^2 + y^2 = z^2 $",
+    "align(center)[centred]",
+)
 
 
 def flow(body: str) -> str:

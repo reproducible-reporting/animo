@@ -304,7 +304,7 @@ A slide has two rectangles, and `pan` is defined by the difference between them.
   slide with no `pan` is indistinguishable from one with no canvas at all.
 
 The automatic size cannot come from typst's own `auto` sizing, because `#place` is out of flow
-and contributes nothing to it — measured, see *Findings*. It also cannot come from position
+and contributes nothing to it, as measured in *Findings*. It also cannot come from position
 introspection, which is dead in the HTML target. What does work, and is what Animo uses, is a
 `show place:` rule over the body: it fires for every placement and exposes `dx`, `dy`,
 `alignment` and a measurable `body`, so the union can be computed from content alone and comes
@@ -654,8 +654,9 @@ meaning does not depend on its position in the block, which is the same reasonin
 The primitives are classified in two ways, and both classifications matter.
 
 The first cut is **what they address**. *Element primitives* take a tag name and act on the
-tagged content. *Slide primitives* take no tag and act on the slide as a whole — today only
-`pan`, which moves the viewport over the canvas; a narration `audio` could join it later.
+tagged content. *Slide primitives* take no tag and act on the slide as a whole.
+Today that is `pan` alone, which moves the viewport over the canvas,
+and a narration `audio` could join it later.
 Slide primitives touch neither tags, regions, epochs nor footprints, which is why adding one
 is cheap.
 
@@ -673,8 +674,9 @@ they are pure CSS on the existing frame, so they animate smoothly and cost nothi
 | `pan(x:, y:, dx:, dy:, relto:)`       | move the viewport over the canvas, optionally relative to a tag    |
 
 The first four are element primitives; `pan` is the slide primitive, which is why it takes no
-tag name and why `relto` — "pan so that this tag comes into view" — is optional rather than
-positional. Every one of them also takes `delay:` and `duration:`, which are under *Timing*.
+tag name and why `relto`, which means "pan so that this tag comes into view",
+is optional rather than positional.
+Every one of them also takes `delay:` and `duration:`, which are under *Timing*.
 
 **Where `move` and `pan` put things.** They say where something goes in the same two ways, and
 each axis takes one of them.
@@ -788,9 +790,11 @@ Notes and consequences:
   what makes it start removed.
 - `remove` versus `hide`: `hide` keeps the space and is smooth; `remove` frees the space and
   reflows. This restores the "occupies no space" state that the first draft dropped, now that
-  regions give it a bounded meaning. Outside a region there is nothing for `remove` to reflow —
-  the implicit region reserves the footprint of the element's largest state either way — so
-  there it costs an epoch without any benefit, and `hide` is the right primitive.
+  regions give it a bounded meaning.
+  Outside a region there is nothing for `remove` to reflow,
+  because the implicit region reserves the footprint of the element's largest state
+  either way.
+  There it costs an epoch without any benefit, and `hide` is the right primitive.
 - Structural primitives work at every tag site, a `wrap: none` one included, because typst
   renders the epoch and needs no group to do it. What such a site redraws outside an explicit
   region is the whole rendering, since it has no box of its own; see *Regions*.
@@ -1065,10 +1069,11 @@ its own content for the epoch as it is laid out. Verified in both targets, insid
 `measure`, with nested `context` reads and no convergence warning (see *Findings*).
 
 This is stated explicitly, because it matters in two ways. It is what makes reflow
-inside a region possible without turning the body into a function of the epoch — the
-`s => ([body], s)` threading that *Resolved Design Decisions* rejects. And it is **indifferent to
-where time-dependent content is written**: a tag could resolve its content for the epoch from the
-plan or from its own arguments equally well. So the question of where `replace`'s content belongs
+inside a region possible without turning the body into a function of the epoch,
+which is the `s => ([body], s)` threading that *Resolved Design Decisions* rejects.
+And it is **indifferent to where time-dependent content is written**:
+a tag could resolve its content for the epoch from the plan or from its own arguments
+equally well. So the question of where `replace`'s content belongs
 is not a feasibility question, and is settled on other grounds below.
 
 Renderings required per slide:
@@ -1221,10 +1226,11 @@ Five rules make this work:
 1. **`pan` belongs to the canvas element, not to what is inside it.** It is a slide primitive,
    so it must not be applied per epoch: the renderings sit in the frame the canvas holds, and
    moving the canvas moves all of them together and keeps the crossfade registered. This is also the one place
-   Animo touches a transform outside an SVG group, where rule 3's prohibition does not apply —
-   though `translate` is used there too, for consistency and to leave `scale` free for a future
-   zoom. A background or overlay that is content belongs to the viewport rather than to the
-   canvas, so in HTML each is a frame of its own beside the canvas element, not ink in the
+   Animo touches a transform outside an SVG group, where rule 3's prohibition does not apply,
+   although `translate` is used there too,
+   for consistency and to leave `scale` free for a future zoom.
+   A background or overlay that is content belongs to the viewport rather than to the canvas,
+   so in HTML each is a frame of its own beside the canvas element, not ink in the
    canvas's frame, and a pan moves the canvas between them; on paper they are placed on the
    page before and after the panned canvas. One frame each per slide covers every state and
    every epoch, since neither may hold a tag or a region and so neither can depend on one.
@@ -1350,13 +1356,16 @@ re-rendering and motion is genuinely smooth. The cost of structural operations i
 time and page weight, not in interaction.
 
 **Static presentation.** One page per state: a snapshot of the *viewport* at that state, clipped
-out of the canvas, with the background under it and the overlay over it. No motion — `move`,
-`scale` and `pan` become discrete jumps between pages, and `replace`, `remove` and `apply` are
-simply rendered in place. A panned subslide is therefore a page showing a different part of the
-canvas, so panning survives into the paged output. Everything under
-*Timing* is absent rather than approximated: a page has no clock, so `wait:`, `hold:`, `delay:`
-and `duration:` say nothing here, and neither does `transition:`, which describes what happens
-between two pages that are simply consecutive.
+out of the canvas, with the background under it and the overlay over it.
+Nothing moves.
+The `move`, `scale` and `pan` primitives become discrete jumps between pages,
+and `replace`, `remove` and `apply` are simply rendered in place.
+A panned subslide is therefore a page showing a different part of the canvas,
+so panning survives into the paged output.
+Everything under *Timing* is absent rather than approximated.
+A page has no clock, so `wait:`, `hold:`, `delay:` and `duration:` say nothing here.
+Neither does `transition:`, which describes what happens between two pages
+that are simply consecutive.
 
 **Static handouts.** One page per state whose `handout` flag resolves to true, which by default is
 the **final state of the slide** and no other: the viewport at its final position, like the
@@ -1611,8 +1620,9 @@ These were the open questions of the earlier drafts. They are settled; the evide
   syntax, and `region(name: ..)` covers the case where the container itself must be animated.
 
 - **Is the name `group` right for the container?** No; it is called `region`. `group` collides
-  with two neighbouring meanings — cetz's `draw.group` and the SVG `<g>` groups that Animo
-  itself emits — while the point of the construct is that it is a *bounded area* of the slide.
+  with two neighbouring meanings, which are cetz's `draw.group`
+  and the SVG `<g>` groups that Animo itself emits.
+  The point of the construct is that it is a *bounded area* of the slide.
 
 - **How much structure does `apply` need?** `apply(tag, ..fns)` with content-to-content
   functions only. `sanor`'s richer `case()`/`object()` machinery exists to cache object state
@@ -1621,10 +1631,12 @@ These were the open questions of the earlier drafts. They are settled; the evide
   belongs to, which Animo cannot do without inspecting content.
 
 - **Where does time-dependent content live: the timeline or the body?** In the timeline, as
-  `replace(tag, body)`. The alternative — declaring several content values at the tag site and
-  selecting among them from the timeline, in the style of `sanor`'s named cases — is expressible
-  under the measuring mechanism above, so feasibility does not decide it. What decides it is the
-  interaction with duplicate tags, and it is sharpest in the case of the future morph:
+  `replace(tag, body)`.
+  The alternative declares several content values at the tag site
+  and selects among them from the timeline, in the style of `sanor`'s named cases.
+  It is expressible under the measuring mechanism above, so feasibility does not decide it.
+  What decides it is the interaction with duplicate tags,
+  and it is sharpest in the case of the future morph:
 
   - Because every site sharing a tag name receives the **same** replacement content, the sub-tags
     inside it, their multiplicities and their document order match automatically between the
@@ -1691,8 +1703,9 @@ These were the open questions of the earlier drafts. They are settled; the evide
 - **Must the syntax become heavier (body as a function)?** No. `sanor` threads a mutable
   context through the body (`s => ([body], s)`) only because it accumulates actions while
   the body is evaluated. Animo passes the plan as an argument instead, so the body stays an
-  ordinary content block — even though tags and regions now *read* that plan while the body is
-  laid out, which is a `context` read, not a threaded accumulator.
+  ordinary content block, even though tags and regions now *read* that plan
+  while the body is laid out.
+  That read is a `context` read rather than a threaded accumulator.
 
 - **Is a context object `c` needed?** No. It provided two things, both obtainable
   otherwise: scoping (handled by the slide container in HTML and by per-slide state in
@@ -1703,9 +1716,10 @@ These were the open questions of the earlier drafts. They are settled; the evide
 - **How are primitives named without shadowing the built-ins?** Following cetz, the
   primitives are imported *inside* the animation block (`import anim: *`). The
   import is scoped to that block, so `move`, `scale` and `hide` keep their natural names
-  there while remaining the typst built-ins everywhere else — including in the slide body,
-  where authors legitimately use `#move`, `#scale` and `#hide`. Note that `region`, `tag` and
-  `slide` are body-level names and are imported at the top level as usual.
+  there while remaining the typst built-ins everywhere else,
+  including in the slide body, where authors legitimately use `#move`, `#scale` and `#hide`.
+  Note that `region`, `tag` and `slide` are body-level names
+  and are imported at the top level as usual.
 
 - **Can the animation logic be placed after the body?** Technically yes (a marker at the
   end of the body, collected by `query`, works), but it costs extra introspection passes
@@ -1929,9 +1943,11 @@ These were the open questions of the earlier drafts. They are settled; the evide
 
 - **Can `hide` and `remove` be one primitive, with the reflow inferred?** No, and the obstacle
   is the order in which a slide is built rather than a judgement about the API. The two differ
-  only inside an explicit region, so the inference would have to read whether the tag sits in
-  one — and that is a *layout-time* fact, while the plan is resolved *before* the body is laid
-  out, because the body's layout depends on its epochs. Nothing in the timeline can stand in for
+  only inside an explicit region, so the inference would have to read whether the tag
+  sits in one.
+  Where a tag sits is a *layout-time* fact,
+  while the plan is resolved *before* the body is laid out,
+  because the body's layout depends on its epochs. Nothing in the timeline can stand in for
   it: the resolver never sees the body. The two escapes are both worse than the problem. Making
   the merged primitive always structural puts a fresh epoch behind the most common animation in
   a deck, which roughly doubles the frames and the page weight of an ordinary slide. Making it
@@ -1986,7 +2002,8 @@ These were the open questions of the earlier drafts. They are settled; the evide
 
 - **Should there be a `once` primitive?** No, and it is dropped rather than deferred. The idea
   was `sanor`'s: make something true for exactly one subslide, revealing and hiding it again, or
-  applying a wrapper and dropping it. It is not hard to resolve — the resolver is a forward pass
+  applying a wrapper and dropping it.
+  It is not hard to resolve, because the resolver is a forward pass
   and could perfectly well write the undo into the next state. What rules it out is that there is
   no single thing it could mean. Reveal-then-hide and reset-then-remove are both "once", and by the
   entry above nothing can choose between them without an argument; an `apply`-then-drop form is a
@@ -2176,8 +2193,8 @@ These were the open questions of the earlier drafts. They are settled; the evide
 
   1. typst-level `#assert` on plan resolution (compile only, no export): per-state content and
      display state, epoch boundaries, epoch counts, and the footprint chosen for each region.
-     These documents are compiled — footprints come from real `layout` and `measure` calls — but
-     nothing is written out and no raster or PDF is produced.
+     These documents are compiled, so footprints come from real `layout` and `measure` calls.
+     Nothing is written out and no raster or PDF is produced.
      `slipst` does this inline in `utils.typ`. Because `replace`/`apply` payloads are content
      and functions, assertions target the resolved structure, not the payloads.
   1. Rasterised comparisons of the presentation and handout outputs.
@@ -2412,10 +2429,11 @@ signal or only noise.
   pay for it.
 - **`slipst`** has HTML export with panning, implemented with a custom runtime (whole-slip
   opacity crossfades with `plus-lighter` plus a `container.style.top` offset for panning). Its
-  animation model is coarse — it re-renders a whole frame per "alter" rather than animating
-  elements — but that per-alter re-render is exactly the mechanism Animo needs for structural
-  steps. Animo's contribution is to confine it to a region and to keep per-element animation
-  inside each frame.
+  animation model is coarse, because it re-renders a whole frame per "alter"
+  rather than animating elements.
+  That per-alter re-render is exactly the mechanism Animo needs for structural steps.
+  Animo's contribution is to confine it to a region
+  and to keep per-element animation inside each frame.
 - **`kino`** targets frame-by-frame animation with an external python driver, which is a
   different goal: it interpolates a timeline into video or reveal.js rather than driving a
   presentation.

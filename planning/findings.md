@@ -33,20 +33,21 @@ This attribute is what the whole design rests on.
 
 - Labelled content appears in SVG output as `<g data-typst-label="name">`. In all of
   0.15.1 there is exactly **one** emission site, `crates/typst-svg/src/lib.rs:348`, and it
-  fires only for `group.label` — that is, only for **labelled `box` and `block`
+  fires only for `group.label`, which means only for **labelled `box` and `block`
   elements**. A label on a bare `rect`, or on a text span, emits nothing.
 - It works **inside `html.frame`**, which is what makes browser animation possible.
 - It works for content inside **math** and inside **cetz** canvases.
 - **Duplicate labels are permitted** and each occurrence gets its own group, which is what
-  makes "one tag, several elements" work — and what makes one CSS rule reach the same tag in
-  every epoch frame of a slide.
+  makes "one tag, several elements" work
+  and what makes one CSS rule reach the same tag in every epoch frame of a slide.
 
 Stability: the attribute was added by PR
 [#4822 "Animation-friendly export"](https://github.com/typst/typst/pull/4822) (merged
 2024-09-03), resolving issue
 [#4384](https://github.com/typst/typst/issues/4384), whose stated purpose was
 "exposing some way to generate groups with well-known identifiers in SVG export, **which
-external tools can pick up**" — precisely this use case. It shipped in **v0.12.0** and is
+external tools can pick up**".
+That is precisely this use case. It shipped in **v0.12.0** and is
 documented in the 0.12.0 changelog ("Exported SVGs now contain the `data-typst-label`
 attribute on groups resulting from labelled boxes and blocks"). It has survived 0.12 →
 0.13 → 0.14 → 0.15.1 unchanged, and no open issue proposes changing or removing it. It is
@@ -74,10 +75,12 @@ This is what forces "re-render the slide, not the region" and therefore the whol
   either: it does not know where the region is.
 
 Hence the only mechanism available: render the whole slide once per content state, stack the
-frames, and swap them. That is also why the vertical-flow alternative — cutting the slide into
-a stack of separate frames the way `slipst` cuts a document into slips — is not usable here:
-it only supports content that flows top to bottom, whereas an Animo slide is a fixed-size 2D
-canvas with `#place`.
+frames, and swap them.
+That is also why the vertical-flow alternative is not usable here.
+That alternative cuts the slide into a stack of separate frames,
+the way `slipst` cuts a document into slips.
+It supports only content that flows top to bottom,
+whereas an Animo slide is a fixed-size 2D canvas with `#place`.
 
 ## Regions: fixed footprints across epochs
 
@@ -85,14 +88,14 @@ Measured on a region with two epochs, i.e. two content states (a short line and 
 enough to wrap), with the footprint taken as the per-axis maximum of
 `measure(epoch, width: avail)` inside `layout(size => ..)`:
 
-| Check                                                      | Result                                          |
-| ---------------------------------------------------------- | ----------------------------------------------- |
-| footprint chosen for both epochs (paged)                   | `w=233.88pt h=21.63pt` — identical              |
-| y position of the content after the region (paged)         | identical in both epochs                        |
-| `data-typst-label` transform after the region (HTML)       | `translate(41.613 40.876)` in both epochs       |
-| `getBoundingClientRect` of a label after the region (HTML) | `{x:0.05, y:58.81, w:100.61, h:14.98}` in both  |
-| pixel diff between the two epoch frames, full window       | 2958 px, all inside the region's band (y 29–43) |
-| pixel diff below the region                                | none                                            |
+| Check                                                      | Result                                             |
+| ---------------------------------------------------------- | -------------------------------------------------- |
+| footprint chosen for both epochs (paged)                   | `w=233.88pt h=21.63pt`, identical                  |
+| y position of the content after the region (paged)         | identical in both epochs                           |
+| `data-typst-label` transform after the region (HTML)       | `translate(41.613 40.876)` in both epochs          |
+| `getBoundingClientRect` of a label after the region (HTML) | `{x:0.05, y:58.81, w:100.61, h:14.98}` in both     |
+| pixel diff between the two epoch frames, full window       | 2958 px, all inside the region's band (y 29 to 43) |
+| pixel diff below the region                                | none                                               |
 
 `measure` internally sets `Target::Paged`
 (`crates/typst-library/src/layout/measure.rs`, "let style = TargetElem::target.set(Target::Paged)"),
@@ -382,8 +385,9 @@ What follows for the measurement of a transition, and for the remedy that sugges
 Measured on 0.15.1, for the canvas rule under *Canvas and viewport*.
 
 - **`#place` contributes nothing to automatic sizing.** With `#set page(width: auto, height: auto, margin: 0pt)` and a body of `#place(dx: 8cm, dy: 4cm)[OUT] in-flow`, the page comes out
-  `32.285 x 7.238 pt` — the size of the in-flow text alone. `measure()` agrees: a block with and
-  without the same placement measures `32.29pt x 7.24pt` both times. So typst's own `auto`
+  `32.285 x 7.238 pt`, which is the size of the in-flow text alone.
+  `measure()` agrees: a block with and without the same placement measures
+  `32.29pt x 7.24pt` both times. So typst's own `auto`
   machinery cannot size an Animo canvas, because an Animo slide is a 2D canvas built with
   `#place`.
 
@@ -402,8 +406,8 @@ Measured on 0.15.1, for the canvas rule under *Canvas and viewport*.
 
   Ratios stay unresolved (`50% + 0pt`), so they must be resolved against the container inside
   `layout(size => ..)`. This needs neither position introspection nor the paged target, so the
-  canvas comes out the same in HTML and on paper — which is the invariant the whole design rests
-  on.
+  canvas comes out the same in HTML and on paper,
+  which is the invariant the whole design rests on.
 
 - **The limit is the third row.** A placement nested inside another container is reported
   exactly like a top-level one, with offsets relative to *that* container. The rule cannot
@@ -653,7 +657,7 @@ Measured in chromium on real typst output, on a labelled group that carries typs
 | Applied CSS                                                         | Result                                                                          |
 | ------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `opacity: 0.35`                                                     | works; typst emits no group-level opacity or style, so opacity is entirely free |
-| `translate: 50px 0`                                                 | composes — element moves, typst's `transform` attribute stays intact            |
+| `translate: 50px 0`                                                 | composes, so the element moves and typst's `transform` attribute stays intact   |
 | `transform: translate(50px,0)`                                      | **clobbers** typst's translate (y jumped 49.2 → 8.0, losing the offset)         |
 | `scale: 2` (default `transform-box: view-box`)                      | scales about the SVG viewBox origin, displacing the element (y 49.2 → 90.5)     |
 | `scale: 2` + `transform-box: fill-box` + `transform-origin: center` | scales about the element's own centre, in place                                 |
@@ -693,8 +697,10 @@ pixel. That is invisible in a transition, and it is why the probe for this row a
 pixel rather than half of one.
 
 Units: CSS lengths inside a group are **user units (pt), scaled by the SVG's rendered
-size** — 50 user units measured as 72.7 px at the test slide scale. A move expressed in
-typst lengths therefore stays the same fraction of the slide at any screen size, for free.
+size**.
+At the test slide scale, 50 user units measure 72.7 px.
+A move expressed in typst lengths therefore stays the same fraction of the slide
+at any screen size, for free.
 
 Two further measurements, on chromium 151 and firefox 153, answer what a transform *looks*
 like rather than where it lands:
@@ -875,10 +881,11 @@ every test that reads a tag's geometry, uses `getBBox` and the CTM, never
 Which slot takes which class of animation is fixed by the measurement, not by taste: a FLIP delta
 is read in the frame's coordinates, so it must be applied above anything that already transforms
 the element. The labelled outer group is the boundary slot, the inner group the continuous one
-(*Architecture* rule 4). The alternative — leaving both classes on the labelled group and
-composing them numerically — also works, but it obliges the runtime to know the current value of
-every continuous property in both frames before it can write a FLIP transform, which is state the
-stacked-frame design otherwise never has to keep.
+(*Architecture* rule 4).
+The alternative leaves both classes on the labelled group and composes them numerically.
+It also works, but it obliges the runtime to know the current value of every continuous
+property in both frames before it can write a FLIP transform,
+which is state the stacked-frame design otherwise never has to keep.
 
 ## `hide()` cannot be undone in the browser
 
@@ -889,7 +896,8 @@ CSS `opacity: 0`; only the paged outputs may use `hide()`.
 
 Note the asymmetry with `remove` and the removed initial state, which are a *content state*:
 resolved by typst when the epoch is rendered, so it needs no browser support and cannot be
-undone within an epoch — by construction, undoing it starts a new one.
+undone within an epoch.
+By construction, undoing it starts a new one.
 
 ## A counter reads the same everywhere a slide lays content out
 
@@ -955,7 +963,8 @@ a block that emits nothing it reads.
   math**. The position of an element is not always its corner, though, which is why
   `pan(relto:)` reads a marker instead of it: see the next entry.
 - In **HTML** output, positions are dead: `here().position()` and
-  `location().position()` return `(page: 1, x: 0pt, y: 0pt)` — *even inside `html.frame`*.
+  `location().position()` return `(page: 1, x: 0pt, y: 0pt)`,
+  *even inside `html.frame`*.
   Verified geometrically, by driving a rectangle's width from `here().position().y`: it
   came out zero-width against a 1 cm control. `query` itself does see inside frames.
 - `measure()` **does** work in HTML output and returns real sizes, in paged layout (above).
@@ -995,8 +1004,8 @@ Measured in chromium on real typst HTML output, for a narration feature that a l
 could add.
 
 - `html.elem("audio", ..)` works as a **sibling of `html.frame`** inside the slide container. It
-  must be wrapped in a block-level element — a `div` with `display: contents` suffices — because
-  `audio` is phrasing content and typst otherwise wraps it in a `<p>`.
+  must be wrapped in a block-level element, for which a `div` with `display: contents`
+  suffices, because `audio` is phrasing content and typst otherwise wraps it in a `<p>`.
 - A clip embedded as a `data:` URI decodes fully: `readyState = 4` and `duration = 8.0065s` for an
   8 s Opus file, matching the source exactly. So the browser can supply the timing that typst
   cannot.
@@ -1012,9 +1021,10 @@ could add.
     per MB of input. Joining in blocks of a few thousand characters keeps memory flat: 4 MB encoded
     in 8.37 s at 46 MB RSS, i.e. **~2.1 s/MB, linear in size and constant in memory**.
 - **The encoding is memoised across recompiles.** Under `typst watch`, a 4 MB payload cost 8.11 s
-  on the first compile and 6.6 / 11.2 / 18.8 ms on the next three — including edits that shift
-  every span in the file. The cost is per watch session and per cold compile, not per edit, which
-  is what makes embedding-by-default tolerable while authoring.
+  on the first compile and 6.6 / 11.2 / 18.8 ms on the next three,
+  including edits that shift every span in the file.
+  The cost is per watch session and per cold compile, not per edit,
+  which is what makes embedding-by-default tolerable while authoring.
 
 ## Live preview: typst serves and reloads the HTML itself
 

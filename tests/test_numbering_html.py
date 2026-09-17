@@ -111,9 +111,7 @@ def test_a_stack_in_the_body_paints_only_the_rendering_of_the_state(deck_at, typ
         assert presentation.subslides == shown(state)
         pixels = screenshot(presentation.current)
         for index, colour in enumerate(SWATCHES):
-            wanted = np.array(
-                [int(colour[at : at + 2], 16) for at in (1, 3, 5)], dtype=np.uint8
-            )
+            wanted = np.array([int(colour[at : at + 2], 16) for at in (1, 3, 5)], dtype=np.uint8)
             found = bool((pixels == wanted).all(axis=2).any())
             assert found == (index == state), (
                 f"subslide {state + 1} paints the rendering of subslide {index + 1}"

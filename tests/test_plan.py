@@ -118,7 +118,8 @@ sub(
   scale("big", f: 2),
 )
 """,
-            '#assert.eq(plan.states.at(1).display.at("shown"), (: ..identity("shown"), hidden: false))',
+            '#assert.eq(plan.states.at(1).display.at("shown"), '
+            '(: ..identity("shown"), hidden: false))',
             '#assert.eq(plan.states.at(1).display.at("gone"), '
             '(: ..identity("gone"), hidden: true))',
             "#assert.eq(",
@@ -308,7 +309,7 @@ sub(pan(x: 2cm, y: 3cm))
 
 
 def test_relto_alone_brings_both_axes_to_the_tag(typst: TypstRunner):
-    """"Pan so that this tag comes into view" is the whole call, with nothing else said."""
+    """ "Pan so that this tag comes into view" is the whole call, with nothing else said."""
     typst.ok(
         resolved(
             'sub(pan(relto: "t"))',
@@ -609,7 +610,7 @@ def test_a_replacement_after_a_remove_keeps_the_wrappers(typst: TypstRunner):
     typst.ok(
         resolved(
             'sub(apply("a", emph))\nsub(remove("a"))\nsub(replace("a")[back])',
-            '#assert.eq(plan.epochs.at(3).tags.a.wrappers, (emph,))',
+            "#assert.eq(plan.epochs.at(3).tags.a.wrappers, (emph,))",
         )
     )
 
@@ -794,26 +795,18 @@ def test_a_scale_that_names_no_axis_is_refused(typst: TypstRunner):
 
 def test_an_absolute_and_a_relative_move_on_one_axis_are_refused(typst: TypstRunner):
     """The two are measured from different places, exactly as they are for a `pan`."""
-    typst.fails(
-        resolved('sub(move("a", x: 1cm, dx: 1cm))'), "move takes either x or dx, not both"
-    )
-    typst.fails(
-        resolved('sub(move("a", y: 1cm, dy: 1cm))'), "move takes either y or dy, not both"
-    )
+    typst.fails(resolved('sub(move("a", x: 1cm, dx: 1cm))'), "move takes either x or dx, not both")
+    typst.fails(resolved('sub(move("a", y: 1cm, dy: 1cm))'), "move takes either y or dy, not both")
 
 
 def test_a_move_that_says_nothing_is_refused(typst: TypstRunner):
     """An empty `move()` would leave the element where it is."""
-    typst.fails(
-        resolved('sub(move("a"))'), "move takes at least one of x, y, dx, dy or relto"
-    )
+    typst.fails(resolved('sub(move("a"))'), "move takes at least one of x, y, dx, dy or relto")
 
 
 def test_a_move_relative_to_something_that_is_not_a_name_is_refused(typst: TypstRunner):
     """A label is what a reader reaches for first, here as everywhere else."""
-    typst.fails(
-        resolved('sub(move("a", relto: <b>))'), "move takes relto as the name of a tag"
-    )
+    typst.fails(resolved('sub(move("a", relto: <b>))'), "move takes relto as the name of a tag")
 
 
 def test_a_replacement_that_is_not_content_is_refused(typst: TypstRunner):
@@ -845,7 +838,7 @@ def test_apply_names_the_argument_that_is_not_a_function(typst: TypstRunner):
     )
 
 
-@pytest.mark.parametrize("call", ['remove(<a>)', 'reset(1)', 'replace(<a>)[x]', "apply(<a>, emph)"])
+@pytest.mark.parametrize("call", ["remove(<a>)", "reset(1)", "replace(<a>)[x]", "apply(<a>, emph)"])
 def test_a_structural_primitive_takes_its_tag_name_as_a_string(typst: TypstRunner, call):
     """The same check as for the continuous primitives, with the primitive's own name."""
     typst.fails(resolved(f"sub({call})"), f"{call.split('(')[0]} takes the name of a tag")
@@ -862,12 +855,12 @@ def test_every_state_of_the_browser_plan_holds_every_addressed_tag(typst: TypstR
     """
     typst.ok(
         resolved(
-            '''sub(move("a", dx: 1cm))
-sub(scale("b", f: 2))''',
+            """sub(move("a", dx: 1cm))
+sub(scale("b", f: 2))""",
             "#context {",
             "  let states = browser-plan(plan, names, ()).states",
             "  assert.eq(states.len(), 3)",
-            "  assert(states.all(state => state.tags.keys().sorted() == (\"a\", \"b\")))",
+            '  assert(states.all(state => state.tags.keys().sorted() == ("a", "b")))',
             "  assert.eq(states.at(0).tags.a, (: hidden: false,",
             '    x: (relto: "a", offset: 0.0), y: (relto: "a", offset: 0.0),',
             "    scale: (x: 1.0, y: 1.0)))",
@@ -888,9 +881,9 @@ def test_a_tag_the_timeline_reveals_reaches_the_browser_as_hidden_in_state_zero(
     """
     typst.ok(
         resolved(
-            '''sub(reveal("h"))''',
+            """sub(reveal("h"))""",
             "#context {",
-            '  let states = browser-plan(plan, names, ()).states',
+            "  let states = browser-plan(plan, names, ()).states",
             "  assert.eq(states.at(0).tags.h.hidden, true)",
             "  assert.eq(states.at(1).tags.h.hidden, false)",
             "}",
@@ -904,7 +897,7 @@ def test_a_pan_reaches_the_browser_as_an_anchor_name_and_an_offset_in_points(
     """The anchor stays a name, because only the browser can read a tag's position there."""
     typst.ok(
         resolved(
-            '''sub(pan(relto: "t", x: 1in))''',
+            """sub(pan(relto: "t", x: 1in))""",
             "#context {",
             "  let states = browser-plan(plan, names, ()).states",
             "  assert.eq(states.at(0).pan.x, (relto: none, offset: 0.0))",
@@ -953,9 +946,9 @@ def test_an_absolute_move_asks_for_the_moved_tag_and_a_relative_one_for_both(
     """The translation is `anchor(relto) + offset - anchor(self)`, so it needs what it names."""
     typst.ok(
         resolved(
-            '''sub(move("a", x: 1cm))
+            """sub(move("a", x: 1cm))
 sub(move("b", relto: "c"))
-sub(pan(relto: "d"))''',
+sub(pan(relto: "d"))""",
             '#assert.eq(anchor-names(plan), ("a", "b", "c", "d"))',
         )
     )

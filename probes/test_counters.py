@@ -65,10 +65,4 @@ def test_a_counter_may_be_read_while_content_is_being_measured(typst: TypstRunne
     wants and what a value varying per epoch may not be built on: *Providing a value down
     the tree* is that other half.
     """
-    typst.ok(
-        PAGE
-        + COUNTED
-        + "#context {\n"
-        '  let _ = measure([#check("a measurement")])\n'
-        "}\n"
-    )
+    typst.ok(PAGE + COUNTED + '#context {\n  let _ = measure([#check("a measurement")])\n}\n')

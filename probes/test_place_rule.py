@@ -219,9 +219,7 @@ def test_a_nested_show_place_rule_does_not_suppress_the_rule_around_it(typst: Ty
     that rendering does not achieve it: the outer rule still sees both placements.
     """
     typst.ok(
-        NESTED.replace("INNER", "show place: it => it").replace(
-            "EXPECTED", '("none", "none")'
-        )
+        NESTED.replace("INNER", "show place: it => it").replace("EXPECTED", '("none", "none")')
     )
 
 

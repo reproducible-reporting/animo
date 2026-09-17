@@ -122,9 +122,7 @@ def test_the_deck_writes_its_tempo_into_the_stylesheet(page, open_page, typst: T
     }
 
 
-def test_reduced_motion_outranks_a_deck_that_asked_for_motion(
-    page, open_page, typst: TypstRunner
-):
+def test_reduced_motion_outranks_a_deck_that_asked_for_motion(page, open_page, typst: TypstRunner):
     """The deck writes its `:root` block after animo's stylesheet, so order cannot decide this.
 
     The reduced-motion query carries `!important` for that reason, and this is the test
@@ -132,7 +130,9 @@ def test_reduced_motion_outranks_a_deck_that_asked_for_motion(
     for less motion would get the deck's answer instead of theirs.
     """
     page.emulate_media(reduced_motion="reduce")
-    source = deck("slide[One]", "slide[Two]", timing='primitive-duration: 2, transition-duration: 2')
+    source = deck(
+        "slide[One]", "slide[Two]", timing="primitive-duration: 2, transition-duration: 2"
+    )
     open_page(typst.html(source, name="reduced-tempo.html"))
     properties = page.evaluate(TEMPO_PROPERTIES)
     assert properties["step"] == "0s"
@@ -181,7 +181,7 @@ def test_only_the_current_slide_paints(page, deck_at, three_slides):
     Two are laid out after a step, because a boundary crossfades the two containers and
     the one it came from keeps its layout, but only one of them is left carrying any ink.
     """
-    presentation = deck_at(three_slides).goto(2).settle()
+    deck_at(three_slides).goto(2).settle()
     shown = page.evaluate(
         """() => Array.from(document.querySelectorAll('.animo-slide'), node => {
             const computed = getComputedStyle(node);
@@ -283,7 +283,9 @@ def test_an_opaque_colour_overlay_covers_the_body_in_the_browser(open_page, typs
     body = '[#place(dx: 2cm, dy: 2cm, rect(width: 2cm, height: 2cm, fill: rgb("#ff0000")))]'
     shots = {}
     for layer in ("overlay", "background"):
-        page = open_page(typst.html(deck(f'slide({layer}: rgb("#0000ff")){body}'), name=f"{layer}.html"))
+        page = open_page(
+            typst.html(deck(f'slide({layer}: rgb("#0000ff")){body}'), name=f"{layer}.html")
+        )
         shots[layer] = screenshot(page.locator(".animo-slide[data-animo-current]"))
     red = (shots["background"] == np.array([255, 0, 0], dtype=np.uint8)).all(axis=2)
     assert red.any(), "the control lost the body for a reason of its own"
@@ -297,8 +299,8 @@ def test_an_opaque_colour_overlay_covers_the_body_in_the_browser(open_page, typs
 # A slide with three epochs, so that "once per slide" is a claim about the layers rather
 # than a claim that the slide has one frame.
 EPOCHS = (
-    "slide(background: [#box(width: 100%, height: 100%, fill: rgb(\"#ff0000\"))], "
-    'overlay: [#place(bottom + right)[o]], animation: { import anim: *\n'
+    'slide(background: [#box(width: 100%, height: 100%, fill: rgb("#ff0000"))], '
+    "overlay: [#place(bottom + right)[o]], animation: { import anim: *\n"
     '  sub(replace("t")[two])\n'
     '  sub(replace("t")[three]) })[#tag("t")[one]]'
 )

@@ -14,7 +14,9 @@ from decks import deck
 from harness import MEASURE, Rect, TypstRunner
 
 ANIMATION = (
-    '{ import anim: *\n  sub(reveal("second"))\n  sub(move("first", dx: 1cm), scale("second", f: 2)) }'
+    "{ import anim: *\n"
+    '  sub(reveal("second"))\n'
+    '  sub(move("first", dx: 1cm), scale("second", f: 2)) }'
 )
 
 DECK = deck(

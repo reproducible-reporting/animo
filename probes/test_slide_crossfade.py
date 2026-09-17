@@ -70,7 +70,8 @@ def deck(extra: str, page: str = "#000000", ground: str = "transparent") -> str:
         extra=extra,
     )
     inner = "\n".join(
-        f'  #html.elem("div", attrs: (class: "slide"), html.frame[{INK.format(index=i, dy=20 + 40 * i)}])'
+        '  #html.elem("div", attrs: (class: "slide"), '
+        f"html.frame[{INK.format(index=i, dy=20 + 40 * i)}])"
         for i in (1, 2)
     )
     return document(f'#html.elem("div", attrs: (class: "deck"))[\n{inner}\n]', css)
@@ -164,9 +165,7 @@ def test_one_slide_added_to_the_isolated_backdrop_is_that_slide(
 
 
 @pytest.mark.parametrize("surround", ["#000000", "#ffffff"])
-def test_the_ground_of_the_isolating_element_joins_the_sum(
-    typst: TypstRunner, open_page, surround
-):
+def test_the_ground_of_the_isolating_element_joins_the_sum(typst: TypstRunner, open_page, surround):
     """Where the surround's colour has to sit, which is not on the element that isolates.
 
     The same two slides are crossfaded twice, with the surround on the page and with it on
@@ -176,9 +175,7 @@ def test_the_ground_of_the_isolating_element_joins_the_sum(
     the mistake, which is why both are probed and why the black case is not the assertion.
     """
     average = halves(typst, open_page, f"ground-{surround[1:]}", page=surround)
-    on_the_page = shot(
-        typst, open_page, deck(LIGHTER, page=surround), f"page-{surround[1:]}.html"
-    )
+    on_the_page = shot(typst, open_page, deck(LIGHTER, page=surround), f"page-{surround[1:]}.html")
     measured, _ = deviation(average, on_the_page)
     assert measured <= 1, f"a surround on the page reached the sum: {measured}/255"
     on_the_deck = shot(
