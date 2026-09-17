@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# The three tiers and the probes, against the typst release the manifest pins.
+name: pytest
+
+on:
+  push:
+    branches:
+      # Run the suite for a change on the main branch ...
+      - main
+    paths:
+      # ... and only if relevant files have changed.
+      - src/**
+      - tests/**
+      - probes/**
+      - docs/**
+      - examples/**
+      - README.md
+      - conftest.py
+      - typst.toml
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/pytest.yml
+  pull_request:
+    # Run the suite on pull requests ...
+    paths:
+      # ... only if relevant files have changed.
+      - src/**
+      - tests/**
+      - probes/**
+      - docs/**
+      - examples/**
+      - README.md
+      - conftest.py
+      - typst.toml
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/pytest.yml
+
+concurrency:
+  group: pytest-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    env:
+      # The same place `setup.sh` and `.envrc` put it,
+      # so that one rule locates the browser on a contributor's machine and here.
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.venv/playwright
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+      - uses: typst-community/setup-typst@v5
+        with:
+          typst-version: "0.15.1"
+      # `setup-uv` restores its cache into the `cache-dir` of `pyproject.toml`,
+      # which is `.venv/cache`, so `.venv` already exists here as a plain directory
+      # and `uv sync` refuses to adopt it.
+      # Creating the environment first is what `setup.sh` does on a contributor's machine.
+      # Observed with `astral-sh/setup-uv@v10.1.0` and `uv` 0.12.13.
+      - run: uv venv --allow-existing
+      # The test suite needs `pytest` and nothing else,
+      # so it does not build `pre-commit`, StepUp or Zensical.
+      - run: uv sync --no-default-groups --group tests
+      # Every engine: this runner is ubuntu, which is the one platform all three run on.
+      - run: uv run playwright install --with-deps chromium firefox webkit
+      # Naming the engines makes each one required: an engine that failed to install
+      # then fails the job rather than skipping quietly and leaving it green.
+      - run: uv run pytest --browser chromium --browser firefox --browser webkit

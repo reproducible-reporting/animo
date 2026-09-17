@@ -1,0 +1,43 @@
+{
+  "upload_type": "software",
+  "title": "Animo",
+  "version": "0.1.0",
+  "publication_date": "2026-09-16",
+  "description": "Animo is a presentation package for typst that supports both dynamic HTML and static PDF outputs.",
+  "creators": [
+    {
+      "name": "Verstraelen, Toon",
+      "orcid": "0000-0001-9288-5608",
+      "affiliation": "Center for Molecular Modeling (CMM), Ghent University"
+    }
+  ],
+  "license": "apache-2.0",
+  "access_right": "open",
+  "communities": [
+    {
+      "identifier": "ugent"
+    }
+  ],
+  "language": "eng",
+  "keywords": [
+    "animation",
+    "beamer",
+    "handout",
+    "HTML",
+    "presentation",
+    "reproducibility",
+    "reproducible research",
+    "slide",
+    "slides",
+    "slipshow",
+    "talk",
+    "typst"
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "https://reproducible-reporting.github.io/animo",
+      "relation": "isDocumentedBy",
+      "resource_type": "publication-softwaredocumentation"
+    }
+  ]
+}

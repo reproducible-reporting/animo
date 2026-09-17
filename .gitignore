@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# Software environment
+.venv/
+uv.lock
+
+# Development tools
+.idea/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Documentation
+.cache/
+site/
+# The example decks the site publishes, compiled by `tools/build_examples.py`.
+docs/examples/
+
+# Scratch space, including the directory pytest compiles its documents in,
+# which has to lie inside the repository because typst refuses a source outside its root.
+tmp/
+
+# Compiled decks
+*.pdf
+*.html
+# The one hand-written HTML in the repository:
+# the stand-in deck the browser tier is exercised against.
+!tests/documents/*.html
+
+# Scratch output of the build scripts under `tools/`
+build/

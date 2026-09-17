@@ -1,0 +1,565 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+"""Tier 3: the deck animating in the browser.
+
+This is where animo's central claim is either true or not, so the assertions are numeric
+rather than pictorial: the geometry of a tagged element at each subslide, the value it
+holds halfway through a step, and what a deep link lands on.
+
+Two things make them reproducible.
+A deep link *snaps*, so a test that only cares about a state never races a transition.
+And a transition is driven by the Web Animations API, so a test that does care about the
+middle of one pauses it at a stated moment instead of sampling whenever it got there.
+
+Geometry is read with `getBBox` and `getScreenCTM`, never with `getBoundingClientRect`,
+which firefox inflates to roughly the width of the whole frame. See *Findings*.
+"""
+
+import pytest
+from decks import deck
+from harness import Deck, TypstRunner, assert_identical, screenshot
+
+# One centimetre in typst points, which is the user unit of a frame's SVG.
+CM = 28.3465
+
+# How far a measured displacement may be from the length the source states, in CSS pixels.
+# The floor is the browser's own rounding of a transform; a real error is far larger,
+# because the smallest length a timeline states here is a centimetre, which is 28 points.
+TOLERANCE = 0.5
+
+# How long a presenter leaves the deck alone before stepping, in milliseconds.
+# Firefox 153 freezes `document.timeline` while the page draws nothing, so a runtime that
+# takes a start time off it is a whole `PAUSE` into the step it has just begun,
+# and with animo's own 400 ms it would be past the end of it. See *Findings*.
+PAUSE = 500
+
+# How much further into a step it may report itself than the time that really passed since
+# the key was pressed, in milliseconds.
+# A step cannot have begun before the key that asked for it, so real time is the bound,
+# and the allowance covers the rounding of the two clocks that bound is read from.
+# A start time taken off the document timeline would put the step at `PAUSE`,
+# and the allowance stays far below that.
+SLACK = 50
+
+# How far the centre of a group may move under a scale about its own centre.
+# Zero is the claim. Firefox 153 resolves `fill-box` to a box whose centre sits about
+# 0.7 CSS pixels from the one `getBBox` reports, which is invisible in a transition.
+# See *Findings*, where the probe for that row allows the same.
+CENTRE_TOLERANCE = 1.0
+
+
+def mark(name: str, dx: str = "0cm", dy: str = "0cm", size: str = "2cm", **arguments) -> str:
+    """A tagged filled square, placed at an offset from the body origin.
+
+    A square rather than a glyph, because the claim is about where content lands and a
+    square's corners are a number. The tag hugs, so the square's own geometry is the tag
+    site's geometry and an assertion can be written in centimetres from the source.
+    """
+    extra = "".join(f", {key}: {value}" for key, value in arguments.items())
+    return (
+        f"#place(dx: {dx}, dy: {dy}, "
+        f'tag("{name}", wrap: box{extra}, '
+        f'rect(width: {size}, height: {size}, fill: rgb("#ff0000"))))'
+    )
+
+
+def timeline(*steps: str) -> str:
+    """The animation argument of a slide, with the primitives imported inside it."""
+    return "{ import anim: *\n  " + "\n  ".join(steps) + " }"
+
+
+def animated(typst: TypstRunner, body: str, *steps: str, name: str = "deck.html"):
+    """Compile a one-slide deck with a timeline, as a file the browser can open."""
+    source = deck(f"slide(animation: {timeline(*steps)})[\n  {body}\n]")
+    return typst.html(source, name=name)
+
+
+@pytest.fixture
+def moving(typst: TypstRunner):
+    """A square that moves, then moves again and scales, so that operations accumulate."""
+    return animated(
+        typst,
+        mark("m"),
+        'sub(move("m", dx: 3cm, dy: 1cm))',
+        'sub(move("m", dx: 1cm), scale("m", f: 2))',
+    )
+
+
+# The geometry of each state.
+
+
+def test_a_move_shifts_the_element_by_the_length_the_timeline_states(deck_at, moving):
+    """The first claim about a move: the browser puts the element where the plan says."""
+    presentation: Deck = deck_at(moving)
+    unit = presentation.unit
+    before = presentation.rects("m")[0]
+    after = presentation.goto(1, 1).rects("m")[0]
+    assert after.x - before.x == pytest.approx(3 * CM * unit, abs=TOLERANCE)
+    assert after.y - before.y == pytest.approx(1 * CM * unit, abs=TOLERANCE)
+    assert after.width == pytest.approx(before.width, abs=TOLERANCE)
+
+
+def test_moves_accumulate_and_a_scale_multiplies(deck_at, moving):
+    """State 2 is state 1 with the second step applied, which is the state model itself."""
+    presentation: Deck = deck_at(moving)
+    unit = presentation.unit
+    before = presentation.rects("m")[0]
+    after = presentation.goto(1, 2).rects("m")[0]
+    assert after.width == pytest.approx(2 * before.width, abs=TOLERANCE)
+    # The centre has travelled the sum of the two moves; the corner has not, because the
+    # square is twice as large about that centre.
+    assert after.center[0] - before.center[0] == pytest.approx(4 * CM * unit, abs=TOLERANCE)
+    assert after.center[1] - before.center[1] == pytest.approx(1 * CM * unit, abs=TOLERANCE)
+
+
+def test_scale_grows_the_element_about_its_own_centre(deck_at, typst: TypstRunner):
+    """`transform-box: fill-box` with a centred origin, which is what keeps a scale in place.
+
+    Centres are also what a future morph pairs on, for the same reason.
+    """
+    presentation: Deck = deck_at(
+        animated(typst, mark("m", dx="4cm", dy="2cm"), 'sub(scale("m", f: 2))')
+    )
+    before = presentation.rects("m")[0]
+    after = presentation.goto(1, 1).rects("m")[0]
+    assert after.width == pytest.approx(2 * before.width, abs=TOLERANCE)
+    assert after.center[0] == pytest.approx(before.center[0], abs=CENTRE_TOLERANCE)
+    assert after.center[1] == pytest.approx(before.center[1], abs=CENTRE_TOLERANCE)
+
+
+def test_an_absolute_move_puts_the_corner_at_a_point_on_the_canvas(deck_at, typst: TypstRunner):
+    """`x` and `y` are measured from the canvas origin, which is the viewport's own corner.
+
+    The square is placed at the body origin, a margin in, so the displacement an absolute
+    move to 2 cm produces is 2 cm less that margin, and the runtime is what subtracts the
+    anchor it measured.
+    """
+    presentation: Deck = deck_at(
+        animated(typst, mark("m"), 'sub(move("m", x: 2cm, y: 3cm))')
+    )
+    unit = presentation.unit
+    before = presentation.rects("m")[0]
+    after = presentation.goto(1, 1).rects("m")[0]
+    assert after.x - before.x == pytest.approx((2 - 1) * CM * unit, abs=TOLERANCE)
+    assert after.y - before.y == pytest.approx((3 - 1) * CM * unit, abs=TOLERANCE)
+
+
+def test_an_absolute_move_is_idempotent(deck_at, typst: TypstRunner):
+    """A tag's anchor excludes its own display state, so saying it twice says it once."""
+    presentation: Deck = deck_at(
+        animated(
+            typst,
+            mark("m", dx="1cm", dy="2cm"),
+            'sub(move("m", x: 4cm, y: 3cm))',
+            'sub(move("m", x: 4cm, y: 3cm))',
+        )
+    )
+    once = presentation.goto(1, 1).rects("m")[0]
+    twice = presentation.goto(1, 2).rects("m")[0]
+    assert twice.approx(once, tol=TOLERANCE), "the second statement moved it again"
+
+
+def test_relto_lands_one_tag_on_another_and_ignores_what_moved_it(deck_at, typst: TypstRunner):
+    """The anchor of `relto` is where the body put the tag, not where a step took it.
+
+    Both squares hug their tag, so the two corners coincide when one lands on the other,
+    and the step that moves the target first is what makes the claim worth testing.
+    """
+    body = mark("m") + "\n  " + mark("g", dx="8cm", dy="3cm")
+    presentation: Deck = deck_at(
+        animated(typst, body, 'sub(move("g", dx: -2cm), move("m", relto: "g"))')
+    )
+    target = presentation.rects("g")[0]
+    landed = presentation.goto(1, 1).rects("m")[0]
+    assert landed.x == pytest.approx(target.x, abs=TOLERANCE)
+    assert landed.y == pytest.approx(target.y, abs=TOLERANCE)
+
+
+def test_a_per_axis_scale_is_two_values_and_an_isotropic_one_is_one(deck_at, typst: TypstRunner):
+    """The two axes are independent, and a factor is set rather than multiplied into.
+
+    The spelling matters as much as the geometry: a `scale` whose two values are equal is
+    written as one, because a property that holds still in the keyframes stops the browser
+    from drawing the ones beside it. See *Findings*.
+    """
+    presentation: Deck = deck_at(
+        animated(
+            typst,
+            mark("m", dx="4cm", dy="2cm"),
+            'sub(scale("m", f: 3))',
+            'sub(scale("m", fx: 2))',
+        )
+    )
+    before = presentation.rects("m")[0]
+    tripled = presentation.goto(1, 1).rects("m")[0]
+    assert presentation.styles("m")[0]["scale"] == "3"
+    assert tripled.width == pytest.approx(3 * before.width, abs=TOLERANCE)
+    mixed = presentation.goto(1, 2).rects("m")[0]
+    assert presentation.styles("m")[0]["scale"] == "2 3"
+    assert mixed.width == pytest.approx(2 * before.width, abs=TOLERANCE)
+    assert mixed.height == pytest.approx(3 * before.height, abs=TOLERANCE)
+
+
+def test_every_site_of_a_name_takes_the_translation_of_the_first(deck_at, typst: TypstRunner):
+    """Two sites of one name cannot both land on a target without moving independently.
+
+    So the first site in document order lands on it and every other site takes the same
+    translation, which is the rule `relto` already follows for reading an anchor.
+    """
+    body = mark("m") + "\n  " + mark("m", dx="5cm", dy="1cm")
+    presentation: Deck = deck_at(animated(typst, body, 'sub(move("m", x: 3cm, y: 2cm))'))
+    unit = presentation.unit
+    before = presentation.rects("m")
+    after = presentation.goto(1, 1).rects("m")
+    assert len(after) == 2
+    # The first site lands on the point the timeline named, a margin in from the origin.
+    assert after[0].x == pytest.approx(3 * CM * unit + before[0].x - CM * unit, abs=TOLERANCE)
+    shifts = [(new.x - old.x, new.y - old.y) for old, new in zip(before, after, strict=True)]
+    assert shifts[1] == pytest.approx(shifts[0], abs=TOLERANCE), (
+        "the two sites of one name took different translations"
+    )
+
+
+def test_the_anchor_is_read_from_the_first_epoch_that_lays_the_tag_out(
+    deck_at, typst: TypstRunner
+):
+    """Which site is the first one, when a tag is not laid out in every epoch.
+
+    The rule both targets read: the first site in document order, in the first rendering
+    that lays the tag out. In the browser that is the first epoch frame holding a group of
+    the name, because the frames are stacked in epoch order; on paper it is the first page,
+    which is state 0 in the presentation and so the same epoch.
+
+    The tag here is inside an explicit region and absent from epoch 0, so the two
+    definitions have somewhere to diverge: a frame that does not lay it out holds no group
+    of its name at all.
+    """
+    body = (
+        '#region[#tag("a", wrap: box)'
+        '[#rect(width: 1cm, height: 1cm, fill: rgb("#00ff00"))] #h(6cm)]\n  ' + mark("m")
+    )
+    presentation: Deck = deck_at(
+        animated(typst, body, 'sub(reset("a"))', 'sub(move("m", relto: "a"))')
+    )
+    # Epoch 0 does not lay the tag out, so the anchor comes from the frame that does.
+    assert len(presentation.rects("a")) == 1
+    target = presentation.rects("a")[0]
+    landed = presentation.goto(1, 2).rects("m")[0]
+    assert landed.x == pytest.approx(target.x, abs=TOLERANCE)
+    assert landed.y == pytest.approx(target.y, abs=TOLERANCE)
+
+
+# A paragraph that wraps, so the frame holds several glyph runs at several heights.
+# Text rather than a square, because what gets re-anchored is the `matrix(1 0 0 -1 ..)`
+# typst writes on a glyph run, and a filled shape is not drawn inside one.
+PARAGRAPH = (
+    "A paragraph long enough to wrap onto a second line, so that the frame holds "
+    "*several* glyph runs at several heights."
+)
+
+
+def test_a_region_does_not_displace_what_it_holds(deck_at, typst: TypstRunner):
+    """What a scale needs may reach the slot animo built, and nothing else.
+
+    `transform-box` and `transform-origin` re-anchor an element's own `transform` as much
+    as the CSS properties beside them, so wherever they land on a group typst positioned,
+    its content moves and nothing errors (see *Findings*). A region's group is the labelled
+    group that is easiest to get this wrong on: it is not a tag site, so its children are
+    the author's content rather than a slot, and it carries a label because the crossfade
+    addresses it.
+
+    One epoch, so the footprint is the body's own size and the two decks are the same
+    picture. The two open in turn on one page, so each is read before the next is opened.
+    """
+    held: Deck = deck_at(typst.html(deck(f"slide[#region[{PARAGRAPH}]]"), name="region.html"))
+    assert held.rects("animo-region-1"), "the region emitted no group to get this wrong on"
+    inside = screenshot(held.current)
+    loose: Deck = deck_at(typst.html(deck(f"slide[{PARAGRAPH}]"), name="loose.html"))
+    assert_identical(
+        inside,
+        screenshot(loose.current),
+        what="a paragraph inside a region and the same paragraph without one",
+    )
+
+
+def test_typsts_own_transform_survives_every_state(deck_at, moving):
+    """*Architecture* rule 3, from the outside: the shorthand is never emitted.
+
+    Typst writes the element's position as a `transform` attribute on the labelled group.
+    A CSS `transform` would replace it and the element would lose its place on the slide
+    without anything erroring, so what animo writes has to leave it untouched.
+    """
+    presentation: Deck = deck_at(moving)
+    seen = set()
+    for state in range(3):
+        presentation.goto(1, state)
+        seen.add(
+            presentation.page.evaluate(
+                """() => document
+                    .querySelector('[data-typst-label="m"]')
+                    .getAttribute('transform')"""
+            )
+        )
+    assert len(seen) == 1, f"typst's own transform changed between states: {seen}"
+
+
+def test_a_move_is_the_same_fraction_of_the_slide_at_any_window_size(page, deck_at, moving):
+    """A length inside a frame is a user unit, so animo never has to measure the window.
+
+    Measured at two sizes rather than assumed: the whole scheme of writing typst points
+    as CSS lengths rests on it.
+    """
+    presentation: Deck = deck_at(moving)
+    fractions = []
+    for width in (1280, 640):
+        page.set_viewport_size({"width": width, "height": width * 9 // 16})
+        presentation.goto(1, 0)
+        before = presentation.rects("m")[0]
+        after = presentation.goto(1, 1).rects("m")[0]
+        fractions.append((after.x - before.x) / presentation.unit)
+    assert fractions[0] == pytest.approx(3 * CM, abs=TOLERANCE)
+    assert fractions[1] == pytest.approx(fractions[0], abs=TOLERANCE)
+
+
+# Visibility, and the asymmetry between the targets.
+
+
+def test_reveal_and_hide_are_opacity_on_the_inner_slot(deck_at, typst: TypstRunner):
+    """The continuous slot is the unlabelled group, so the labelled one stays free.
+
+    That is what leaves the boundary slot to the epoch crossfade of a later version.
+    """
+    presentation: Deck = deck_at(
+        animated(typst, mark("m"), 'sub(hide("m"))', 'sub(reveal("m"))')
+    )
+    assert [style["opacity"] for style in presentation.styles("m")] == ["1"]
+    assert [style["opacity"] for style in presentation.goto(1, 1).styles("m")] == ["0"]
+    assert [style["opacity"] for style in presentation.goto(1, 2).styles("m")] == ["1"]
+
+
+def test_an_initially_hidden_tag_has_ink_in_the_dom_and_zero_opacity(
+    deck_at, typst: TypstRunner
+):
+    """The asymmetry between the HTML output and the paged ones, in one assertion.
+
+    Typst's `hide()` lays content out and emits nothing to draw, so no CSS could ever
+    bring it back. The HTML target therefore renders an initially hidden element normally
+    and the runtime hides it, while only the paged outputs may use `hide()`.
+    """
+    presentation: Deck = deck_at(
+        animated(typst, mark("m"), 'sub(reveal("m"))')
+    )
+    painted = presentation.page.evaluate(
+        """() => document
+            .querySelector('[data-typst-label="m"]')
+            .querySelectorAll('path, use, rect, image, text').length"""
+    )
+    assert painted > 0, "the hidden element emitted no ink, so nothing can reveal it"
+    assert [style["opacity"] for style in presentation.styles("m")] == ["0"]
+    assert [style["opacity"] for style in presentation.goto(1, 1).styles("m")] == ["1"]
+    assert presentation.rects("m")[0].width > 0, "the hidden element lost its space"
+
+
+# Stepping, deep links and the clock.
+
+
+def test_a_step_interpolates_at_a_stated_moment(page, deck_at, moving):
+    """Mid-flight, sampled rather than raced.
+
+    The transition is a paused animation with an explicit `currentTime`, so halfway
+    through the step the element is halfway along, and the test says which halfway.
+    """
+    presentation: Deck = deck_at(moving)
+    page.add_style_tag(content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }")
+    unit = presentation.unit
+    before = presentation.rects("m")[0]
+    presentation.press("ArrowRight").scrub(2000)
+    middle = presentation.rects("m")[0]
+    assert middle.x - before.x == pytest.approx(1.5 * CM * unit, abs=TOLERANCE)
+    assert middle.y - before.y == pytest.approx(0.5 * CM * unit, abs=TOLERANCE)
+    presentation.scrub(4000)
+    end = presentation.rects("m")[0]
+    assert end.x - before.x == pytest.approx(3 * CM * unit, abs=TOLERANCE)
+
+
+def test_a_step_animates_only_the_properties_it_changes(deck_at, typst: TypstRunner):
+    """A property that holds still in the keyframes is not free.
+
+    In chromium 151 a `translate` or `scale` that is equal at both ends stops the browser
+    from drawing the `opacity` beside it: the element stays as it was for the whole step
+    and jumps at the end. Nothing in the DOM says so, because every value the animation
+    computes is right and only the drawing is missing, which is why this is asserted on
+    what the step animates rather than on what it looks like. See *Findings*.
+    """
+    presentation: Deck = deck_at(
+        animated(
+            typst,
+            mark("m"),
+            'sub(reveal("m"))',
+            'sub(move("m", dx: 2cm))',
+        )
+    )
+    presentation.press("ArrowRight")
+    assert presentation.animating == [{"opacity"}], "the reveal animated more than opacity"
+    presentation.settle()
+    presentation.press("ArrowRight")
+    assert presentation.animating == [{"translate"}], "the move animated more than translate"
+
+
+def test_a_step_taken_after_a_pause_starts_at_its_beginning(page, deck_at, moving):
+    """A presenter talks over a slide and then steps, which is the ordinary case.
+
+    The step is slowed down so that it cannot have finished within the pause,
+    and the assertion is about the clock rather than about the geometry: an animation that
+    began too early is not wrong about where it is going, only about when it set off, and
+    that is invisible in every state it passes through and in the one it lands on.
+
+    How far along the step is when it is read is bounded by the time that really passed
+    since the key, and not by what a frame is expected to cost:
+    a loaded continuous integration runner spent 111 ms on the two frames this reads
+    across, which says nothing about when the step set off.
+    """
+    presentation: Deck = deck_at(moving)
+    page.add_style_tag(content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }")
+    page.wait_for_timeout(PAUSE)
+    clock = "() => performance.now()"
+    pressed = page.evaluate(clock)
+    presentation.press("ArrowRight")
+    flight = presentation.flight
+    elapsed = page.evaluate(clock) - pressed
+    assert flight, "the step animated nothing at all"
+    assert max(flight) < elapsed + SLACK, (
+        f"the step was {max(flight):.0f} ms along {elapsed:.0f} ms after the key was pressed, "
+        f"which is the {PAUSE} ms the page stood still"
+    )
+
+
+def test_stepping_back_returns_to_exactly_the_earlier_geometry(deck_at, moving):
+    """A state is the same wherever it is arrived from, which is what makes it a state."""
+    presentation: Deck = deck_at(moving)
+    before = presentation.rects("m")[0]
+    presentation.press("ArrowRight", 2).settle()
+    assert presentation.position == (1, 2)
+    presentation.press("ArrowLeft", 2).settle()
+    assert presentation.position == (1, 0)
+    assert presentation.rects("m")[0].approx(before), "the element did not come back"
+
+
+def test_a_deep_link_snaps_to_the_state_without_animating(page, deck_at, moving):
+    """What `typst watch` reloads into, and what every other test here relies on.
+
+    The reload keeps the fragment, so the author comes back on the same subslide.
+    Animating into a restored state would mean every recompile plays the step again.
+    """
+    presentation: Deck = deck_at(moving)
+    unit = presentation.unit
+    before = presentation.rects("m")[0]
+    page.reload()
+    presentation.goto(1, 1)
+    assert page.evaluate("() => document.getAnimations().length") == 0
+    after = presentation.rects("m")[0]
+    assert after.x - before.x == pytest.approx(3 * CM * unit, abs=TOLERANCE)
+
+
+def test_a_subslide_step_leaves_no_history_behind(page, deck_at, moving):
+    """`replaceState`, not `pushState`, for subslides as well as for slides.
+
+    A talk steps hundreds of times, and a history entry per step makes the browser's own
+    back button useless for leaving the deck.
+    """
+    presentation: Deck = deck_at(moving)
+    before = page.evaluate("() => history.length")
+    presentation.press("ArrowRight", 2).settle()
+    assert page.url.endswith("#1.2")
+    assert page.evaluate("() => history.length") == before
+
+
+# Scoping, and reaching every occurrence of a tag.
+
+
+def test_one_tag_at_two_sites_moves_as_one_element(deck_at, typst: TypstRunner):
+    """The same name in one slide addresses every site, which is the scoping rule.
+
+    It is also what applies a display state to every epoch frame of a slide at once,
+    since a frame holds one more occurrence of the same name.
+    """
+    body = mark("m") + "\n  " + mark("m", dx="6cm")
+    presentation: Deck = deck_at(animated(typst, body, 'sub(move("m", dx: 2cm))'))
+    unit = presentation.unit
+    before = presentation.rects("m")
+    assert len(before) == 2
+    after = presentation.goto(1, 1).rects("m")
+    for one, other in zip(before, after, strict=True):
+        assert other.x - one.x == pytest.approx(2 * CM * unit, abs=TOLERANCE)
+
+
+def test_a_timeline_moves_only_the_tags_of_its_own_slide(deck_at, typst: TypstRunner):
+    """A tag name means nothing outside the slide it sits in."""
+    source = deck(
+        f"slide(animation: {timeline('sub(move(\"m\", dx: 3cm))')})[\n  {mark('m')}\n]",
+        f"slide[\n  {mark('m')}\n]",
+    )
+    presentation: Deck = deck_at(typst.html(source, name="two.html"))
+    untouched = presentation.goto(2, 0).rects("m")[0]
+    moved = presentation.goto(1, 1).rects("m")[0]
+    assert moved.x - untouched.x == pytest.approx(3 * CM * presentation.unit, abs=TOLERANCE)
+
+
+def test_a_tag_inside_a_tag_is_animated_on_its_own(deck_at, typst: TypstRunner):
+    """Two slots nested in two more, which is what a tag inside a tag emits.
+
+    The inner tag's own group sits inside the outer tag's continuous slot, so the two
+    displacements compose rather than replacing one another.
+    """
+    presentation: Deck = deck_at(
+        animated(
+            typst,
+            '#tag("outer")[before #tag("inner")[middle] after]',
+            'sub(move("outer", dx: 2cm), move("inner", dy: 1cm))',
+        )
+    )
+    unit = presentation.unit
+    outer, inner = presentation.rects("outer")[0], presentation.rects("inner")[0]
+    presentation.goto(1, 1)
+    moved_outer, moved_inner = presentation.rects("outer")[0], presentation.rects("inner")[0]
+    assert moved_outer.x - outer.x == pytest.approx(2 * CM * unit, abs=TOLERANCE)
+    assert moved_outer.y - outer.y == pytest.approx(0, abs=TOLERANCE)
+    assert moved_inner.x - inner.x == pytest.approx(2 * CM * unit, abs=TOLERANCE)
+    assert moved_inner.y - inner.y == pytest.approx(1 * CM * unit, abs=TOLERANCE)
+
+
+def test_every_site_of_a_hidden_name_starts_out_hidden(deck_at, typst: TypstRunner):
+    """One rule addresses every site of a name at once, and one timeline says it for all.
+
+    The initial state is a property of the name in the timeline rather than of a site, so
+    two sites of one name cannot start out differently.
+    """
+    body = mark("d") + "\n  " + mark("d", dx="6cm")
+    presentation: Deck = deck_at(animated(typst, body, 'sub(reveal("d"))'))
+    assert [style["opacity"] for style in presentation.styles("d")] == ["0", "0"]
+
+
+# The plan, as the page carries it.
+
+
+def test_the_slide_carries_the_resolved_plan(deck_at, moving):
+    """The channel, asserted where it is read rather than where it is written.
+
+    It is a `data-` attribute so that the state a runtime applies can be read off the
+    element it belongs to, in a browser's inspector as well as in a test.
+    """
+    presentation: Deck = deck_at(moving)
+    states = presentation.plan["states"]
+    assert len(states) == 3
+    # A position is an anchor and an offset per axis, and a tag the timeline has not moved
+    # is anchored at itself, which is the pair the runtime resolves to the identity.
+    assert [state["tags"]["m"]["x"] for state in states] == [
+        {"relto": "m", "offset": pytest.approx(offset, abs=0.01)}
+        for offset in (0, 3 * CM, 4 * CM)
+    ]
+    assert [state["tags"]["m"]["scale"] for state in states] == [
+        {"x": 1, "y": 1},
+        {"x": 1, "y": 1},
+        {"x": 2, "y": 2},
+    ]
+    assert [state["tags"]["m"]["hidden"] for state in states] == [False, False, False]

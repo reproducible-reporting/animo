@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# The documentation site, built with `--strict` so that a broken link fails the build.
+name: zensical
+
+on:
+  push:
+    branches:
+      # Every commit on the main branch republishes the site,
+      # so that the documentation never lags behind the code.
+      - main
+  pull_request:
+    # Build without publishing on pull requests ...
+    paths:
+      # ... only if relevant files have changed.
+      # The site publishes the example decks and includes their source verbatim,
+      # and compiling them is what `src/` reaches this workflow through.
+      - docs/**
+      - examples/**
+      - src/**
+      - tools/**
+      - typst.toml
+      - zensical.toml
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/zensical.yml
+
+concurrency:
+  group: zensical-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+      - uses: typst-community/setup-typst@v5
+        with:
+          typst-version: "0.15.1"
+      # `setup-uv` restores its cache into the `cache-dir` of `pyproject.toml`,
+      # which is `.venv/cache`, so `.venv` already exists here as a plain directory
+      # and `uv sync` refuses to adopt it.
+      # Creating the environment first is what `setup.sh` does on a contributor's machine.
+      # Observed with `astral-sh/setup-uv@v10.1.0` and `uv` 0.12.13.
+      - run: uv venv --allow-existing
+      - run: uv sync --no-default-groups --group docs
+      # The decks the site publishes, compiled before the site copies them.
+      # A deck that fails to compile fails this job, which is what makes the examples
+      # tested rather than merely shown.
+      - run: ./tools/build_examples.py
+      - run: uv run zensical build --strict
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    # Only `main` is published; a pull request builds the site and stops there.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5
+        id: deployment

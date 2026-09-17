@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# The probes against the newest typst release, as an early warning rather than a post-mortem.
+# It is decoupled from the pinned build: nothing here gates a pull request,
+# and a red run means a finding the design rests on may have changed under it.
+name: probes
+
+on:
+  schedule:
+    # Weekly, on Monday morning. Typst releases are not frequent enough to warrant more.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probes:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.venv/playwright
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.1.0
+        with:
+          enable-cache: true
+      # Deliberately not the pinned release: that is the whole point of this workflow.
+      - uses: typst-community/setup-typst@v5
+        with:
+          typst-version: latest
+      # `setup-uv` restores its cache into the `cache-dir` of `pyproject.toml`,
+      # which is `.venv/cache`, so `.venv` already exists here as a plain directory
+      # and `uv sync` refuses to adopt it.
+      # Creating the environment first is what `setup.sh` does on a contributor's machine.
+      # Observed with `astral-sh/setup-uv@v10.1.0` and `uv` 0.12.13.
+      - run: uv venv --allow-existing
+      - run: uv sync --no-default-groups --group tests
+      # Every engine: this runner is ubuntu, which is the one platform all three run on.
+      - run: uv run playwright install --with-deps chromium firefox webkit
+      - name: Run the probes
+        id: run
+        run: |
+          set -o pipefail
+          uv run pytest probes --browser chromium --browser firefox --browser webkit \
+            --tb=line -q -rs | tee probes.log
+      - name: Report
+        if: always()
+        run: |
+          {
+            echo "## Probes against $(typst --version)"
+            echo
+            if [ "${{ steps.run.outcome }}" = "success" ]; then
+              echo "Every finding the design rests on still holds."
+            else
+              echo "A probe failed, which means a *finding* changed, not a feature."
+              echo "Each probe names the entry of \`planning/findings.md\` it asserts."
+              echo "Decide whether the finding was wrong or has legitimately changed,"
+              echo "update that entry, and then update or retire the probe in the same commit."
+              echo "A probe is never relaxed to make this job green."
+            fi
+            echo
+            echo '```'
+            tail -n 60 probes.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

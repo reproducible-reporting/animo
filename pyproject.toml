@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# Animo is a typst package, not a Python package.
+# Nothing here is ever built or published:
+# `[project]` exists only to give `uv` a name and an interpreter floor,
+# and the development environment lives in `[dependency-groups]`.
+[project]
+name = "animo"
+version = "0.1.0"
+description = "Animo is a presentation package for typst that supports both dynamic HTML and static PDF outputs."
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.14"
+
+[tool.uv]
+package = false
+# Everything `setup.sh` installs has to stay under `.venv/`,
+# so that removing that directory undoes the whole bootstrap.
+cache-dir = "./.venv/cache"
+# `setup.sh` asks for an interpreter that the system may not have.
+python-downloads = "auto"
+
+[dependency-groups]
+# What the test suite needs, and nothing more, so that a continuous integration job
+# running only the tests does not build `pre-commit` or `zensical`.
+tests = [
+    "attrs>=25.0.0",
+    # A static ffmpeg binary, for the one probe that has to read a recorded video back.
+    # What a browser draws while an animation runs cannot be screenshotted: the capture
+    # repaints the page and the behaviour under test disappears. See *Findings*.
+    "imageio-ffmpeg>=0.5.0",
+    "numpy>=2.0.0",
+    "pillow>=11.0.0",
+    # The bundled browsers keep the pixels identical on every machine,
+    # and the browser tier runs in each of them.
+    # `setup.sh` downloads them into `.venv/playwright`.
+    "playwright>=1.50.0",
+    # The few assertions that are about the PDF writer rather than about the layout.
+    # It is the same engine chromium renders PDFs with, and it ships self-contained wheels.
+    "pypdfium2>=4.30.0",
+    "pytest>=8.0.0",
+    "pytest-timeout>=2.3.1",
+    "pytest-xdist>=3.6.1",
+    "snipwise>=1.1.0",
+]
+docs = [
+    # Zensical is a `0.0.x` on a near-daily release cadence,
+    # and every release is a `0.0.x`, so a range pins nothing.
+    # The exact version is what keeps a documentation build from breaking
+    # without a change in this repository.
+    "zensical==0.0.61",
+]
+dev = [
+    { include-group = "tests" },
+    { include-group = "docs" },
+    "pre-commit>=4.6.0",
+    "reuse>=6.2.0",
+]
+
+[tool.pytest.ini_options]
+addopts = "-n auto --dist worksteal -W error -W ignore::ResourceWarning --strict-markers"
+# The slowest step in the test suite is the compilation of typst documents in a subprocess.
+timeout = 60
+# `tests/` holds the feature tests and the harness itself, `probes/` the behaviour probes.
+# One runner covers both, so that a probe and a feature test share every fixture.
+testpaths = ["tests", "probes"]
+# The harness lives in `tests/harness/` and is imported as `harness` from both directories.
+pythonpath = ["tests"]
+markers = [
+    "plan: tier 1, a document full of `#assert` that is compiled and never exported",
+    "paged: tier 2, a rasterised comparison of the presentation or handout output",
+    "browser: tier 3, a check on the HTML output in chromium",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "A", "B", "BLE", "C4", "E", "EXE", "F", "I", "ICN", "ISC", "N", "NPY", "PERF", "PIE", "PL",
+    "PT", "PYI", "RET", "RSE", "RUF", "SIM", "TRY", "UP", "W"
+]
+ignore = [
+    "ISC004",  # https://docs.astral.sh/ruff/rules/isc004/
+    "PLR0904",  # https://docs.astral.sh/ruff/rules/too-many-public-methods/
+    "PLR0911",  # https://docs.astral.sh/ruff/rules/too-many-return-statements/
+    "PLR0912",  # https://docs.astral.sh/ruff/rules/too-many-branches/
+    "PLR0913",  # https://docs.astral.sh/ruff/rules/too-many-arguments/
+    "PLR0914",  # https://docs.astral.sh/ruff/rules/too-many-locals/
+    "PLR0915",  # https://docs.astral.sh/ruff/rules/too-many-statements/
+    "PLR0916",  # https://docs.astral.sh/ruff/rules/too-many-boolean-expressions/
+    "PLR0917",  # https://docs.astral.sh/ruff/rules/too-many-positional/
+    "PLR2004",  # https://docs.astral.sh/ruff/rules/magic-value-comparison/
+    "PLW2901",  # https://docs.astral.sh/ruff/rules/redefined-loop-name/
+    "PT011",  # https://docs.astral.sh/ruff/rules/pytest-raises-too-broad/
+    "RET503",  # https://docs.astral.sh/ruff/rules/implicit-return/
+    "TRY003",  # https://docs.astral.sh/ruff/rules/raise-vanilla-args/
+    "TRY300",  # https://docs.astral.sh/ruff/rules/try-consider-else/
+    "TRY301",  # https://docs.astral.sh/ruff/rules/raise-within-try/
+]

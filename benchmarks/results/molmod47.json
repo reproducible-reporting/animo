@@ -1,0 +1,1352 @@
+{
+  "environment": {
+    "host": "molmod47",
+    "cpu": "12th Gen Intel(R) Core(TM) i7-1260P",
+    "cores": 16,
+    "platform": "Linux-7.2.5-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "typst": "typst 0.15.1 (unknown commit)",
+    "animo": "0.1.0",
+    "commit": "e9ac5e0-dirty",
+    "measured": "2026-09-17 15:51:43+0200"
+  },
+  "settings": {
+    "repeat": 5,
+    "placement_points": 10000,
+    "placement_states": 20
+  },
+  "tour": {
+    "html": {
+      "min": 0.3733,
+      "median": 0.3811,
+      "samples": [
+        0.3733,
+        0.3916,
+        0.3811,
+        0.3921,
+        0.3764
+      ],
+      "bytes": 1365368,
+      "gzip_bytes": 268060,
+      "slides": 16,
+      "states": 48,
+      "epochs": 20,
+      "page_bytes": 1365368,
+      "defs_bytes": 702993,
+      "repeated_defs_bytes": 386217,
+      "distinct_defs": 398,
+      "hoisted_bytes": 979151,
+      "hoisted_gzip_bytes": 168593,
+      "merged_bytes": 1365368,
+      "merged_gzip_bytes": 268060
+    },
+    "presentation": {
+      "min": 0.4389,
+      "median": 0.4571,
+      "samples": [
+        0.4426,
+        0.4389,
+        0.4571,
+        0.4668,
+        0.4669
+      ],
+      "bytes": 233884
+    },
+    "handout": {
+      "min": 0.3402,
+      "median": 0.3517,
+      "samples": [
+        0.374,
+        0.3542,
+        0.3402,
+        0.3428,
+        0.3517
+      ],
+      "bytes": 146396
+    },
+    "watch": {
+      "edit": "one-slide",
+      "cold": 0.4104,
+      "incremental_min": 0.0364,
+      "incremental_median": 0.04,
+      "incremental_samples": [
+        0.0404,
+        0.04,
+        0.0413,
+        0.0364,
+        0.04
+      ]
+    }
+  },
+  "scaling": {
+    "base": {
+      "html": {
+        "min": 0.1158,
+        "median": 0.1201,
+        "samples": [
+          0.1223,
+          0.1158,
+          0.1201,
+          0.1233,
+          0.1195
+        ],
+        "bytes": 955844,
+        "gzip_bytes": 188056,
+        "slides": 12,
+        "states": 12,
+        "epochs": 12,
+        "page_bytes": 955844,
+        "defs_bytes": 460403,
+        "repeated_defs_bytes": 415774,
+        "distinct_defs": 54,
+        "hoisted_bytes": 540070,
+        "hoisted_gzip_bytes": 74155,
+        "merged_bytes": 955844,
+        "merged_gzip_bytes": 188056
+      },
+      "presentation": {
+        "min": 0.0995,
+        "median": 0.1035,
+        "samples": [
+          0.1033,
+          0.1035,
+          0.1073,
+          0.0995,
+          0.1038
+        ],
+        "bytes": 41801
+      },
+      "handout": {
+        "min": 0.1027,
+        "median": 0.1048,
+        "samples": [
+          0.1027,
+          0.1042,
+          0.1071,
+          0.1107,
+          0.1048
+        ],
+        "bytes": 41801
+      },
+      "plain": {
+        "min": 0.0494,
+        "median": 0.0511,
+        "samples": [
+          0.0527,
+          0.0494,
+          0.0511,
+          0.054,
+          0.0499
+        ],
+        "bytes": 40006
+      }
+    },
+    "states-4": {
+      "html": {
+        "min": 0.1504,
+        "median": 0.1606,
+        "samples": [
+          0.1632,
+          0.1606,
+          0.1504,
+          0.1667,
+          0.1539
+        ],
+        "bytes": 1153700,
+        "gzip_bytes": 212261,
+        "slides": 12,
+        "states": 60,
+        "epochs": 12,
+        "page_bytes": 1153700,
+        "defs_bytes": 495743,
+        "repeated_defs_bytes": 448169,
+        "distinct_defs": 58,
+        "hoisted_bytes": 705531,
+        "hoisted_gzip_bytes": 81480,
+        "merged_bytes": 1153700,
+        "merged_gzip_bytes": 212261
+      },
+      "presentation": {
+        "min": 0.2048,
+        "median": 0.2132,
+        "samples": [
+          0.2048,
+          0.2299,
+          0.2118,
+          0.2132,
+          0.2219
+        ],
+        "bytes": 157563
+      },
+      "handout": {
+        "min": 0.1327,
+        "median": 0.138,
+        "samples": [
+          0.1486,
+          0.138,
+          0.1445,
+          0.1356,
+          0.1327
+        ],
+        "bytes": 43742
+      },
+      "plain": {
+        "min": 0.0504,
+        "median": 0.0505,
+        "samples": [
+          0.0554,
+          0.0505,
+          0.0514,
+          0.0504,
+          0.0505
+        ],
+        "bytes": 41321
+      }
+    },
+    "epochs-2": {
+      "html": {
+        "min": 0.1735,
+        "median": 0.1748,
+        "samples": [
+          0.1885,
+          0.1879,
+          0.1745,
+          0.1735,
+          0.1748
+        ],
+        "bytes": 1389391,
+        "gzip_bytes": 228647,
+        "slides": 12,
+        "states": 24,
+        "epochs": 24,
+        "page_bytes": 1389391,
+        "defs_bytes": 469511,
+        "repeated_defs_bytes": 424123,
+        "distinct_defs": 55,
+        "hoisted_bytes": 965268,
+        "hoisted_gzip_bytes": 110352,
+        "merged_bytes": 1389391,
+        "merged_gzip_bytes": 228647
+      },
+      "presentation": {
+        "min": 0.1256,
+        "median": 0.1297,
+        "samples": [
+          0.1286,
+          0.1344,
+          0.1297,
+          0.1256,
+          0.1302
+        ],
+        "bytes": 68612
+      },
+      "handout": {
+        "min": 0.1154,
+        "median": 0.1202,
+        "samples": [
+          0.1164,
+          0.1154,
+          0.1205,
+          0.1202,
+          0.1203
+        ],
+        "bytes": 41410
+      },
+      "plain": {
+        "min": 0.0484,
+        "median": 0.0521,
+        "samples": [
+          0.0521,
+          0.0566,
+          0.0484,
+          0.0511,
+          0.0531
+        ],
+        "bytes": 40006
+      }
+    },
+    "epochs-4": {
+      "html": {
+        "min": 0.2663,
+        "median": 0.2742,
+        "samples": [
+          0.2865,
+          0.2721,
+          0.2663,
+          0.2742,
+          0.2864
+        ],
+        "bytes": 2256701,
+        "gzip_bytes": 307304,
+        "slides": 12,
+        "states": 48,
+        "epochs": 48,
+        "page_bytes": 2256701,
+        "defs_bytes": 486959,
+        "repeated_defs_bytes": 440117,
+        "distinct_defs": 57,
+        "hoisted_bytes": 1816584,
+        "hoisted_gzip_bytes": 180403,
+        "merged_bytes": 2256701,
+        "merged_gzip_bytes": 307304
+      },
+      "presentation": {
+        "min": 0.159,
+        "median": 0.1611,
+        "samples": [
+          0.1611,
+          0.1642,
+          0.159,
+          0.1609,
+          0.1632
+        ],
+        "bytes": 123195
+      },
+      "handout": {
+        "min": 0.1229,
+        "median": 0.1316,
+        "samples": [
+          0.1229,
+          0.1526,
+          0.1458,
+          0.1263,
+          0.1316
+        ],
+        "bytes": 41387
+      },
+      "plain": {
+        "min": 0.0519,
+        "median": 0.0539,
+        "samples": [
+          0.0539,
+          0.0521,
+          0.0551,
+          0.0519,
+          0.0539
+        ],
+        "bytes": 40006
+      }
+    },
+    "epochs-8": {
+      "html": {
+        "min": 0.5115,
+        "median": 0.5389,
+        "samples": [
+          0.5504,
+          0.5115,
+          0.5256,
+          0.5389,
+          0.5545
+        ],
+        "bytes": 3987001,
+        "gzip_bytes": 460377,
+        "slides": 12,
+        "states": 96,
+        "epochs": 96,
+        "page_bytes": 3987001,
+        "defs_bytes": 517535,
+        "repeated_defs_bytes": 468145,
+        "distinct_defs": 61,
+        "hoisted_bytes": 3518856,
+        "hoisted_gzip_bytes": 320350,
+        "merged_bytes": 3987001,
+        "merged_gzip_bytes": 460377
+      },
+      "presentation": {
+        "min": 0.2451,
+        "median": 0.2478,
+        "samples": [
+          0.2473,
+          0.2522,
+          0.2478,
+          0.2451,
+          0.2563
+        ],
+        "bytes": 232200
+      },
+      "handout": {
+        "min": 0.1398,
+        "median": 0.1453,
+        "samples": [
+          0.1453,
+          0.1475,
+          0.1458,
+          0.1405,
+          0.1398
+        ],
+        "bytes": 41430
+      },
+      "plain": {
+        "min": 0.0492,
+        "median": 0.0525,
+        "samples": [
+          0.0492,
+          0.0528,
+          0.0533,
+          0.0513,
+          0.0525
+        ],
+        "bytes": 40006
+      }
+    },
+    "regions-2-epochs-1": {
+      "html": {
+        "min": 0.1909,
+        "median": 0.1972,
+        "samples": [
+          0.1965,
+          0.2027,
+          0.1909,
+          0.1972,
+          0.1992
+        ],
+        "bytes": 1182872,
+        "gzip_bytes": 194499,
+        "slides": 12,
+        "states": 12,
+        "epochs": 12,
+        "page_bytes": 1182872,
+        "defs_bytes": 469511,
+        "repeated_defs_bytes": 424123,
+        "distinct_defs": 55,
+        "hoisted_bytes": 758749,
+        "hoisted_gzip_bytes": 77630,
+        "merged_bytes": 1182872,
+        "merged_gzip_bytes": 194499
+      },
+      "presentation": {
+        "min": 0.1534,
+        "median": 0.1614,
+        "samples": [
+          0.1614,
+          0.1652,
+          0.1534,
+          0.1644,
+          0.1557
+        ],
+        "bytes": 43422
+      },
+      "handout": {
+        "min": 0.1537,
+        "median": 0.1594,
+        "samples": [
+          0.1537,
+          0.1594,
+          0.1621,
+          0.155,
+          0.161
+        ],
+        "bytes": 43422
+      },
+      "plain": {
+        "min": 0.051,
+        "median": 0.0516,
+        "samples": [
+          0.0511,
+          0.054,
+          0.051,
+          0.0516,
+          0.0522
+        ],
+        "bytes": 41634
+      }
+    },
+    "regions-2-epochs-4": {
+      "html": {
+        "min": 0.8233,
+        "median": 0.8471,
+        "samples": [
+          0.8987,
+          0.8233,
+          0.8315,
+          0.8547,
+          0.8471
+        ],
+        "bytes": 3132329,
+        "gzip_bytes": 317786,
+        "slides": 12,
+        "states": 48,
+        "epochs": 48,
+        "page_bytes": 3132329,
+        "defs_bytes": 486959,
+        "repeated_defs_bytes": 440117,
+        "distinct_defs": 57,
+        "hoisted_bytes": 2692212,
+        "hoisted_gzip_bytes": 190092,
+        "merged_bytes": 3132329,
+        "merged_gzip_bytes": 317786
+      },
+      "presentation": {
+        "min": 0.4413,
+        "median": 0.4444,
+        "samples": [
+          0.4438,
+          0.4544,
+          0.4444,
+          0.4505,
+          0.4413
+        ],
+        "bytes": 131499
+      },
+      "handout": {
+        "min": 0.302,
+        "median": 0.3085,
+        "samples": [
+          0.302,
+          0.3085,
+          0.3112,
+          0.3101,
+          0.3056
+        ],
+        "bytes": 43533
+      },
+      "plain": {
+        "min": 0.0509,
+        "median": 0.0527,
+        "samples": [
+          0.0527,
+          0.0509,
+          0.0518,
+          0.0542,
+          0.0554
+        ],
+        "bytes": 41634
+      }
+    },
+    "regions-2-epochs-4-sized": {
+      "html": {
+        "min": 0.4293,
+        "median": 0.4363,
+        "samples": [
+          0.4363,
+          0.4483,
+          0.4348,
+          0.4519,
+          0.4293
+        ],
+        "bytes": 3141341,
+        "gzip_bytes": 321852,
+        "slides": 12,
+        "states": 48,
+        "epochs": 48,
+        "page_bytes": 3141341,
+        "defs_bytes": 489935,
+        "repeated_defs_bytes": 442845,
+        "distinct_defs": 59,
+        "hoisted_bytes": 2698496,
+        "hoisted_gzip_bytes": 193375,
+        "merged_bytes": 3141341,
+        "merged_gzip_bytes": 321852
+      },
+      "presentation": {
+        "min": 0.2362,
+        "median": 0.2423,
+        "samples": [
+          0.2423,
+          0.2423,
+          0.2362,
+          0.2443,
+          0.2457
+        ],
+        "bytes": 135082
+      },
+      "handout": {
+        "min": 0.174,
+        "median": 0.1805,
+        "samples": [
+          0.1848,
+          0.1805,
+          0.1817,
+          0.174,
+          0.1759
+        ],
+        "bytes": 44438
+      },
+      "plain": {
+        "min": 0.05,
+        "median": 0.0542,
+        "samples": [
+          0.0502,
+          0.0554,
+          0.05,
+          0.0549,
+          0.0542
+        ],
+        "bytes": 52044
+      }
+    },
+    "figure-regions-2-epochs-1": {
+      "html": {
+        "min": 0.4844,
+        "median": 0.498,
+        "samples": [
+          0.4844,
+          0.5028,
+          0.4862,
+          0.517,
+          0.498
+        ],
+        "bytes": 784137,
+        "gzip_bytes": 168338,
+        "slides": 12,
+        "states": 12,
+        "epochs": 12,
+        "page_bytes": 784137,
+        "defs_bytes": 417660,
+        "repeated_defs_bytes": 374568,
+        "distinct_defs": 53,
+        "hoisted_bytes": 409569,
+        "hoisted_gzip_bytes": 41627,
+        "merged_bytes": 784137,
+        "merged_gzip_bytes": 168338
+      },
+      "presentation": {
+        "min": 0.3647,
+        "median": 0.3671,
+        "samples": [
+          0.3708,
+          0.3671,
+          0.3667,
+          0.3745,
+          0.3647
+        ],
+        "bytes": 42380
+      },
+      "handout": {
+        "min": 0.3693,
+        "median": 0.3719,
+        "samples": [
+          0.3731,
+          0.3715,
+          0.3693,
+          0.3719,
+          0.3728
+        ],
+        "bytes": 42380
+      },
+      "plain": {
+        "min": 0.0834,
+        "median": 0.0893,
+        "samples": [
+          0.0895,
+          0.0941,
+          0.0846,
+          0.0834,
+          0.0893
+        ],
+        "bytes": 50461
+      }
+    },
+    "figure-regions-2-epochs-4": {
+      "html": {
+        "min": 4.3414,
+        "median": 4.4236,
+        "samples": [
+          4.4712,
+          4.4198,
+          4.4236,
+          4.5014,
+          4.3414
+        ],
+        "bytes": 1692942,
+        "gzip_bytes": 185973,
+        "slides": 12,
+        "states": 48,
+        "epochs": 48,
+        "page_bytes": 1692942,
+        "defs_bytes": 435108,
+        "repeated_defs_bytes": 390562,
+        "distinct_defs": 55,
+        "hoisted_bytes": 1302380,
+        "hoisted_gzip_bytes": 55802,
+        "merged_bytes": 1692942,
+        "merged_gzip_bytes": 185973
+      },
+      "presentation": {
+        "min": 2.1207,
+        "median": 2.1309,
+        "samples": [
+          2.1432,
+          2.1302,
+          2.1207,
+          2.1309,
+          2.188
+        ],
+        "bytes": 128133
+      },
+      "handout": {
+        "min": 1.153,
+        "median": 1.1626,
+        "samples": [
+          1.2098,
+          1.187,
+          1.153,
+          1.1626,
+          1.1539
+        ],
+        "bytes": 42499
+      },
+      "plain": {
+        "min": 0.0833,
+        "median": 0.0892,
+        "samples": [
+          0.0833,
+          0.0892,
+          0.0911,
+          0.0905,
+          0.0881
+        ],
+        "bytes": 50461
+      }
+    },
+    "figure-regions-2-epochs-4-sized": {
+      "html": {
+        "min": 1.096,
+        "median": 1.1076,
+        "samples": [
+          1.1024,
+          1.109,
+          1.096,
+          1.1273,
+          1.1076
+        ],
+        "bytes": 1701714,
+        "gzip_bytes": 187568,
+        "slides": 12,
+        "states": 48,
+        "epochs": 48,
+        "page_bytes": 1701714,
+        "defs_bytes": 438084,
+        "repeated_defs_bytes": 393290,
+        "distinct_defs": 57,
+        "hoisted_bytes": 1308424,
+        "hoisted_gzip_bytes": 56062,
+        "merged_bytes": 1701714,
+        "merged_gzip_bytes": 187568
+      },
+      "presentation": {
+        "min": 0.5562,
+        "median": 0.5743,
+        "samples": [
+          0.5783,
+          0.576,
+          0.5743,
+          0.5562,
+          0.5633
+        ],
+        "bytes": 131011
+      },
+      "handout": {
+        "min": 0.3433,
+        "median": 0.3487,
+        "samples": [
+          0.3433,
+          0.3522,
+          0.3478,
+          0.3487,
+          0.3583
+        ],
+        "bytes": 43220
+      },
+      "plain": {
+        "min": 0.0837,
+        "median": 0.086,
+        "samples": [
+          0.0853,
+          0.0861,
+          0.086,
+          0.0863,
+          0.0837
+        ],
+        "bytes": 49879
+      }
+    },
+    "overlay": {
+      "html": {
+        "min": 0.1258,
+        "median": 0.1331,
+        "samples": [
+          0.1258,
+          0.1367,
+          0.1331,
+          0.1454,
+          0.1287
+        ],
+        "bytes": 1194704,
+        "gzip_bytes": 251104,
+        "slides": 12,
+        "states": 12,
+        "epochs": 12,
+        "page_bytes": 1194704,
+        "defs_bytes": 646583,
+        "repeated_defs_bytes": 586439,
+        "distinct_defs": 73,
+        "hoisted_bytes": 608265,
+        "hoisted_gzip_bytes": 87180,
+        "merged_bytes": 1194704,
+        "merged_gzip_bytes": 251104
+      },
+      "presentation": {
+        "min": 0.1048,
+        "median": 0.1074,
+        "samples": [
+          0.1069,
+          0.1048,
+          0.1075,
+          0.1118,
+          0.1074
+        ],
+        "bytes": 45197
+      },
+      "handout": {
+        "min": 0.106,
+        "median": 0.1073,
+        "samples": [
+          0.1073,
+          0.1075,
+          0.1063,
+          0.1088,
+          0.106
+        ],
+        "bytes": 45197
+      },
+      "plain": {
+        "min": 0.0506,
+        "median": 0.0522,
+        "samples": [
+          0.0532,
+          0.0559,
+          0.0522,
+          0.0522,
+          0.0506
+        ],
+        "bytes": 40006
+      }
+    },
+    "overlay-epochs-4": {
+      "html": {
+        "min": 0.2796,
+        "median": 0.2834,
+        "samples": [
+          0.2847,
+          0.2824,
+          0.2918,
+          0.2796,
+          0.2834
+        ],
+        "bytes": 2495561,
+        "gzip_bytes": 369335,
+        "slides": 12,
+        "states": 48,
+        "epochs": 48,
+        "page_bytes": 2495561,
+        "defs_bytes": 673139,
+        "repeated_defs_bytes": 610782,
+        "distinct_defs": 76,
+        "hoisted_bytes": 1884779,
+        "hoisted_gzip_bytes": 193151,
+        "merged_bytes": 2495561,
+        "merged_gzip_bytes": 369335
+      },
+      "presentation": {
+        "min": 0.1619,
+        "median": 0.1672,
+        "samples": [
+          0.1672,
+          0.1678,
+          0.1659,
+          0.1619,
+          0.1718
+        ],
+        "bytes": 136148
+      },
+      "handout": {
+        "min": 0.1232,
+        "median": 0.1308,
+        "samples": [
+          0.1232,
+          0.1331,
+          0.1308,
+          0.1299,
+          0.1327
+        ],
+        "bytes": 44775
+      },
+      "plain": {
+        "min": 0.0509,
+        "median": 0.0534,
+        "samples": [
+          0.0555,
+          0.0509,
+          0.0548,
+          0.051,
+          0.0534
+        ],
+        "bytes": 40006
+      }
+    },
+    "overlay-states-4-epochs-3": {
+      "html": {
+        "min": 0.2931,
+        "median": 0.2991,
+        "samples": [
+          0.2991,
+          0.3146,
+          0.2945,
+          0.3117,
+          0.2931
+        ],
+        "bytes": 2450706,
+        "gzip_bytes": 349358,
+        "slides": 12,
+        "states": 84,
+        "epochs": 36,
+        "page_bytes": 2450706,
+        "defs_bytes": 681923,
+        "repeated_defs_bytes": 618834,
+        "distinct_defs": 77,
+        "hoisted_bytes": 1831872,
+        "hoisted_gzip_bytes": 171602,
+        "merged_bytes": 2450706,
+        "merged_gzip_bytes": 349358
+      },
+      "presentation": {
+        "min": 0.2704,
+        "median": 0.2777,
+        "samples": [
+          0.2704,
+          0.2777,
+          0.2719,
+          0.2797,
+          0.2798
+        ],
+        "bytes": 234742
+      },
+      "handout": {
+        "min": 0.1519,
+        "median": 0.1534,
+        "samples": [
+          0.1572,
+          0.1521,
+          0.1534,
+          0.1591,
+          0.1519
+        ],
+        "bytes": 46640
+      },
+      "plain": {
+        "min": 0.0505,
+        "median": 0.0529,
+        "samples": [
+          0.053,
+          0.0523,
+          0.0586,
+          0.0505,
+          0.0529
+        ],
+        "bytes": 41321
+      }
+    },
+    "number": {
+      "html": {
+        "min": 0.1363,
+        "median": 0.1402,
+        "samples": [
+          0.1438,
+          0.1366,
+          0.1463,
+          0.1402,
+          0.1363
+        ],
+        "bytes": 1240130,
+        "gzip_bytes": 262242,
+        "slides": 12,
+        "states": 12,
+        "epochs": 12,
+        "page_bytes": 1240130,
+        "defs_bytes": 677187,
+        "repeated_defs_bytes": 609759,
+        "distinct_defs": 86,
+        "hoisted_bytes": 630371,
+        "hoisted_gzip_bytes": 92684,
+        "merged_bytes": 1240130,
+        "merged_gzip_bytes": 262242
+      },
+      "presentation": {
+        "min": 0.1062,
+        "median": 0.1132,
+        "samples": [
+          0.1129,
+          0.1062,
+          0.1132,
+          0.1158,
+          0.1134
+        ],
+        "bytes": 47358
+      },
+      "handout": {
+        "min": 0.1104,
+        "median": 0.1144,
+        "samples": [
+          0.1104,
+          0.1191,
+          0.113,
+          0.1144,
+          0.1194
+        ],
+        "bytes": 47358
+      },
+      "plain": {
+        "min": 0.0508,
+        "median": 0.052,
+        "samples": [
+          0.0522,
+          0.0508,
+          0.052,
+          0.0527,
+          0.0511
+        ],
+        "bytes": 40006
+      }
+    },
+    "number-states-4": {
+      "html": {
+        "min": 0.1717,
+        "median": 0.1804,
+        "samples": [
+          0.1736,
+          0.184,
+          0.1717,
+          0.1833,
+          0.1804
+        ],
+        "bytes": 1490615,
+        "gzip_bytes": 290201,
+        "slides": 12,
+        "states": 60,
+        "epochs": 12,
+        "page_bytes": 1490615,
+        "defs_bytes": 735924,
+        "repeated_defs_bytes": 665551,
+        "distinct_defs": 90,
+        "hoisted_bytes": 825064,
+        "hoisted_gzip_bytes": 101460,
+        "merged_bytes": 1490615,
+        "merged_gzip_bytes": 290201
+      },
+      "presentation": {
+        "min": 0.2267,
+        "median": 0.2298,
+        "samples": [
+          0.2298,
+          0.2284,
+          0.2328,
+          0.2321,
+          0.2267
+        ],
+        "bytes": 179927
+      },
+      "handout": {
+        "min": 0.1419,
+        "median": 0.1444,
+        "samples": [
+          0.1444,
+          0.1501,
+          0.1419,
+          0.1437,
+          0.1452
+        ],
+        "bytes": 48966
+      },
+      "plain": {
+        "min": 0.0515,
+        "median": 0.0544,
+        "samples": [
+          0.0515,
+          0.0519,
+          0.0551,
+          0.0546,
+          0.0544
+        ],
+        "bytes": 41321
+      }
+    },
+    "number-states-4-epochs-3": {
+      "html": {
+        "min": 0.3087,
+        "median": 0.3193,
+        "samples": [
+          0.3193,
+          0.3229,
+          0.3354,
+          0.3087,
+          0.3184
+        ],
+        "bytes": 2575070,
+        "gzip_bytes": 374962,
+        "slides": 12,
+        "states": 84,
+        "epochs": 36,
+        "page_bytes": 2575070,
+        "defs_bytes": 747617,
+        "repeated_defs_bytes": 677244,
+        "distinct_defs": 90,
+        "hoisted_bytes": 1897826,
+        "hoisted_gzip_bytes": 180421,
+        "merged_bytes": 2575070,
+        "merged_gzip_bytes": 374962
+      },
+      "presentation": {
+        "min": 0.2994,
+        "median": 0.3048,
+        "samples": [
+          0.2994,
+          0.3048,
+          0.3097,
+          0.3007,
+          0.308
+        ],
+        "bytes": 242887
+      },
+      "handout": {
+        "min": 0.1547,
+        "median": 0.1625,
+        "samples": [
+          0.1547,
+          0.1625,
+          0.1623,
+          0.165,
+          0.1629
+        ],
+        "bytes": 48446
+      },
+      "plain": {
+        "min": 0.0557,
+        "median": 0.0564,
+        "samples": [
+          0.0564,
+          0.0561,
+          0.0582,
+          0.0557,
+          0.0579
+        ],
+        "bytes": 41321
+      }
+    },
+    "realistic": {
+      "html": {
+        "min": 0.7071,
+        "median": 0.7659,
+        "samples": [
+          0.7177,
+          0.7851,
+          0.7659,
+          0.7071,
+          0.7854
+        ],
+        "bytes": 2868402,
+        "gzip_bytes": 300929,
+        "slides": 12,
+        "states": 84,
+        "epochs": 36,
+        "page_bytes": 2868402,
+        "defs_bytes": 495743,
+        "repeated_defs_bytes": 448169,
+        "distinct_defs": 58,
+        "hoisted_bytes": 2420233,
+        "hoisted_gzip_bytes": 166338,
+        "merged_bytes": 2868402,
+        "merged_gzip_bytes": 300929
+      },
+      "presentation": {
+        "min": 0.6308,
+        "median": 0.6322,
+        "samples": [
+          0.6322,
+          0.6312,
+          0.6372,
+          0.6327,
+          0.6308
+        ],
+        "bytes": 233339
+      },
+      "handout": {
+        "min": 0.3119,
+        "median": 0.3169,
+        "samples": [
+          0.3254,
+          0.3312,
+          0.3119,
+          0.3133,
+          0.3169
+        ],
+        "bytes": 46428
+      },
+      "plain": {
+        "min": 0.053,
+        "median": 0.0559,
+        "samples": [
+          0.0556,
+          0.053,
+          0.0575,
+          0.0559,
+          0.0585
+        ],
+        "bytes": 50457
+      },
+      "watch": {
+        "edit": "one-slide",
+        "cold": 0.6882,
+        "incremental_min": 0.0593,
+        "incremental_median": 0.0616,
+        "incremental_samples": [
+          0.0612,
+          0.0658,
+          0.0616,
+          0.0593,
+          0.0657
+        ]
+      }
+    }
+  },
+  "derived": {
+    "overhead_factor": {
+      "base": 2.08,
+      "states-4": 2.63,
+      "epochs-2": 2.38,
+      "epochs-4": 2.37,
+      "epochs-8": 2.84,
+      "regions-2-epochs-1": 3.01,
+      "regions-2-epochs-4": 5.93,
+      "regions-2-epochs-4-sized": 3.48,
+      "figure-regions-2-epochs-1": 4.43,
+      "figure-regions-2-epochs-4": 13.84,
+      "figure-regions-2-epochs-4-sized": 4.1,
+      "overlay": 2.09,
+      "overlay-epochs-4": 2.42,
+      "overlay-states-4-epochs-3": 3.01,
+      "number": 2.17,
+      "number-states-4": 2.76,
+      "number-states-4-epochs-3": 2.78,
+      "realistic": 5.88
+    },
+    "seconds_per_epoch_per_slide": 0.0047,
+    "seconds_per_region_measurement": 0.00133,
+    "seconds_per_canvas_measurement": 0.00843,
+    "bytes_per_epoch_per_slide": 36084,
+    "gzip_bytes_per_epoch_per_slide": 3235,
+    "gzip_ratio": {
+      "base": 5.08,
+      "states-4": 5.44,
+      "epochs-2": 6.08,
+      "epochs-4": 7.34,
+      "epochs-8": 8.66,
+      "regions-2-epochs-1": 6.08,
+      "regions-2-epochs-4": 9.86,
+      "regions-2-epochs-4-sized": 9.76,
+      "figure-regions-2-epochs-1": 4.66,
+      "figure-regions-2-epochs-4": 9.1,
+      "figure-regions-2-epochs-4-sized": 9.07,
+      "overlay": 4.76,
+      "overlay-epochs-4": 6.76,
+      "overlay-states-4-epochs-3": 7.01,
+      "number": 4.73,
+      "number-states-4": 5.14,
+      "number-states-4-epochs-3": 6.87,
+      "realistic": 9.53
+    },
+    "hoisting_saves_gzipped": {
+      "base": 0.606,
+      "states-4": 0.616,
+      "epochs-2": 0.517,
+      "epochs-4": 0.413,
+      "epochs-8": 0.304,
+      "regions-2-epochs-1": 0.601,
+      "regions-2-epochs-4": 0.402,
+      "regions-2-epochs-4-sized": 0.399,
+      "figure-regions-2-epochs-1": 0.753,
+      "figure-regions-2-epochs-4": 0.7,
+      "figure-regions-2-epochs-4-sized": 0.701,
+      "overlay": 0.653,
+      "overlay-epochs-4": 0.477,
+      "overlay-states-4-epochs-3": 0.509,
+      "number": 0.647,
+      "number-states-4": 0.65,
+      "number-states-4-epochs-3": 0.519,
+      "realistic": 0.447
+    },
+    "merging_saves_gzipped": {
+      "base": 0.0,
+      "states-4": 0.0,
+      "epochs-2": 0.0,
+      "epochs-4": 0.0,
+      "epochs-8": 0.0,
+      "regions-2-epochs-1": 0.0,
+      "regions-2-epochs-4": 0.0,
+      "regions-2-epochs-4-sized": 0.0,
+      "figure-regions-2-epochs-1": 0.0,
+      "figure-regions-2-epochs-4": 0.0,
+      "figure-regions-2-epochs-4-sized": 0.0,
+      "overlay": 0.0,
+      "overlay-epochs-4": 0.0,
+      "overlay-states-4-epochs-3": 0.0,
+      "number": 0.0,
+      "number-states-4": 0.0,
+      "number-states-4-epochs-3": 0.0,
+      "realistic": 0.0
+    }
+  },
+  "placements": {
+    "no-pan": {
+      "min": 1.3041,
+      "median": 1.3239,
+      "samples": [
+        1.3041,
+        1.3089,
+        1.3239,
+        1.3358,
+        1.3783
+      ],
+      "peak_kib": 1015820,
+      "bytes": 2658114
+    },
+    "pan": {
+      "min": 1.7481,
+      "median": 1.8139,
+      "samples": [
+        1.7481,
+        1.8166,
+        1.7776,
+        1.8139,
+        1.8413
+      ],
+      "peak_kib": 1231004,
+      "bytes": 2647450
+    },
+    "pan-canvas": {
+      "min": 1.3668,
+      "median": 1.5503,
+      "samples": [
+        1.5503,
+        1.4248,
+        1.3668,
+        1.6017,
+        1.5567
+      ],
+      "peak_kib": 1014444,
+      "bytes": 2647450
+    },
+    "pan-image": {
+      "min": 0.5732,
+      "median": 0.5826,
+      "samples": [
+        0.5951,
+        0.5927,
+        0.5826,
+        0.5816,
+        0.5732
+      ],
+      "peak_kib": 131156,
+      "bytes": 12442602
+    }
+  }
+}
