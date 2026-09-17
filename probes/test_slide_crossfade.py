@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Crossfading two slide containers*.
+"""Probes for *Crossfading two slide containers*
+and for *Chromium rasterises a frame differently while an opacity animation runs in it*.
 
 The epoch crossfade blends two inline SVGs inside the canvas, which is a container with no
 ground of its own. A slide boundary blends two *HTML* elements that each carry an opaque
@@ -14,6 +15,11 @@ is inside the group it isolates, so a surround written on the deck is added to b
 at every moment of a crossfade. A black surround hides that completely, because zero is
 what adding nothing looks like, and a deck that restated it would have found out the hard
 way.
+
+*Chromium rasterises a frame differently while an opacity animation runs in it* is asserted
+at the end of the module, on those same two containers. A slide boundary is where animo drives
+an opacity animation, and the rounding that finding measures is what decides how exact a
+mid-flight comparison in a feature test may be.
 """
 
 import numpy as np
@@ -188,3 +194,132 @@ def test_the_ground_of_the_isolating_element_joins_the_sum(
         assert measured > 32, (
             f"a light surround on the isolating element did not reach the sum: {measured}/255"
         )
+
+
+# Sampling a crossfade while it runs, for *Chromium rasterises a frame differently while an
+# opacity animation runs in it*.
+#
+# The cases above state an opacity in a stylesheet and rasterise the result.
+# A slide boundary states it in an animation instead,
+# and what an engine rasterises while that animation runs is not always what it rasterises at
+# rest.
+# The difference is the rounding that every mid-flight comparison in the feature tests carries.
+
+# How long the crossfade these cases pause runs for, in milliseconds,
+# and how far inside it the two rasters that stand for its ends are taken.
+# One step leaves the container being faded out at an opacity of 0.99975 rather than at rest,
+# which is as close to the slide alone as a raster taken in flight comes.
+DURATION = 4000
+STEP = 1
+
+# The two slides blended, with the second one hidden until the animation moves it.
+FADING = ONLY_FIRST + ".slide { mix-blend-mode: plus-lighter; }\n"
+
+# How far a raster taken one step inside a crossfade sits from the same page at rest, per
+# engine, as a deviation out of 255 and whether the two rasters differ at all.
+#
+# Chromium 151 is the engine that differs, which is the finding.
+# It promotes the container it is fading and rasterises the ground of that container a unit
+# below the ground at rest, over the whole slide rather than on glyph edges.
+# Measured at 1/255 on 2026-09-17.
+# The allowance is a step above the 2/255 that a deck of animo's own implies, whose midpoint
+# comparison came to 1.5/255 on a continuous integration runner.
+# Firefox 153 shows none of it.
+# Playwright ships no webkit build for the distribution this was measured on, so webkit has no
+# row and the case skips with the number that fills one in.
+IN_FLIGHT = {"chromium": (3, True), "firefox": (0, False), "webkit": None}
+
+# How far the midpoint of a paused crossfade sits from the average of the two rasters that
+# stand for its ends, per engine, out of 255, every raster taken with the animation in flight.
+# This is the rounding the mid-flight comparisons of `tests/` allow for, measured on the
+# mechanism alone: 1/255 in chromium 151 and 0.5/255 in firefox 153 on 2026-09-17.
+MID_FLIGHT = {"chromium": 3, "firefox": 3, "webkit": None}
+
+
+def crossfade(page) -> None:
+    """Start the crossfade of the two slides and pause it where it began."""
+    page.evaluate(
+        """duration => {
+            const opacities = [["1", "0"], ["0", "1"]];
+            document.querySelectorAll(".slide").forEach((slide, index) => {
+                const animation = slide.animate(
+                    opacities[index].map((opacity) => ({opacity})),
+                    {duration, easing: "linear"},
+                );
+                animation.pause();
+            });
+        }""",
+        DURATION,
+    )
+
+
+def at(page, moment: float) -> np.ndarray:
+    """The raster of one moment of the paused crossfade, taken with it in flight."""
+    page.evaluate(
+        """moment => {
+            for (const animation of document.getAnimations()) animation.currentTime = moment;
+        }""",
+        moment,
+    )
+    return screenshot(page, animations="allow").astype(int)
+
+
+def test_a_raster_taken_in_flight_is_not_the_page_at_rest(
+    typst: TypstRunner, open_page, browser_name
+):
+    """The finding, and the reason a mid-flight comparison takes every raster in flight.
+
+    One page is rasterised twice: at rest, and with a crossfade paused one step inside it.
+    The slide the crossfade starts from is at an opacity of 0.99975 there and the slide it
+    ends on at 0.00025, so the picture is the first slide in both rasters.
+    A difference between them is the rendering path rather than the transition.
+    """
+    page = open_page(typst.html(deck(FADING), name="fading.html"))
+    at_rest = screenshot(page)
+    crossfade(page)
+    measured, _ = deviation(at_rest, at(page, STEP))
+    row = IN_FLIGHT[browser_name]
+    if row is None:
+        # A real skip, reported by `pytest -rs`, carrying the number that fills the row in.
+        pytest.skip(
+            f"{browser_name} has no measured row: one step into a crossfade it rasterised "
+            f"{measured}/255 from the page at rest"
+        )
+    allowed, differs = row
+    assert measured <= allowed, (
+        f"{browser_name} rasterised the first step of a crossfade {measured}/255 from the "
+        f"page at rest"
+    )
+    assert (measured > 0) == differs, (
+        f"{browser_name} rasterised the first step of a crossfade {measured}/255 from the "
+        f"page at rest, where its row says {'a difference' if differs else 'none'}"
+    )
+
+
+def test_the_midpoint_in_flight_is_the_average_of_the_two_ends_in_flight(
+    typst: TypstRunner, open_page, browser_name
+):
+    """What a feature test asserts about a slide boundary, on the mechanism alone.
+
+    Three rasters of one paused crossfade: one step inside each end, and the midpoint.
+    The blend sums, so the average of the two ends is the midpoint, and what is left over is
+    the rounding of three eight-bit rasters and of the end that is not the slide at rest.
+    The two ends are checked against each other first, since a crossfade between two equal
+    pictures would meet the claim without summing anything.
+    """
+    page = open_page(typst.html(deck(FADING), name="fading-midpoint.html"))
+    crossfade(page)
+    before, halfway, after = (at(page, moment) for moment in (STEP, DURATION / 2, DURATION - STEP))
+    apart, _ = deviation(before, after)
+    assert apart > 32, f"the two ends of the crossfade are {apart}/255 apart"
+    measured = float(abs((before + after) / 2 - halfway).max())
+    allowed = MID_FLIGHT[browser_name]
+    if allowed is None:
+        # A real skip, reported by `pytest -rs`, carrying the number that fills the row in.
+        pytest.skip(
+            f"{browser_name} has no measured row: its midpoint sat {measured}/255 from the "
+            f"average of the two ends"
+        )
+    assert measured <= allowed, (
+        f"the midpoint of the crossfade is {measured}/255 from the average of its two ends"
+    )

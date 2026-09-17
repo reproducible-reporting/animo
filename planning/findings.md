@@ -347,15 +347,30 @@ region, and up to 79/255 on the glyph edges inside it. Firefox 153 shows none of
 the blend and not the isolation, which forcing `mix-blend-mode: normal` and `isolation: auto`
 both leave unchanged, and a step that animates only `translate` is exact.
 
-Two consequences, the second of which took the longest to find:
+What follows for the measurement of a transition, and for the remedy that suggests itself:
 
 - Any comparison between a raster taken with an animation in flight and one taken at rest
   measures the rendering path and not the transition. **Every raster of a mid-flight
   comparison has to be taken with the same animation in flight**, the ones standing for the
   endpoints included, sampled just inside the step rather than at its ends, since an animation
   at its end time is finished and rasterises as at rest again. Compared that way the
-  containment is exact in both engines and the midpoint is the sum of the two frames to within
-  1/255.
+  containment is exact in both engines.
+- **A raster sampled just inside the step is not the slide at rest**,
+  so a mid-flight comparison carries more rounding than a comparison of stated opacities.
+  The container being faded out is at an opacity of just under one there.
+  Chromium 151 rasterises it 1/255 below the same container at rest,
+  over the whole ground rather than on glyph edges, and firefox 153 rasterises it exactly.
+  The end that stands for the container being faded in is exact in both engines.
+  Half of that offset reaches the average of the two ends,
+  and the midpoint raster adds the half unit of its own quantisation.
+  The midpoint of a mid-flight comparison is therefore the sum of its two ends to within
+  1.5/255, where a comparison of stated opacities is exact to 1/255.
+  Measured on 2026-09-17, on the mechanism by hand and in a deck of animo's own.
+  The deck came to 1.0/255 on a workstation and to 1.5/255 on a continuous integration runner,
+  which takes an end 2/255 from the slide at rest.
+  Which way an end rounds differs between machines,
+  and an allowance of 1/255 on a mid-flight comparison passes on one machine and fails on
+  another.
 - `will-change: opacity` on the carried groups removes the difference, because a group that is
   always promoted rasterises the same at rest and in flight. It is not worth it: the promoted
   text then differs from unpromoted text *permanently*, and by more (643 of 3600 ink pixels,

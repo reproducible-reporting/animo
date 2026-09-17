@@ -146,6 +146,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Regions: what a region learns from its container             | `test_region_containers.py`  |
 | Crossfading epoch frames                                     | `test_crossfade.py`          |
 | Crossfading two slide containers                             | `test_slide_crossfade.py`    |
+| Rasterising a frame while an opacity animation runs in it    | `test_slide_crossfade.py`    |
 | Choosing between stacked renderings: opacity, not visibility | `test_stacked_renderings.py` |
 | Automatic canvas sizing: `#place` and `show place:`          | `test_canvas.py`             |
 | Recording placements: what a `show place:` rule may do       | `test_place_rule.py`         |

@@ -28,11 +28,22 @@ MIDPOINT = DURATION / 2
 
 SLOW = f":root {{ --animo-transition-duration: {DURATION}ms; --animo-easing: linear }}"
 
-# How far the blended midpoint of a slide boundary may sit from the exact average of the
-# two slides, per engine, as a deviation out of 255 and a number of pixels allowed to
-# exceed one. These are the allowances the probe for *Crossfading two slide containers*
-# measured; webkit's is the one from *Crossfading epoch frames*, which it shares.
-BLEND = {"chromium": (1, 0), "firefox": (1, 0), "webkit": (48, 512)}
+# What a comparison of a midpoint with the two endpoints around it carries on its own,
+# out of 255, as `test_epochs_html.py` derives it.
+# Chromium 151 is the engine that needs most of it.
+# The container it fades out is sampled one step inside the boundary rather than at full
+# opacity, and it rasterises up to 2/255 from the same container at rest.
+ROUNDING = 3
+
+# How far the blended midpoint of a slide boundary may sit from the average of the two
+# slides, per engine, as a deviation out of 255 and a number of pixels allowed to exceed the
+# rounding above.
+# Chromium 151 and firefox 153 are held to that rounding, which stays far below the 64/255 a
+# plain opacity crossfade dips by.
+# The probe for *Crossfading two slide containers* is where the exactness of the blend is
+# measured, on rasters with no animation running in them.
+# Webkit's allowance is the one from *Crossfading epoch frames*, which it shares.
+BLEND = {"chromium": (ROUNDING, 0), "firefox": (ROUNDING, 0), "webkit": (48, 512)}
 
 # Three slides of three grounds, the middle one cutting and the outer two crossfading.
 # The ground is what the blend is really about, and a heading is what says the slide
@@ -233,7 +244,7 @@ def test_the_midpoint_of_a_boundary_is_the_sum_of_the_two_slides(
     assert difference.max() <= deviation, (
         f"the midpoint of the boundary is {difference.max()}/255 from the exact sum"
     )
-    assert int((difference > 1).any(axis=2).sum()) <= pixels, (
+    assert int((difference > ROUNDING).any(axis=2).sum()) <= pixels, (
         "more of the slide dipped than this engine was measured to"
     )
 
