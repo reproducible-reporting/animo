@@ -22,7 +22,7 @@ so either of them exports to PDF, SVG or PNG.
 
 The specification is two documents under `planning/`, and the first is the entry point.
 
-- [planning/design.md](planning/design.md) specifies Animo 0.1.0 and is the reference
+- [planning/design.md](planning/design.md) specifies how Animo works and is the reference
   for any change in behaviour.
   Read it before changing anything in `src/`.
   Two of its sections carry more weight than the rest.

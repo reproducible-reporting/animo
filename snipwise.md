@@ -141,7 +141,6 @@ render = "{{ content | unwrap }}"
 [[targets]]
 patterns = [
   "*.md",
-  ".envrc",
   "benchmarks/*.typ",
   "docs/**/*.md",
   "examples/*.typ",

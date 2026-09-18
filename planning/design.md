@@ -29,7 +29,8 @@ introduces it. The rule is:
 
 ## Companion Documents
 
-This document specifies Animo 0.1.0: what a slide declares, what a timeline may do to it,
+This document specifies the latest version of Animo:
+what a slide declares, what a timeline may do to it,
 and why each of those answers was chosen rather than another.
 One companion document carries the material that would otherwise overwhelm it.
 
@@ -554,16 +555,21 @@ subslides**. It is the unit of reflow and the unit of redrawing.
   region control over `width`, `height`, `clip` and `align`, which it would then have to merge
   into the author's element by rebuilding it from `fields()`, losing whatever a `set` rule
   contributed.
-- **Why block-level**, since the reason is not the one the word suggests. It is not that the
-  surroundings have to stay still: a box whose footprint is fixed at the maximum over its
-  epochs holds its paragraph as still as a block holds its flow, because constant size means
-  constant line breaking. It is that a region at `width: auto` has to know its container's
-  width, and `layout(size => ..)` is the only way to learn it, and `layout` is block-level: it
-  breaks the line it is put in (measured). Inline, the best available is an unbounded
-  `measure`, which reports the natural width of content that never got the chance to wrap. A
-  box itself wraps correctly once it has a width, so what is missing inside a paragraph is the
-  width, not the box. An explicitly sized region could therefore be a box; 0.1.0 does not offer
-  one, because the inline case already exists as the implicit region around a bare tag.
+- **Why block-level**, since the reason is not the one the word suggests.
+  It is not that the surroundings have to stay still:
+  a box whose footprint is fixed at the maximum over its epochs
+  holds its paragraph as still as a block holds its flow,
+  because constant size means constant line breaking.
+  It is that a region at `width: auto` has to know its container's width,
+  and `layout(size => ..)` is the only way to learn it, and `layout` is block-level:
+  it breaks the line it is put in (measured).
+  Inline, the best available is an unbounded `measure`,
+  which reports the natural width of content that never got the chance to wrap.
+  A box itself wraps correctly once it has a width,
+  so what is missing inside a paragraph is the width, not the box.
+  An explicitly sized region could therefore be a box.
+  Animo does not offer one,
+  because the inline case already exists as the implicit region around a bare tag.
 - That implicit region inherits the same limit: its footprint can only come from unbounded
   measurements, so content replaced at an *inline* tag site cannot wrap, it can only run on.
   Inline tag sites are for short content, and the manual says so. A one-line paragraph measures
@@ -1593,7 +1599,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
   few pixels, and two copies of the same words a few pixels apart are an illegible smear for
   the rest of the paragraph, where the part *before* the edit stays crisp because it did not
   move. This is the case a morph would exist for, and it is why the transition strategy is a
-  named, swappable one from 0.1.0 on.
+  named, swappable one from the first release of Animo.
   Until a morph exists, the authoring advice is to put a region around what is replaced
   wholesale and to keep what merely shifts out of it.
 
@@ -1921,8 +1927,8 @@ These were the open questions of the earlier drafts. They are settled; the evide
   which skips the measuring and took the same deck to 1.2 s. Nothing here asks for a change to
   the design; `docs/performance.md` says it to authors instead.
 
-- **Is gzip enough for the page weight, or is the shared-defs hoisting needed?** Gzip is enough
-  for 0.1.0, and what was to follow it turned out to be two things rather than one. Hoisting the
+- **Is gzip enough for the page weight, or is the shared-defs hoisting needed?** Gzip is enough,
+  and what was to follow it turned out to be two things rather than one. Hoisting the
   shared definitions into a document-level `<svg>` is sound in the browser and **unreachable
   from inside typst 0.15.1**, because a package never holds the markup a frame became; what is
   reachable is one frame per slide holding a rendering per epoch, which makes typst's own
@@ -2086,7 +2092,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
   supposed to buy is not there: `#slide(wait: ..)` on the first slide of a deck does nothing,
   because a gap is read when its state is entered from a predecessor and state 0 of slide 1 has
   none. What is left is that the two forms are natural for different sentences and fail in
-  opposite directions when a timeline is edited, which is why both are in 0.1.0.
+  opposite directions when a timeline is edited, which is why both are implemented.
 
   **One gap takes one number**, and a gap that both of its neighbours time is refused rather than
   summed. *Timing* states why, and the part that belongs here is the order of the two decisions:
@@ -2125,7 +2131,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
 
 - **Does an operation get a duration of its own, and in what unit?** Yes, `duration:`, beside
   `delay:` on every primitive, defaulting to `auto`, and in seconds like everything else an
-  author writes. It was queued as `time:` and moved into 0.1.0 once `delay:` had built its
+  author writes. It was queued as `time:` and moved into Animo once `delay:` had built its
   plumbing, because the plan carries per-operation timing to the browser either way and the Web Animations API takes a duration exactly where it takes a delay.
   The name is `duration:` rather than `time:` because it sits beside `delay:`, where `time:`
   reads as a moment rather than as a length, and because it is the quantity
@@ -2357,7 +2363,7 @@ path: every example, including the ones in the README, imports `@preview/animo:X
 a relative path, so that a reader can copy any file and compile it. Keeping those strings correct
 is `snipwise`'s job.
 
-A submission cannot be withdrawn: publishing `0.1.0` commits to the name and to that version
+A submission cannot be withdrawn: publishing a first version commits to the name and to that version
 number for good. It does not commit to the API. Animo is not API-stable before 1.0, and
 saying so plainly is better than a promise that real use would break anyway, because nobody
 knows yet what real use turns up. What the intention means is that a break has a real cost:
