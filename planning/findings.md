@@ -1274,9 +1274,9 @@ the presence of a `hide` say what that state did to it.
   `{ import anim: * ... }` the primitives win, while `move`, `scale` and `hide`
   outside the block remain the typst built-ins.
 - A star import re-exports submodule bindings, so a single
-  `#import "@preview/animo:0.1.0": *` provides `slide`, `tag`, `region`, `sub` *and* the
+  `#import "@preview/animo:0.1.1": *` provides `slide`, `tag`, `region`, `sub` *and* the
   `anim` module (`anim` reports as a `module`). Three usage forms all work: `import anim: *`
-  inside the animation block, a named import (`#import "@preview/animo:0.1.0": sub, tag, anim`), and fully-qualified calls (`anim.reveal("a")`) with no inner import at all.
+  inside the animation block, a named import (`#import "@preview/animo:0.1.1": sub, tag, anim`), and fully-qualified calls (`anim.reveal("a")`) with no inner import at all.
   Verified with a local two-file module, which resolves identically to a package
   entrypoint.
 - **Footgun:** because `import ...: *` silently falls through to the standard library for

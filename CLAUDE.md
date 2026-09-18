@@ -49,7 +49,7 @@ When a finding contradicts one of them, say so and ask.
   Snipwise copies it into every file that repeats it, as `snipwise.md` spells out,
   so a version number is never edited by hand outside the manifest.
   The same holds for the typst release, which is the manifest's `compiler` field.
-- Every example, snippet and test document imports `@preview/animo:0.1.0`,
+- Every example, snippet and test document imports `@preview/animo:0.1.1`,
   never a relative path, so that a reader can copy any of them and compile it unchanged.
   Only the internal tests import `/src/lib.typ`.
 - Rendering has to be reproducible between a contributor's machine and CI,

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
 cff-version: 1.2.0
-version: 0.1.0
+version: 0.1.1
 date-released: 2026-09-16
 message: If you use this software, please cite it using these metadata.
 title: Animo

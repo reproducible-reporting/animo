@@ -7,7 +7,7 @@ cross-target invariant to say anything, so a deck that only one tier can build i
 that cannot be compared.
 
 These are internal tests, so they import `/src/lib.typ` by absolute path.
-Everything a reader is meant to copy imports `@preview/animo:0.1.0` instead.
+Everything a reader is meant to copy imports `@preview/animo:0.1.1` instead.
 """
 
 __all__ = ("PREAMBLE", "deck", "marks_deck")

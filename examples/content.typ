@@ -4,7 +4,7 @@
 // The structural primitives, which change what typst lays out rather than how it is
 // shown, and the region that lets a change push its surroundings around.
 
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 

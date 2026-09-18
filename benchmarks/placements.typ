@@ -27,7 +27,7 @@
 // A number measured here means something only when the deck it was measured on is the same
 // deck, so this file is meant to stay as it is.
 
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 #let flag(name, value) = sys.inputs.at(name, default: "") == value
 #let number(name, fallback) = int(sys.inputs.at(name, default: str(fallback)))

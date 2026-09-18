@@ -3,7 +3,7 @@
 
 // The smallest deck that animates: one slide, one tag, one step.
 
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 // The shape of the deck is a document-level show rule, written once.
 // It is also what emits the HTML page, its stylesheet and its runtime,

@@ -3,7 +3,7 @@
 
 // The published import form, exactly as every example and every documentation snippet
 // shows it. It resolves through the repository-local package directory.
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 #show: animo.with(width: 16cm, height: 9cm)
 

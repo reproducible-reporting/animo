@@ -65,8 +65,8 @@ done
 echo
 
 # The repository-local package directory that makes the working tree resolve
-# as `@preview/animo:0.1.0`. It is committed, so this only repairs a lost symlink.
+# as `@preview/animo:0.1.1`. It is committed, so this only repairs a lost symlink.
 mkdir -p .typst-packages/preview/animo
-ln -sfn ../../.. .typst-packages/preview/animo/0.1.0
+ln -sfn ../../.. .typst-packages/preview/animo/0.1.1
 
 .venv/bin/uv run pre-commit install

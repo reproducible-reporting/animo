@@ -88,7 +88,7 @@ The initial version has the following (non)features:
 Example usage:
 
 ```typst
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 #slide(
   background: blue,

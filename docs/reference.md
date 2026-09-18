@@ -15,7 +15,7 @@ The whole public surface of Animo.
 The guide explains these names, and this page states their signatures.
 
 ```typst
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 ```
 
 A star import brings in the body-level names and the `anim` module as a name.

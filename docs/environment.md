@@ -72,12 +72,12 @@ The `uv-lock` hook fails a commit that leaves the two out of step.
 
 Both of these resolve from a single working tree, at the same time.
 
-**`@preview/animo:0.1.0`** is what every example, documentation snippet and README shows,
+**`@preview/animo:0.1.1`** is what every example, documentation snippet and README shows,
 so that a reader can copy any of them and compile it unchanged.
 It resolves to the working tree through a repository-local package directory:
 
 ```text
-.typst-packages/preview/animo/0.1.0 -> ../../..
+.typst-packages/preview/animo/0.1.1 -> ../../..
 ```
 
 The symlink is committed, and `.envrc` points typst at it:
