@@ -60,7 +60,7 @@ jobs:
           enable-cache: true
       - uses: typst-community/setup-typst@v5
         with:
-          typst-version: "0.15.1"
+          typst-version: "0.15.0"
       # `setup-uv` restores its cache into the `cache-dir` of `pyproject.toml`,
       # which is `.venv/cache`, so `.venv` already exists here as a plain directory
       # and `uv sync` refuses to adopt it.

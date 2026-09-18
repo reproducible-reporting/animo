@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 [![Package on Typst Universe](https://img.shields.io/badge/universe-animo-239dad?logo=typst&logoColor=white)](https://typst.app/universe/package/animo)
 [![Latest release on GitHub](https://img.shields.io/github/v/release/reproducible-reporting/animo?logo=github&label=release)](https://github.com/reproducible-reporting/animo/releases)
-[![Supported typst release](https://img.shields.io/badge/typst-0.15.1-239dad?logo=typst&logoColor=white)](https://github.com/typst/typst/releases/tag/v0.15.1)
+[![Supported typst release](https://img.shields.io/badge/typst-0.15.0-239dad?logo=typst&logoColor=white)](https://github.com/typst/typst/releases/tag/v0.15.0)
 [![Documentation site](https://img.shields.io/badge/docs-animo-blue)](https://reproducible-reporting.github.io/animo/)
 [![Status of the test suite](https://github.com/reproducible-reporting/animo/actions/workflows/pytest.yml/badge.svg)](https://github.com/reproducible-reporting/animo/actions/workflows/pytest.yml)
 [![Status of the pre-commit hooks](https://results.pre-commit.ci/badge/github/reproducible-reporting/animo/main.svg)](https://results.pre-commit.ci/latest/github/reproducible-reporting/animo/main)
