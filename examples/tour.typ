@@ -537,7 +537,7 @@
   #tag("d1")[
     3. `delay:` delays an animation primitive, e.g. `reveal`, `move`, `scale`, etc.
 
-    #tag("d2")[This sentence was shown with 0.3 seconds of delay.]
+      #tag("d2")[This sentence was shown with 0.3 seconds of delay.]
   ]
 
   #tag("d3")[
