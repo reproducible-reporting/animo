@@ -19,6 +19,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 ### Fixes
 
 - Reduce the typst dependency from 0.15.1 to 0.15.0.
+- Simplify package build script.
 
 ## [0.1.0] - 2026-09-17
 
