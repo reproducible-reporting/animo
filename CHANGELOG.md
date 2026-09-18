@@ -14,7 +14,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 (no changes yet)
 
-## [0.1.0] - 2026-09-18
+## [0.1.1] - 2026-09-18
 
 ### Fixes
 
