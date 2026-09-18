@@ -40,10 +40,10 @@ def main():
         for source in ROOT.glob(pattern):
             destination = target / source.relative_to(ROOT)
             destination.parent.mkdir(parents=True, exist_ok=True)
-            destination.write_bytes(source.read_bytes())
+            shutil.copy2(source, destination)
 
     # Manually copy LICENSE file to comply with Typst Universe conventions
-    Path(ROOT / "LICENSES" / "Apache-2.0.txt").copy(target / "LICENSE")
+    shutil.copy2(ROOT / "LICENSES" / "Apache-2.0.txt", target / "LICENSE")
 
     return 0
 
