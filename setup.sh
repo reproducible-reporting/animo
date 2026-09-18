@@ -22,6 +22,38 @@ export UV_PYTHON_INSTALL_DIR=.venv/uv-python
 # Install the development environment.
 .venv/bin/uv sync
 
+# The typst release the manifest pins, installed under `.venv/` like everything else here,
+# so that it shadows any other typst on PATH once the environment is activated.
+# The test suite asserts that `typst --version` agrees with the `compiler` field of
+# `typst.toml`, because the rendered pixels a test compares are the pixels of one release.
+# Snipwise copies the number from that field, so it is never edited here by hand.
+TYPST_VERSION="0.15.0"
+
+case "$(uname -s)/$(uname -m)" in
+Linux/x86_64) typst_target="x86_64-unknown-linux-musl" ;;
+Linux/aarch64 | Linux/arm64) typst_target="aarch64-unknown-linux-musl" ;;
+Darwin/x86_64) typst_target="x86_64-apple-darwin" ;;
+Darwin/arm64) typst_target="aarch64-apple-darwin" ;;
+*)
+  echo "typst ${TYPST_VERSION} has no build for $(uname -s)/$(uname -m)." >&2
+  echo "Install it by hand and put it on PATH ahead of .venv/bin." >&2
+  exit 1
+  ;;
+esac
+
+# A second run downloads nothing, because the binary already there is the pinned release.
+if [ "$(.venv/bin/typst --version 2>/dev/null | cut -d' ' -f2)" != "${TYPST_VERSION}" ]; then
+  echo "Downloading typst ${TYPST_VERSION} for ${typst_target}."
+  typst_unpacked=".venv/typst-download"
+  rm -rf "${typst_unpacked}"
+  mkdir -p "${typst_unpacked}"
+  typst_release="https://github.com/typst/typst/releases/download/v${TYPST_VERSION}"
+  curl -LsSf "${typst_release}/typst-${typst_target}.tar.xz" |
+    tar -xJ -C "${typst_unpacked}"
+  mv "${typst_unpacked}/typst-${typst_target}/typst" .venv/bin/typst
+  rm -rf "${typst_unpacked}"
+fi
+
 # The browsers the browser tier of the test suite drives.
 # Three rendering engines, because a deck that only works in one of them is not a
 # presentation format.

@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Animo Design Document
 
-Animo is a proof-of-concept presentation package for typst (0.15.1 or newer),
+Animo is a proof-of-concept presentation package for typst (0.15.0 or newer),
 drawing inspiration from `slipst` and `sanor`.
 
 Its distinguishing idea: **content and animation are separated**.
@@ -35,7 +35,7 @@ and why each of those answers was chosen rather than another.
 One companion document carries the material that would otherwise overwhelm it.
 
 - [findings.md](findings.md), referred to throughout as *Findings*,
-  records the verified behaviour of typst 0.15.1 and of the browsers Animo drives
+  records the verified behaviour of typst 0.15.0 and of the browsers Animo drives
   that this design rests on.
   Every entry there was expensive to establish and is easily lost again,
   and nearly every one is guarded by a probe under `probes/`.
@@ -1606,7 +1606,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
 - **Does every slide compute the union of its placements?** No. Only a slide whose timeline
   pans does. The union is the one part of laying out a slide whose cost grows with the number
   of `#place` calls in the body, and a deck that draws data as thousands of small placed marks
-  is where that is felt: measured on typst 0.15.1, a slide with 10 000 placements over 20
+  is where that is felt: measured with typst 0.15.1, a slide with 10 000 placements over 20
   states took 63.9 s and 4.9 GB with the recording and 3.6 s and 1.1 GB without it. Nothing
   reads the canvas but `pan`: the viewport clips in both targets, and an offset is refused as
   a ratio, so no length in a timeline is a fraction of the canvas either. A slide with no
@@ -1930,7 +1930,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
 - **Is gzip enough for the page weight, or is the shared-defs hoisting needed?** Gzip is enough,
   and what was to follow it turned out to be two things rather than one. Hoisting the
   shared definitions into a document-level `<svg>` is sound in the browser and **unreachable
-  from inside typst 0.15.1**, because a package never holds the markup a frame became; what is
+  from inside typst 0.15.0**, because a package never holds the markup a frame became; what is
   reachable is one frame per slide holding a rendering per epoch, which makes typst's own
   deduplicator share the definitions of a slide's epochs. *Findings* measures both, and the
   reachable half is specified under *Architecture*, since it changes what an epoch frame is
@@ -2343,7 +2343,7 @@ This section keeps only what the design decides.
 ### Repository layout and manifest
 
 `typst.toml` is the root of everything downstream: the entrypoint, the version,
-`compiler = "0.15.1"`, and the `exclude` list that keeps documentation out of the published
+`compiler = "0.15.0"`, and the `exclude` list that keeps documentation out of the published
 archive.
 
 ```text
@@ -2464,11 +2464,11 @@ Reference implementations and prior art:
 
 Upstream sources consulted for the findings:
 
-| Directory             | Relevance                                                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `../typst`            | v0.15.1 checkout; `crates/typst-svg` (label emission, def id hashing) and `crates/typst-library` (`measure`, `html.frame`) |
-| `../typst-dev-assets` | assets used by typst's own test suite, handy for rendering tests                                                           |
-| `../krilla`           | the PDF writer typst builds on; relevant only if PDF-level features (pdfpc metadata, layers) are ever needed               |
+| Directory             | Relevance                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `../typst`            | typst 0.15.0 checkout; `crates/typst-svg` (label emission, def id hashing) and `crates/typst-library` (`measure`, `html.frame`) |
+| `../typst-dev-assets` | assets used by typst's own test suite, handy for rendering tests                                                                |
+| `../krilla`           | the PDF writer typst builds on; relevant only if PDF-level features (pdfpc metadata, layers) are ever needed                    |
 
 Real decks that constitute the test corpus and the motivation:
 

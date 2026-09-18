@@ -12,7 +12,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Behaviour Probes
 
-Animo rests on some twenty verified behaviours of typst 0.15.1 and of the browsers it
+Animo rests on some twenty verified behaviours of typst 0.15.0 and of the browsers it
 targets. They are recorded in *Findings*, the document beside the design that
 [Developing Animo](development.md) points at, and any of them could change under the
 package.

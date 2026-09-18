@@ -36,7 +36,7 @@ WINDOW = {"width": 908, "height": 511}
 # Neither is a layout difference, and a real one is far larger: a lost margin would be
 # 0.11 of the slide and the `em` sizing bug of *Findings* was 0.08.
 #
-# Measured on typst 0.15.1, chromium 151 and firefox 153, the largest disagreement is one
+# Measured on typst 0.15.0, chromium 151 and firefox 153, the largest disagreement is one
 # pixel of the coarser raster. The only place the two engines differ from each other is
 # the bottom edge of the red mark, by one pixel of the 511-pixel screenshot, which is a
 # row of edge pixels firefox blends and chromium does not.
@@ -182,7 +182,7 @@ RELTO_SITES = {
 }
 
 # How far the two targets may disagree about where a `relto` puts the viewport, in points.
-# Measured on typst 0.15.1 over these sites, at windows 1280 and 640 pixels wide: at most
+# Measured on typst 0.15.0 over these sites, at windows 1280 and 640 pixels wide: at most
 # 0.001 pt in chromium 151 and 0.005 pt in firefox 153, which is the rounding of the two
 # boxes the browser's pan is read off. The disagreement this guards against is a box height,
 # which is what reading typst's own position of a tag in the middle of a line would cost.
@@ -227,7 +227,7 @@ def test_relto_resolves_to_the_same_anchor_in_both_targets(deck_at, typst: Typst
 # A move reads two anchors and subtracts them, so the rounding of a `relto` enters twice,
 # and one of the two is the anchor of the tag being transformed, which is the case an inline
 # tag site makes awkward: the wrapper's own position is the line's baseline.
-# Measured on typst 0.15.1 over the sites below, at windows 1280 and 640 pixels wide: at
+# Measured on typst 0.15.0 over the sites below, at windows 1280 and 640 pixels wide: at
 # most 0.0005 pt in chromium 151 and in firefox 153, over every kind of site. That is ten
 # times closer than the `relto` figure above, because the browser's own translation is read
 # here where a pan is read off two boxes. The same allowance is kept all the same, since the

@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-Animo is a proof-of-concept presentation package for typst 0.15.1,
+Animo is a proof-of-concept presentation package for typst 0.15.0,
 in which the content of a slide and its animation are separated.
 The body of a slide declares what is on it, tags the parts a timeline may address,
 and marks the areas that may be relaid out.
@@ -30,7 +30,7 @@ The specification is two documents under `planning/`, and the first is the entry
   reopening one needs a reason that is not in that section already.
   *Open Questions* records what is deliberately undecided.
 - [planning/findings.md](planning/findings.md), referred to as *Findings*,
-  records verified behaviour of typst 0.15.1 and of the browsers Animo drives
+  records verified behaviour of typst 0.15.0 and of the browsers Animo drives
   that the whole design rests on.
   Every entry there is expensive to rediscover,
   and every entry gets a probe under `probes/` that asserts the behaviour itself

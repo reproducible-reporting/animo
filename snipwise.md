@@ -155,17 +155,36 @@ regex = '(?:animo/blob/v|preview/animo[:/])(?P<content>[0-9]+\.[0-9]+\.[0-9]+)'
 snippets = ["version"]
 render = "{{ content | unwrap }}"
 
-# The typst release, which is a bare version number wherever it is repeated,
-# so in prose it is marked rather than matched: there is no expression that tells
-# the pinned release apart from a mention of some other release.
-# The `codeblock` filter writes the fences, so the marker comments stay outside the block
-# instead of being shown as text by the documentation site.
-# The blank lines around the block are what `mdformat` writes between an HTML comment
-# and a fence, and rendering them here stops the two hooks from undoing each other.
+# The typst release, wherever the prose names the release Animo is built and verified with.
+# Every such site writes it as `typst X.Y.Z`, with the word before the number,
+# which is what the expression anchors on.
+# That anchor is also what keeps the release of another tool out of a match,
+# such as cetz 0.5.2 in *A cetz draw command is a value, not content*.
+# `setup.sh` downloads that release and `typst.toml` is quoted in the design document,
+# so those two spellings are matched as well.
+#
+# A bump of the `compiler` field therefore rewrites every claim about typst's behaviour,
+# and the probes are what say whether those claims still hold.
+# `pytest` runs `probes/` beside `tests/`, so a bump whose probes fail is a bump
+# that does not get committed.
+#
+# A figure that a benchmark run produced names its release as `with typst X.Y.Z`,
+# and the lookbehind passes over that spelling,
+# because rerunning the benchmark is the only thing that may change such a figure.
 [[targets]]
-patterns = ["docs/**/*.md"]
+patterns = [
+  "CLAUDE.md",
+  "docs/**/*.md",
+  "planning/*.md",
+  "probes/*.py",
+  "setup.sh",
+  "src/*.typ",
+  "tests/*.py",
+]
+scanner = "regex"
+regex = '(?:(?<!with )typst \(?v?|compiler = "|TYPST_VERSION=")(?P<content>[0-9]+\.[0-9]+\.[0-9]+)'
 snippets = ["typst-version"]
-render = "\n{{ content | codeblock }}\n\n"
+render = "{{ content | unwrap }}"
 
 # In `README.md` the same release appears twice in the badge row,
 # as the message of a shields.io badge and as the release tag that badge links to.

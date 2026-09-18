@@ -65,7 +65,7 @@ def test_a_layout_block_inside_the_rule_does_disturb_the_layout(typst: TypstRunn
 
     It is the one way to tell a top-level placement from one nested in a box, which is
     the known limit of the automatic canvas. It is block-level, so it breaks the
-    paragraph the placement sits in: measured on typst 0.15.1, the same body comes out
+    paragraph the placement sits in: measured on typst 0.15.0, the same body comes out
     76.89pt tall without the rule and 103.29pt with it.
     Recorded as a probe rather than as a comment, because it looks like the obvious fix
     and is not, and the next reader will reach for it again.
@@ -170,7 +170,7 @@ def test_a_frame_is_sized_in_em_against_the_document_text_size(typst: TypstRunne
     dividing the frame's size in points by the text size in effect.
     An inline style outranks a stylesheet rule, so a deck that sizes its frames from CSS
     silently renders them at the ratio between the page's font size and typst's text size.
-    Measured on typst 0.15.1: a 200pt block is `18.181818182em` at the default 11pt text
+    Measured on typst 0.15.0: a 200pt block is `18.181818182em` at the default 11pt text
     and `9.090909091em` at 22pt.
     """
     for size, expected in (("11pt", "18.181818182em"), ("22pt", "9.090909091em")):
@@ -214,7 +214,7 @@ NESTED = """\
 def test_a_nested_show_place_rule_does_not_suppress_the_rule_around_it(typst: TypstRunner):
     """Both rules fire, so a rule cannot decline to be recorded by staying silent.
 
-    Measured on typst 0.15.1. A rendering that is only measured produces no queryable
+    Measured on typst 0.15.0. A rendering that is only measured produces no queryable
     metadata, so animo wants the recording rule to pass over it, and a no-op rule inside
     that rendering does not achieve it: the outer rule still sees both placements.
     """
@@ -228,7 +228,7 @@ def test_a_nested_rule_runs_first_and_hands_its_label_to_the_rule_around_it(
 ):
     """This is the channel the two rules use instead, and it is what `unrecorded` writes.
 
-    Measured on typst 0.15.1. The inner rule runs before the outer one and the outer one
+    Measured on typst 0.15.0. The inner rule runs before the outer one and the outer one
     is handed the element the inner one produced, so a label attached inside is readable
     outside. The placement written outside the inner rule carries no label, which is what
     makes the answer about the label and not about the order of the two placements.

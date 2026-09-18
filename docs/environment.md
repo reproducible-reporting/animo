@@ -16,6 +16,8 @@ SPDX-License-Identifier: Apache-2.0
 
 The development setup requires typst version {{ config.extra.typst_version }},
 which is the version pinned in the `typst.toml` manifest.
+`setup.sh` downloads that release into `.venv/bin/`,
+so activating the environment puts it ahead of any other typst on `PATH`.
 The test suite asserts that `typst --version` agrees with the `compiler` field of `typst.toml`,
 so a mismatched toolchain fails loudly instead of producing confusing errors much later.
 
@@ -33,9 +35,13 @@ pytest
 ```
 
 `setup.sh` installs `uv` and a pinned interpreter under `.venv/`,
-runs `uv sync`, downloads the browsers the browser tests drive,
+runs `uv sync`, downloads the pinned typst release and the browsers the browser tests drive,
 repairs the local package directory and installs the `pre-commit` hook.
-Removing `.venv/` undoes all of it, the browsers included.
+Removing `.venv/` undoes all of it, the compiler and the browsers included.
+A second run downloads neither again.
+Typst publishes a build for linux and macOS on x86-64 and arm64,
+and on any other platform the script says so and stops,
+because the rest of the bootstrap would produce a tree that no test can compile.
 
 Chromium and firefox are always downloaded.
 Webkit is downloaded only where playwright has a build that can run,
@@ -168,6 +174,23 @@ and of the typst release it is compiled with.
 into every file that repeats them, as `snipwise.md` in the repository root spells out.
 Bumping a release is therefore an edit of the manifest followed by
 `pre-commit run --all-files`.
+
+The typst release is repeated in prose as well as in configuration.
+Every claim about typst's behaviour names the release it was established on,
+in `src/`, in `probes/`, in `tests/` and in the specification that
+[Developing Animo](development.md) points at,
+and Snipwise rewrites all of them from the `compiler` field.
+A claim is written as `typst X.Y.Z`, with the word before the number,
+because that is the anchor Snipwise matches on.
+Bumping the field therefore restates every one of those claims for the new release,
+and the probes are what say whether they still hold:
+`pytest` runs `probes/` beside `tests/`.
+Commit a bump only once that run is green.
+
+A figure that came out of a benchmark is written as `with typst X.Y.Z` instead,
+and Snipwise leaves it alone,
+because only rerunning the benchmark can change the numbers beside it.
+See [Performance](performance.md) for those figures.
 
 One version number sits in a file name rather than in text.
 The package directory under `.typst-packages` carries the version in the name of its symlink,

@@ -44,7 +44,7 @@ def test_a_document_without_pages_becomes_one_blank_default_page(typst: TypstRun
     This is what makes animo refuse a handout whose every state gave up its page:
     left to typst, such a deck compiles to one blank page at typst's own default size,
     which reads as a rendering failure rather than as the flag doing what it was told.
-    Measured on typst 0.15.1.
+    Measured on typst 0.15.0.
     """
     source = typst.source("#context { let _ = 1 }\n")
     compile_typst(source, typst.scratch / "blank-{p}.png", fmt="png", ppi=36).check()
