@@ -330,7 +330,8 @@ the heaviest deck spends 3.0 s of its 4.3 s recalculating style over 2.07 millio
 3 ms laying anything out, so the remaining lever is the number of nodes typst emits rather than
 anything the runtime does with them. Dropping the definitions that an earlier epoch frame
 already carried, which is what a shared `<defs>` hoisting would do, takes that deck from
-4.34 s to **0.55 s** and its nodes from 2.07 million to 407 thousand, and the deck with one epoch a slide from 0.42 s to 0.16 s. Slides 1, 30 and 60 of both
+4.34 s to **0.55 s** and its nodes from 2.07 million to 407 thousand,
+and the deck with one epoch a slide from 0.42 s to 0.16 s. Slides 1, 30 and 60 of both
 decks render pixel-identically before and after, which shows the deduplicated page is the
 same page: typst's def ids are content hashes, so an id that occurs twice is one definition
 twice. So the hoisting is worth a factor of eight on the first paint of a deck with structural

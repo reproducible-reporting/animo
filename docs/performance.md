@@ -69,11 +69,11 @@ because the plain typst deck they divide by is compiled by the same binary.
 
 | What                         | Measured                 |
 | ---------------------------- | ------------------------ |
-| HTML presentation            | 0.48 s                   |
-| Static presentation          | 1.07 s                   |
+| HTML presentation            | 0.47 s                   |
+| Static presentation          | 1.09 s                   |
 | Static handout               | 0.60 s                   |
 | HTML page                    | 1.37 MB, 262 KiB gzipped |
-| One edit under `typst watch` | 49 ms                    |
+| One edit under `typst watch` | 51 ms                    |
 
 The terms behind those totals, each measured as the difference between two decks that
 differ in one thing only:
@@ -81,19 +81,19 @@ differ in one thing only:
 | Term                                    | Cost                              |
 | --------------------------------------- | --------------------------------- |
 | one more epoch on one slide, in HTML    | 6 ms, 35 KiB raw, 3 KiB gzipped   |
-| one region measuring one epoch of prose | 2.2 ms                            |
-| one region measuring one epoch of cetz  | 15.4 ms                           |
-| one content layer on one slide, in HTML | 19 KiB raw, 5 KiB gzipped, 1.7 ms |
+| one region measuring one epoch of prose | 2.1 ms                            |
+| one region measuring one epoch of cetz  | 14.9 ms                           |
+| one content layer on one slide, in HTML | 19 KiB raw, 5 KiB gzipped, 0.8 ms |
 
 And the same content laid out by plain typst, one page per slide, as a factor:
 
 | Deck                                                 | Against plain typst |
 | ---------------------------------------------------- | ------------------- |
-| no structural subslides                              | 2.2                 |
-| four continuous subslides per slide                  | 2.9                 |
-| two to eight epochs per slide                        | 2.5 to 2.8          |
-| two regions, three epochs, four continuous subslides | 6.5                 |
-| two regions of cetz canvas, four epochs              | 15.6                |
+| no structural subslides                              | 2.0                 |
+| four continuous subslides per slide                  | 2.7                 |
+| two to eight epochs per slide                        | 2.5 to 3.0          |
+| two regions, three epochs, four continuous subslides | 6.6                 |
+| two regions of cetz canvas, four epochs              | 15.1                |
 
 Your own numbers take one command to measure, and land in
 [`benchmarks/results/`](https://github.com/reproducible-reporting/animo/tree/main/benchmarks):
@@ -109,9 +109,9 @@ Seconds measured while another process is using the processor are not meaningful
 
 Typst memoises across recompiles inside one `typst watch` process,
 so an edit only pays for what it actually changed.
-On the tour, an edit to one slide recompiles in **49 ms** against **0.53 s** cold,
+On the tour, an edit to one slide recompiles in **51 ms** against **0.51 s** cold,
 and on a deck with regions, epochs and continuous subslides throughout,
-in 82 ms against 0.90 s.
+in 84 ms against 0.95 s.
 
 This is the number that decides whether a deck is comfortable to write.
 Keep the preview running while you write:
@@ -144,17 +144,17 @@ It is linear in each, which keeps it affordable, but the cost is the product of 
 **Give a region a `height` when you know it.**
 A region with an explicit height measures nothing at all.
 On a deck of twelve slides with two regions over four epochs,
-that is 1.04 s against 0.55 s for the HTML output: nearly half the cost of the deck.
+that is 1.02 s against 0.53 s for the HTML output: nearly half the cost of the deck.
 The drawback is that a state taller than the height is clipped.
 
 **A cetz canvas inside a region is the expensive case.**
 The region lays the canvas out afresh for every epoch, and cetz layout is not cheap:
-15.4 ms per measurement against 2.2 ms for the same shape holding prose, seven times more.
-A deck of twelve such slides over four epochs took 5.5 s to compile against 0.13 s for the
+14.9 ms per measurement against 2.1 ms for the same shape holding prose, seven times more.
+A deck of twelve such slides over four epochs took 5.2 s to compile against 0.13 s for the
 same drawings as plain typst.
 There are two ways to avoid this cost: leave the canvas outside a region, where a tagged
 `content()` element reserves the room of its widest epoch; or give the region a `height`,
-which skips the measuring and keeps the reflow. The same deck then took 1.4 s rather than 5.5 s.
+which skips the measuring and keeps the reflow. The same deck then took 1.4 s rather than 5.2 s.
 
 **A body full of `#place` calls costs only on a slide that pans.**
 The [automatic canvas](viewport.md#how-large-the-canvas-is) is the union of the body
@@ -173,10 +173,10 @@ as a static presentation, with typst 0.15.0:
 
 | Slide                              |   Time | Peak memory |
 | ---------------------------------- | -----: | ----------: |
-| no `pan` in the timeline           | 3.12 s |      799 MB |
-| a `pan` in the timeline            | 3.82 s |      962 MB |
-| a `pan`, and an explicit `canvas:` | 3.27 s |      790 MB |
-| the same marks as one `image`      | 1.18 s |      113 MB |
+| no `pan` in the timeline           | 2.93 s |      812 MB |
+| a `pan` in the timeline            | 3.59 s |      972 MB |
+| a `pan`, and an explicit `canvas:` | 3.09 s |      811 MB |
+| the same marks as one `image`      | 1.12 s |      113 MB |
 
 **State the `canvas:` of a placement-heavy slide that pans.**
 A stated canvas leaves Animo nothing to compute,
@@ -251,7 +251,7 @@ over three epochs, with a slide number and a subslide number in the overlay:
 | ------------ | ---------------- | ------------- | ------ |
 | HTML page    | 2393 KiB         | 2515 KiB      | 5%     |
 | gzipped      | 341 KiB          | 366 KiB       | 7%     |
-| compile time | 0.39 s           | 0.40 s        | 4%     |
+| compile time | 0.38 s           | 0.40 s        | 7%     |
 
 Put it in the **overlay** and not in the body.
 An overlay is one rendering per slide where the body is one rendering per epoch,

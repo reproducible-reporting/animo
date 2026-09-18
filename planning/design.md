@@ -1607,7 +1607,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
   pans does. The union is the one part of laying out a slide whose cost grows with the number
   of `#place` calls in the body, and a deck that draws data as thousands of small placed marks
   is where that is felt. Measured with typst 0.15.0 linked against musl, a slide with 10 000
-  placements over 20 states took 3.82 s and 962 MB with the recording and 3.12 s and 799 MB
+  placements over 20 states took 3.59 s and 972 MB with the recording and 2.93 s and 812 MB
   without it. Nothing reads the canvas but `pan`: the viewport clips in both targets, and an
   offset is refused as a ratio, so no length in a timeline is a fraction of the canvas either.
   A slide with no `pan` in its timeline is therefore drawn identically whatever canvas it is
@@ -1909,19 +1909,19 @@ These were the open questions of the earlier drafts. They are settled; the evide
 - **What does a realistic deck cost to compile?** About twice a plain typst deck, and the
   live preview loop costs a tenth of a cold compile, so Animo is not slow.
   Measured on `examples/tour.typ`, 16 slides with 48 states and 20 epoch frames,
-  on an i7-1260P with typst 0.15.0 linked against musl: 0.48 s for the HTML presentation,
-  1.07 s for the static presentation, 0.60 s for the handout, and **49 ms** to
+  on an i7-1260P with typst 0.15.0 linked against musl: 0.47 s for the HTML presentation,
+  1.09 s for the static presentation, 0.60 s for the handout, and **51 ms** to
   recompile after an edit to one slide under `typst watch`, which memoises across recompiles.
 
-  The overhead over the same content laid out as plain typst pages is **2.2** for a deck with
-  no structural subslides, **2.5 to 2.8** for two to eight epochs a slide, and **6.5** for a deck
+  The overhead over the same content laid out as plain typst pages is **2.0** for a deck with
+  no structural subslides, **2.5 to 3.0** for two to eight epochs a slide, and **6.6** for a deck
   with regions, epochs and continuous subslides throughout. The terms behind it, each measured as
   the difference between two decks that differ in one knob: one more epoch on one slide costs
-  6 ms in HTML, and one region measuring one epoch costs 2.2 ms of prose.
+  6 ms in HTML, and one region measuring one epoch costs 2.1 ms of prose.
 
-  The one expensive construct is a **cetz canvas inside a region**, at 15.4 ms per epoch
+  The one expensive construct is a **cetz canvas inside a region**, at 14.9 ms per epoch
   measured, seven times the prose figure, which took a twelve-slide deck over four epochs to
-  5.5 s against 0.13 s for the same drawings as plain typst. That is the cost of letting a
+  5.2 s against 0.13 s for the same drawings as plain typst. That is the cost of letting a
   figure change size, it is the cost the region design predicts, and both remedies are
   authorial: leave the canvas outside a region to keep it rigid, or give the region a `height`,
   which skips the measuring and took the same deck to 1.4 s. Nothing here asks for a change to
