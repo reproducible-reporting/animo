@@ -8,9 +8,12 @@ on:
   workflow_dispatch:
   push:
     branches:
-      # Every commit on the main branch republishes the site,
-      # so that the documentation never lags behind the code.
+      # A commit on the main branch builds the site without publishing it,
+      # so that a broken build or a broken link shows up before a release.
       - main
+    tags:
+      # A tag is what publishes the site.
+      - v*
   pull_request:
     # Build without publishing on pull requests ...
     paths:
@@ -62,8 +65,11 @@ jobs:
           path: site
 
   deploy:
-    # Only `main` is published; a pull request builds the site and stops there.
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Only a tag publishes the site.
+    # The documentation links to URLs that contain the version of the package,
+    # and those URLs exist only once the tag does,
+    # so a commit on the main branch and a pull request build the site and stop there.
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: build
     runs-on: ubuntu-latest
     permissions:
