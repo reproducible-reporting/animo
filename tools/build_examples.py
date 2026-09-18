@@ -80,7 +80,7 @@ def compile_deck(source: Path) -> bool:
     for selection, destination in products(source.stem):
         destination.parent.mkdir(parents=True, exist_ok=True)
         args = ["typst", "compile", *COMMON, *selection, str(source), str(destination)]
-        # The working tree resolves as `@preview/animo:0.1.0` through a repository-local
+        # The working tree resolves as `@preview/animo:0.1.1` through a repository-local
         # package directory, so that the deck the site shows is the deck a reader copies.
         env = dict(os.environ)
         env["TYPST_PACKAGE_PATH"] = str(ROOT / ".typst-packages")

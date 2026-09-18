@@ -10,7 +10,7 @@ The three probes together are the argument: a draw command is an array of closur
 canvas body refuses content outright, and what a canvas *does* lay out as content, a
 `content()` element, is reached by a show rule installed outside the canvas.
 
-Measured against cetz 0.5.2 on typst 0.15.1.
+Measured against cetz 0.5.2 on typst 0.15.0.
 """
 
 import re

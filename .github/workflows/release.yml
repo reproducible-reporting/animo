@@ -82,16 +82,19 @@ jobs:
           PY
 
       - name: Build the publishable subtree
-        run: ./tools/build_package.py --destination build/package
+        run: ./tools/build_package.py
 
       # The checker reads the subtree that is submitted, which is not the working tree,
       # so it is pointed at the copy above rather than at the checkout.
+      # It reads the manifest at the root of what is mounted,
+      # so the mount is the version directory rather than the directory that contains it.
       # It runs as a container rather than through its own GitHub Action,
       # because that action expects credentials for a GitHub App
       # that a personal repository does not have.
       - name: Check the package as it would be submitted
         run: >-
-          docker run -v ${{ github.workspace }}/build/package:/data
+          docker run
+          -v ${{ github.workspace }}/build/package/${{ steps.manifest.outputs.version }}:/data
           ghcr.io/typst/package-check check
 
       # A manifest whose version has no section in the changelog fails here,

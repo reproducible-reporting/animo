@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Animo Design Document
 
-Animo is a proof-of-concept presentation package for typst (0.15.1 or newer),
+Animo is a proof-of-concept presentation package for typst (0.15.0 or newer),
 drawing inspiration from `slipst` and `sanor`.
 
 Its distinguishing idea: **content and animation are separated**.
@@ -29,12 +29,13 @@ introduces it. The rule is:
 
 ## Companion Documents
 
-This document specifies Animo 0.1.0: what a slide declares, what a timeline may do to it,
+This document specifies the latest version of Animo:
+what a slide declares, what a timeline may do to it,
 and why each of those answers was chosen rather than another.
 One companion document carries the material that would otherwise overwhelm it.
 
 - [findings.md](findings.md), referred to throughout as *Findings*,
-  records the verified behaviour of typst 0.15.1 and of the browsers Animo drives
+  records the verified behaviour of typst 0.15.0 and of the browsers Animo drives
   that this design rests on.
   Every entry there was expensive to establish and is easily lost again,
   and nearly every one is guarded by a probe under `probes/`.
@@ -88,7 +89,7 @@ The initial version has the following (non)features:
 Example usage:
 
 ```typst
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 #slide(
   background: blue,
@@ -554,16 +555,21 @@ subslides**. It is the unit of reflow and the unit of redrawing.
   region control over `width`, `height`, `clip` and `align`, which it would then have to merge
   into the author's element by rebuilding it from `fields()`, losing whatever a `set` rule
   contributed.
-- **Why block-level**, since the reason is not the one the word suggests. It is not that the
-  surroundings have to stay still: a box whose footprint is fixed at the maximum over its
-  epochs holds its paragraph as still as a block holds its flow, because constant size means
-  constant line breaking. It is that a region at `width: auto` has to know its container's
-  width, and `layout(size => ..)` is the only way to learn it, and `layout` is block-level: it
-  breaks the line it is put in (measured). Inline, the best available is an unbounded
-  `measure`, which reports the natural width of content that never got the chance to wrap. A
-  box itself wraps correctly once it has a width, so what is missing inside a paragraph is the
-  width, not the box. An explicitly sized region could therefore be a box; 0.1.0 does not offer
-  one, because the inline case already exists as the implicit region around a bare tag.
+- **Why block-level**, since the reason is not the one the word suggests.
+  It is not that the surroundings have to stay still:
+  a box whose footprint is fixed at the maximum over its epochs
+  holds its paragraph as still as a block holds its flow,
+  because constant size means constant line breaking.
+  It is that a region at `width: auto` has to know its container's width,
+  and `layout(size => ..)` is the only way to learn it, and `layout` is block-level:
+  it breaks the line it is put in (measured).
+  Inline, the best available is an unbounded `measure`,
+  which reports the natural width of content that never got the chance to wrap.
+  A box itself wraps correctly once it has a width,
+  so what is missing inside a paragraph is the width, not the box.
+  An explicitly sized region could therefore be a box.
+  Animo does not offer one,
+  because the inline case already exists as the implicit region around a bare tag.
 - That implicit region inherits the same limit: its footprint can only come from unbounded
   measurements, so content replaced at an *inline* tag site cannot wrap, it can only run on.
   Inline tag sites are for short content, and the manual says so. A one-line paragraph measures
@@ -1593,20 +1599,20 @@ These were the open questions of the earlier drafts. They are settled; the evide
   few pixels, and two copies of the same words a few pixels apart are an illegible smear for
   the rest of the paragraph, where the part *before* the edit stays crisp because it did not
   move. This is the case a morph would exist for, and it is why the transition strategy is a
-  named, swappable one from 0.1.0 on.
+  named, swappable one from the first release of Animo.
   Until a morph exists, the authoring advice is to put a region around what is replaced
   wholesale and to keep what merely shifts out of it.
 
 - **Does every slide compute the union of its placements?** No. Only a slide whose timeline
   pans does. The union is the one part of laying out a slide whose cost grows with the number
   of `#place` calls in the body, and a deck that draws data as thousands of small placed marks
-  is where that is felt: measured on typst 0.15.1, a slide with 10 000 placements over 20
-  states took 63.9 s and 4.9 GB with the recording and 3.6 s and 1.1 GB without it. Nothing
-  reads the canvas but `pan`: the viewport clips in both targets, and an offset is refused as
-  a ratio, so no length in a timeline is a fraction of the canvas either. A slide with no
-  `pan` in its timeline is therefore drawn identically whatever canvas it is given, which is
-  what makes the saving free rather than a trade. An author who does pan and wants the cost
-  gone states `canvas:`, which skips the recording as well.
+  is where that is felt. Measured with typst 0.15.0 linked against musl, a slide with 10 000
+  placements over 20 states took 3.82 s and 962 MB with the recording and 3.12 s and 799 MB
+  without it. Nothing reads the canvas but `pan`: the viewport clips in both targets, and an
+  offset is refused as a ratio, so no length in a timeline is a fraction of the canvas either.
+  A slide with no `pan` in its timeline is therefore drawn identically whatever canvas it is
+  given, which is what makes the saving free rather than a trade. An author who does pan and
+  wants the cost gone states `canvas:`, which skips the recording as well.
 
 - **Should the whole slide body be a region?** No. The body stays a plain layout in which
   nothing reflows, and regions are opt-in. If the body were a region, every structural operation
@@ -1902,29 +1908,29 @@ These were the open questions of the earlier drafts. They are settled; the evide
 
 - **What does a realistic deck cost to compile?** About twice a plain typst deck, and the
   live preview loop costs a tenth of a cold compile, so Animo is not slow.
-  Measured on `examples/tour.typ`, 13 slides with 41 states and 17 epoch frames,
-  on an i7-1260P with typst 0.15.1: 0.29 s for the HTML presentation,
-  0.29 s for the static presentation, 0.25 s for the handout, and **34 ms** to
+  Measured on `examples/tour.typ`, 16 slides with 48 states and 20 epoch frames,
+  on an i7-1260P with typst 0.15.0 linked against musl: 0.48 s for the HTML presentation,
+  1.07 s for the static presentation, 0.60 s for the handout, and **49 ms** to
   recompile after an edit to one slide under `typst watch`, which memoises across recompiles.
 
-  The overhead over the same content laid out as plain typst pages is **2.0** for a deck with
-  no structural subslides, **2.2 to 2.6** for two to eight epochs a slide, and **5.4** for a deck
+  The overhead over the same content laid out as plain typst pages is **2.2** for a deck with
+  no structural subslides, **2.5 to 2.8** for two to eight epochs a slide, and **6.5** for a deck
   with regions, epochs and continuous subslides throughout. The terms behind it, each measured as
   the difference between two decks that differ in one knob: one more epoch on one slide costs
-  5 ms in HTML, and one region measuring one epoch costs 1.3 ms of prose.
+  6 ms in HTML, and one region measuring one epoch costs 2.2 ms of prose.
 
-  The one expensive construct is a **cetz canvas inside a region**, at 8.8 ms per epoch
+  The one expensive construct is a **cetz canvas inside a region**, at 15.4 ms per epoch
   measured, seven times the prose figure, which took a twelve-slide deck over four epochs to
-  5.0 s against 0.08 s for the same drawings as plain typst. That is the cost of letting a
+  5.5 s against 0.13 s for the same drawings as plain typst. That is the cost of letting a
   figure change size, it is the cost the region design predicts, and both remedies are
   authorial: leave the canvas outside a region to keep it rigid, or give the region a `height`,
-  which skips the measuring and took the same deck to 1.2 s. Nothing here asks for a change to
+  which skips the measuring and took the same deck to 1.4 s. Nothing here asks for a change to
   the design; `docs/performance.md` says it to authors instead.
 
-- **Is gzip enough for the page weight, or is the shared-defs hoisting needed?** Gzip is enough
-  for 0.1.0, and what was to follow it turned out to be two things rather than one. Hoisting the
+- **Is gzip enough for the page weight, or is the shared-defs hoisting needed?** Gzip is enough,
+  and what was to follow it turned out to be two things rather than one. Hoisting the
   shared definitions into a document-level `<svg>` is sound in the browser and **unreachable
-  from inside typst 0.15.1**, because a package never holds the markup a frame became; what is
+  from inside typst 0.15.0**, because a package never holds the markup a frame became; what is
   reachable is one frame per slide holding a rendering per epoch, which makes typst's own
   deduplicator share the definitions of a slide's epochs. *Findings* measures both, and the
   reachable half is specified under *Architecture*, since it changes what an epoch frame is
@@ -2086,7 +2092,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
   supposed to buy is not there: `#slide(wait: ..)` on the first slide of a deck does nothing,
   because a gap is read when its state is entered from a predecessor and state 0 of slide 1 has
   none. What is left is that the two forms are natural for different sentences and fail in
-  opposite directions when a timeline is edited, which is why both are in 0.1.0.
+  opposite directions when a timeline is edited, which is why both are implemented.
 
   **One gap takes one number**, and a gap that both of its neighbours time is refused rather than
   summed. *Timing* states why, and the part that belongs here is the order of the two decisions:
@@ -2125,7 +2131,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
 
 - **Does an operation get a duration of its own, and in what unit?** Yes, `duration:`, beside
   `delay:` on every primitive, defaulting to `auto`, and in seconds like everything else an
-  author writes. It was queued as `time:` and moved into 0.1.0 once `delay:` had built its
+  author writes. It was queued as `time:` and moved into Animo once `delay:` had built its
   plumbing, because the plan carries per-operation timing to the browser either way and the Web Animations API takes a duration exactly where it takes a delay.
   The name is `duration:` rather than `time:` because it sits beside `delay:`, where `time:`
   reads as a moment rather than as a length, and because it is the quantity
@@ -2337,7 +2343,7 @@ This section keeps only what the design decides.
 ### Repository layout and manifest
 
 `typst.toml` is the root of everything downstream: the entrypoint, the version,
-`compiler = "0.15.1"`, and the `exclude` list that keeps documentation out of the published
+`compiler = "0.15.0"`, and the `exclude` list that keeps documentation out of the published
 archive.
 
 ```text
@@ -2357,7 +2363,7 @@ path: every example, including the ones in the README, imports `@preview/animo:X
 a relative path, so that a reader can copy any file and compile it. Keeping those strings correct
 is `snipwise`'s job.
 
-A submission cannot be withdrawn: publishing `0.1.0` commits to the name and to that version
+A submission cannot be withdrawn: publishing a first version commits to the name and to that version
 number for good. It does not commit to the API. Animo is not API-stable before 1.0, and
 saying so plainly is better than a promise that real use would break anyway, because nobody
 knows yet what real use turns up. What the intention means is that a break has a real cost:
@@ -2458,11 +2464,11 @@ Reference implementations and prior art:
 
 Upstream sources consulted for the findings:
 
-| Directory             | Relevance                                                                                                                  |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `../typst`            | v0.15.1 checkout; `crates/typst-svg` (label emission, def id hashing) and `crates/typst-library` (`measure`, `html.frame`) |
-| `../typst-dev-assets` | assets used by typst's own test suite, handy for rendering tests                                                           |
-| `../krilla`           | the PDF writer typst builds on; relevant only if PDF-level features (pdfpc metadata, layers) are ever needed               |
+| Directory             | Relevance                                                                                                                       |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `../typst`            | typst 0.15.0 checkout; `crates/typst-svg` (label emission, def id hashing) and `crates/typst-library` (`measure`, `html.frame`) |
+| `../typst-dev-assets` | assets used by typst's own test suite, handy for rendering tests                                                                |
+| `../krilla`           | the PDF writer typst builds on; relevant only if PDF-level features (pdfpc metadata, layers) are ever needed                    |
 
 Real decks that constitute the test corpus and the motivation:
 

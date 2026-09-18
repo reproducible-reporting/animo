@@ -63,7 +63,7 @@ def test_a_block_that_does_not_fit_is_stacked_at_the_bottom_edge(typst: TypstRun
     """The behaviour that decides how tall a slide body's box has to be.
 
     Twenty-four one-line blocks go into a container 100 pt tall that holds sixteen of them.
-    Measured on typst 0.15.1, the sixteen land 6.58 pt apart and the remaining eight are all
+    Measured on typst 0.15.0, the sixteen land 6.58 pt apart and the remaining eight are all
     at exactly 100 pt, the bottom edge, each drawn over the one before it.
     """
     typst.ok(blocks() + STACKED)
@@ -82,7 +82,7 @@ def test_a_paragraph_runs_past_the_bottom_edge_instead(typst: TypstRunner):
     """The contrast that makes the stacking easy to miss.
 
     The same container, filled with running text rather than with blocks, lays every line out
-    where it belongs and simply paints past its own bottom edge: measured on typst 0.15.1, the
+    where it belongs and simply paints past its own bottom edge: measured on typst 0.15.0, the
     end of a paragraph that is 100 pt of container tall sits at 333.58 pt.
     """
     source = (

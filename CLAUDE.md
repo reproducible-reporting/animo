@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-Animo is a proof-of-concept presentation package for typst 0.15.1,
+Animo is a proof-of-concept presentation package for typst 0.15.0,
 in which the content of a slide and its animation are separated.
 The body of a slide declares what is on it, tags the parts a timeline may address,
 and marks the areas that may be relaid out.
@@ -22,7 +22,7 @@ so either of them exports to PDF, SVG or PNG.
 
 The specification is two documents under `planning/`, and the first is the entry point.
 
-- [planning/design.md](planning/design.md) specifies Animo 0.1.0 and is the reference
+- [planning/design.md](planning/design.md) specifies how Animo works and is the reference
   for any change in behaviour.
   Read it before changing anything in `src/`.
   Two of its sections carry more weight than the rest.
@@ -30,7 +30,7 @@ The specification is two documents under `planning/`, and the first is the entry
   reopening one needs a reason that is not in that section already.
   *Open Questions* records what is deliberately undecided.
 - [planning/findings.md](planning/findings.md), referred to as *Findings*,
-  records verified behaviour of typst 0.15.1 and of the browsers Animo drives
+  records verified behaviour of typst 0.15.0 and of the browsers Animo drives
   that the whole design rests on.
   Every entry there is expensive to rediscover,
   and every entry gets a probe under `probes/` that asserts the behaviour itself
@@ -49,7 +49,7 @@ When a finding contradicts one of them, say so and ask.
   Snipwise copies it into every file that repeats it, as `snipwise.md` spells out,
   so a version number is never edited by hand outside the manifest.
   The same holds for the typst release, which is the manifest's `compiler` field.
-- Every example, snippet and test document imports `@preview/animo:0.1.0`,
+- Every example, snippet and test document imports `@preview/animo:0.1.1`,
   never a relative path, so that a reader can copy any of them and compile it unchanged.
   Only the internal tests import `/src/lib.typ`.
 - Rendering has to be reproducible between a contributor's machine and CI,

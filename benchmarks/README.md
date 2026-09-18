@@ -98,8 +98,13 @@ process, so the cold compile time does not describe what writing a deck feels li
 
 One JSON file per machine under `results/`, committed.
 A number is only interpretable together with the machine it was measured on,
-so each file records the CPU, the core count, the platform,
-the typst release, the Animo version and the commit it was measured at.
+so each file records the CPU, the core count, the platform, the typst release,
+the libc that release is linked against, the Animo version and the commit it was measured at.
+
+The libc is recorded because two builds of one release differ in speed.
+Typst publishes a static musl binary for linux and no build against glibc,
+so that musl binary is what `setup.sh` installs,
+and a glibc build of the same release compiles these decks 1.2 to 2.4 times faster.
 
 The rendering counts the seconds are divided by are *not* recorded as a claim here.
 They follow from the timeline alone and are the same on every machine,

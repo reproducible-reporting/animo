@@ -5,7 +5,7 @@
 // The viewport is what the audience sees and what clips;
 // the canvas is what the body is laid out on, and it may be larger.
 
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 

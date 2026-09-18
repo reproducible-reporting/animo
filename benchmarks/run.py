@@ -540,6 +540,32 @@ def derive(scaling: dict) -> dict:
     }
 
 
+def typst_build(binary: Path) -> str:
+    """Which build of the release the compiler on `PATH` is.
+
+    Typst publishes a static musl binary for linux and nothing linked against glibc,
+    and a glibc build of the same release compiles the benchmark decks
+    1.2 to 2.4 times faster,
+    so the release alone does not say what a recorded second was measured on.
+
+    Parameters
+    ----------
+    binary
+        The compiler that was run, as `shutil.which` resolved it.
+
+    Returns
+    -------
+    build
+        The libc the binary is linked against, with its version where there is one.
+    """
+    libc, version = platform.libc_ver(executable=str(binary))
+    if libc:
+        return f"{libc} {version}".strip()
+    if b"-linux-musl" in binary.read_bytes():
+        return "musl"
+    return "unknown"
+
+
 def environment() -> dict:
     """What the numbers were measured on, which is half of what a measurement is."""
     cpu = platform.processor()
@@ -552,6 +578,7 @@ def environment() -> dict:
     with open(ROOT / "typst.toml", "rb") as fh:
         package = tomllib.load(fh)["package"]
     typst = subprocess.run(["typst", "--version"], capture_output=True, text=True, check=True)
+    binary = Path(shutil.which("typst"))
     commit = subprocess.run(
         ["git", "-C", str(ROOT), "describe", "--always", "--dirty"],
         capture_output=True,
@@ -564,6 +591,7 @@ def environment() -> dict:
         "cores": os.cpu_count(),
         "platform": platform.platform(),
         "typst": typst.stdout.strip(),
+        "typst_libc": typst_build(binary),
         "animo": package["version"],
         "commit": commit.stdout.strip() or "unknown",
         "measured": time.strftime("%Y-%m-%d %H:%M:%S%z"),
@@ -612,7 +640,11 @@ def main():
 
 def summary(result: dict) -> str:
     """A short human-readable account of a result, for the terminal and for a session log."""
-    lines = [f"{result['environment']['cpu']}, {result['environment']['typst']}", ""]
+    lines = [
+        f"{result['environment']['cpu']}, {result['environment']['typst']} "
+        f"linked against {result['environment']['typst_libc']}",
+        "",
+    ]
     tour = result["tour"]
     lines.append(
         f"tour.typ: {tour['html']['slides']} slides, {tour['html']['states']} states, "

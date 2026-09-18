@@ -5,7 +5,7 @@
 // Nothing here changes what typst lays out, so every step is free on paper
 // and smooth in the browser.
 
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Probes for *Media elements in the HTML output*.
 
-These belong to narrated audio, which is a candidate for a later release rather than
-part of 0.1.0. They are probed anyway, because the finding is what makes that feature
+These belong to narrated audio, which is a candidate for a later release.
+They are probed anyway, because the finding is what makes that feature
 look cheap, and a finding that quietly stops holding makes a plan quietly wrong.
 
 The clip is a half-second sine wave, generated here rather than stored,

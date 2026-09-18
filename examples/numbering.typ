@@ -12,7 +12,7 @@
 // so a stack of one rendering per subslide is paid for once here and once per epoch there.
 // It also belongs to the viewport, so a `pan` leaves it where it is.
 
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 

@@ -5,11 +5,10 @@ SPDX-License-Identifier: Apache-2.0
 
 # Animo Findings
 
-Verified behaviour of typst 0.15.1, and of the browsers Animo drives,
+Verified behaviour of typst 0.15.0, and of the browsers Animo drives,
 that [the design](design.md) relies on.
 Recorded here so that it does not have to be rediscovered.
-Checked against the installed `typst 0.15.1` binary and the
-v0.15.1 source checkout (`../typst`, commit `9dfd3a085`), with chromium 151, firefox 153 and
+Checked against the installed `typst 0.15.0` binary, with chromium 151, firefox 153 and
 playwright's webkit 26.5 for the browser measurements. Where the engines differ, the entry
 says so, because a deck has to work in all of them.
 Webkit is measured in a container, for the reason under [Testing](../docs/testing.md).
@@ -31,10 +30,12 @@ is a section of [design.md](design.md) unless it names an entry below.
 
 This attribute is what the whole design rests on.
 
-- Labelled content appears in SVG output as `<g data-typst-label="name">`. In all of
-  0.15.1 there is exactly **one** emission site, `crates/typst-svg/src/lib.rs:348`, and it
-  fires only for `group.label`, which means only for **labelled `box` and `block`
-  elements**. A label on a bare `rect`, or on a text span, emits nothing.
+- Labelled content appears in SVG output as `<g data-typst-label="name">`.
+  In all of typst 0.15.0 there is exactly **one** emission site,
+  `crates/typst-svg/src/lib.rs:348`,
+  and it fires only for `group.label`,
+  which means only for **labelled `box` and `block` elements**.
+  A label on a bare `rect`, or on a text span, emits nothing.
 - It works **inside `html.frame`**, which is what makes browser animation possible.
 - It works for content inside **math** and inside **cetz** canvases.
 - **Duplicate labels are permitted** and each occurrence gets its own group, which is what
@@ -49,9 +50,10 @@ Stability: the attribute was added by PR
 external tools can pick up**".
 That is precisely this use case. It shipped in **v0.12.0** and is
 documented in the 0.12.0 changelog ("Exported SVGs now contain the `data-typst-label`
-attribute on groups resulting from labelled boxes and blocks"). It has survived 0.12 →
-0.13 → 0.14 → 0.15.1 unchanged, and no open issue proposes changing or removing it. It is
-not mentioned in the reference documentation, only in that changelog entry.
+attribute on groups resulting from labelled boxes and blocks").
+It has survived 0.12, 0.13 and 0.14 unchanged, and typst 0.15.0 still emits it.
+No open issue proposes changing or removing it.
+It is not mentioned in the reference documentation, only in that changelog entry.
 
 The residual risk is not the attribute but its HTML wrapper: HTML export remains behind
 `--features html`, warns that "behaviour may change at any time", and its tracking issue
@@ -108,7 +110,7 @@ epochs rather than combinatorial in tags.
 
 ## Regions: an inline footprint has to pin its baseline
 
-Measured on 0.15.1, while building the implicit region of an inline tag, over five epochs: a
+Measured on typst 0.15.0, while building the implicit region of an inline tag, over five epochs: a
 word, a word at 2em, nothing, two lines, and an equation with a subscript.
 
 - **A box takes its baseline from its content, even at a fixed size.** `box(width: W, height: H, c)`, sized to the per-axis maximum, puts the rest of its line at 17.24, 24.48 or 31.63 pt as
@@ -129,7 +131,8 @@ word, a word at 2em, nothing, two lines, and an equation with a subscript.
 
 ## Regions: what a region learns from its container
 
-Measured on 0.15.1 with a filling block inside `layout(size => ..)` on a 360 pt wide page body.
+Measured on typst 0.15.0 with a filling block inside `layout(size => ..)`
+on a 360 pt wide page body.
 
 | Container                                                             | Width handed to `layout` |
 | --------------------------------------------------------------------- | ------------------------ |
@@ -382,7 +385,7 @@ What follows for the measurement of a transition, and for the remedy that sugges
 
 ## Automatic canvas sizing: `#place` is invisible to `auto`, but visible to a show rule
 
-Measured on 0.15.1, for the canvas rule under *Canvas and viewport*.
+Measured on typst 0.15.0, for the canvas rule under *Canvas and viewport*.
 
 - **`#place` contributes nothing to automatic sizing.** With `#set page(width: auto, height: auto, margin: 0pt)` and a body of `#place(dx: 8cm, dy: 4cm)[OUT] in-flow`, the page comes out
   `32.285 x 7.238 pt`, which is the size of the in-flow text alone.
@@ -415,7 +418,7 @@ Measured on 0.15.1, for the canvas rule under *Canvas and viewport*.
   Recorded under *Open Questions*; `canvas:` is the explicit override.
 
 - **The union errs in both directions, and it is not exact at the top level either.**
-  Measured on 0.15.1 against where the ink really lands, by laying the same body out twice:
+  Measured on typst 0.15.0 against where the ink really lands, by laying the same body out twice:
   once as an Animo slide, and once as a plain block of the same inner size on a page large
   enough to hold everything, with a marker inside the placed content.
 
@@ -453,7 +456,7 @@ Measured on 0.15.1, for the canvas rule under *Canvas and viewport*.
 
 ## Recording placements: what a `show place:` rule may and may not do
 
-Measured on 0.15.1 while building the automatic canvas, which needs the placements as
+Measured on typst 0.15.0 while building the automatic canvas, which needs the placements as
 *data* and not merely as content the rule passes through.
 
 - **A show rule cannot return a value, so the numbers travel as introspection.** The rule
@@ -492,7 +495,7 @@ Measured on 0.15.1 while building the automatic canvas, which needs the placemen
 
 ## A fixed-height container stacks the block-level content that does not fit
 
-Measured on 0.15.1, and the reason a slide body is not always laid out at the viewport's inner
+Measured on typst 0.15.0, and the reason a slide body is not always laid out at the viewport's inner
 height. A container with a fixed height lays its content out in a single region of that height.
 What does not fit is neither clipped nor allowed to grow the container, and what becomes of it
 depends on what it is.
@@ -519,7 +522,7 @@ introspection that sizes the canvas still terminates.
 
 ## `html.frame` sizes its SVG in `em`, as an inline style
 
-Measured on 0.15.1. `html.frame` writes `width` and `height` on the `<svg>` as an inline
+Measured on typst 0.15.0. `html.frame` writes `width` and `height` on the `<svg>` as an inline
 style in `em`, dividing the frame's size in points by the text size in effect: a 200pt
 block is `18.181818182em` at the default 11pt text and `9.090909091em` at 22pt.
 
@@ -610,7 +613,7 @@ decided by a third fact: the scope of typst's deduplicator.
   and `<script>`, which is how Animo's stylesheet and runtime reach the page and is no help
   here, because a definition has to be an SVG element. A second compile does not open the
   door either: `read()` can take the first pass's HTML back in, and nothing can emit it.
-  So the document-level `<svg>` cannot be written from inside typst 0.15.1, whatever it
+  So the document-level `<svg>` cannot be written from inside typst 0.15.0, whatever it
   would be worth.
 
 - **The deduplicator's scope is the frame, not the rendering, and that is reachable.**
@@ -901,7 +904,7 @@ By construction, undoing it starts a new one.
 
 ## A counter reads the same everywhere a slide lays content out
 
-Measured on 0.15.1, in both targets.
+Measured on typst 0.15.0, in both targets.
 
 A counter read with `get()` gives the same value inside an `html.frame` as outside one: a frame
 is a container and not a document, so nothing about a counter is reset at its edge. `final()`
@@ -920,7 +923,7 @@ vary per epoch cannot be carried this way.
 
 ## A panic that depends on `query` can be swallowed
 
-Measured on 0.15.1, while building a check that two sites of one tag name agree.
+Measured on typst 0.15.0, while building a check that two sites of one tag name agree.
 
 A value read with `query` is read once per introspection pass, so a check on such a value
 is a check on one pass and not on the document. If that check panics, the panic may never
@@ -976,7 +979,8 @@ coordinates.
 
 ## Introspection: the corner of an element, in both targets
 
-Measured on 0.15.1, chromium 151 and firefox 153, while resolving `pan(relto:)`, which needs the
+Measured on typst 0.15.0, chromium 151 and firefox 153,
+while resolving `pan(relto:)`, which needs the
 top-left corner of a tag's wrapper in both targets.
 
 - **A box on a line is located at the line's baseline, not at its corner.** Typst's inline layout
@@ -1029,7 +1033,7 @@ could add.
 ## Live preview: typst serves and reloads the HTML itself
 
 `typst watch` with HTML output starts a small HTTP server and injects a live-reload script into
-the response it serves. Verified against the 0.15.1 binary and the checkout
+the response it serves. Verified against the typst 0.15.0 binary and the checkout
 (`crates/typst-kit/src/server.rs`):
 
 - the flags are `--port` (default: the first free port in the range 3000-3005), `--no-serve` and
@@ -1155,7 +1159,7 @@ body, and not by a sweep at the end of the document.
 
 ## A cetz draw command is a value, not content
 
-Measured against cetz 0.5.2 on typst 0.15.1, while settling whether raw draw commands can be
+Measured against cetz 0.5.2 on typst 0.15.0, while settling whether raw draw commands can be
 tagged. This is what decides that they are refused.
 
 - A draw command is an **array of closures**: `draw.grid((0,0), (4,2))` is an `array` whose
@@ -1191,7 +1195,7 @@ state and in both targets; only the parameters inside it change.
 **The measurement is of the size a slot takes, and it says nothing about where the content inside
 it lands.** A `move` is laid out as an inline element, so a block-level payload inside one is laid
 out in a paragraph rather than as a block, and it is aligned to the paragraph's start instead of
-filling the container. Measured on 0.15.1 at 144 ppi, over the centred bodies of *Wrapping a
+filling the container. Measured on typst 0.15.0 at 144 ppi, over the centred bodies of *Wrapping a
 tag site*, against the page that holds the body with no wrapper at all:
 
 | Nesting                                                  | Renders          |
@@ -1207,8 +1211,8 @@ opened.
 holds a `move`, which is block-level and therefore a block of its own, so the size that slot takes
 is the same either way. The extent of a rendering measured on its own differs. `measure` reports a
 height and no baseline, so a descent is read off a line that holds the content beside a zero-width
-pole taller than it, and a block-level body pushes that pole onto a line of its own. Measured on
-0.15.1, over the word `hidden` at 11 pt:
+pole taller than it, and a block-level body pushes that pole onto a line of its own.
+Measured on typst 0.15.0, over the word `hidden` at 11 pt:
 
 | Measured                   | Ascent   | Descent  |
 | -------------------------- | -------- | -------- |
@@ -1254,14 +1258,14 @@ the presence of a `hide` say what that state did to it.
 - `set page(...)` is **ignored** in HTML export at document level (typst warns) and is an
   error inside `html.frame`. Slide size, background colour and background image must be
   emitted as CSS for the HTML target, and the slide itself is a sized `block`.
-- HTML export still requires `--features html` in 0.15.1 and prints an
+- HTML export still requires `--features html` in typst 0.15.0 and prints an
   "under active development and incomplete" warning.
 - `html.elem` takes its attributes as a dictionary in the `attrs:` argument; `html.div(..)`
   and friends do not accept `attrs:`, so Animo should use `html.elem` for anything with
   data attributes.
 - Multi-page SVG export fails without a page-number template (`{p}`/`{0p}`) in the output
   path.
-- A document that lays nothing out is **not refused**: typst 0.15.1 compiles it to one blank
+- A document that lays nothing out is **not refused**: typst 0.15.0 compiles it to one blank
   page at its own default size, A4. So a handout whose every state gave up its page produces
   a blank page at a size the deck never mentioned, rather than an error.
   Animo counts the pages its slides contribute and refuses that deck itself.
@@ -1274,9 +1278,9 @@ the presence of a `hide` say what that state did to it.
   `{ import anim: * ... }` the primitives win, while `move`, `scale` and `hide`
   outside the block remain the typst built-ins.
 - A star import re-exports submodule bindings, so a single
-  `#import "@preview/animo:0.1.0": *` provides `slide`, `tag`, `region`, `sub` *and* the
+  `#import "@preview/animo:0.1.1": *` provides `slide`, `tag`, `region`, `sub` *and* the
   `anim` module (`anim` reports as a `module`). Three usage forms all work: `import anim: *`
-  inside the animation block, a named import (`#import "@preview/animo:0.1.0": sub, tag, anim`), and fully-qualified calls (`anim.reveal("a")`) with no inner import at all.
+  inside the animation block, a named import (`#import "@preview/animo:0.1.1": sub, tag, anim`), and fully-qualified calls (`anim.reveal("a")`) with no inner import at all.
   Verified with a local two-file module, which resolves identically to a package
   entrypoint.
 - **Footgun:** because `import ...: *` silently falls through to the standard library for

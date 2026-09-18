@@ -21,7 +21,7 @@ It illustrates most concepts explained below with one slide, one tag and one sub
 A deck is a document with a show rule at the top and a `#slide` call per slide.
 
 ```typst
-#import "@preview/animo:0.1.0": *
+#import "@preview/animo:0.1.1": *
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
 #slide[

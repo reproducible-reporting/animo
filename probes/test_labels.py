@@ -30,7 +30,7 @@ def test_a_labelled_box_and_block_become_groups(typst: TypstRunner):
 def test_a_label_on_anything_else_emits_nothing(typst: TypstRunner):
     """Only `box` and `block` are addressable.
 
-    In 0.15.1 the attribute has exactly one emission site, `crates/typst-svg/src/lib.rs`,
+    In typst 0.15.0 the attribute has exactly one emission site, `crates/typst-svg/src/lib.rs`,
     and it fires for `group.label` alone.
     That source-tree fact is not observable, but its consequence is:
     a label on a `rect` or on a text span produces no group at all.

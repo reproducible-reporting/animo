@@ -105,4 +105,4 @@ zensical.extensions.macros.on_error_fail = true
 zensical.extensions.macros.on_undefined = "strict"
 
 [project.extra]
-typst_version = "0.15.1"
+typst_version = "0.15.0"

@@ -4,10 +4,11 @@
     "cpu": "12th Gen Intel(R) Core(TM) i7-1260P",
     "cores": 16,
     "platform": "Linux-7.2.5-200.fc44.x86_64-x86_64-with-glibc2.43",
-    "typst": "typst 0.15.1 (unknown commit)",
-    "animo": "0.1.0",
-    "commit": "e9ac5e0-dirty",
-    "measured": "2026-09-17 15:51:43+0200"
+    "typst": "typst 0.15.0 (3ae52774)",
+    "typst_libc": "musl",
+    "animo": "0.1.1",
+    "commit": "6157006-dirty",
+    "measured": "2026-09-18 16:08:09+0200"
   },
   "settings": {
     "repeat": 5,
@@ -16,81 +17,81 @@
   },
   "tour": {
     "html": {
-      "min": 0.3733,
-      "median": 0.3811,
+      "min": 0.4812,
+      "median": 0.4971,
       "samples": [
-        0.3733,
-        0.3916,
-        0.3811,
-        0.3921,
-        0.3764
+        0.4812,
+        0.4971,
+        0.4999,
+        0.5139,
+        0.4894
       ],
-      "bytes": 1365368,
-      "gzip_bytes": 268060,
+      "bytes": 1365315,
+      "gzip_bytes": 268056,
       "slides": 16,
       "states": 48,
       "epochs": 20,
-      "page_bytes": 1365368,
-      "defs_bytes": 702993,
+      "page_bytes": 1365315,
+      "defs_bytes": 702990,
       "repeated_defs_bytes": 386217,
       "distinct_defs": 398,
-      "hoisted_bytes": 979151,
-      "hoisted_gzip_bytes": 168593,
-      "merged_bytes": 1365368,
-      "merged_gzip_bytes": 268060
+      "hoisted_bytes": 979098,
+      "hoisted_gzip_bytes": 168595,
+      "merged_bytes": 1365315,
+      "merged_gzip_bytes": 268056
     },
     "presentation": {
-      "min": 0.4389,
-      "median": 0.4571,
+      "min": 1.0722,
+      "median": 1.0795,
       "samples": [
-        0.4426,
-        0.4389,
-        0.4571,
-        0.4668,
-        0.4669
+        1.0798,
+        1.077,
+        1.0795,
+        1.0722,
+        1.1087
       ],
-      "bytes": 233884
+      "bytes": 233933
     },
     "handout": {
-      "min": 0.3402,
-      "median": 0.3517,
+      "min": 0.5994,
+      "median": 0.6088,
       "samples": [
-        0.374,
-        0.3542,
-        0.3402,
-        0.3428,
-        0.3517
+        0.6088,
+        0.6043,
+        0.5994,
+        0.6103,
+        0.6107
       ],
-      "bytes": 146396
+      "bytes": 146467
     },
     "watch": {
       "edit": "one-slide",
-      "cold": 0.4104,
-      "incremental_min": 0.0364,
-      "incremental_median": 0.04,
+      "cold": 0.5253,
+      "incremental_min": 0.0495,
+      "incremental_median": 0.0509,
       "incremental_samples": [
-        0.0404,
-        0.04,
-        0.0413,
-        0.0364,
-        0.04
+        0.0495,
+        0.0551,
+        0.0547,
+        0.0505,
+        0.0509
       ]
     }
   },
   "scaling": {
     "base": {
       "html": {
-        "min": 0.1158,
-        "median": 0.1201,
+        "min": 0.1482,
+        "median": 0.1499,
         "samples": [
-          0.1223,
-          0.1158,
-          0.1201,
-          0.1233,
-          0.1195
+          0.1482,
+          0.1499,
+          0.1511,
+          0.1492,
+          0.1515
         ],
         "bytes": 955844,
-        "gzip_bytes": 188056,
+        "gzip_bytes": 187987,
         "slides": 12,
         "states": 12,
         "epochs": 12,
@@ -99,60 +100,60 @@
         "repeated_defs_bytes": 415774,
         "distinct_defs": 54,
         "hoisted_bytes": 540070,
-        "hoisted_gzip_bytes": 74155,
+        "hoisted_gzip_bytes": 74140,
         "merged_bytes": 955844,
-        "merged_gzip_bytes": 188056
+        "merged_gzip_bytes": 187987
       },
       "presentation": {
-        "min": 0.0995,
-        "median": 0.1035,
+        "min": 0.1328,
+        "median": 0.1366,
         "samples": [
-          0.1033,
-          0.1035,
-          0.1073,
-          0.0995,
-          0.1038
+          0.1366,
+          0.1385,
+          0.1328,
+          0.1448,
+          0.1342
         ],
         "bytes": 41801
       },
       "handout": {
-        "min": 0.1027,
-        "median": 0.1048,
+        "min": 0.1368,
+        "median": 0.1376,
         "samples": [
-          0.1027,
-          0.1042,
-          0.1071,
-          0.1107,
-          0.1048
+          0.1368,
+          0.1377,
+          0.1384,
+          0.1374,
+          0.1376
         ],
         "bytes": 41801
       },
       "plain": {
-        "min": 0.0494,
-        "median": 0.0511,
+        "min": 0.0625,
+        "median": 0.0638,
         "samples": [
-          0.0527,
-          0.0494,
-          0.0511,
-          0.054,
-          0.0499
+          0.0662,
+          0.0625,
+          0.0638,
+          0.0646,
+          0.0633
         ],
         "bytes": 40006
       }
     },
     "states-4": {
       "html": {
-        "min": 0.1504,
-        "median": 0.1606,
+        "min": 0.1923,
+        "median": 0.1995,
         "samples": [
-          0.1632,
-          0.1606,
-          0.1504,
-          0.1667,
-          0.1539
+          0.1923,
+          0.1931,
+          0.1995,
+          0.2001,
+          0.2004
         ],
         "bytes": 1153700,
-        "gzip_bytes": 212261,
+        "gzip_bytes": 212199,
         "slides": 12,
         "states": 60,
         "epochs": 12,
@@ -161,60 +162,60 @@
         "repeated_defs_bytes": 448169,
         "distinct_defs": 58,
         "hoisted_bytes": 705531,
-        "hoisted_gzip_bytes": 81480,
+        "hoisted_gzip_bytes": 81457,
         "merged_bytes": 1153700,
-        "merged_gzip_bytes": 212261
+        "merged_gzip_bytes": 212199
       },
       "presentation": {
-        "min": 0.2048,
-        "median": 0.2132,
+        "min": 0.3888,
+        "median": 0.3939,
         "samples": [
-          0.2048,
-          0.2299,
-          0.2118,
-          0.2132,
-          0.2219
+          0.3939,
+          0.404,
+          0.3888,
+          0.3908,
+          0.4015
         ],
         "bytes": 157563
       },
       "handout": {
-        "min": 0.1327,
-        "median": 0.138,
+        "min": 0.1857,
+        "median": 0.1901,
         "samples": [
-          0.1486,
-          0.138,
-          0.1445,
-          0.1356,
-          0.1327
+          0.1857,
+          0.1901,
+          0.189,
+          0.1905,
+          0.1906
         ],
         "bytes": 43742
       },
       "plain": {
-        "min": 0.0504,
-        "median": 0.0505,
+        "min": 0.0636,
+        "median": 0.0649,
         "samples": [
-          0.0554,
-          0.0505,
-          0.0514,
-          0.0504,
-          0.0505
+          0.0639,
+          0.0649,
+          0.0679,
+          0.0636,
+          0.0657
         ],
         "bytes": 41321
       }
     },
     "epochs-2": {
       "html": {
-        "min": 0.1735,
-        "median": 0.1748,
+        "min": 0.2175,
+        "median": 0.2222,
         "samples": [
-          0.1885,
-          0.1879,
-          0.1745,
-          0.1735,
-          0.1748
+          0.2248,
+          0.2175,
+          0.2222,
+          0.2223,
+          0.2194
         ],
         "bytes": 1389391,
-        "gzip_bytes": 228647,
+        "gzip_bytes": 228519,
         "slides": 12,
         "states": 24,
         "epochs": 24,
@@ -223,60 +224,60 @@
         "repeated_defs_bytes": 424123,
         "distinct_defs": 55,
         "hoisted_bytes": 965268,
-        "hoisted_gzip_bytes": 110352,
+        "hoisted_gzip_bytes": 110270,
         "merged_bytes": 1389391,
-        "merged_gzip_bytes": 228647
+        "merged_gzip_bytes": 228519
       },
       "presentation": {
-        "min": 0.1256,
-        "median": 0.1297,
+        "min": 0.1923,
+        "median": 0.1947,
         "samples": [
-          0.1286,
-          0.1344,
-          0.1297,
-          0.1256,
-          0.1302
+          0.1998,
+          0.199,
+          0.1947,
+          0.1923,
+          0.1941
         ],
         "bytes": 68612
       },
       "handout": {
-        "min": 0.1154,
-        "median": 0.1202,
+        "min": 0.1576,
+        "median": 0.1586,
         "samples": [
-          0.1164,
-          0.1154,
-          0.1205,
-          0.1202,
-          0.1203
+          0.1598,
+          0.1586,
+          0.1576,
+          0.161,
+          0.1583
         ],
         "bytes": 41410
       },
       "plain": {
-        "min": 0.0484,
-        "median": 0.0521,
+        "min": 0.0628,
+        "median": 0.0659,
         "samples": [
-          0.0521,
-          0.0566,
-          0.0484,
-          0.0511,
-          0.0531
+          0.0628,
+          0.0668,
+          0.066,
+          0.0659,
+          0.0657
         ],
         "bytes": 40006
       }
     },
     "epochs-4": {
       "html": {
-        "min": 0.2663,
-        "median": 0.2742,
+        "min": 0.3424,
+        "median": 0.3517,
         "samples": [
-          0.2865,
-          0.2721,
-          0.2663,
-          0.2742,
-          0.2864
+          0.3519,
+          0.3577,
+          0.3424,
+          0.3453,
+          0.3517
         ],
         "bytes": 2256701,
-        "gzip_bytes": 307304,
+        "gzip_bytes": 307075,
         "slides": 12,
         "states": 48,
         "epochs": 48,
@@ -285,60 +286,60 @@
         "repeated_defs_bytes": 440117,
         "distinct_defs": 57,
         "hoisted_bytes": 1816584,
-        "hoisted_gzip_bytes": 180403,
+        "hoisted_gzip_bytes": 180239,
         "merged_bytes": 2256701,
-        "merged_gzip_bytes": 307304
+        "merged_gzip_bytes": 307075
       },
       "presentation": {
-        "min": 0.159,
-        "median": 0.1611,
+        "min": 0.2993,
+        "median": 0.3063,
         "samples": [
-          0.1611,
-          0.1642,
-          0.159,
-          0.1609,
-          0.1632
+          0.3037,
+          0.2993,
+          0.3103,
+          0.3077,
+          0.3063
         ],
         "bytes": 123195
       },
       "handout": {
-        "min": 0.1229,
-        "median": 0.1316,
+        "min": 0.1666,
+        "median": 0.1694,
         "samples": [
-          0.1229,
-          0.1526,
-          0.1458,
-          0.1263,
-          0.1316
+          0.1666,
+          0.171,
+          0.1694,
+          0.1684,
+          0.175
         ],
         "bytes": 41387
       },
       "plain": {
-        "min": 0.0519,
-        "median": 0.0539,
+        "min": 0.0636,
+        "median": 0.065,
         "samples": [
-          0.0539,
-          0.0521,
-          0.0551,
-          0.0519,
-          0.0539
+          0.0681,
+          0.064,
+          0.065,
+          0.0636,
+          0.067
         ],
         "bytes": 40006
       }
     },
     "epochs-8": {
       "html": {
-        "min": 0.5115,
-        "median": 0.5389,
+        "min": 0.6433,
+        "median": 0.667,
         "samples": [
-          0.5504,
-          0.5115,
-          0.5256,
-          0.5389,
-          0.5545
+          0.6904,
+          0.6963,
+          0.667,
+          0.6612,
+          0.6433
         ],
         "bytes": 3987001,
-        "gzip_bytes": 460377,
+        "gzip_bytes": 459232,
         "slides": 12,
         "states": 96,
         "epochs": 96,
@@ -347,60 +348,60 @@
         "repeated_defs_bytes": 468145,
         "distinct_defs": 61,
         "hoisted_bytes": 3518856,
-        "hoisted_gzip_bytes": 320350,
+        "hoisted_gzip_bytes": 320106,
         "merged_bytes": 3987001,
-        "merged_gzip_bytes": 460377
+        "merged_gzip_bytes": 459232
       },
       "presentation": {
-        "min": 0.2451,
-        "median": 0.2478,
+        "min": 0.5654,
+        "median": 0.5728,
         "samples": [
-          0.2473,
-          0.2522,
-          0.2478,
-          0.2451,
-          0.2563
+          0.5654,
+          0.5677,
+          0.5837,
+          0.5917,
+          0.5728
         ],
         "bytes": 232200
       },
       "handout": {
-        "min": 0.1398,
-        "median": 0.1453,
+        "min": 0.1922,
+        "median": 0.2021,
         "samples": [
-          0.1453,
-          0.1475,
-          0.1458,
-          0.1405,
-          0.1398
+          0.2014,
+          0.1922,
+          0.2021,
+          0.2087,
+          0.2373
         ],
         "bytes": 41430
       },
       "plain": {
-        "min": 0.0492,
-        "median": 0.0525,
+        "min": 0.069,
+        "median": 0.0705,
         "samples": [
-          0.0492,
-          0.0528,
-          0.0533,
-          0.0513,
-          0.0525
+          0.0762,
+          0.086,
+          0.0694,
+          0.0705,
+          0.069
         ],
         "bytes": 40006
       }
     },
     "regions-2-epochs-1": {
       "html": {
-        "min": 0.1909,
-        "median": 0.1972,
+        "min": 0.2439,
+        "median": 0.2462,
         "samples": [
-          0.1965,
-          0.2027,
-          0.1909,
-          0.1972,
-          0.1992
+          0.2452,
+          0.2462,
+          0.2439,
+          0.2596,
+          0.2537
         ],
         "bytes": 1182872,
-        "gzip_bytes": 194499,
+        "gzip_bytes": 194431,
         "slides": 12,
         "states": 12,
         "epochs": 12,
@@ -409,60 +410,60 @@
         "repeated_defs_bytes": 424123,
         "distinct_defs": 55,
         "hoisted_bytes": 758749,
-        "hoisted_gzip_bytes": 77630,
+        "hoisted_gzip_bytes": 77617,
         "merged_bytes": 1182872,
-        "merged_gzip_bytes": 194499
+        "merged_gzip_bytes": 194431
       },
       "presentation": {
-        "min": 0.1534,
-        "median": 0.1614,
+        "min": 0.2057,
+        "median": 0.2157,
         "samples": [
-          0.1614,
-          0.1652,
-          0.1534,
-          0.1644,
-          0.1557
+          0.2204,
+          0.216,
+          0.21,
+          0.2057,
+          0.2157
         ],
-        "bytes": 43422
+        "bytes": 43451
       },
       "handout": {
-        "min": 0.1537,
-        "median": 0.1594,
+        "min": 0.2063,
+        "median": 0.2125,
         "samples": [
-          0.1537,
-          0.1594,
-          0.1621,
-          0.155,
-          0.161
+          0.2157,
+          0.2063,
+          0.2125,
+          0.2104,
+          0.2191
         ],
-        "bytes": 43422
+        "bytes": 43451
       },
       "plain": {
-        "min": 0.051,
-        "median": 0.0516,
+        "min": 0.0651,
+        "median": 0.0682,
         "samples": [
-          0.0511,
-          0.054,
-          0.051,
-          0.0516,
-          0.0522
+          0.0682,
+          0.0691,
+          0.0677,
+          0.0688,
+          0.0651
         ],
-        "bytes": 41634
+        "bytes": 41650
       }
     },
     "regions-2-epochs-4": {
       "html": {
-        "min": 0.8233,
-        "median": 0.8471,
+        "min": 1.038,
+        "median": 1.0583,
         "samples": [
-          0.8987,
-          0.8233,
-          0.8315,
-          0.8547,
-          0.8471
+          1.0903,
+          1.0489,
+          1.038,
+          1.0583,
+          1.0943
         ],
         "bytes": 3132329,
-        "gzip_bytes": 317786,
+        "gzip_bytes": 317671,
         "slides": 12,
         "states": 48,
         "epochs": 48,
@@ -471,60 +472,60 @@
         "repeated_defs_bytes": 440117,
         "distinct_defs": 57,
         "hoisted_bytes": 2692212,
-        "hoisted_gzip_bytes": 190092,
+        "hoisted_gzip_bytes": 190106,
         "merged_bytes": 3132329,
-        "merged_gzip_bytes": 317786
+        "merged_gzip_bytes": 317671
       },
       "presentation": {
-        "min": 0.4413,
-        "median": 0.4444,
+        "min": 0.9692,
+        "median": 1.0765,
         "samples": [
-          0.4438,
-          0.4544,
-          0.4444,
-          0.4505,
-          0.4413
+          0.9692,
+          1.0901,
+          1.0847,
+          1.0765,
+          1.0734
         ],
-        "bytes": 131499
+        "bytes": 131608
       },
       "handout": {
-        "min": 0.302,
-        "median": 0.3085,
+        "min": 0.4501,
+        "median": 0.4766,
         "samples": [
-          0.302,
-          0.3085,
-          0.3112,
-          0.3101,
-          0.3056
+          0.4783,
+          0.482,
+          0.4551,
+          0.4766,
+          0.4501
         ],
-        "bytes": 43533
+        "bytes": 43561
       },
       "plain": {
-        "min": 0.0509,
-        "median": 0.0527,
+        "min": 0.0652,
+        "median": 0.0687,
         "samples": [
-          0.0527,
-          0.0509,
-          0.0518,
-          0.0542,
-          0.0554
+          0.0677,
+          0.0696,
+          0.0652,
+          0.0687,
+          0.0746
         ],
-        "bytes": 41634
+        "bytes": 41650
       }
     },
     "regions-2-epochs-4-sized": {
       "html": {
-        "min": 0.4293,
-        "median": 0.4363,
+        "min": 0.5486,
+        "median": 0.5534,
         "samples": [
-          0.4363,
-          0.4483,
-          0.4348,
-          0.4519,
-          0.4293
+          0.5882,
+          0.5534,
+          0.5486,
+          0.5496,
+          0.5591
         ],
         "bytes": 3141341,
-        "gzip_bytes": 321852,
+        "gzip_bytes": 321627,
         "slides": 12,
         "states": 48,
         "epochs": 48,
@@ -533,60 +534,60 @@
         "repeated_defs_bytes": 442845,
         "distinct_defs": 59,
         "hoisted_bytes": 2698496,
-        "hoisted_gzip_bytes": 193375,
+        "hoisted_gzip_bytes": 193398,
         "merged_bytes": 3141341,
-        "merged_gzip_bytes": 321852
+        "merged_gzip_bytes": 321627
       },
       "presentation": {
-        "min": 0.2362,
-        "median": 0.2423,
+        "min": 0.4315,
+        "median": 0.4324,
         "samples": [
-          0.2423,
-          0.2423,
-          0.2362,
-          0.2443,
-          0.2457
+          0.4316,
+          0.4315,
+          0.4324,
+          0.4383,
+          0.4404
         ],
-        "bytes": 135082
+        "bytes": 135168
       },
       "handout": {
-        "min": 0.174,
-        "median": 0.1805,
+        "min": 0.2394,
+        "median": 0.2433,
         "samples": [
-          0.1848,
-          0.1805,
-          0.1817,
-          0.174,
-          0.1759
+          0.2444,
+          0.2433,
+          0.2394,
+          0.2453,
+          0.2422
         ],
-        "bytes": 44438
+        "bytes": 44458
       },
       "plain": {
-        "min": 0.05,
-        "median": 0.0542,
+        "min": 0.0694,
+        "median": 0.0697,
         "samples": [
-          0.0502,
-          0.0554,
-          0.05,
-          0.0549,
-          0.0542
+          0.0694,
+          0.0774,
+          0.0697,
+          0.0697,
+          0.0762
         ],
         "bytes": 52044
       }
     },
     "figure-regions-2-epochs-1": {
       "html": {
-        "min": 0.4844,
-        "median": 0.498,
+        "min": 0.6988,
+        "median": 0.8292,
         "samples": [
-          0.4844,
-          0.5028,
-          0.4862,
-          0.517,
-          0.498
+          0.719,
+          0.6988,
+          0.8292,
+          0.9387,
+          0.8576
         ],
         "bytes": 784137,
-        "gzip_bytes": 168338,
+        "gzip_bytes": 168264,
         "slides": 12,
         "states": 12,
         "epochs": 12,
@@ -595,60 +596,60 @@
         "repeated_defs_bytes": 374568,
         "distinct_defs": 53,
         "hoisted_bytes": 409569,
-        "hoisted_gzip_bytes": 41627,
+        "hoisted_gzip_bytes": 41613,
         "merged_bytes": 784137,
-        "merged_gzip_bytes": 168338
+        "merged_gzip_bytes": 168264
       },
       "presentation": {
-        "min": 0.3647,
-        "median": 0.3671,
+        "min": 0.849,
+        "median": 0.9935,
         "samples": [
-          0.3708,
-          0.3671,
-          0.3667,
-          0.3745,
-          0.3647
+          0.9276,
+          1.0666,
+          0.849,
+          1.0292,
+          0.9935
         ],
         "bytes": 42380
       },
       "handout": {
-        "min": 0.3693,
-        "median": 0.3719,
+        "min": 0.65,
+        "median": 0.6613,
         "samples": [
-          0.3731,
-          0.3715,
-          0.3693,
-          0.3719,
-          0.3728
+          0.6659,
+          0.6819,
+          0.65,
+          0.656,
+          0.6613
         ],
         "bytes": 42380
       },
       "plain": {
-        "min": 0.0834,
-        "median": 0.0893,
+        "min": 0.133,
+        "median": 0.1396,
         "samples": [
-          0.0895,
-          0.0941,
-          0.0846,
-          0.0834,
-          0.0893
+          0.1382,
+          0.142,
+          0.1428,
+          0.133,
+          0.1396
         ],
         "bytes": 50461
       }
     },
     "figure-regions-2-epochs-4": {
       "html": {
-        "min": 4.3414,
-        "median": 4.4236,
+        "min": 5.4683,
+        "median": 5.624,
         "samples": [
-          4.4712,
-          4.4198,
-          4.4236,
-          4.5014,
-          4.3414
+          5.8041,
+          5.4683,
+          5.7235,
+          5.6137,
+          5.624
         ],
         "bytes": 1692942,
-        "gzip_bytes": 185973,
+        "gzip_bytes": 185891,
         "slides": 12,
         "states": 48,
         "epochs": 48,
@@ -657,60 +658,60 @@
         "repeated_defs_bytes": 390562,
         "distinct_defs": 55,
         "hoisted_bytes": 1302380,
-        "hoisted_gzip_bytes": 55802,
+        "hoisted_gzip_bytes": 55792,
         "merged_bytes": 1692942,
-        "merged_gzip_bytes": 185973
+        "merged_gzip_bytes": 185891
       },
       "presentation": {
-        "min": 2.1207,
-        "median": 2.1309,
+        "min": 4.9121,
+        "median": 5.1474,
         "samples": [
-          2.1432,
-          2.1302,
-          2.1207,
-          2.1309,
-          2.188
+          5.1474,
+          4.9121,
+          4.9332,
+          5.3322,
+          5.3421
         ],
         "bytes": 128133
       },
       "handout": {
-        "min": 1.153,
-        "median": 1.1626,
+        "min": 2.0494,
+        "median": 2.0612,
         "samples": [
-          1.2098,
-          1.187,
-          1.153,
-          1.1626,
-          1.1539
+          2.0605,
+          2.0494,
+          2.1799,
+          2.0612,
+          2.0932
         ],
         "bytes": 42499
       },
       "plain": {
-        "min": 0.0833,
-        "median": 0.0892,
+        "min": 0.1314,
+        "median": 0.1392,
         "samples": [
-          0.0833,
-          0.0892,
-          0.0911,
-          0.0905,
-          0.0881
+          0.1314,
+          0.1348,
+          0.1462,
+          0.142,
+          0.1392
         ],
         "bytes": 50461
       }
     },
     "figure-regions-2-epochs-4-sized": {
       "html": {
-        "min": 1.096,
-        "median": 1.1076,
+        "min": 1.4195,
+        "median": 1.531,
         "samples": [
-          1.1024,
-          1.109,
-          1.096,
-          1.1273,
-          1.1076
+          1.4792,
+          1.4195,
+          1.531,
+          1.6473,
+          1.8911
         ],
         "bytes": 1701714,
-        "gzip_bytes": 187568,
+        "gzip_bytes": 187479,
         "slides": 12,
         "states": 48,
         "epochs": 48,
@@ -719,60 +720,60 @@
         "repeated_defs_bytes": 393290,
         "distinct_defs": 57,
         "hoisted_bytes": 1308424,
-        "hoisted_gzip_bytes": 56062,
+        "hoisted_gzip_bytes": 56055,
         "merged_bytes": 1701714,
-        "merged_gzip_bytes": 187568
+        "merged_gzip_bytes": 187479
       },
       "presentation": {
-        "min": 0.5562,
-        "median": 0.5743,
+        "min": 1.2081,
+        "median": 1.2277,
         "samples": [
-          0.5783,
-          0.576,
-          0.5743,
-          0.5562,
-          0.5633
+          1.2581,
+          1.2091,
+          1.2277,
+          1.2081,
+          1.2953
         ],
         "bytes": 131011
       },
       "handout": {
-        "min": 0.3433,
-        "median": 0.3487,
+        "min": 0.5705,
+        "median": 0.5855,
         "samples": [
-          0.3433,
-          0.3522,
-          0.3478,
-          0.3487,
-          0.3583
+          0.6261,
+          0.5906,
+          0.5855,
+          0.5705,
+          0.5751
         ],
         "bytes": 43220
       },
       "plain": {
-        "min": 0.0837,
-        "median": 0.086,
+        "min": 0.129,
+        "median": 0.1337,
         "samples": [
-          0.0853,
-          0.0861,
-          0.086,
-          0.0863,
-          0.0837
+          0.1337,
+          0.129,
+          0.1447,
+          0.143,
+          0.1331
         ],
         "bytes": 49879
       }
     },
     "overlay": {
       "html": {
-        "min": 0.1258,
-        "median": 0.1331,
+        "min": 0.1681,
+        "median": 0.1737,
         "samples": [
-          0.1258,
-          0.1367,
-          0.1331,
-          0.1454,
-          0.1287
+          0.1737,
+          0.1681,
+          0.1763,
+          0.1827,
+          0.17
         ],
         "bytes": 1194704,
-        "gzip_bytes": 251104,
+        "gzip_bytes": 251008,
         "slides": 12,
         "states": 12,
         "epochs": 12,
@@ -781,60 +782,60 @@
         "repeated_defs_bytes": 586439,
         "distinct_defs": 73,
         "hoisted_bytes": 608265,
-        "hoisted_gzip_bytes": 87180,
+        "hoisted_gzip_bytes": 87148,
         "merged_bytes": 1194704,
-        "merged_gzip_bytes": 251104
+        "merged_gzip_bytes": 251008
       },
       "presentation": {
-        "min": 0.1048,
-        "median": 0.1074,
+        "min": 0.1438,
+        "median": 0.1495,
         "samples": [
-          0.1069,
-          0.1048,
-          0.1075,
-          0.1118,
-          0.1074
+          0.152,
+          0.1496,
+          0.1495,
+          0.148,
+          0.1438
         ],
         "bytes": 45197
       },
       "handout": {
-        "min": 0.106,
-        "median": 0.1073,
+        "min": 0.1424,
+        "median": 0.1459,
         "samples": [
-          0.1073,
-          0.1075,
-          0.1063,
-          0.1088,
-          0.106
+          0.1424,
+          0.1459,
+          0.1472,
+          0.1473,
+          0.1439
         ],
         "bytes": 45197
       },
       "plain": {
-        "min": 0.0506,
-        "median": 0.0522,
+        "min": 0.0635,
+        "median": 0.0674,
         "samples": [
-          0.0532,
-          0.0559,
-          0.0522,
-          0.0522,
-          0.0506
+          0.0672,
+          0.0685,
+          0.0635,
+          0.0674,
+          0.0703
         ],
         "bytes": 40006
       }
     },
     "overlay-epochs-4": {
       "html": {
-        "min": 0.2796,
-        "median": 0.2834,
+        "min": 0.3604,
+        "median": 0.368,
         "samples": [
-          0.2847,
-          0.2824,
-          0.2918,
-          0.2796,
-          0.2834
+          0.392,
+          0.4187,
+          0.3604,
+          0.368,
+          0.3636
         ],
         "bytes": 2495561,
-        "gzip_bytes": 369335,
+        "gzip_bytes": 369168,
         "slides": 12,
         "states": 48,
         "epochs": 48,
@@ -843,60 +844,60 @@
         "repeated_defs_bytes": 610782,
         "distinct_defs": 76,
         "hoisted_bytes": 1884779,
-        "hoisted_gzip_bytes": 193151,
+        "hoisted_gzip_bytes": 193019,
         "merged_bytes": 2495561,
-        "merged_gzip_bytes": 369335
+        "merged_gzip_bytes": 369168
       },
       "presentation": {
-        "min": 0.1619,
-        "median": 0.1672,
+        "min": 0.3123,
+        "median": 0.316,
         "samples": [
-          0.1672,
-          0.1678,
-          0.1659,
-          0.1619,
-          0.1718
+          0.3154,
+          0.316,
+          0.3123,
+          0.3202,
+          0.3296
         ],
         "bytes": 136148
       },
       "handout": {
-        "min": 0.1232,
-        "median": 0.1308,
+        "min": 0.1717,
+        "median": 0.1786,
         "samples": [
-          0.1232,
-          0.1331,
-          0.1308,
-          0.1299,
-          0.1327
+          0.1823,
+          0.1744,
+          0.1717,
+          0.186,
+          0.1786
         ],
         "bytes": 44775
       },
       "plain": {
-        "min": 0.0509,
-        "median": 0.0534,
+        "min": 0.0646,
+        "median": 0.0662,
         "samples": [
-          0.0555,
-          0.0509,
-          0.0548,
-          0.051,
-          0.0534
+          0.0682,
+          0.0662,
+          0.0661,
+          0.0691,
+          0.0646
         ],
         "bytes": 40006
       }
     },
     "overlay-states-4-epochs-3": {
       "html": {
-        "min": 0.2931,
-        "median": 0.2991,
+        "min": 0.3881,
+        "median": 0.392,
         "samples": [
-          0.2991,
-          0.3146,
-          0.2945,
-          0.3117,
-          0.2931
+          0.3946,
+          0.3901,
+          0.3969,
+          0.392,
+          0.3881
         ],
         "bytes": 2450706,
-        "gzip_bytes": 349358,
+        "gzip_bytes": 349188,
         "slides": 12,
         "states": 84,
         "epochs": 36,
@@ -905,60 +906,60 @@
         "repeated_defs_bytes": 618834,
         "distinct_defs": 77,
         "hoisted_bytes": 1831872,
-        "hoisted_gzip_bytes": 171602,
+        "hoisted_gzip_bytes": 171485,
         "merged_bytes": 2450706,
-        "merged_gzip_bytes": 349358
+        "merged_gzip_bytes": 349188
       },
       "presentation": {
-        "min": 0.2704,
-        "median": 0.2777,
+        "min": 0.6201,
+        "median": 0.6277,
         "samples": [
-          0.2704,
-          0.2777,
-          0.2719,
-          0.2797,
-          0.2798
+          0.6385,
+          0.631,
+          0.6201,
+          0.6277,
+          0.6267
         ],
         "bytes": 234742
       },
       "handout": {
-        "min": 0.1519,
-        "median": 0.1534,
+        "min": 0.2178,
+        "median": 0.2209,
         "samples": [
-          0.1572,
-          0.1521,
-          0.1534,
-          0.1591,
-          0.1519
+          0.2209,
+          0.2281,
+          0.2204,
+          0.263,
+          0.2178
         ],
         "bytes": 46640
       },
       "plain": {
-        "min": 0.0505,
-        "median": 0.0529,
+        "min": 0.0675,
+        "median": 0.0691,
         "samples": [
-          0.053,
-          0.0523,
-          0.0586,
-          0.0505,
-          0.0529
+          0.0691,
+          0.0677,
+          0.071,
+          0.0692,
+          0.0675
         ],
         "bytes": 41321
       }
     },
     "number": {
       "html": {
-        "min": 0.1363,
-        "median": 0.1402,
+        "min": 0.1735,
+        "median": 0.1786,
         "samples": [
-          0.1438,
-          0.1366,
-          0.1463,
-          0.1402,
-          0.1363
+          0.1735,
+          0.1798,
+          0.18,
+          0.1786,
+          0.1781
         ],
         "bytes": 1240130,
-        "gzip_bytes": 262242,
+        "gzip_bytes": 262158,
         "slides": 12,
         "states": 12,
         "epochs": 12,
@@ -967,60 +968,60 @@
         "repeated_defs_bytes": 609759,
         "distinct_defs": 86,
         "hoisted_bytes": 630371,
-        "hoisted_gzip_bytes": 92684,
+        "hoisted_gzip_bytes": 92663,
         "merged_bytes": 1240130,
-        "merged_gzip_bytes": 262242
+        "merged_gzip_bytes": 262158
       },
       "presentation": {
-        "min": 0.1062,
-        "median": 0.1132,
+        "min": 0.1454,
+        "median": 0.1517,
         "samples": [
-          0.1129,
-          0.1062,
-          0.1132,
-          0.1158,
-          0.1134
+          0.148,
+          0.1454,
+          0.152,
+          0.1553,
+          0.1517
         ],
         "bytes": 47358
       },
       "handout": {
-        "min": 0.1104,
-        "median": 0.1144,
+        "min": 0.1511,
+        "median": 0.1549,
         "samples": [
-          0.1104,
-          0.1191,
-          0.113,
-          0.1144,
-          0.1194
+          0.1511,
+          0.1569,
+          0.1574,
+          0.1549,
+          0.1538
         ],
         "bytes": 47358
       },
       "plain": {
-        "min": 0.0508,
-        "median": 0.052,
+        "min": 0.0641,
+        "median": 0.0668,
         "samples": [
-          0.0522,
-          0.0508,
-          0.052,
-          0.0527,
-          0.0511
+          0.0681,
+          0.0658,
+          0.0705,
+          0.0668,
+          0.0641
         ],
         "bytes": 40006
       }
     },
     "number-states-4": {
       "html": {
-        "min": 0.1717,
-        "median": 0.1804,
+        "min": 0.2258,
+        "median": 0.2312,
         "samples": [
-          0.1736,
-          0.184,
-          0.1717,
-          0.1833,
-          0.1804
+          0.2258,
+          0.2312,
+          0.2346,
+          0.2306,
+          0.2385
         ],
         "bytes": 1490615,
-        "gzip_bytes": 290201,
+        "gzip_bytes": 290145,
         "slides": 12,
         "states": 60,
         "epochs": 12,
@@ -1029,60 +1030,60 @@
         "repeated_defs_bytes": 665551,
         "distinct_defs": 90,
         "hoisted_bytes": 825064,
-        "hoisted_gzip_bytes": 101460,
+        "hoisted_gzip_bytes": 101446,
         "merged_bytes": 1490615,
-        "merged_gzip_bytes": 290201
+        "merged_gzip_bytes": 290145
       },
       "presentation": {
-        "min": 0.2267,
-        "median": 0.2298,
+        "min": 0.4653,
+        "median": 0.4752,
         "samples": [
-          0.2298,
-          0.2284,
-          0.2328,
-          0.2321,
-          0.2267
+          0.4905,
+          0.4775,
+          0.4752,
+          0.4749,
+          0.4653
         ],
         "bytes": 179927
       },
       "handout": {
-        "min": 0.1419,
-        "median": 0.1444,
+        "min": 0.2027,
+        "median": 0.2035,
         "samples": [
-          0.1444,
-          0.1501,
-          0.1419,
-          0.1437,
-          0.1452
+          0.2093,
+          0.2035,
+          0.203,
+          0.2027,
+          0.2135
         ],
         "bytes": 48966
       },
       "plain": {
-        "min": 0.0515,
-        "median": 0.0544,
+        "min": 0.0692,
+        "median": 0.0709,
         "samples": [
-          0.0515,
-          0.0519,
-          0.0551,
-          0.0546,
-          0.0544
+          0.0692,
+          0.0709,
+          0.0706,
+          0.0716,
+          0.0716
         ],
         "bytes": 41321
       }
     },
     "number-states-4-epochs-3": {
       "html": {
-        "min": 0.3087,
-        "median": 0.3193,
+        "min": 0.4032,
+        "median": 0.4199,
         "samples": [
-          0.3193,
-          0.3229,
-          0.3354,
-          0.3087,
-          0.3184
+          0.4032,
+          0.4318,
+          0.4199,
+          0.4162,
+          0.4266
         ],
         "bytes": 2575070,
-        "gzip_bytes": 374962,
+        "gzip_bytes": 374857,
         "slides": 12,
         "states": 84,
         "epochs": 36,
@@ -1091,60 +1092,60 @@
         "repeated_defs_bytes": 677244,
         "distinct_defs": 90,
         "hoisted_bytes": 1897826,
-        "hoisted_gzip_bytes": 180421,
+        "hoisted_gzip_bytes": 180321,
         "merged_bytes": 2575070,
-        "merged_gzip_bytes": 374962
+        "merged_gzip_bytes": 374857
       },
       "presentation": {
-        "min": 0.2994,
-        "median": 0.3048,
+        "min": 0.7091,
+        "median": 0.7185,
         "samples": [
-          0.2994,
-          0.3048,
-          0.3097,
-          0.3007,
-          0.308
+          0.7141,
+          0.7208,
+          0.7185,
+          0.7091,
+          0.7388
         ],
         "bytes": 242887
       },
       "handout": {
-        "min": 0.1547,
-        "median": 0.1625,
+        "min": 0.2349,
+        "median": 0.246,
         "samples": [
-          0.1547,
-          0.1625,
-          0.1623,
-          0.165,
-          0.1629
+          0.246,
+          0.2384,
+          0.2349,
+          0.2606,
+          0.26
         ],
         "bytes": 48446
       },
       "plain": {
-        "min": 0.0557,
-        "median": 0.0564,
+        "min": 0.0728,
+        "median": 0.0773,
         "samples": [
-          0.0564,
-          0.0561,
-          0.0582,
-          0.0557,
-          0.0579
+          0.0773,
+          0.078,
+          0.0809,
+          0.0728,
+          0.0744
         ],
         "bytes": 41321
       }
     },
     "realistic": {
       "html": {
-        "min": 0.7071,
-        "median": 0.7659,
+        "min": 0.8976,
+        "median": 0.9417,
         "samples": [
-          0.7177,
-          0.7851,
-          0.7659,
-          0.7071,
-          0.7854
+          1.003,
+          0.9417,
+          0.9531,
+          0.8976,
+          0.9287
         ],
         "bytes": 2868402,
-        "gzip_bytes": 300929,
+        "gzip_bytes": 300779,
         "slides": 12,
         "states": 84,
         "epochs": 36,
@@ -1153,113 +1154,113 @@
         "repeated_defs_bytes": 448169,
         "distinct_defs": 58,
         "hoisted_bytes": 2420233,
-        "hoisted_gzip_bytes": 166338,
+        "hoisted_gzip_bytes": 166283,
         "merged_bytes": 2868402,
-        "merged_gzip_bytes": 300929
+        "merged_gzip_bytes": 300779
       },
       "presentation": {
-        "min": 0.6308,
-        "median": 0.6322,
+        "min": 1.4201,
+        "median": 1.4412,
         "samples": [
-          0.6322,
-          0.6312,
-          0.6372,
-          0.6327,
-          0.6308
+          1.4412,
+          1.4253,
+          1.4201,
+          1.4612,
+          1.4843
         ],
-        "bytes": 233339
+        "bytes": 233314
       },
       "handout": {
-        "min": 0.3119,
-        "median": 0.3169,
+        "min": 0.4638,
+        "median": 0.47,
         "samples": [
-          0.3254,
-          0.3312,
-          0.3119,
-          0.3133,
-          0.3169
+          0.4638,
+          0.4893,
+          0.4844,
+          0.47,
+          0.469
         ],
-        "bytes": 46428
+        "bytes": 46426
       },
       "plain": {
-        "min": 0.053,
-        "median": 0.0559,
+        "min": 0.0715,
+        "median": 0.073,
         "samples": [
-          0.0556,
-          0.053,
-          0.0575,
-          0.0559,
-          0.0585
+          0.073,
+          0.0715,
+          0.073,
+          0.073,
+          0.0715
         ],
-        "bytes": 50457
+        "bytes": 50473
       },
       "watch": {
         "edit": "one-slide",
-        "cold": 0.6882,
-        "incremental_min": 0.0593,
-        "incremental_median": 0.0616,
+        "cold": 0.9038,
+        "incremental_min": 0.0816,
+        "incremental_median": 0.0889,
         "incremental_samples": [
-          0.0612,
-          0.0658,
-          0.0616,
-          0.0593,
-          0.0657
+          0.0898,
+          0.0816,
+          0.0831,
+          0.0889,
+          0.097
         ]
       }
     }
   },
   "derived": {
     "overhead_factor": {
-      "base": 2.08,
-      "states-4": 2.63,
-      "epochs-2": 2.38,
-      "epochs-4": 2.37,
-      "epochs-8": 2.84,
-      "regions-2-epochs-1": 3.01,
-      "regions-2-epochs-4": 5.93,
-      "regions-2-epochs-4-sized": 3.48,
-      "figure-regions-2-epochs-1": 4.43,
-      "figure-regions-2-epochs-4": 13.84,
-      "figure-regions-2-epochs-4-sized": 4.1,
-      "overlay": 2.09,
-      "overlay-epochs-4": 2.42,
-      "overlay-states-4-epochs-3": 3.01,
-      "number": 2.17,
-      "number-states-4": 2.76,
-      "number-states-4-epochs-3": 2.78,
-      "realistic": 5.88
+      "base": 2.19,
+      "states-4": 2.92,
+      "epochs-2": 2.51,
+      "epochs-4": 2.62,
+      "epochs-8": 2.79,
+      "regions-2-epochs-1": 3.17,
+      "regions-2-epochs-4": 6.9,
+      "regions-2-epochs-4-sized": 3.45,
+      "figure-regions-2-epochs-1": 4.89,
+      "figure-regions-2-epochs-4": 15.6,
+      "figure-regions-2-epochs-4-sized": 4.42,
+      "overlay": 2.24,
+      "overlay-epochs-4": 2.66,
+      "overlay-states-4-epochs-3": 3.23,
+      "number": 2.36,
+      "number-states-4": 2.93,
+      "number-states-4-epochs-3": 3.23,
+      "realistic": 6.49
     },
-    "seconds_per_epoch_per_slide": 0.0047,
-    "seconds_per_region_measurement": 0.00133,
-    "seconds_per_canvas_measurement": 0.00843,
+    "seconds_per_epoch_per_slide": 0.0059,
+    "seconds_per_region_measurement": 0.00219,
+    "seconds_per_canvas_measurement": 0.01541,
     "bytes_per_epoch_per_slide": 36084,
-    "gzip_bytes_per_epoch_per_slide": 3235,
+    "gzip_bytes_per_epoch_per_slide": 3222,
     "gzip_ratio": {
       "base": 5.08,
       "states-4": 5.44,
       "epochs-2": 6.08,
-      "epochs-4": 7.34,
-      "epochs-8": 8.66,
+      "epochs-4": 7.35,
+      "epochs-8": 8.68,
       "regions-2-epochs-1": 6.08,
       "regions-2-epochs-4": 9.86,
-      "regions-2-epochs-4-sized": 9.76,
+      "regions-2-epochs-4-sized": 9.77,
       "figure-regions-2-epochs-1": 4.66,
-      "figure-regions-2-epochs-4": 9.1,
-      "figure-regions-2-epochs-4-sized": 9.07,
+      "figure-regions-2-epochs-4": 9.11,
+      "figure-regions-2-epochs-4-sized": 9.08,
       "overlay": 4.76,
       "overlay-epochs-4": 6.76,
-      "overlay-states-4-epochs-3": 7.01,
+      "overlay-states-4-epochs-3": 7.02,
       "number": 4.73,
       "number-states-4": 5.14,
       "number-states-4-epochs-3": 6.87,
-      "realistic": 9.53
+      "realistic": 9.54
     },
     "hoisting_saves_gzipped": {
       "base": 0.606,
       "states-4": 0.616,
       "epochs-2": 0.517,
       "epochs-4": 0.413,
-      "epochs-8": 0.304,
+      "epochs-8": 0.303,
       "regions-2-epochs-1": 0.601,
       "regions-2-epochs-4": 0.402,
       "regions-2-epochs-4-sized": 0.399,
@@ -1297,55 +1298,55 @@
   },
   "placements": {
     "no-pan": {
-      "min": 1.3041,
-      "median": 1.3239,
+      "min": 3.1155,
+      "median": 3.1508,
       "samples": [
-        1.3041,
-        1.3089,
-        1.3239,
-        1.3358,
-        1.3783
+        3.2293,
+        3.1304,
+        3.253,
+        3.1155,
+        3.1508
       ],
-      "peak_kib": 1015820,
-      "bytes": 2658114
+      "peak_kib": 817752,
+      "bytes": 2632033
     },
     "pan": {
-      "min": 1.7481,
-      "median": 1.8139,
+      "min": 3.8157,
+      "median": 3.8486,
       "samples": [
-        1.7481,
-        1.8166,
-        1.7776,
-        1.8139,
-        1.8413
+        3.8486,
+        3.8157,
+        4.0046,
+        3.8193,
+        3.8917
       ],
-      "peak_kib": 1231004,
-      "bytes": 2647450
+      "peak_kib": 985564,
+      "bytes": 2621452
     },
     "pan-canvas": {
-      "min": 1.3668,
-      "median": 1.5503,
+      "min": 3.2703,
+      "median": 3.3222,
       "samples": [
-        1.5503,
-        1.4248,
-        1.3668,
-        1.6017,
-        1.5567
+        3.3222,
+        3.4004,
+        3.2757,
+        3.4399,
+        3.2703
       ],
-      "peak_kib": 1014444,
-      "bytes": 2647450
+      "peak_kib": 809436,
+      "bytes": 2621452
     },
     "pan-image": {
-      "min": 0.5732,
-      "median": 0.5826,
+      "min": 1.1757,
+      "median": 1.2261,
       "samples": [
-        0.5951,
-        0.5927,
-        0.5826,
-        0.5816,
-        0.5732
+        1.2309,
+        1.2089,
+        1.2261,
+        1.1757,
+        1.2345
       ],
-      "peak_kib": 131156,
+      "peak_kib": 115816,
       "bytes": 12442602
     }
   }
