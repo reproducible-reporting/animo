@@ -172,4 +172,6 @@ Bumping a release is therefore an edit of the manifest followed by
 One version number sits in a file name rather than in text.
 The package directory under `.typst-packages` carries the version in the name of its symlink,
 which Snipwise cannot rewrite, so `git mv` renames it in the same commit.
-A rename that is forgotten fails `test_package_symlink_points_at_the_working_tree`.
+A rename that is forgotten fails the `package symlink matches the manifest` hook,
+which `pre-commit` runs on the commit that bumps the version.
+It also fails `test_package_symlink_points_at_the_working_tree`.

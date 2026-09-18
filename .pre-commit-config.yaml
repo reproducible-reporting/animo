@@ -116,6 +116,15 @@ repos:
       # An alternation is what keeps the two sequences whole.
       entry: "\u2013|\u2014"
       types_or: [markdown, toml, yaml]
+    # The version in the manifest is also the name of the symlink under `.typst-packages/`.
+    # A symlink left under the previous version keeps every document that imports
+    # `@preview/animo` from compiling.
+    - id: package-symlink-matches-the-manifest
+      name: package symlink matches the manifest
+      language: script
+      entry: tools/check_package_symlink.py
+      always_run: true
+      pass_filenames: false
 - repo: meta
   hooks:
     # The configuration above carries excludes written by hand,
