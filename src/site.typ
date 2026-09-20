@@ -90,3 +90,123 @@
     if current.hidden { hide(payload) } else { payload },
   ),
 )
+
+// What a container resolves from its own children.
+//
+// A grid, a table, a list, an enum and a terms list read their own children and keep the
+// ones that are `cell` or `item` elements.
+// Every other child becomes the body of a cell or an item with default settings.
+// A tag site and a region are a `context` block, which is one of those other children, so
+// the element the author wrote stops being the container's child
+// (measured on typst 0.15.0; see *Findings*).
+//
+// `body` names the field that holds the child's own content, for a child whose settings are
+// the whole of the loss.
+// Such a child that sets nothing beside its body lays out the same either way and is left
+// alone.
+// `body: none` marks a child the container drops whatever it carries.
+//
+// `article` is the article the child's element function takes, for the diagnosis.
+//
+// `fill` marks a child whose container paints the fill, which is where the second way out
+// of the refusal applies.
+#let container-children = (
+  (
+    func: grid.cell,
+    container: "a grid",
+    call: "grid.cell",
+    article: "a",
+    dropped: "its fill, its colspan and the other cell settings",
+    body: "body",
+    fill: true,
+  ),
+  (
+    func: table.cell,
+    container: "a table",
+    call: "table.cell",
+    article: "a",
+    dropped: "its fill, its colspan and the other cell settings",
+    body: "body",
+    fill: true,
+  ),
+  (
+    func: list.item,
+    container: "a list",
+    call: "list.item",
+    article: "a",
+    dropped: "its place in the list, which becomes a nested list under the item above it",
+    body: none,
+    fill: false,
+  ),
+  (
+    func: enum.item,
+    container: "an enum",
+    call: "enum.item",
+    article: "an",
+    dropped: "its place in the enum, which becomes a nested enum under the item above it",
+    body: none,
+    fill: false,
+  ),
+  (
+    func: terms.item,
+    container: "a terms list",
+    call: "terms.item",
+    article: "a",
+    dropped: "its place in the terms list, which typst refuses outright",
+    body: none,
+    fill: false,
+  ),
+)
+
+// Refuse a body that a container would resolve, naming the ways to write it instead.
+//
+// `inside` is the site written inside the child, which is what keeps the child's settings.
+// `holding` is the site written around a block that carries the fill, which a timeline that
+// moves, scales, reveals or hides the filled box needs.
+// The second way is named only for a cell, because a grid and a table paint the fill in
+// their own frame, outside every group a site produces, so a site inside a cell never
+// covers that fill (measured; see *Findings*).
+//
+// A label on the child does not stop the container from reading it, so the key a label adds
+// is not one of the settings that would be lost.
+#let check-container-child(what, body, inside, holding) = {
+  let child = container-children.find(it => it.func == body.func())
+  if child == none { return }
+  if child.body != none {
+    let settings = body.fields().keys().filter(key => key != "label")
+    if settings == (child.body,) { return }
+  }
+  let message = (
+    "the body of "
+      + what
+      + " is "
+      + child.article
+      + " "
+      + child.call
+      + ", and "
+      + child.container
+      + " reads that element from its own children; "
+      + "a site is a context block between the two, so the container drops "
+      + child.dropped
+      + "; write the site inside the element instead, as in "
+      + child.call
+      + "(.., "
+      + inside
+      + ")"
+  )
+  if child.fill {
+    message += (
+      ". The fill is painted by "
+        + child.container
+        + " in its own frame, outside every group a site produces, "
+        + "so a site inside a cell does not cover the fill either: "
+        + "a timeline that moves, scales, reveals or hides the filled box "
+        + "needs the fill on a block the site holds, as in "
+        + child.call
+        + "("
+        + holding
+        + ")"
+    )
+  }
+  panic(message)
+}

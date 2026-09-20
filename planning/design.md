@@ -469,6 +469,27 @@ cause. What to write instead is a cetz `content()` element with a tag of its
 own, or a canvas written as a function of what it draws and tagged whole, so that the
 timeline replaces it with the same function called differently.
 
+**A body a container would have resolved is refused** as well, and the refusal covers `region`
+for the same reason. A grid, a table, a list, an enum and a terms list read their own children
+and keep the ones that are `cell` or `item` elements, and every other child becomes the body of a
+cell or an item with default settings (measured; see *Findings*). A site is a `context` block
+between the container and the element, so `tag("s", grid.cell(fill: c)[..])` lays out a cell with
+no fill, and a tagged `list.item` becomes a nested list. Nothing panics and nothing warns, so the
+author meets the mistake in the rendered deck.
+
+Rebuilding the cell around the site was the alternative, and it is rejected on what it leaves
+behind. A grid paints a cell's fill in its own frame, outside every group a site produces
+(measured; see *Findings*), so the rebuild restores the fill in the rendering and leaves `move`,
+`scale`, `pan`, `reveal` and `hide` reaching only the cell's content. That is the silent no-op the
+cetz refusal above exists to prevent, applied to half the primitives instead of all of them. The
+refusal names both ways out, because the cell-internal site is only half the answer: the site goes
+inside the element to keep its settings, and the fill goes on a `block` the site holds when the
+timeline has to move the filled box.
+
+The refusal fires only where something is lost. A cell that sets nothing beside its body lays out
+the same either way and is left alone, while an item is refused whatever it carries, because what
+the container drops there is the item's place in the container rather than a setting on it.
+
 Wrapping is not free, and the manual states this explicitly:
 a tagged inline phrase can no longer break across lines, so its paragraph may reflow,
 and a tagged heading shifts by a few points, because a heading's own block spacing is trimmed
@@ -482,22 +503,25 @@ elements become addressable groups in the SVG/HTML output (see *Findings*). That
 which primitives a tag site supports, and it is worth stating as a table rather than leaving it
 implied:
 
-| Tag site                                    | Structural primitives | Continuous primitives |
-| ------------------------------------------- | --------------------- | --------------------- |
-| ordinary content                            | yes                   | yes                   |
-| inside math                                 | yes                   | yes                   |
-| a cetz `content()` element or fletcher node | yes                   | yes                   |
-| content tagged with `wrap: none`            | yes                   | refused               |
-| raw cetz draw commands                      | refused               | refused               |
+| Tag site                                                     | Structural primitives | Continuous primitives |
+| ------------------------------------------------------------ | --------------------- | --------------------- |
+| ordinary content                                             | yes                   | yes                   |
+| inside math                                                  | yes                   | yes                   |
+| a cetz `content()` element or fletcher node                  | yes                   | yes                   |
+| content tagged with `wrap: none`                             | yes                   | refused               |
+| a `grid.cell` or a `table.cell` that sets more than its body | refused               | refused               |
+| an item of a list, an enum or a terms list                   | refused               | refused               |
+| raw cetz draw commands                                       | refused               | refused               |
 
-The asymmetry in the fourth row has one cause. Structural primitives are resolved by typst
+The asymmetry in the `wrap: none` row has one cause. Structural primitives are resolved by typst
 when the epoch is rendered, so they work wherever a tag can wrap something at all. Continuous
 primitives are resolved by the browser and need a `<g data-typst-label>` to address, which
 typst emits only for labelled boxes and blocks.
 
-The last row is the boundary of the claim above, and it is a property of the value rather than
-of Animo's mechanism. `sanor` does reach a tagged `draw.grid(..)`, in `test/draw.typ`, and it
-reaches it by threading its `s` through the slide body: the body is a function, re-evaluated
+The row for raw cetz draw commands is the boundary of the claim above,
+and it is a property of the value rather than of Animo's mechanism.
+`sanor` does reach a tagged `draw.grid(..)`, in `test/draw.typ`,
+and it reaches it by threading its `s` through the slide body: the body is a function, re-evaluated
 once per subslide, so its `tag` applies draw-to-draw wrappers eagerly at call time. Animo
 re-*lays out* one content value instead of re-*evaluating* a function, which is what
 *Resolved Design Decisions* settles on other grounds, and a show rule reaches content where

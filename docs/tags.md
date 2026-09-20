@@ -201,6 +201,50 @@ tagged as a whole and replaced:
 Anything on the figure that has to move smoothly, or be revealed and hidden,
 must be a typst content element with a tag.
 
+**A cell of a grid or a table is refused**, and so is an item of a list, an enum or a terms
+list. A grid reads `fill`, `colspan`, `align` and `stroke` from its own children, a tag site
+is a `context` block between the grid and the cell, and the grid then takes the whole tag site
+as the content of a cell with default settings. The fill is dropped in every output type,
+with no panic and no warning. The same holds for `region`.
+
+Write the tag inside the cell, where the grid still reads the cell itself:
+
+```typst
+#grid(
+  columns: (1fr, 1fr),
+  inset: 0.5cm,
+  grid.cell(fill: aqua)[Untagged],
+  grid.cell(fill: orange, tag("note")[Tagged]),
+)
+```
+
+**A tag inside a cell does not cover the cell's fill.** The grid paints the fill in its own
+frame, outside every group a tag produces, so `move`, `scale`, `pan`, `reveal` and `hide` on
+such a tag reach the text and leave the fill standing.
+
+When the timeline has to move or hide the filled box itself, put the fill on a block that the
+tag holds. A `block` takes a gradient as readily as a colour:
+
+```typst
+#grid(
+  columns: (1fr,),
+  grid.cell(tag("panel", block(
+    fill: gradient.linear(aqua, orange),
+    width: 100%,
+    height: 100%,
+    inset: 0.5cm,
+  )[Summary])),
+)
+```
+
+The tag's group then holds the block, and the fill moves, scales, reveals and hides with it.
+A block with a fill is also the shorter answer when the grid was only there for the panel:
+one `#block(fill: ..)` inside a `#place` or a `#stack` needs no cell at all.
+
+A tag around a cell that sets nothing beside its body is left alone, because such a cell lays
+out the same either way. An item is refused whatever it carries, because what a list drops
+there is the item's place in the list rather than a setting on it.
+
 The [Reference](reference.md#tag) has the table of which primitives reach which kind of
 tag site.
 In that table, `wrap: none` is the special case:

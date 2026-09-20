@@ -1181,6 +1181,62 @@ that no other channel can either: varying the array per epoch would mean re-eval
 that built it, which only a body that is a function of the subslide can do. `sanor` has exactly that
 body, which is how `test/draw.typ` reaches a tagged `draw.grid(..)`.
 
+## What a container resolves from its own children
+
+A grid, a table, a list, an enum and a terms list read their own children and keep the ones that
+are `cell` or `item` elements. Every other child becomes the body of a cell or an item with
+default settings, so the element the author wrote is never consulted. Measured on typst 0.15.0,
+with a `grid.cell(fill: yellow)` as the child:
+
+| What sits between the container and the child    | Fill |
+| ------------------------------------------------ | ---- |
+| nothing, the cell is the argument                | kept |
+| a label, `[#grid.cell(..)[x]<l>]`                | kept |
+| a `context` block                                | lost |
+| a `box`                                          | lost |
+| a `styled`, from `text(red, ..)` or a `set` rule | lost |
+
+The label row is what makes the claim about the intervening element rather than about touching
+the cell at all. The `styled` row is the one that is guessed wrong: typst does not look through
+`styled` here, so a package must not look through it either, and `peel` from `wrap.typ` is the
+wrong tool on this path.
+
+The loss differs per container, and `colspan` goes the way `fill` does:
+
+| Child        | What a `context` block around it costs                         |
+| ------------ | -------------------------------------------------------------- |
+| `grid.cell`  | `fill`, `colspan`, `rowspan`, `align` and `stroke` are dropped |
+| `table.cell` | the same settings are dropped                                  |
+| `list.item`  | becomes a nested list under the item above it                  |
+| `enum.item`  | becomes a nested enum under the item above it                  |
+| `terms.item` | fails to compile, with `expected term item or array`           |
+
+An explicit number survives into the nested enum rather than being dropped.
+`enum(enum.item(7)[a], context enum.item(9)[b])` renders `7. a` and then `8.` holding a nested
+`9. b`, where the direct form renders `7. a` and `9. b`. The enclosing enum numbers the item that
+holds the nested one from its own count, so the loss is the item's place and not its number.
+
+**A cell's fill is painted by the container, not by the cell.** In the SVG of a one-cell grid
+holding a labelled box, the fill path is a sibling emitted *before* the labelled group, and the
+group holds only the glyphs:
+
+```
+<path fill="#ffdc00" ... transform="translate(2 2)" d="M 0 0v 17.238h 222.771653543v -17.238Z "/>
+<g transform="translate(7 7)" data-typst-label="probe">
+  <g transform="matrix(1 0 0 -1 0 7.238)">   <- glyphs only
+```
+
+So no arrangement of a tag, and no reconstruction of the cell, puts a cell's fill inside the group
+the browser addresses. That is what decides the refusal in *Tags* rather than a silent rebuild:
+rebuilding the cell around the site restores the fill in the rendering and leaves `move`, `scale`,
+`pan`, `reveal` and `hide` reaching only the cell's content.
+
+Detection has to compare element functions. `grid.cell` and `table.cell` both `repr` as `cell`,
+and `list.item`, `enum.item` and `terms.item` all as `item`, while `==` tells every pair apart.
+`fields()` reports only the fields that were set, and a label adds a `label` key, so a cell that
+carries nothing but its body is recognised by its key set being `("body",)` once `label` is
+dropped.
+
 ## Transforms between a tag's slots are layout-neutral
 
 `box(move(dx: .., dy: .., ..))`, `box(scale(.., reflow: false, ..))` and `box(hide(..))` measure

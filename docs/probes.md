@@ -170,6 +170,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Live preview: typst serves and reloads the HTML itself       | `test_watch.py`              |
 | Wrapping a tag site: what it changes and what it does not    | `test_wrapping.py`           |
 | A cetz draw command is a value, not content                  | `test_draw_commands.py`      |
+| What a container resolves from its own children              | `test_container_children.py` |
 | Inline versus block, decided by measurement                  | `test_levels.py`             |
 | Providing a value down the tree                              | `test_providing.py`          |
 | A counter reads the same everywhere a slide lays out         | `test_counters.py`           |

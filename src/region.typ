@@ -23,7 +23,9 @@
 #import "footprint.typ": finite, inline-footprint, inline-placed, measured-at
 #import "member.typ": member
 #import "plan.typ": ask, provide, varies
-#import "site.typ": check-name, describe, display-of, reserved
+#import "site.typ": (
+  check-container-child, check-name, describe, display-of, reserved,
+)
 #import "wrap.typ": filling, slots
 
 // The label every footprint carries, so that it can be read back.
@@ -262,6 +264,12 @@
         + "that the region is put around",
     )
   }
+  check-container-child(
+    what,
+    body,
+    "region[..]",
+    "region(block(fill: .., width: 100%, height: 100%)[..])",
+  )
   // A size that is given is a size that a state can exceed, so clipping matters there.
   // A measured footprint fits every state by construction.
   let clip = if clip == auto { width != auto or height != auto } else { clip }

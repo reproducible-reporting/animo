@@ -25,7 +25,9 @@
 #import "member.typ": member
 #import "plan.typ": ask, pristine, provide, varies
 #import "region.typ": block-region, footprint-label, inline-region
-#import "site.typ": check-name, describe, display-of, displayed
+#import "site.typ": (
+  check-container-child, check-name, describe, display-of, displayed,
+)
 #import "wrap.typ": choose-wrapper, outer-of, slots
 
 // What a tag site lays out in one epoch, with its wrappers applied, or `none` for nothing.
@@ -168,6 +170,12 @@
         + "and replace it with one drawn differently",
     )
   }
+  check-container-child(
+    "the tag " + name,
+    body,
+    "tag(" + repr(name) + ")[..]",
+    "tag(" + repr(name) + ", block(fill: .., width: 100%, height: 100%)[..])",
+  )
   context {
     let wrapper = choose-wrapper(name, body, wrap)
     ask("the tag " + name, view => render(name, body, wrapper, view))

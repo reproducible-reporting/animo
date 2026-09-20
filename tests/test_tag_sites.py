@@ -1,11 +1,13 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Tiers 1 and 2: the tag sites that are hardest, and the one that is refused.
+"""Tiers 1 and 2: the tag sites that are hardest, and the ones that are refused.
 
 The claim that makes animo worth building is that anything typst can lay out as content can
 be tagged. This module is where that claim is either true or not in the three places it is
-hardest, and where the one place it does not reach is pinned down rather than left for a
-reader to discover: a cetz draw command is not content and is refused at the tag site.
+hardest, and where the places it does not reach are pinned down rather than left for a
+reader to discover. A cetz draw command is not content and is refused at the tag site. A
+`grid.cell` and an item of a list are content, and are refused because the container reads
+them from its own children and never sees one behind a tag site.
 
 Two third-party packages are compiled here, so these tests skip when Universe cannot be
 reached with a cold package cache, which is the only network dependency in the suite.
@@ -168,6 +170,80 @@ def test_a_region_inside_a_cetz_canvas_is_refused(typst: TypstRunner):
         "is not content, but array",
     )
     assert "goes inside a canvas that the region is put around" in result.stderr
+
+
+def test_a_tag_around_a_grid_cell_is_refused(typst: TypstRunner):
+    """The container reads the cell, and a tag site is a context block between the two.
+
+    Rebuilding the cell around the tag would restore the fill and leave every continuous
+    primitive reaching the cell's content, so the message names both ways out: the tag goes
+    inside the cell, and the fill goes on a block the tag holds.
+    """
+    body = '#grid(\n    columns: (1fr,),\n    tag("cell", grid.cell(fill: aqua)[x]),\n  )'
+    result = typst.fails(
+        deck(f"slide[\n  {body}\n]"),
+        "the body of the tag cell is a grid.cell",
+    )
+    assert 'grid.cell(.., tag("cell")[..])' in result.stderr
+    assert "block(fill: .., width: 100%, height: 100%)" in result.stderr
+
+
+def test_a_tag_around_a_cell_that_carries_no_settings_is_left_alone(typst: TypstRunner):
+    """Such a cell lays out the same either way, so the refusal would cost and gain nothing.
+
+    A label on the cell is not one of the settings, since a label does not stop the grid
+    from reading the cell.
+    """
+    body = (
+        "#grid(\n"
+        "    columns: (1fr, 1fr),\n"
+        '    tag("plain", grid.cell[x]),\n'
+        '    tag("labelled", [#grid.cell[y]<cell-label>]),\n'
+        "  )"
+    )
+    typst.ok(deck(f"slide[\n  {body}\n]"))
+
+
+def test_a_tag_around_a_list_item_is_refused_whatever_it_carries(typst: TypstRunner):
+    """What a list drops is the item's place in it, which no setting on the item restores."""
+    body = '#list(list.item[a], tag("second", list.item[b]))'
+    result = typst.fails(
+        deck(f"slide[\n  {body}\n]"),
+        "the body of the tag second is a list.item",
+    )
+    assert "becomes a nested list" in result.stderr
+    assert 'list.item(.., tag("second")[..])' in result.stderr
+
+
+def test_a_region_around_a_grid_cell_is_refused_in_the_same_words(typst: TypstRunner):
+    """A region becomes a container the same way a tag site does, so it loses the same fill."""
+    body = "#grid(\n    columns: (1fr,),\n    region(grid.cell(fill: aqua)[x]),\n  )"
+    result = typst.fails(
+        deck(f"slide[\n  {body}\n]"),
+        "the body of a region is a grid.cell",
+    )
+    assert "grid.cell(.., region[..])" in result.stderr
+
+
+def test_the_documented_ways_around_a_tagged_cell_compile(typst: TypstRunner):
+    """Both forms the refusal names, checked so that the message cannot go stale.
+
+    The second is the one a timeline that moves the filled box needs, since a grid paints
+    the fill in its own frame and no tag ever covers it.
+    """
+    body = (
+        "#grid(\n"
+        "    columns: (1fr, 1fr),\n"
+        '    grid.cell(fill: aqua, tag("inside")[x]),\n'
+        '    grid.cell(tag("held", block(\n'
+        "      fill: gradient.linear(aqua, orange),\n"
+        "      width: 100%,\n"
+        "      height: 100%,\n"
+        "    )[y])),\n"
+        "  )"
+    )
+    animation = timeline('sub(move("held", dx: 1cm), reveal("inside"))')
+    typst.ok(deck(f"slide(animation: {animation})[\n  {body}\n]"), **PRESENTATION)
 
 
 # Tier 2: what changes on the page, and what does not.

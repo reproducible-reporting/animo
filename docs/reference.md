@@ -137,19 +137,29 @@ operation is `reset` starts removed (see [Tags](tags.md#initial-state-of-tagged-
 
 Which primitives reach which kind of tag site:
 
-| Tag site                                    | Structural | Continuous |
-| ------------------------------------------- | ---------- | ---------- |
-| ordinary content                            | yes        | yes        |
-| inside math                                 | yes        | yes        |
-| a cetz `content()` element or fletcher node | yes        | yes        |
-| content tagged with `wrap: none`            | yes        | refused    |
-| raw cetz draw commands                      | refused    | refused    |
+| Tag site                                                     | Structural | Continuous |
+| ------------------------------------------------------------ | ---------- | ---------- |
+| ordinary content                                             | yes        | yes        |
+| inside math                                                  | yes        | yes        |
+| a cetz `content()` element or fletcher node                  | yes        | yes        |
+| content tagged with `wrap: none`                             | yes        | refused    |
+| a `grid.cell` or a `table.cell` that sets more than its body | refused    | refused    |
+| an item of a list, an enum or a terms list                   | refused    | refused    |
+| raw cetz draw commands                                       | refused    | refused    |
 
 The structural primitives are resolved by typst when it renders the slide,
 so they work wherever a tag can wrap something at all.
 The continuous primitives are resolved by the browser and need a group to address,
 which typst emits only for labelled boxes and blocks.
 A `pan(relto: ..)` reads a corner of that group, so it is refused on a `wrap: none` tag too.
+
+A `grid.cell`, a `table.cell` and an item of a list, an enum or a terms list
+are read by the container they sit in, which never sees them behind a tag site.
+Write the tag inside the element instead (see [Tags](tags.md#where-a-tag-may-sit)).
+A cell that sets nothing beside its body lays out the same either way and is left alone.
+An item is refused whatever it carries,
+because what the container drops there is the item's place in the container
+rather than a setting on it.
 
 Taught in [Tags](tags.md).
 
