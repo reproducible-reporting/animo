@@ -370,11 +370,17 @@
 ]
 
 #let ncirc = 12
+#let circle-radius = 0.3cm
 
 #slide(animation: {
   import anim: *
   // The ring is the state the handout keeps, and the scattered one is the state it drops:
   // the last step carries every circle past the viewport, so a page of it is a bare title.
+  //
+  // A circle grows in place with `scale` and is not replaced by a bigger one.
+  // A `replace` crossfades the old circle into the new one, and where the two overlap in
+  // the same colour the outgoing circle stays solid inside the fading incoming one.
+  // The factor is absolute, so each step states the size its circle ends up with.
   for (radius, keep) in ((2.7cm, true), (10cm, false)) {
     sub(
       handout: keep,
@@ -388,11 +394,7 @@
             dx: radius * calc.cos(angle),
             dy: radius * calc.sin(angle),
           ),
-          replace(name, circle(radius: radius / 5, fill: color.oklch(
-            80%,
-            80%,
-            icirc / ncirc * 360deg,
-          ))),
+          scale(name, f: radius / 5 / circle-radius),
         )
       },
     )
@@ -409,8 +411,8 @@
       place(
         center + horizon,
         tag(strfmt("c{}", icirc), circle(
-          radius: 0.3cm,
-          fill: color.oklch(10%, 80%, icirc / ncirc * 360deg),
+          radius: circle-radius,
+          fill: color.oklch(80%, 80%, icirc / ncirc * 360deg),
         )),
       )
     }
