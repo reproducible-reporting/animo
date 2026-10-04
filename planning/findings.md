@@ -277,7 +277,11 @@ position is on, and neither can undo the other.
 Measured on chromium 151 and firefox 153, for the slide boundary under *Architecture*.
 The case above is two inline SVGs inside the canvas, which carries no ground of its own.
 A slide boundary is two HTML elements that each carry an opaque background,
-stacked in one grid cell of the deck, which is the element that centres a slide on a surround.
+stacked inside an element that isolates and that is centred on a surround.
+The probe stacks them in one grid cell of that element.
+Animo's stage is that element, and it stacks its slides by absolute positioning instead.
+The probe asserts the midpoint for the grid cell,
+and `tests/test_transitions_html.py` asserts it for an Animo deck.
 
 | Midpoint of a boundary between two opaque grounds | Deviation from their average |
 | ------------------------------------------------- | ---------------------------- |
@@ -287,17 +291,17 @@ stacked in one grid cell of the deck, which is the element that centres a slide 
 So the mechanism carries over unchanged, and it carries over for a reason the frame case never
 had to state: a plain crossfade handles two opaque grounds incorrectly, since each is
 composited over what is behind it and the surround shows through the half-transparent pair.
-One slide blended against the transparent backdrop of the isolated deck is that slide, to
+One slide blended against the transparent backdrop of the isolating element is that slide, to
 within the same rounding, so the blend may sit on every slide rather than be turned on for the
 length of a boundary.
 
 **The ground of the isolating element is inside the group it isolates.**
-With the surround written on the deck, the element that carries `isolation: isolate`, a white
+With the surround written on the element that carries `isolation: isolate`, a white
 surround is added to both halves and takes the midpoint 239/255 away from the average of the
 two slides; with the same colour written on the page instead, the midpoint is exact.
 Black hides the mistake completely, because zero is what adding nothing looks like, which is
 why this was found by reasoning rather than by inspection. Animo therefore writes its surround on
-`body` and leaves the deck without a background.
+`body` and leaves the deck and the stage without a background.
 
 ## What keeping every slide laid out costs
 

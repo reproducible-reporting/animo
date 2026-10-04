@@ -12,12 +12,32 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 ## [Unreleased]
 
+### Added
+
+- Announce the position of the HTML presentation as events on the root element:
+  `animo:position`, `animo:leave`, `animo:enter` and `animo:mode`.
+  They are sent after the page, the URL fragment and the clock have been updated.
+  The root element also carries the active input mode as `data-animo-mode`.
+- Ignore key presses and clicks inside an element with the attribute `data-animo-control`.
+
+### Changes
+
+- Place the slides of the HTML presentation in a `.animo-stage` element inside `.animo-deck`.
+  The stage is the visible rectangle, and it clips and isolates the crossfade between slides.
+- Split the runtime of the HTML presentation into files under `src/js`,
+  which are joined into the one script of the page.
+
 ### Fixes
 
 - Draw a gradient and a clip path on every slide of the HTML presentation.
   A slide reached by a deep link, a reload or a step back lost them
   when an earlier slide used the same gradient or clip path,
   which turned the gradient background recipe into white slides.
+- Give pointer events only to the slide that is shown in the HTML presentation.
+  After a step back, the slide that was just left stayed on top of the one shown
+  and received the clicks meant for it.
+- Pause and resume only the animations that Animo started.
+  The pause key used to pause every animation of the page, including the author's own.
 
 ## [0.1.1] - 2026-09-18
 

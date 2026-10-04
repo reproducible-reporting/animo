@@ -5,13 +5,13 @@ and for *Chromium rasterises a frame differently while an opacity animation runs
 
 The epoch crossfade blends two inline SVGs inside the canvas, which is a container with no
 ground of its own. A slide boundary blends two *HTML* elements that each carry an opaque
-background, inside the deck, which is the element that centres a slide on a surround.
+background, inside an element that isolates and is centred on a surround.
 Two things are different there and both are measured here: whether `plus-lighter` still
 sums two opaque grounds to their average, and where the surround's own colour has to sit
 so that it does not join that sum.
 
 The second is the one that cost the time. The ground of the element that isolates a blend
-is inside the group it isolates, so a surround written on the deck is added to both slides
+is inside the group it isolates, so a surround written on that element is added to both slides
 at every moment of a crossfade. A black surround hides that completely, because zero is
 what adding nothing looks like, and a deck that restated it would have found out the hard
 way.
@@ -32,8 +32,9 @@ from htmldoc import document
 # average of the two, because the surround shows through the half-transparent pair.
 GROUNDS = ("#204080", "#a06020")
 
-# The deck and its two slides, as animo builds them: the slides stacked in one grid cell of
-# an isolated parent, each a positioned box with a ground and an inline SVG of typst ink.
+# An isolating parent and its two slides, which stand for animo's stage and its slides: the
+# slides stacked in one grid cell of the parent, each a positioned box with a ground and an
+# inline SVG of typst ink.
 # The surround is a parameter, because where it sits is half of what is probed.
 DECK_CSS = """\
 html, body {{ margin: 0; padding: 0; background: {page}; }}

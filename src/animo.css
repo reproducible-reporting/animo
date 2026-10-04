@@ -38,8 +38,8 @@ SPDX-License-Identifier: Apache-2.0
 
 /*
   The surround the slide is centred on, which is not part of any slide.
-  It is a declaration on the page's own root elements rather than on the deck below.
-  The deck isolates the blend that crossfades two slides, and the ground of the isolating
+  It is a declaration on the page's own root elements rather than on the stage below.
+  The stage isolates the blend that crossfades two slides, and the ground of the isolating
   element is inside the group it isolates, so a surround written there would be summed into
   both slides.
   Measured with a white surround, which shifted the midpoint of a crossfade by 239/255 in
@@ -54,11 +54,10 @@ body {
 }
 
 /*
-  The window: the current slide, centred on the surround.
-  The slides are stacked in a single grid cell, on a stacking context of their own, which
-  is what lets the slide being entered and the slide being left cross without the two
-  taking two rows of a grid.
-  It carries no background of its own, because the deck isolates the crossfade.
+  The window: the stage, centred on the surround.
+  It carries no background and no isolation of its own.
+  Controls that belong to the window rather than to a slide are children of the deck beside
+  the stage, because a corner of the window can lie outside the stage.
 */
 .animo-deck {
   display: grid;
@@ -66,18 +65,31 @@ body {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
-  isolation: isolate;
-}
-
-.animo-deck > * {
-  grid-row: 1;
-  grid-column: 1;
 }
 
 /*
-  The viewport: the slide's visible box.
+  The stage: the rectangle the current slide fills, and the element everything that belongs
+  to the visible slide attaches to.
   It is as large as the window allows at the deck's aspect ratio, and it clips,
-  because content outside it belongs to the canvas and is reached by panning.
+  because content outside it belongs to the canvas and is reached by panning, and a slide
+  that is entering or leaving is clipped at it as well.
+
+  It isolates, so that `plus-lighter` on the slides sums the two of a crossfade against a
+  transparent backdrop and not against the page. It carries no background for the reason
+  the surround above gives.
+*/
+.animo-stage {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  width: var(--animo-viewport);
+  aspect-ratio: var(--animo-aspect);
+}
+
+/*
+  A slide: one container in the stage, as large as the stage.
+  It clips as well, because the canvas inside it is larger than the stage when the slide
+  pans.
 
   Two slides are laid out at a time and never more: the one being shown, and the one a
   boundary is crossing from, which keeps its layout until the deck moves again so that
@@ -86,18 +98,23 @@ body {
   Laying every slide out for the whole session doubled the first paint of a sixty-slide
   deck. See *Findings*.
 
+  Slides are stacked in document order, so the one being left would be above the one being
+  shown and take its pointer events.
+  Only the current slide takes events, which leaves the slide being left laid out and
+  inert to the pointer. The runtime sets `inert` on it as well, for the keyboard and for
+  assistive technology.
+
   `plus-lighter` makes the crossfade between two slides add rather than cover, and
   it is on every slide rather than only on the two a boundary involves, so that a slide
   rasterises the same whether or not it is in a transition. A single slide added to the
-  transparent backdrop of the isolated deck is that slide, so this changes nothing outside
+  transparent backdrop of the isolated stage is that slide, so this changes nothing outside
   a boundary.
 */
 .animo-slide {
   display: none;
-  position: relative;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  width: var(--animo-viewport);
-  aspect-ratio: var(--animo-aspect);
   background: #ffffff;
   mix-blend-mode: plus-lighter;
 }
@@ -105,6 +122,10 @@ body {
 .animo-slide[data-animo-current],
 .animo-slide[data-animo-leaving] {
   display: block;
+}
+
+.animo-slide:not([data-animo-current]) {
+  pointer-events: none;
 }
 
 /*

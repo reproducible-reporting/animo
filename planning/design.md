@@ -266,7 +266,7 @@ goes in them.
 
 A slide has two rectangles, and `pan` is defined by the difference between them.
 
-- The **viewport** is what the audience sees: one HTML slide container, one presentation-PDF
+- The **viewport** is what the audience sees: one HTML stage, one presentation-PDF
   page, one handout page. Its size is the deck's slide size.
 
 - The **canvas** is what the body is laid out on. It is at least as large as the viewport and
@@ -1135,9 +1135,12 @@ becomes a `<g data-typst-label="animo-epoch-N">` the runtime can address. One fr
 per epoch, because typst's deduplicator has the frame for its scope: the renderings of a slide
 then define each glyph they share once between them rather than once each, which is the only
 part of that duplication a package can reach (see *Findings*). The canvas element sits inside
-the viewport element, which is the slide's visible box and clips it (`overflow: hidden`),
+the slide container, which is the slide's visible box and clips it (`overflow: hidden`),
 between the background frame and the overlay frame, which are frames of the slide rather than
 renderings inside the canvas's frame and are not moved by a `pan`.
+The slide containers are the children of the **stage**, an element of the deck's aspect ratio
+that is the viewport of the HTML output: it clips, it isolates the blend between two slides,
+and the deck centres it on the page's surround.
 Each tagged element appears in every epoch rendering as a `<g data-typst-label="...">` group.
 Animations are then performed in the browser:
 
@@ -1161,7 +1164,7 @@ Animations are then performed in the browser:
   on the epoch renderings inside the canvas, which isolates, and `visibility` scoping the
   outgoing rendering down to the regions it hands over
 - a slide boundary crossfades the two **slide containers** by the same means: `plus-lighter` on
-  the containers inside an isolated stacking context, the outgoing one kept laid out until the
+  the containers inside the stage, which isolates, the outgoing one kept laid out until the
   two have crossed, and `--animo-transition-duration` rather than `--animo-primitive-duration`
   for its length.
   Nothing is scoped here, because the two slides share nothing to hold still, which is why

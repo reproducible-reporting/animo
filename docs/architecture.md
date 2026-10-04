@@ -2,7 +2,8 @@
 description: >-
   How a slide becomes an HTML presentation: the epoch renderings, the five rules the
   browser runtime obeys, the two transform slots of a tag site,
-  and where the transition strategy is selected.
+  where the transition strategy is selected,
+  and how the runtime is divided into files, a controller and events.
 ---
 
 <!--
@@ -19,7 +20,12 @@ and every measurement it cites is an entry of *Findings* with a probe under `pro
 
 ## What Typst Emits
 
-A slide is one container element carrying its plan as JSON in `data-animo-plan`,
+The slides are the children of one stage element, which is the only child of the deck element,
+so the page is `.animo-deck > .animo-stage > .animo-slide`.
+The deck fills the window and centres the stage.
+The stage is as large as the window allows at the deck's aspect ratio, it clips, and it isolates.
+A slide is one container element in the stage, as large as the stage,
+carrying its plan as JSON in `data-animo-plan`,
 and inside it a `.animo-canvas` element holding **one `html.frame` for the whole slide**,
 in which **one rendering per epoch** is placed at one point, in epoch order.
 Each rendering is a labelled box, so it becomes a `<g data-typst-label="animo-epoch-N">`
@@ -27,7 +33,7 @@ the runtime can show, hide and blend.
 One frame and not one per epoch, because typst's deduplicator has the frame for its scope:
 the renderings of a slide then define each glyph they share once between them instead of
 once each, which takes a deck of several epochs a slide down by about 40% on the wire.
-The canvas sits inside the viewport element, which clips it.
+The slide container clips the canvas.
 The container also carries `data-animo-transition`, which is how the boundary above the
 slide is crossed: one value per slide, so it is an attribute rather than an entry in the
 plan, for the reason the plan itself is an attribute.
@@ -172,7 +178,7 @@ them together and keeps them registered.
 
 ## Where the Transition Strategy Is Selected
 
-`transitions` in `src/animo.js` holds one entry per strategy,
+`transitions` in `src/js/boundaries.js` holds one entry per strategy,
 and the single `const transition = transitions.crossfade` beside it selects one for every
 boundary of every deck.
 A strategy is handed the epoch renderings, the epoch the step leaves and the one it
@@ -195,7 +201,7 @@ it is why both renderings stay laid out and readable rather than being hidden wi
 
 ## Where the Slide Boundary Is Selected
 
-`slideTransitions` in `src/animo.js` is the same seam one container out,
+`slideTransitions` in `src/js/boundaries.js` is the same seam one container out,
 and a table of its own rather than an entry in the one above,
 because the two are handed different things.
 An epoch strategy gets the renderings of one slide and the regions a boundary carries
@@ -205,9 +211,9 @@ since two slides share nothing, so the whole container is the unit.
 
 The crossfade there animates `opacity` on the two containers,
 through the `mix-blend-mode: plus-lighter` the stylesheet puts on every slide,
-inside the `isolation: isolate` on the deck.
+inside the `isolation: isolate` on the stage.
 A plain crossfade handles two opaque grounds incorrectly,
-and the surround therefore sits on `body` rather than on the deck:
+and the surround therefore sits on `body` rather than on the stage:
 the ground of the element that isolates a blend is inside the group it isolates,
 so a surround written there would be summed into both slides.
 
@@ -273,6 +279,79 @@ the ones standing for the endpoints included:
 chromium 151 rasterises glyphs differently while an `opacity` animation runs in their frame,
 so a raster taken at rest and one taken mid-step come off two different rendering paths.
 
+## The Files of the Runtime
+
+The HTML output is one self-contained file, so its script cannot import its parts.
+The runtime is the files under `src/js`, which `src/deck.typ` reads in a stated order
+and joins into the one `<script type="module">` of the page.
+The files share one module scope.
+Function declarations are hoisted, so a function may call one from any file at any time.
+A top level `const` is initialised when the script reaches its file,
+so a file may use one at load time only if it comes after the file that defines it.
+Only `boot.js` calls into the other files at load time, and it is the last one.
+
+| File            | Holds                                                                     |
+| --------------- | ------------------------------------------------------------------------- |
+| `slides.js`     | `readSlide`, the registry of slides, `count`, `clamp` and `parseHash`     |
+| `effects.js`    | `timing`, `scheduled`, `span`, `put` and `showing`                        |
+| `display.js`    | positions and anchors, the CSS of a display state and a pan, and `render` |
+| `boundaries.js` | the epoch strategies, the slide strategies, `putEpoch` and `putSubslides` |
+| `controller.js` | the position, `show`, `step`, `jump`, and the clock with its pause        |
+| `input.js`      | key, pointer and hash events, turned into intents by the active mode      |
+| `boot.js`       | preparing the page, reading the slides and the first `jump`               |
+
+## The Controller and Its Events
+
+`controller.js` holds every piece of state that the runtime keeps between two inputs:
+the position, the direction of travel, the pending step, the reasons the clock is stopped,
+and the active mode.
+`show` is the only function that writes the position.
+
+The controller announces what happened as events on the root element,
+after the DOM, the fragment, the `data-animo` attribute and the clock have been written.
+A listener therefore finds the page in the state the event describes.
+The events bubble, so a listener on the root element, the document or the window receives them.
+
+| Event            | Detail                 | Sent                                                                               |
+| ---------------- | ---------------------- | ---------------------------------------------------------------------------------- |
+| `animo:leave`    | `{slide}`              | when a position is on another slide than the previous one, with the previous slide |
+| `animo:enter`    | `{slide}`              | in the same case, and for the first position, with the slide entered               |
+| `animo:position` | `{from, to, animated}` | after every position that is shown                                                 |
+| `animo:mode`     | `{from, to}`           | when the active mode changes, with names as values                                 |
+
+A position is `{slide, state}`.
+For a change of slide the events come in the order `leave`, `enter`, `position`.
+The first position of the page enters its slide and leaves none, and its `from` is `null`.
+The mode the page starts in is announced in the same way, with a `from` of `null`.
+`animated` is true when the position was reached by a step and the deck lets motion run.
+It is false for a deep link, `Home` and `End`, for a cut, and for a reader who asked for
+less motion.
+A join, which is a gap of zero, is two steps made by the clock, and each is announced.
+
+Input is read in a **mode**, which is `{name, keymap, pointer}`.
+The keymap maps `event.key` to an intent, and the pointer table maps the type of a pointer
+event to one.
+The intents are `next`, `previous`, `first`, `last` and `toggle-pause`,
+and the controller offers each of them as one entry of `intents`.
+The one mode is `present`, and `Space` in it is `toggle-pause` while the deck has a clock
+to pause and `next` otherwise.
+The root element carries the name of the active mode as `data-animo-mode`.
+
+The clock is stopped while a set of **hold reasons** is not empty.
+The pause key holds `user`.
+Backward travel that runs out of deck holds `travel`, which the next forward step releases.
+The pause key releases both, and it holds `user` when neither is held.
+
+The runtime acts only on what belongs to the deck, in these places.
+
+- Only the current slide takes pointer events.
+  The slide a boundary is crossing from stays laid out so that stepping back finds it laid out,
+  and it is `inert` for as long as it is the slide being left.
+- A key press or a click whose target is inside an element with the attribute
+  `data-animo-control` does not step the deck.
+- The pause key pauses and resumes the animations that the runtime created,
+  which carry the id `animo`, and leaves every other animation of the page running.
+
 ## What the Page Carries
 
 A few attributes are what the runtime reads, and they can be read back in a browser's
@@ -287,7 +366,10 @@ inspector, which is how a step that does not do what the timeline says is diagno
   which.
 - The root element carries `data-animo` with the position the runtime has reached,
   which is the same value as the fragment,
+  `data-animo-mode` with the name of the active mode,
   and `data-animo-paused` while the deck's own clock is stopped.
+- The slide that is shown carries `data-animo-current`,
+  and the slide a boundary is crossing from carries `data-animo-leaving` and `inert`.
 
 ## Where the Page Weight Goes
 

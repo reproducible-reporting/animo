@@ -160,7 +160,29 @@
   read("animo.css") + "\n:root {\n" + declarations + "\n}\n"
 }
 
-// The HTML page a deck becomes: the stylesheet, the runtime and one container for the slides.
+// The files of the runtime, in the order they are joined into the one script of the page.
+//
+// The page is one self contained file, so the script cannot import its parts.
+// The files are concatenated and share one module scope, which is why the order is stated
+// here: a file may use at load time only what an earlier file defines, and only `boot.js`
+// calls into the other files at load time.
+// Function declarations are hoisted, so only a top level `const` needs that care.
+#let runtime-files = (
+  "slides",
+  "effects",
+  "display",
+  "boundaries",
+  "controller",
+  "input",
+  "boot",
+)
+
+// The runtime as the text of its script.
+#let runtime-script() = {
+  runtime-files.map(name => read("js/" + name + ".js")).join("\n")
+}
+
+// The HTML page a deck becomes: the stylesheet, the runtime and the stage that holds the slides.
 #let html-shell(shape, timing, body) = html.html({
   html.head({
     html.meta(charset: "utf-8")
@@ -170,9 +192,10 @@
     ))
     html.elem("style", stylesheet(shape, timing))
     // A module script is deferred by default, so the runtime finds the slides in place.
-    html.elem("script", attrs: (type: "module"), read("animo.js"))
+    html.elem("script", attrs: (type: "module"), runtime-script())
   })
-  html.body(html.elem("div", attrs: (class: "animo-deck"), body))
+  let stage = html.elem("div", attrs: (class: "animo-stage"), body)
+  html.body(html.elem("div", attrs: (class: "animo-deck"), stage))
 })
 
 #let animo(
