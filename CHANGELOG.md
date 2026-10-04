@@ -12,7 +12,12 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 ## [Unreleased]
 
-(no changes yet)
+### Fixes
+
+- Draw a gradient and a clip path on every slide of the HTML presentation.
+  A slide reached by a deep link, a reload or a step back lost them
+  when an earlier slide used the same gradient or clip path,
+  which turned the gradient background recipe into white slides.
 
 ## [0.1.1] - 2026-09-18
 

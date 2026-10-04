@@ -4,7 +4,9 @@
 
 Relevant because stacking several epoch frames in one document puts duplicate ids
 in one DOM, and a browser resolves `<use xlink:href="#g..">` to the first match.
-That is harmless only as long as equal ids always mean equal content.
+That is harmless only as long as equal ids always mean equal content,
+and, for a gradient, a clip path or a tiling, as long as the first definition is laid out.
+The second condition is probed in `test_hidden_defs.py`.
 
 The last probe here is about `gzip` rather than about typst, and it belongs beside these
 because it is what decides whether the redundancy the others describe costs anything on

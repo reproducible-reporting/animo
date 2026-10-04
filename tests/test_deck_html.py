@@ -355,3 +355,103 @@ def test_the_layers_are_siblings_of_the_canvas_in_painting_order(open_page, laye
     assert order["layers"] == ["normal", "normal"]
     assert order["frame"] == "normal"
     assert order["renderings"] == ["plus-lighter"] * 3
+
+
+# A paint server is drawn on every slide, however the slide was reached.
+
+# Typst names a gradient and a clip path by a hash of its content, so a slide that repeats one
+# from an earlier slide defines the same id in a second frame, and a reference resolves to the
+# first of them. That one sits in a slide that is `display: none` unless the runtime is laying
+# it out, so a slide reached without its predecessor lost the fill and the clip.
+# The background is the recipe the refusal message of `background` gives for a gradient, and
+# the body has a clipped box and a gradient of its own, which are the two kinds of paint
+# server that a slide emits on the canvas.
+PAINT_SERVERS = tuple(
+    "slide(background: rect(width: 100%, height: 100%, fill: gradient.linear(navy, teal)))"
+    "[#place(dx: 2cm, dy: 2cm, box(width: 2cm, height: 2cm, clip: true,"
+    ' rect(width: 6cm, height: 6cm, fill: rgb("#ff0000"))))'
+    "#place(dx: 8cm, dy: 2cm, rect(width: 4cm, height: 2cm,"
+    f" fill: gradient.linear(yellow, lime)))#place(dx: 0cm, dy: 6cm)[{word}]]"
+    for word in ("One", "Two", "Three")
+)
+
+# At 1280 by 720 a centimetre of this 16 by 9 centimetre deck is 80 pixels.
+WINDOW = {"width": 1280, "height": 720}
+
+
+def paint_signature(page) -> dict:
+    """What the slide being shown has of its gradients and its clip, as pixels.
+
+    The word that tells the slides apart sits clear of every place sampled here, so the
+    signature of a slide that drew its paint servers is the same on every slide.
+    """
+    image = screenshot(page.locator(".animo-slide[data-animo-current]"))
+    red = (image == np.array([255, 0, 0], dtype=np.uint8)).all(axis=2)
+    return {
+        "background": tuple(int(value) for value in image[360, 640]),
+        "gradient": (
+            tuple(int(value) for value in image[240, 8 * 80 + 40]),
+            tuple(int(value) for value in image[240, 12 * 80 - 40]),
+        ),
+        "clipped": int(red.sum()),
+    }
+
+
+@pytest.fixture
+def paint_deck(typst: TypstRunner):
+    """A compiled three-slide deck whose slides repeat the same gradients and clip path."""
+    return typst.html(deck(*PAINT_SERVERS), name="paint.html")
+
+
+def test_the_first_slide_draws_its_paint_servers(page, open_page, paint_deck):
+    """The control: what a slide that draws them looks like, so the other tests can compare.
+
+    The background is not white, the two ends of the gradient differ, and the clip leaves
+    the two centimetre square of the box and not the six centimetre square of its content.
+    """
+    page.set_viewport_size(WINDOW)
+    open_page(paint_deck)
+    signature = paint_signature(page)
+    assert signature["background"] != (255, 255, 255)
+    assert signature["gradient"][0] != signature["gradient"][1]
+    assert signature["gradient"][0] != (255, 255, 255)
+    assert signature["clipped"] == pytest.approx(160 * 160, rel=0.01)
+
+
+@pytest.mark.parametrize("slide", [2, 3])
+def test_a_deep_link_to_a_later_slide_draws_its_paint_servers(page, paint_deck, slide):
+    """The route that has no predecessor: every slide before this one is `display: none`.
+
+    The page is opened afresh on the fragment, which is also what `typst watch` does to a deck
+    it reloads, so the slide that defines the ids first is never laid out.
+    """
+    page.set_viewport_size(WINDOW)
+    page.goto(paint_deck.resolve().as_uri())
+    expected = paint_signature(page)
+    page.goto("about:blank")
+    page.goto(paint_deck.resolve().as_uri() + state_hash(slide))
+    page.wait_for_function(
+        "expected => document.documentElement.dataset.animo === expected",
+        arg=f"{slide}.0",
+    )
+    assert paint_signature(page) == expected
+
+
+def test_stepping_forward_and_back_draws_the_paint_servers_on_every_slide(
+    page, deck_at, paint_deck
+):
+    """The route through the deck, with the boundary animations on.
+
+    The slide being left stays laid out until the next step, so the same slide is drawn
+    after one step and was not drawn after another.
+    Stepping back lands on slides whose first definition is no longer the one being left.
+    """
+    page.set_viewport_size(WINDOW)
+    presentation = deck_at(paint_deck).settle()
+    expected = paint_signature(page)
+    seen = []
+    for key in ("ArrowRight", "ArrowRight", "ArrowLeft", "ArrowLeft"):
+        presentation.press(key).settle()
+        seen.append((presentation.position, paint_signature(page)))
+    assert [position for position, _ in seen] == [(2, 0), (3, 0), (2, 0), (1, 0)]
+    assert [signature for _, signature in seen] == [expected] * 4

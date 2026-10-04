@@ -137,45 +137,45 @@ so they stay visible instead of quietly disappearing.
 
 Every entry in *Findings* has a probe module, or a row in the table above.
 
-| Finding                                                      | Module                       |
-| ------------------------------------------------------------ | ---------------------------- |
-| Element identity in the output: `data-typst-label`           | `test_labels.py`             |
-| The frame is the smallest unit of DOM addressability         | `test_frames.py`             |
-| Regions: fixed footprints across epochs                      | `test_regions.py`            |
-| Regions: an inline footprint has to pin its baseline         | `test_baselines.py`          |
-| Regions: what a region learns from its container             | `test_region_containers.py`  |
-| Crossfading epoch frames                                     | `test_crossfade.py`          |
-| Crossfading two slide containers                             | `test_slide_crossfade.py`    |
-| Rasterising a frame while an opacity animation runs in it    | `test_slide_crossfade.py`    |
-| Choosing between stacked renderings: opacity, not visibility | `test_stacked_renderings.py` |
-| Automatic canvas sizing: `#place` and `show place:`          | `test_canvas.py`             |
-| Recording placements: what a `show place:` rule may do       | `test_place_rule.py`         |
-| A fixed-height container stacks what does not fit            | `test_overflow.py`           |
-| Fitting the slide to the browser window                      | `test_fitting.py`            |
-| SVG `<defs>` ids are content hashes                          | `test_defs.py`               |
-| Hoisting shared `<defs>`: sound in the browser, not in typst | `test_hoisting.py`           |
-| CSS animation of typst SVG groups                            | `test_css_transforms.py`     |
-| A keyframe property that does not change suppresses others   | `test_frame_drawing.py`      |
-| A delayed effect does not hold its first keyframe            | `test_delayed_effects.py`    |
-| The document timeline is not a clock                         | `test_timeline_clock.py`     |
-| A faked clock drives a timer, not the document timeline      | `test_fake_clock.py`         |
-| Styling from CSS: what is and is not reachable               | `test_css_styling.py`        |
-| Cross-frame geometry, and the two nested transform slots     | `test_slots.py`              |
-| `hide()` cannot be undone in the browser                     | `test_hide.py`               |
-| A panic that depends on `query` can be swallowed             | `test_convergence.py`        |
-| Introspection: positions                                     | `test_introspection.py`      |
-| Introspection: the corner of an element, in both targets     | `test_anchors.py`            |
-| Introspection: the fields of a nested structure              | `test_element_fields.py`     |
-| Media elements in the HTML output                            | `test_media.py`              |
-| Live preview: typst serves and reloads the HTML itself       | `test_watch.py`              |
-| Wrapping a tag site: what it changes and what it does not    | `test_wrapping.py`           |
-| A cetz draw command is a value, not content                  | `test_draw_commands.py`      |
-| What a container resolves from its own children              | `test_container_children.py` |
-| Inline versus block, decided by measurement                  | `test_levels.py`             |
-| Providing a value down the tree                              | `test_providing.py`          |
-| A counter reads the same everywhere a slide lays out         | `test_counters.py`           |
-| Transforms between a tag's slots are layout-neutral          | `test_paged_transforms.py`   |
-| Other verified behaviour                                     | `test_misc.py`               |
+| Finding                                                      | Module                                |
+| ------------------------------------------------------------ | ------------------------------------- |
+| Element identity in the output: `data-typst-label`           | `test_labels.py`                      |
+| The frame is the smallest unit of DOM addressability         | `test_frames.py`                      |
+| Regions: fixed footprints across epochs                      | `test_regions.py`                     |
+| Regions: an inline footprint has to pin its baseline         | `test_baselines.py`                   |
+| Regions: what a region learns from its container             | `test_region_containers.py`           |
+| Crossfading epoch frames                                     | `test_crossfade.py`                   |
+| Crossfading two slide containers                             | `test_slide_crossfade.py`             |
+| Rasterising a frame while an opacity animation runs in it    | `test_slide_crossfade.py`             |
+| Choosing between stacked renderings: opacity, not visibility | `test_stacked_renderings.py`          |
+| Automatic canvas sizing: `#place` and `show place:`          | `test_canvas.py`                      |
+| Recording placements: what a `show place:` rule may do       | `test_place_rule.py`                  |
+| A fixed-height container stacks what does not fit            | `test_overflow.py`                    |
+| Fitting the slide to the browser window                      | `test_fitting.py`                     |
+| SVG `<defs>` ids are content hashes                          | `test_defs.py`, `test_hidden_defs.py` |
+| Hoisting shared `<defs>`: sound in the browser, not in typst | `test_hoisting.py`                    |
+| CSS animation of typst SVG groups                            | `test_css_transforms.py`              |
+| A keyframe property that does not change suppresses others   | `test_frame_drawing.py`               |
+| A delayed effect does not hold its first keyframe            | `test_delayed_effects.py`             |
+| The document timeline is not a clock                         | `test_timeline_clock.py`              |
+| A faked clock drives a timer, not the document timeline      | `test_fake_clock.py`                  |
+| Styling from CSS: what is and is not reachable               | `test_css_styling.py`                 |
+| Cross-frame geometry, and the two nested transform slots     | `test_slots.py`                       |
+| `hide()` cannot be undone in the browser                     | `test_hide.py`                        |
+| A panic that depends on `query` can be swallowed             | `test_convergence.py`                 |
+| Introspection: positions                                     | `test_introspection.py`               |
+| Introspection: the corner of an element, in both targets     | `test_anchors.py`                     |
+| Introspection: the fields of a nested structure              | `test_element_fields.py`              |
+| Media elements in the HTML output                            | `test_media.py`                       |
+| Live preview: typst serves and reloads the HTML itself       | `test_watch.py`                       |
+| Wrapping a tag site: what it changes and what it does not    | `test_wrapping.py`                    |
+| A cetz draw command is a value, not content                  | `test_draw_commands.py`               |
+| What a container resolves from its own children              | `test_container_children.py`          |
+| Inline versus block, decided by measurement                  | `test_levels.py`                      |
+| Providing a value down the tree                              | `test_providing.py`                   |
+| A counter reads the same everywhere a slide lays out         | `test_counters.py`                    |
+| Transforms between a tag's slots are layout-neutral          | `test_paged_transforms.py`            |
+| Other verified behaviour                                     | `test_misc.py`                        |
 
 A few probes, and a few feature tests, import a package from Typst Universe:
 the label emission is claimed for a cetz `content()` element and a fletcher node,

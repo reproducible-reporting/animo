@@ -218,6 +218,13 @@ laying every slide out for the whole session doubled the first paint of a sixty-
 That is also why a slide's anchors are still measured on its first showing,
 which is the moment it is first laid out and is still before anything has been written on it.
 
+A gradient, a clip path, a tiling, a mask and a filter are referenced through ids that typst
+derives from their content, and a reference resolves to the first definition in the document,
+which may sit in a slide that is `display: none`.
+At load the runtime therefore copies the first definition of each id into a zero size `<svg>`
+that is the first child of `body` and stays laid out,
+so that every slide draws them whichever slides are laid out.
+
 A boundary animates only for a step between neighbouring slides.
 A deep link, the first paint, `Home`, `End` and any longer jump snap,
 which is the rule the epoch crossfade already uses.

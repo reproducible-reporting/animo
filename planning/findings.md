@@ -574,11 +574,61 @@ Relevant because stacking several frames in one document puts duplicate ids in o
 - All deduplicated defs (glyphs, clip paths, gradients, patterns) get ids of the form
   *kind char* + hex of `hash128(key)`, from the `Deduplicator` in
   `crates/typst-svg/src/lib.rs` (`DedupId(char, u128)`).
+
 - Equal ids therefore always mean equal content. Browsers resolve `<use xlink:href="#g..">`
-  to the first matching id in the document, which is harmless here, and it is why stacking
-  frames does not corrupt glyph rendering.
+  to the first matching id in the document. For a glyph definition that is harmless,
+  and it is why stacking frames does not corrupt glyph rendering.
+  It is harmless for glyph definitions only, as the next entry of this list says.
+
+- **A gradient, a clip path or a tiling is not drawn when its first definition is in a
+  subtree that is not laid out.**
+  A reference such as `fill="url(#id)"` resolves to the first element of that id in the
+  document, which sits in the earliest slide that defines it, and that slide is `display: none`
+  unless it is one of the two slides the runtime lays out.
+  Neither chromium 151 nor firefox 153 resolves a reference into a subtree that is not laid
+  out, so the fill is dropped and the clip is not applied.
+  A `<use>` of a glyph `<symbol>` in the same subtree is drawn, which is why text stays intact
+  on a slide that has lost its fills, and why the entry was first judged harmless:
+  it was measured on glyphs, and on frames that were all displayed.
+  Measured on a deck of three slides that each hold the same gradient rectangle and the same
+  clipped box, and on a deck of three slides with the gradient background recipe:
+
+  | Position, and how it was reached                  | chromium 151           | firefox 153            |
+  | ------------------------------------------------- | ---------------------- | ---------------------- |
+  | slide 1, first paint                              | drawn                  | drawn                  |
+  | slide 2, step from slide 1 (slide 1 is leaving)   | drawn                  | drawn                  |
+  | slide 3, step from slide 2                        | missing                | missing                |
+  | slide 3, after a reload                           | missing                | missing                |
+  | background recipe, centre pixel of slides 1, 2, 3 | gradient, white, white | gradient, white, white |
+  | the same recipe after hoisting the paint servers  | gradient on all three  | gradient on all three  |
+
+  Forcing `display: block` on slide 1 makes slide 3 draw correctly, which shows that the cause
+  is the hidden subtree and not the id.
+  The slide being left stays `display: block` until the next step, so the same slide is drawn
+  after one step and missing after another, and `typst watch` reloads into the state that
+  shows it.
+  A subtree hidden with `visibility` is laid out, so a gradient defined in it resolves.
+  A clip path or a tiling defined in it is empty instead, because its children inherit the
+  visibility, so the clip hides the whole box and the tile draws nothing.
+  Typst writes the definitions of a frame in a `<defs>` that is a child of the frame's root
+  `<svg>`, so no group that Animo scopes with `visibility` contains one.
+
+- **Hoisting the definitions into an `<svg>` that is laid out repairs this.**
+  A copy of the first element of each id, in a `width="0" height="0"` `<svg>` with
+  `position: absolute` that is the first child of `body`, is the first match of every id and
+  is laid out, so every slide draws.
+  The holder must not be `display: none`, which would make it the first match and drop the
+  fill again.
+  The runtime builds it once at load, before it reads a slide, and the originals stay in their
+  slides.
+  On a page of sixty slides it took at most 3.4 ms in chromium 151 and 5 ms in firefox 153,
+  where firefox rounds its timer to a millisecond.
+  Webkit was not run for the table.
+  The probe runs in it where it can be launched, which is continuous integration.
+
 - It also means the duplication is pure redundancy: hoisting shared defs into one
   document-level `<svg>` would be sound, and the entry after this one is what came of that.
+
 - **Gzip does not recover that redundancy**, so the redundancy is real on the wire and not
   only in memory. Deflate's window is 32 KiB and no setting raises it, while an epoch frame
   carrying a heading and a single sentence is already 45 KiB, and a frame carrying a whole
