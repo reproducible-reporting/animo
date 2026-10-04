@@ -15,6 +15,10 @@ the first `<svg>` defines a gradient and a clip path, and the second one referen
 The control has the first `<svg>` displayed, which is what makes the claim meaningful.
 The repair is an always rendered `<svg>` that comes first in the document and holds copies,
 which is what the runtime builds at load.
+
+In webkit, a definition that stops being laid out also drops every reference to its id,
+even while the holder still defines that id and is laid out.
+The runtime therefore removes the ids of the originals.
 """
 
 import numpy as np
@@ -70,15 +74,20 @@ def document(*, first: str, holder: str = "") -> str:
 
 
 def paint(page, markup: str) -> tuple[bool, bool, bool]:
-    """Whether the gradient is drawn, the clip path applied and the tiling drawn, in one page.
+    """Whether the gradient is drawn, the clip path applied and the tiling drawn, in one page."""
+    page.set_viewport_size({"width": 400, "height": 200})
+    page.set_content(markup)
+    return drawn(page)
+
+
+def drawn(page) -> tuple[bool, bool, bool]:
+    """Whether the gradient is drawn, the clip path applied and the tiling drawn, as shown now.
 
     The gradient is red at its left edge and blue at its right edge, and a dropped fill
     leaves the white of the page. The green box is cut at x = 150 by the clip path, and a clip
     that is not applied leaves all of it green.
     The tiling is magenta for its first five pixels in ten, and a dropped fill leaves white.
     """
-    page.set_viewport_size({"width": 400, "height": 200})
-    page.set_content(markup)
     image = screenshot(page)
     left, right = image[50, 10], image[50, 90]
     gradient = left[0] > 200 > left[2] and right[2] > 200 > right[0] and left[1] < 50
@@ -167,3 +176,47 @@ def test_the_holder_takes_no_space_and_paints_no_ink(page):
         " return [r.x, r.y]; }"
     )
     assert user == [0, 0]
+
+
+# Whether a definition that stops being laid out drops every reference to its id, although the
+# holder defines the same id and is laid out.
+# In webkit the references resolve to nothing until a definition of the id is laid out again.
+# Chromium and firefox look the id up again and find the holder.
+# Webkit is playwright's webkit 26.5, measured in a container because no webkit build runs on
+# every contributor's distribution.
+# A changed value here is a finding that changed, not a probe that needs fixing.
+DROPS_THE_HOLDER = {"chromium": False, "firefox": False, "webkit": True}
+
+# The wrapper of the duplicate definitions, which is the only `<div>` of the page.
+WRAPPER = "document.querySelector('div')"
+
+# What the runtime does at load, applied to the duplicate definitions.
+STRIP_IDS = f"{WRAPPER}.querySelectorAll('[id]').forEach((node) => node.removeAttribute('id'))"
+
+
+def test_hiding_a_laid_out_duplicate_drops_the_holders_definition(page, browser_name):
+    """The claim: the duplicate is laid out, as the slide being left is, and is then hidden.
+
+    Before the duplicate is hidden every reference resolves, which is the control.
+    """
+    assert paint(page, document(first="", holder=HOLDER)) == (True, True, True)
+    page.evaluate(f"{WRAPPER}.style.display = 'none'")
+    expected = not DROPS_THE_HOLDER[browser_name]
+    assert drawn(page) == (expected, expected, expected), (
+        f"{browser_name} now {'keeps' if expected else 'drops'} the holder's definitions "
+        "when a laid out duplicate is hidden; update *Findings*"
+    )
+
+
+def test_a_duplicate_without_ids_leaves_the_holder_alone(page):
+    """The repair: the ids of the duplicate are removed, as the runtime does at load.
+
+    It is then laid out and hidden again, as a slide is on its way through the deck,
+    and the holder serves every reference throughout.
+    """
+    assert paint(page, document(first="display: none", holder=HOLDER)) == (True, True, True)
+    page.evaluate(STRIP_IDS)
+    page.evaluate(f"{WRAPPER}.style.display = ''")
+    assert drawn(page) == (True, True, True)
+    page.evaluate(f"{WRAPPER}.style.display = 'none'")
+    assert drawn(page) == (True, True, True)

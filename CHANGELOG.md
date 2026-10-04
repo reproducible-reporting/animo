@@ -31,7 +31,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 - Draw a gradient and a clip path on every slide of the HTML presentation.
   A slide reached by a deep link, a reload or a step back lost them
-  when an earlier slide used the same gradient or clip path,
+  when another slide used the same gradient or clip path,
   which turned the gradient background recipe into white slides.
 - Give pointer events only to the slide that is shown in the HTML presentation.
   After a step back, the slide that was just left stayed on top of the one shown

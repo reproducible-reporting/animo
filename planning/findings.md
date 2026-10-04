@@ -623,12 +623,36 @@ Relevant because stacking several frames in one document puts duplicate ids in o
   is laid out, so every slide draws.
   The holder must not be `display: none`, which would make it the first match and drop the
   fill again.
-  The runtime builds it once at load, before it reads a slide, and the originals stay in their
-  slides.
+  The runtime builds it once at load, before it reads a slide,
+  and removes the ids of the originals, for the reason the next entry of this list gives.
   On a page of sixty slides it took at most 3.4 ms in chromium 151 and 5 ms in firefox 153,
   where firefox rounds its timer to a millisecond.
   Webkit was not run for the table.
   The probe runs in it where it can be launched, which is continuous integration.
+
+- **In webkit, a definition that stops being laid out drops every reference to its id,
+  although the holder still defines the id and is laid out.**
+  The references resolve to nothing until a definition of the id is laid out again.
+  Chromium 151 and firefox 153 look the id up again and find the holder.
+  What was measured fits a single registration per id, which the definition laid out last
+  takes over and which is removed when any definition of the id stops being laid out.
+  The webkit source was not read to confirm it.
+  On a deck of three slides that each hold the same gradient background, gradient rectangle
+  and clipped box, with the holder in place and the originals keeping their ids,
+  playwright's webkit 26.5 drew slide 1, the step to slide 2, the step to slide 3
+  and the step back to slide 2.
+  The step back to slide 1 lays slide 1 out and hides slide 3,
+  which comes later in the document, and slide 1 then drew neither gradient nor the clip.
+  Every later step drew none of them either.
+  A forward step hides a slide that comes earlier than the one it lays out.
+  A page with the holder, one laid out duplicate and one reference reproduces it:
+  hiding the duplicate drops the gradient, the clip path and the tiling of the reference
+  in webkit, and in neither of the other engines.
+  Removing the id of the duplicate instead of hiding it drops nothing, before or after the
+  duplicate is laid out, so the holder must be the only element that keeps the id.
+  With the ids of the originals removed, the deck draws all three on every step of the route.
+  Webkit was measured in the `mcr.microsoft.com/playwright/python:v1.62.0-noble` container,
+  because no webkit build runs on every contributor's distribution.
 
 - It also means the duplication is pure redundancy: hoisting shared defs into one
   document-level `<svg>` would be sound, and the entry after this one is what came of that.

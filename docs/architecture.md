@@ -230,6 +230,9 @@ which may sit in a slide that is `display: none`.
 At load the runtime therefore copies the first definition of each id into a zero size `<svg>`
 that is the first child of `body` and stays laid out,
 so that every slide draws them whichever slides are laid out.
+It then removes the id from every original,
+because in webkit a definition that stops being laid out drops every reference to its id,
+even while the holder still defines it.
 
 A boundary animates only for a step between neighbouring slides.
 A deep link, the first paint, `Home`, `End` and any longer jump snap,

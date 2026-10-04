@@ -363,6 +363,8 @@ def test_the_layers_are_siblings_of_the_canvas_in_painting_order(open_page, laye
 # from an earlier slide defines the same id in a second frame, and a reference resolves to the
 # first of them. That one sits in a slide that is `display: none` unless the runtime is laying
 # it out, so a slide reached without its predecessor lost the fill and the clip.
+# In webkit, a slide also lost them on a step back to it, which hides a later slide that
+# defines the same ids.
 # The background is the recipe the refusal message of `background` gives for a gradient, and
 # the body has a clipped box and a gradient of its own, which are the two kinds of paint
 # server that a slide emits on the canvas.
