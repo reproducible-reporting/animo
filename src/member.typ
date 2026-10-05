@@ -132,28 +132,35 @@
   holders
 }
 
-// The timing of every operation that changes one region at one boundary, in the order the
-// operations were written, as `(name:, timing:)` pairs.
-#let boundary-timings(epochs, epoch, holder) = {
-  let timings = epochs.at(epoch).timings
+// One field of every operation that changes one region at one boundary, in the order the
+// operations were written, as `(name:, value:)` pairs.
+//
+// `field` is the key of the epoch that holds the field per name, which is `timings` or
+// `transitions`.
+#let boundary-values(epochs, epoch, holder, field) = {
+  let values = epochs.at(epoch).at(field)
   holder
     .names
-    .map(name => timings
+    .map(name => values
       .at(name, default: ())
-      .map(timing => (
+      .map(value => (
         name: name,
-        timing: timing,
+        value: value,
       )))
     .flatten()
 }
 
-// Refuse two operations that change one region at one boundary and disagree about when.
+// Refuse two operations that change one region at one boundary and disagree about when, or
+// about how the region crosses it.
 //
-// A region crossfades once, so there is nothing for a precedence rule to pick between.
+// A region crosses a boundary once, so there is nothing for a precedence rule to pick
+// between.
 // Two bare tags are always two regions, each its own implicit one, so this refusal applies
 // inside an explicit region and between two operations on one tag.
 // The comparison is over an operation's timing as a whole rather than over one field of it,
 // because a timing record may gain more fields.
+// A transition is compared as it was written, so `auto` and the name of the transition it
+// stands for are two answers, as a duration of `auto` and the deck's own number are.
 //
 // Which region a tag belongs to is a layout-time fact, so this reads the membership reports
 // and runs where the other layout-informed refusals run, in a context block of its own after
@@ -161,34 +168,44 @@
 // A panic that depends on `query` is only reported when it is raised there.
 //
 // Must be called in a context.
-#let check-boundary-timings(index, epochs, members) = {
+#let check-boundaries(index, epochs, members) = {
   for epoch in range(1, epochs.len()) {
     for holder in changed-members(epochs, epoch, members) {
-      let timings = boundary-timings(epochs, epoch, holder)
-      if timings.len() < 2 { continue }
-      let first = timings.first()
-      for other in timings.slice(1) {
-        assert(
-          other.timing == first.timing,
-          message: "on slide "
-            + str(index)
-            + ", the operations on "
-            + first.name
-            + " and "
-            + other.name
-            + " change one region at one boundary and disagree about their timing, "
-            + repr(first.timing)
-            + " against "
-            + repr(other.timing)
-            + "; a region crossfades once, so there is nothing to choose between them: "
-            + "give them the same timing, or put them in two regions",
-        )
+      for (field, what, remedy) in (
+        ("timings", "their timing", "give them the same timing"),
+        ("transitions", "their transition", "give them the same transition"),
+      ) {
+        let values = boundary-values(epochs, epoch, holder, field)
+        if values.len() < 2 { continue }
+        let first = values.first()
+        for other in values.slice(1) {
+          assert(
+            other.value == first.value,
+            message: "on slide "
+              + str(index)
+              + ", the operations on "
+              + first.name
+              + " and "
+              + other.name
+              + " change one region at one boundary and disagree about "
+              + what
+              + ", "
+              + repr(first.value)
+              + " against "
+              + repr(other.value)
+              + "; a region crosses a boundary once, so there is nothing to choose "
+              + "between them: "
+              + remedy
+              + ", or put them in two regions",
+          )
+        }
       }
     }
   }
 }
 
-// The groups a boundary redraws, as the browser addresses them, each with its timing.
+// The groups a boundary redraws, as the browser addresses them, each with its timing and its
+// transition.
 //
 // A key is animo's own way of naming a region, and a group in the output is addressed by a
 // label, so the two are joined here from the reports of the sites that own their keys.
@@ -198,7 +215,8 @@
 // The whole rendering is the holder with no key, and it has no group either: the runtime
 // knows it as the rendering it is showing, and `none` is how the plan says so.
 //
-// The timing is the first of the region's operations, which is every one of them.
+// The timing and the transition are those of the first of the region's operations, which are
+// those of every one of them.
 // A boundary whose operations disagree is refused after the slide, and this runs inside it,
 // where a panic would be swallowed.
 #let changed-groups(epochs, epoch, members) = {
@@ -210,12 +228,14 @@
     if holder.key != none and found == none { continue }
     let group = if found == none { none } else { found.group }
     if group in groups.map(it => it.group) { continue }
-    let timings = boundary-timings(epochs, epoch, holder)
+    let first(field, default) = {
+      let values = boundary-values(epochs, epoch, holder, field)
+      if values.len() == 0 { default } else { values.first().value }
+    }
     groups.push((
       group: group,
-      timing: if timings.len() == 0 { default-timing } else {
-        timings.first().timing
-      },
+      timing: first("timings", default-timing),
+      transition: first("transitions", auto),
     ))
   }
   groups

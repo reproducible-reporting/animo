@@ -291,8 +291,33 @@
 // On a structural operation a delay holds back the crossfade of the region it changes and
 // a duration says how long that crossfade takes, and the epoch boundary lasts until the
 // last of them has finished.
+//
+// `transition:` says how the region it changes crosses the boundary: `auto` is the deck's
+// own transition, which is the crossfade, and a string names a transition.
+// It is an argument of the operation rather than of `sub`, so that one step can carry one
+// region with one transition and another region with another.
 
-#let replace(name, body, delay: 0, duration: auto) = {
+// The transitions an epoch boundary may carry a region with, by name.
+//
+// The list lives here rather than only in the runtime because typst is what refuses a
+// misspelling, and it has to do so at compile time.
+// A name the runtime did not recognise would be a region that quietly took the default.
+#let epoch-transition-names = ("crossfade",)
+
+// Check how a structural operation carries its region across the boundary.
+#let check-transition(kind, value) = {
+  assert(
+    value == auto or value in epoch-transition-names,
+    message: kind
+      + " takes transition as `auto`, which is the deck's own, or one of "
+      + repr(epoch-transition-names)
+      + ", got "
+      + describe(value),
+  )
+  value
+}
+
+#let replace(name, body, delay: 0, duration: auto, transition: auto) = {
   assert(
     type(body) == content,
     message: "replace takes its replacement as content, got " + describe(body),
@@ -302,18 +327,20 @@
     name: check-tag-name("replace", name),
     body: body,
     timing: timing-of("replace", delay, duration),
+    transition: check-transition("replace", transition),
   )
 }
 
-#let remove(name, delay: 0, duration: auto) = (
+#let remove(name, delay: 0, duration: auto, transition: auto) = (
   kind: "remove",
   name: check-tag-name("remove", name),
   timing: timing-of("remove", delay, duration),
+  transition: check-transition("remove", transition),
 )
 
 // Named style properties are refused rather than guessed at:
 // animo does not inspect content, so it cannot know which `set` rule a property belongs to.
-#let apply(name, delay: 0, duration: auto, ..fns) = {
+#let apply(name, delay: 0, duration: auto, transition: auto, ..fns) = {
   let name = check-tag-name("apply", name)
   assert(
     fns.named().len() == 0,
@@ -343,13 +370,15 @@
     name: name,
     fns: fns.pos(),
     timing: timing-of("apply", delay, duration),
+    transition: check-transition("apply", transition),
   )
 }
 
-#let reset(name, delay: 0, duration: auto) = (
+#let reset(name, delay: 0, duration: auto, transition: auto) = (
   kind: "reset",
   name: check-tag-name("reset", name),
   timing: timing-of("reset", delay, duration),
+  transition: check-transition("reset", transition),
 )
 
 // Check that a value is an operation of one of the primitives above.

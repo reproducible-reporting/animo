@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // How an element is put into a display state: the timing a step takes from the stylesheet and
-// from its operations, and the one function that writes a state and animates into it.
+// from its operations, and the two phases that plan the effects of a step and apply them.
 //
 // Motion is driven by the Web Animations API rather than by CSS transitions.
 // Each step writes the state's display state as inline style on the tag's inner group and
@@ -130,58 +130,128 @@ function span(record, options) {
   );
 }
 
-/** What an element is showing right now, for the properties named, as `declarations` has it. */
+/**
+ * What a property shows at rest, for the properties whose unset value the engine reports as a
+ * keyword rather than as that value.
+ *
+ * `none` is what `getComputedStyle` gives for the property when nothing sets it, and `rest` is
+ * the value that keyword stands for, which is what a keyframe and a comparison need.
+ * A property that is not in the table is read as the engine reports it, so a transition can
+ * animate a property this file does not know.
+ */
+const PROPERTIES = {
+  opacity: { rest: "1" },
+  translate: { rest: "0px 0px", none: "none" },
+  scale: { rest: "1", none: "none" },
+};
+
+/** What an element is showing right now, for the CSS properties named. */
 function showing(element, names) {
   const computed = getComputedStyle(element);
-  const read = {
-    opacity: () => computed.opacity,
-    translate: () => (computed.translate === "none" ? "0px 0px" : computed.translate),
-    scale: () => (computed.scale === "none" ? "1" : computed.scale),
-  };
-  return Object.fromEntries(names.map((name) => [name, read[name]()]));
+  return Object.fromEntries(
+    names.map((name) => {
+      const value = computed.getPropertyValue(name);
+      const known = PROPERTIES[name];
+      return [name, value === known?.none ? known.rest : value];
+    }),
+  );
+}
+
+/** A CSS property as a keyframe names it, which is the camel case of its IDL attribute. */
+function keyframeName(name) {
+  return name.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+// A step is put on the page in two phases, which the two functions below are.
+//
+// The first plans it. It reads what every element the step animates is showing, and a
+// transition reads whatever geometry it needs beside that, and nothing is written.
+// The result is the step's effects, one per element and property, each with what the
+// element shows now, what it is to show, and the timing that takes it there or `null`
+// for a property that snaps.
+// The second applies them, writing every style and then creating every animation in one
+// task, which is the step's one clock.
+//
+// The split keeps every read of a step ahead of every write of it. Continuous state is
+// written to every occurrence of a tag in a loop, so a read between two writes could see
+// the ancestors of one occurrence in the new state and those of another in the old one,
+// and reading and writing in alternation recalculates style once per element.
+
+/**
+ * Plan a display state on one element, as effects of the step being planned.
+ *
+ * `effects` maps an element to its effects by property, and an effect planned for an
+ * element and a property that already have one replaces it. That is how a transition puts a
+ * region it carries in place of the state at rest that `planEpoch` planned for it first.
+ *
+ * `options` is `null` for a state that snaps, and otherwise one options object per property
+ * of `to`, because two operations of one step may start at different moments and an effect
+ * has one delay. A property it has no options for snaps.
+ */
+function plan(effects, element, to, options = null) {
+  let own = effects.get(element);
+  if (own === undefined) {
+    own = new Map();
+    effects.set(element, own);
+  }
+  for (const [property, value] of Object.entries(to)) {
+    const timing = options?.[property] ?? null;
+    const from = timing === null ? null : showing(element, [property])[property];
+    own.set(property, { to: value, timing, from });
+  }
 }
 
 /**
- * Put a display state on one element, animating into it unless the step snaps.
+ * Apply the effects of a step: write every style, then animate into it.
  *
- * `options` is `null` for a step that snaps, and otherwise one options object per property
- * of `to`, because two operations of one step may start at different moments and an effect
- * has one delay.
+ * Every element the step touches loses the animations it was running, because the style
+ * written here is where they were going and the animation created here starts from where
+ * they had got to.
  */
-function put(element, to, options) {
-  const names = Object.keys(to);
-  const from = options === null ? null : showing(element, names);
-  for (const animation of element.getAnimations()) {
-    animation.cancel();
-  }
-  Object.assign(element.style, to);
-  if (from === null) {
-    return;
-  }
-  // What the element now computes, rather than what was just written: an engine
-  // normalises what it computes, and chromium 151 gives back `0px` for the `0px 0px` of
-  // a tag at rest, so comparing the two spellings finds a difference where there is none.
-  const into = showing(element, names);
-  // Only the properties this step actually changes, because in chromium 151 a `translate`
-  // or `scale` that is equal at both ends stops the browser from drawing the `opacity`
-  // beside it, and the element stays as it was until the step ends and then jumps.
-  // Measured; see *Findings*.
-  const changed = names.filter((name) => from[name] !== into[name]);
-  // One effect per group of properties that are timed alike, so that a step whose
-  // operations are timed alike, which is every step that says nothing about timing, is
-  // still one effect on this element.
-  const groups = new Map();
-  for (const name of changed) {
-    const found = groups.get(JSON.stringify(options[name]));
-    if (found === undefined) {
-      groups.set(JSON.stringify(options[name]), { timing: options[name], names: [name] });
-    } else {
-      found.names.push(name);
+function apply(effects) {
+  for (const [element, own] of effects) {
+    for (const animation of element.getAnimations()) {
+      animation.cancel();
+    }
+    for (const [property, effect] of own) {
+      element.style.setProperty(property, effect.to);
     }
   }
-  for (const group of groups.values()) {
-    const only = (values) =>
-      Object.fromEntries(group.names.map((name) => [name, values[name]]));
-    element.animate([only(from), only(into)], { ...group.timing, id: ANIMATION_ID });
+  // Read after every write of the step, so that the engine recalculates style once.
+  for (const [element, own] of effects) {
+    const names = [...own].filter(([, effect]) => effect.timing !== null).map(([name]) => name);
+    if (names.length === 0) {
+      continue;
+    }
+    // What the element now computes, rather than what was just written: an engine
+    // normalises what it computes, and chromium 151 gives back `0px` for the `0px 0px` of
+    // a tag at rest, so comparing the two spellings finds a difference where there is none.
+    const into = showing(element, names);
+    // Only the properties this step actually changes, because in chromium 151 a `translate`
+    // or `scale` that is equal at both ends stops the browser from drawing the `opacity`
+    // beside it, and the element stays as it was until the step ends and then jumps.
+    // Measured; see *Findings*.
+    const changed = names.filter((name) => own.get(name).from !== into[name]);
+    // One effect per group of properties that are timed alike, so that a step whose
+    // operations are timed alike, which is every step that says nothing about timing, is
+    // still one animation on this element.
+    const groups = new Map();
+    for (const name of changed) {
+      const key = JSON.stringify(own.get(name).timing);
+      const found = groups.get(key);
+      if (found === undefined) {
+        groups.set(key, { timing: own.get(name).timing, names: [name] });
+      } else {
+        found.names.push(name);
+      }
+    }
+    for (const group of groups.values()) {
+      const frame = (pick) =>
+        Object.fromEntries(group.names.map((name) => [keyframeName(name), pick(name)]));
+      element.animate(
+        [frame((name) => own.get(name).from), frame((name) => into[name])],
+        { ...group.timing, id: ANIMATION_ID },
+      );
+    }
   }
 }

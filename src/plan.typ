@@ -284,8 +284,9 @@
 // own step performed and the `span` of that step.
 // An epoch holds `tags`, the content state of every tag a structural operation has addressed
 // so far, keyed by name, `changed`, the names its first step addressed, which are the
-// implicit regions whose content changes at the boundary that starts it, and `timings`, the
-// timing of every operation that changed each of those names.
+// implicit regions whose content changes at the boundary that starts it, `timings`, the
+// timing of every operation that changed each of those names, and `transitions`, the
+// `transition:` of each of those operations, in the same order.
 // Operations are applied in the order they are written, within a step as well as across steps.
 //
 // The plan carries the `steps` it was resolved from, so that what the timeline asks of the
@@ -311,7 +312,7 @@
   let display = start.display
   let content = start.content
   let slide = (pan: unpanned)
-  let epochs = ((tags: content, changed: (), timings: (:)),)
+  let epochs = ((tags: content, changed: (), timings: (:), transitions: (:)),)
   let states = (
     (
       display: display,
@@ -327,6 +328,7 @@
   for step in steps {
     let changed = ()
     let timings = (:)
+    let transitions = (:)
     let timing = untimed
     for op in step.ops {
       if op.kind in slide-kinds {
@@ -336,13 +338,22 @@
         content = apply-structural(content, op)
         if op.name not in changed { changed.push(op.name) }
         timings.insert(op.name, timings.at(op.name, default: ()) + (op.timing,))
+        transitions.insert(
+          op.name,
+          transitions.at(op.name, default: ()) + (op.transition,),
+        )
       } else {
         display = apply-op(display, op)
         timing = note-timing(timing, op)
       }
     }
     if changed.len() > 0 {
-      epochs.push((tags: content, changed: changed.sorted(), timings: timings))
+      epochs.push((
+        tags: content,
+        changed: changed.sorted(),
+        timings: timings,
+        transitions: transitions,
+      ))
     }
     states.push((
       display: display,

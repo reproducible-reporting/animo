@@ -19,6 +19,13 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   They are sent after the page, the URL fragment and the clock have been updated.
   The root element also carries the active input mode as `data-animo-mode`.
 - Ignore key presses and clicks inside an element with the attribute `data-animo-control`.
+- Add a `transition:` argument to `replace`, `remove`, `apply` and `reset`,
+  which names the transition that carries the changed region across the boundary.
+  It takes `auto` or `"crossfade"`, and the plan carries the name per region.
+- Write the `<title>`, the `lang` and the `<meta>` elements of the HTML presentation
+  from `set document(..)` and `set text(lang: ..)`.
+- Carry the resolved `handout` flag of every state in the plan of the HTML presentation,
+  and the settings of the deck in a `data-animo-config` attribute on `.animo-deck`.
 
 ### Changes
 
@@ -26,6 +33,8 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   The stage is the visible rectangle, and it clips and isolates the crossfade between slides.
 - Split the runtime of the HTML presentation into files under `src/js`,
   which are joined into the one script of the page.
+- Plan every effect of a step before writing any of them, and accept any CSS property in an
+  effect, so that a transition can read the page as it was before the step.
 
 ### Fixes
 
@@ -38,6 +47,8 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   and received the clicks meant for it.
 - Pause and resume only the animations that Animo started.
   The pause key used to pause every animation of the page, including the author's own.
+- Choose the transition of a slide boundary from the slide that owns it on a backward step too.
+  A step back used to take the transition of the slide it entered.
 
 ## [0.1.1] - 2026-09-18
 

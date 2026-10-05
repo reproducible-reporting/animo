@@ -97,8 +97,8 @@ Example usage:
   // a `pan` moves the slide under it. Same for the background, behind it.
   overlay: place(bottom + right, dx: -1cm, dy: -1cm)[#emph[A talk]],
   // `transition` says how this slide is entered: `auto` is the deck's own
-  // strategy, `none` cuts, and a string names a strategy. It is `auto` by
-  // default, and `"crossfade"` is the one strategy there is.
+  // transition, `none` cuts, and a string names a transition. It is `auto` by
+  // default, and `"crossfade"` is the one transition there is.
   transition: auto,
   // `numbered` decides whether this slide is counted by the slide counter.
   // It says nothing about whether or how a number is shown; that is the
@@ -193,8 +193,8 @@ slide(body, animation: (), canvas: auto, background: none, overlay: none,
 
 - `animation` is the timeline, a code block of `sub(..)` calls (see *Animation primitives*).
 - `background` and `overlay` are the section after next.
-- `transition` says how this slide is **entered**: `auto` is the deck's own strategy,
-  `none` cuts, and a string names a strategy, of which `"crossfade"` is the one that exists and
+- `transition` says how this slide is **entered**: `auto` is the deck's own transition,
+  `none` cuts, and a string names a transition, of which `"crossfade"` is the one that exists and
   is what `auto` means.
   A boundary uses the setting of the slide being entered, in both directions, so
   stepping back over a boundary undoes exactly what stepping forward over it did. The duration
@@ -790,7 +790,7 @@ instead of tracking a history across every later subslide.
 
 **Structural primitives** change what typst has to lay out or paint. Only typst can render
 the result, so each of them forces a fresh rendering of the slide (an *epoch*, below) and is
-transitioned by a crossfade rather than by motion.
+carried by the transition its operation names, the crossfade by default, rather than by motion.
 
 | Primitive            | Meaning                                                                 |
 | -------------------- | ----------------------------------------------------------------------- |
@@ -841,6 +841,13 @@ Notes and consequences:
   does not undo a `move`. Several operations on one tag in one `sub` apply in the order written,
   as continuous operations do, so `apply("x", f, g)` in one subslide equals two subslides
   and lays out `g(f(content))`.
+- **How a region crosses its boundary.** All four take `transition:`, which names the transition
+  that carries the region they change across the epoch boundary. `auto`, the default, is the
+  deck's own transition, and a string names a transition, of which `"crossfade"` is the one that
+  exists. It is an argument of the operation rather than of `sub`, so that one subslide can
+  carry one region with one transition and another region with another. Two operations that
+  change one region at one boundary and name two transitions are refused, as two that disagree
+  about `delay:` are. The argument is HTML only, because two pages have nothing between them.
 - Because `replace` and `apply` carry content and functions, plan descriptors are no longer
   pure data in the strict sense. Tier-1 tests should therefore assert on the *resolved
   structure* (tag names, per-state flags, epoch boundaries and counts) rather than on the
@@ -1298,6 +1305,9 @@ carries neither, and lasts exactly one `primitive-duration:` of the deck.
 Both gap numbers travel rather than one resolved number per gap,
 because the gap across a slide boundary is timed by two slides and emitted by two calls,
 so the runtime is the first place that sees both sides of it.
+Each state also carries its resolved `handout:` flag, so that a view of the deck that shows one
+state per slide can show the state the handout shows. A region record of a boundary carries the
+`transition:` its operations named, and nothing for `auto`.
 
 **Motion is driven by the Web Animations API**, not by CSS transitions. A step writes the new
 display state as inline style and animates from what the element was showing to that, so the
@@ -1625,8 +1635,8 @@ These were the open questions of the earlier drafts. They are settled; the evide
   A **small edit inside a large paragraph** reads badly. Everything after the edit shifts by a
   few pixels, and two copies of the same words a few pixels apart are an illegible smear for
   the rest of the paragraph, where the part *before* the edit stays crisp because it did not
-  move. This is the case a morph would exist for, and it is why the transition strategy is a
-  named, swappable one from the first release of Animo.
+  move. This is the case a morph would exist for, and it is why the transition of an epoch
+  boundary is a named, swappable one from the first release of Animo.
   Until a morph exists, the authoring advice is to put a region around what is replaced
   wholesale and to keep what merely shifts out of it.
 
@@ -2097,11 +2107,23 @@ These were the open questions of the earlier drafts. They are settled; the evide
   a deck with nothing but hard cuts sets it to zero, `prefers-reduced-motion: reduce` does
   the same, and `transition: none` and a zero duration take one code path. Richer transitions
   (a wipe, a push) are left for later, and the argument is already open to them: beside the
-  typst literals `auto` and `none` it takes the name of a strategy, so a second
+  typst literals `auto` and `none` it takes the name of a transition, so a second
   one is a value added to a list rather than a change of what the argument takes. The list of
   names lives in typst rather than only in the runtime, because a misspelling has to be refused
   at compile time: a name the runtime did not recognise would be a slide that quietly took the
   default.
+
+- **Where is the transition of an epoch boundary named?** On the structural operation, as
+  `transition:`, beside its `delay:` and `duration:`. What crosses a boundary is a region, and
+  two regions of one boundary can want two transitions, such as a morph for an equation whose
+  terms move and a crossfade for the caption replaced beside it. An argument of `sub` would make
+  that cost two subslides. A region already takes its timing from its operations, and its
+  transition follows the same rule and the same refusal.
+
+- **Where do the title and the language of the HTML page come from?** From `set document(..)`
+  and `set text(lang: ..)`, as for any typst document, so nothing is stated twice. Typst writes
+  neither into a head that a package builds, so the deck's show rule reads them in a context and
+  writes the `<title>`, the `lang` and the `<meta>` elements typst would write (see *Findings*).
 
 - **Where does the timing of an automatic step go, and can one operation start late?** On either
   side of the gap it times, and yes. The three knobs are `wait:`, `hold:` and `delay:`, and

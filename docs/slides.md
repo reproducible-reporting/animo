@@ -129,7 +129,7 @@ Four rules govern both overlay and background layers.
 ## Slide Transitions
 
 `transition:` says how a slide is **entered**:
-`auto`, the default, is the deck's own strategy, and `none` cuts abruptly.
+`auto`, the default, is the deck's own transition, and `none` cuts abruptly.
 A transition may also be named, and `"crossfade"` is the only one implemented so far,
 which is what `auto` defaults to.
 

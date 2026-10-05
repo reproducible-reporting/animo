@@ -350,7 +350,7 @@ def test_a_hold_reaches_the_browser_plan(typst: TypstRunner):
             "#context {",
             "  let states = browser-plan(plan, names, ()).states",
             "  assert.eq(states.at(1).hold, 2.0)",
-            '  assert.eq(states.at(0).keys(), ("tags", "pan", "epoch"))',
+            '  assert.eq(states.at(0).keys(), ("tags", "pan", "epoch", "handout"))',
             "}",
         )
     )
@@ -482,7 +482,7 @@ def test_a_timeline_that_times_nothing_carries_no_timing(typst: TypstRunner):
             'sub(reveal("a"), pan(dx: 1cm))',
             "#context {",
             "  let states = browser-plan(plan, names, ()).states",
-            '  assert.eq(states.at(1).keys(), ("tags", "pan", "epoch"))',
+            '  assert.eq(states.at(1).keys(), ("tags", "pan", "epoch", "handout"))',
             "}",
         )
     )
@@ -497,7 +497,7 @@ def test_a_timed_timeline_carries_both_numbers_in_seconds(typst: TypstRunner):
             "  let states = browser-plan(plan, names, ()).states",
             "  assert.eq(states.at(1).wait, 2.0)",
             "  assert.eq(states.at(1).timing, (tags: (a: (opacity: (delay: 0.2)))))",
-            '  assert.eq(states.at(0).keys(), ("tags", "pan", "epoch"))',
+            '  assert.eq(states.at(0).keys(), ("tags", "pan", "epoch", "handout"))',
             "}",
         )
     )

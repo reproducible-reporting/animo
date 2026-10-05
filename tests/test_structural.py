@@ -496,3 +496,36 @@ def test_handout_true_adds_exactly_one_page_in_its_place(paged: PagedRunner):
     assert_identical(handout[0], presentation[2], what="the kept page and state 2")
     assert_identical(handout[1], presentation[3], what="the final page and state 3")
     assert color_box(handout[0], BLUE) is not None
+
+
+# How a region crosses a boundary.
+
+DISAGREE = 'sub(replace("a", transition: "crossfade")[A2], replace("b")[B2])'
+"""One step whose two structural operations name the transition in two ways."""
+
+
+def test_two_operations_in_one_region_may_not_disagree_about_their_transition(
+    typst: TypstRunner,
+):
+    """A region crosses a boundary once, so it is carried by one transition.
+
+    `auto` and the name it stands for are two answers, as a duration of `auto` and the deck's
+    own number are, because the deck's own transition is not a name the resolver can see.
+    """
+    body = '#region[#tag("a")[A] #tag("b")[B]]'
+    source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")
+    typst.fails(source, "disagree about their transition")
+
+
+def test_two_regions_may_cross_one_boundary_with_two_transitions(typst: TypstRunner):
+    """Two bare tags are two regions, so each names its own transition."""
+    body = '#tag("a")[A]\n#tag("b")[B]'
+    source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")
+    typst.ok(source)
+
+
+def test_a_region_inside_a_changed_region_shares_its_transition(typst: TypstRunner):
+    """The outer region is what crosses, so the inner one's operation is part of it."""
+    body = '#region[#tag("a")[A] #region[#tag("b")[B]]]'
+    source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")
+    typst.fails(source, "disagree about their transition")

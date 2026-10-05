@@ -118,17 +118,23 @@ function show(position, animate = false) {
   if (slide !== undefined && slide.anchors === null) {
     slide.anchors = measureAnchors(slide);
   }
-  // In the same task as the state below, so that a boundary and whatever it carries are
-  // created together and take the same frame's time, which is the step's one clock.
+  // The step is planned whole before any of it is written, and then applied in one task, so
+  // that a boundary and whatever it carries take the same frame's time, which is the step's
+  // one clock, and so that no part of the plan reads a style another part has written.
   // The slide being entered takes the deck's own step where the boundary takes the deck's
   // slide duration: a join is two clocks started on one frame, going back as coming.
-  slideTransitionOf(slide?.transition ?? "auto")(current.slide, leaving, boundary);
+  // The boundary belongs to the slide with the higher number, in both directions, so a
+  // backward step undoes exactly what the forward step over it did.
+  const effects = new Map();
+  const owner = deck.get(Math.max(current.slide, from));
+  slideTransitionOf(owner?.transition ?? "auto")(effects, current.slide, leaving, boundary);
   const options = moving ? timing() : null;
-  render(slide, current.state, options, {
+  planState(effects, slide, current.state, options, {
     from: left,
     step: walked,
     reverse,
   });
+  apply(effects);
   const hash = `#${current.slide}.${current.state}`;
   if (location.hash !== hash) {
     history.replaceState(null, "", hash);

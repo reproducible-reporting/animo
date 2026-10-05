@@ -499,7 +499,7 @@ sub(move("a", x: 1cm), pan(dx: 1cm))
 sub()
 """,
             "#assert.eq(plan.states.map(state => state.epoch), (0, 0, 0, 0))",
-            "#assert.eq(plan.epochs, ((tags: (:), changed: (), timings: (:)),))",
+            "#assert.eq(plan.epochs, ((tags: (:), changed: (), timings: (:), transitions: (:)),))",
         )
     )
 
@@ -844,6 +844,54 @@ def test_a_structural_primitive_takes_its_tag_name_as_a_string(typst: TypstRunne
     typst.fails(resolved(f"sub({call})"), f"{call.split('(')[0]} takes the name of a tag")
 
 
+STRUCTURAL = ['remove("a"', 'reset("a"', 'apply("a", emph', 'replace("a"']
+"""The four structural primitives, each opened up to the arguments a test adds."""
+
+
+def call(opening: str, arguments: str) -> str:
+    """One structural operation, with its body where it takes one."""
+    body = "[x]" if opening.startswith("replace") else ""
+    return f"{opening}, {arguments}){body}"
+
+
+@pytest.mark.parametrize("opening", STRUCTURAL)
+def test_every_structural_primitive_takes_a_transition(typst: TypstRunner, opening):
+    """The transition is chosen per operation, so one step can carry two regions two ways."""
+    typst.ok(
+        resolved(
+            f"sub({call(opening, 'transition: "crossfade"')})\n"
+            f"sub({call(opening, 'transition: auto')})",
+            '#assert.eq(plan.epochs.at(1).transitions, (a: ("crossfade",)))',
+            "#assert.eq(plan.epochs.at(2).transitions, (a: (auto,)))",
+        )
+    )
+
+
+def test_the_transitions_of_an_epoch_follow_its_operations_in_order(typst: TypstRunner):
+    """One entry per operation, beside the timings, so a boundary can compare them."""
+    typst.ok(
+        resolved(
+            'sub(replace("a")[x], apply("a", emph, transition: "crossfade"), remove("b"))',
+            '#assert.eq(plan.epochs.at(1).transitions, (a: (auto, "crossfade"), b: (auto,)))',
+        )
+    )
+
+
+@pytest.mark.parametrize("opening", STRUCTURAL)
+def test_a_misspelled_transition_is_refused(typst: TypstRunner, opening):
+    """A name the runtime did not know would be a region that quietly took the default."""
+    kind = opening.split("(")[0]
+    typst.fails(
+        resolved(f"sub({call(opening, 'transition: "crosfade"')})"),
+        f'{kind} takes transition as `auto`, which is the deck\'s own, or one of ("crossfade",)',
+    )
+
+
+def test_a_transition_that_is_not_a_name_is_refused(typst: TypstRunner):
+    """`none` is the cut of a slide boundary, and an epoch boundary does not take it."""
+    typst.fails(resolved('sub(replace("a", transition: none)[x])'), "got none")
+
+
 # What the browser is handed.
 
 
@@ -921,6 +969,45 @@ def test_a_length_reaches_the_browser_as_a_number_of_typst_points(typst: TypstRu
             "  let tags = browser-plan(plan, names, ()).states.at(1).tags",
             "  assert.eq(tags.a.x.offset, 72.0)",
             "  assert.eq(tags.a.y.offset, 3.0)",
+            "}",
+        )
+    )
+
+
+def test_every_state_of_the_browser_plan_carries_its_resolved_handout_flag(
+    typst: TypstRunner,
+):
+    """The flag the paged outputs resolve, so a view of one state per slide can pick its own."""
+    typst.ok(
+        resolved(
+            """sub(reveal("a"), handout: true)
+sub(hide("a"))""",
+            "#context {",
+            "  let states = browser-plan(plan, names, ()).states",
+            "  assert.eq(states.map(state => state.handout), (false, true, true))",
+            "}",
+            handout="false",
+        )
+    )
+
+
+def test_a_region_carries_the_transition_its_operations_named(typst: TypstRunner):
+    """A name travels, and `auto` travels as nothing, so a deck that names none is unchanged.
+
+    The runtime reads a region with no `transition` as one that crossfades.
+    """
+    typst.ok(
+        resolved(
+            'sub(replace("a")[x])',
+            "#let timing = (delay: 0.0, duration: auto)",
+            "#context {",
+            "  let boundaries = ((), (",
+            '    (group: "a", timing: timing, transition: "crossfade"),',
+            '    (group: "b", timing: timing, transition: auto),',
+            "  ))",
+            "  let epochs = browser-plan(plan, names, boundaries).epochs",
+            '  assert.eq(epochs.at(1).regions, ((group: "a", transition: "crossfade"),',
+            '    (group: "b",)))',
             "}",
         )
     )

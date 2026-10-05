@@ -27,7 +27,7 @@
 #import "deck.typ": (
   css-color, deck-shape, handout-tally, paged-mode, unit-length,
 )
-#import "member.typ": changed-groups, check-boundary-timings, members-of
+#import "member.typ": changed-groups, check-boundaries, members-of
 #import "plan.typ": (
   inside, provide, refuse, resolve, stack-view-for, timeline-asks, unpanned,
   view-of,
@@ -228,7 +228,7 @@
   refuse(which, index, stack-view, ink),
 )
 
-// The strategies a slide boundary may be given by name.
+// The transitions a slide boundary may be given by name.
 //
 // The list lives here rather than only in the runtime because typst is what refuses a
 // misspelling, and it has to do so at compile time.
@@ -237,9 +237,9 @@
 
 // How a slide is entered, as the browser runtime reads it.
 //
-// `auto` is the deck's own strategy and `none` is a cut, both typst literals; a string
-// names a strategy outright.
-// A name is accepted although animo has one strategy, so that a richer transition is a value
+// `auto` is the deck's own transition and `none` is a cut, both typst literals; a string
+// names a transition outright.
+// A name is accepted although animo has one transition, so that a richer one is a value
 // added to `transition-names` rather than a change of what the argument takes.
 //
 // The boundary above a slide belongs to that slide and is crossed the same way in both
@@ -641,7 +641,7 @@
     let index = position.get().first()
     // Which region a tag belongs to is a layout-time fact, so this reads the membership
     // reports of the rendering, exactly as the site checks below read the site reports.
-    check-boundary-timings(index, plan.epochs, members-of(index))
+    check-boundaries(index, plan.epochs, members-of(index))
     // A paged slide with no page has no tag site to read back, and nothing to show
     // wrongly; the HTML target renders a frame whatever the handout flags say, so it
     // checks the same slide over that.

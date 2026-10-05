@@ -60,7 +60,7 @@ function readSlide(element) {
     epochs,
     states: plan.states ?? [],
     count: Math.max(1, Number(element.dataset.animoStates ?? 1)),
-    // How the boundary above this slide is crossed: the name of a strategy, `auto` for
+    // How the boundary above this slide is crossed: the name of a transition, `auto` for
     // the deck's own, or `none` for a cut. It is the setting of the slide a forward step
     // enters and is used in both directions.
     transition: element.dataset.animoTransition ?? "auto",
@@ -85,6 +85,15 @@ function readSlide(element) {
     shown: null,
   };
 }
+
+/**
+ * The settings of the deck, as the `data-animo-config` attribute of the deck element states
+ * them, read once.
+ *
+ * The durations and the easing are custom properties on `:root` instead, because a media
+ * query for a reader who asked for less motion has to reach them.
+ */
+const config = JSON.parse(document.querySelector(".animo-deck")?.dataset.animoConfig || "{}");
 
 /** The slides of the deck by number, which `boot.js` fills once the page has loaded. */
 const deck = new Map();

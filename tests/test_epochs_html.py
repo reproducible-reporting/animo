@@ -301,6 +301,38 @@ def test_the_crossfade_midpoint_is_the_sum_of_the_two_renderings(
     )
 
 
+def test_a_region_that_names_the_crossfade_crosses_as_one_that_names_nothing(
+    page, deck_at, reflowing, typst: TypstRunner
+):
+    """A region with no `transition` in the plan is crossfaded, and so is one that names it.
+
+    The plan carries the name only where an operation stated one, so the two decks differ in
+    that one entry, and the boundary looks the same halfway through in both.
+    """
+    named: Deck = deck_at(
+        animated(
+            typst,
+            REFLOWING,
+            f'sub(replace("claim", transition: "crossfade")[{LONGER}])',
+            'sub(reset("claim"))',
+            name="named.html",
+        )
+    )
+    assert [epoch["regions"] for epoch in named.plan["epochs"]] == [
+        [],
+        [{"group": "r", "transition": "crossfade"}],
+        [{"group": "r"}],
+    ]
+    page.add_style_tag(content=SLOW)
+    named.press("ArrowRight")
+    (halfway_named,) = crossing(named, MIDPOINT)
+    plain: Deck = deck_at(reflowing)
+    page.add_style_tag(content=SLOW)
+    plain.press("ArrowRight")
+    (halfway_plain,) = crossing(plain, MIDPOINT)
+    assert_identical(halfway_named, halfway_plain, what="the two midpoints")
+
+
 def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
     page, deck_at, reflowing_layered, browser_name
 ):

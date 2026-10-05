@@ -167,6 +167,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Introspection: the corner of an element, in both targets     | `test_anchors.py`                     |
 | Introspection: the fields of a nested structure              | `test_element_fields.py`              |
 | Media elements in the HTML output                            | `test_media.py`                       |
+| The head of a page that a package builds itself              | `test_document_head.py`               |
 | Live preview: typst serves and reloads the HTML itself       | `test_watch.py`                       |
 | Wrapping a tag site: what it changes and what it does not    | `test_wrapping.py`                    |
 | A cetz draw command is a value, not content                  | `test_draw_commands.py`               |

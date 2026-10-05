@@ -134,15 +134,18 @@
 
 // The whole plan of a slide, as the runtime reads it.
 //
-// A state holds the display state of its tags, the position of its viewport and the epoch
-// it belongs to, the first two kept apart as the resolver keeps them apart.
+// A state holds the display state of its tags, the position of its viewport, the epoch it
+// belongs to and whether the handout keeps a page for it, the first two kept apart as the
+// resolver keeps them apart.
+// The handout flag is the one the paged outputs resolve, so that a view of the deck that
+// shows one state per slide can show the state the handout shows.
 // The epoch is which of the stacked frames shows the state, so a step that changes it is a
 // step that crosses a boundary.
 //
 // `epochs` holds, per epoch, the groups that the boundary starting it redraws, which is
 // what the transition carries from the outgoing frame to the incoming one, each with the
-// timing of the operations that changed it. The first epoch begins no boundary and its
-// list is empty.
+// timing of the operations that changed it and the transition they named for it, which is
+// left out for `auto`. The first epoch begins no boundary and its list is empty.
 //
 // A state also carries the `wait` before it is entered, the `hold` before the state after
 // it is, the `timing` of the operations its own step performed and the `span` of that
@@ -161,6 +164,7 @@
     tags: tags-of(state.display, names),
     pan: position-of(state.slide.pan),
     epoch: state.epoch,
+    handout: state.handout,
     ..entry("wait", state.wait),
     ..entry("hold", state.hold),
     ..entry("timing", timings-of(state.timing)),
@@ -170,6 +174,7 @@
     regions: groups.map(region => (
       group: region.group,
       ..entry("timing", pruned-timing(region.timing)),
+      ..entry("transition", if region.transition != auto { region.transition }),
     )),
   )),
 )

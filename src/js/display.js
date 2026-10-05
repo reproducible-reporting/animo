@@ -3,7 +3,7 @@
 
 // What a state of a slide looks like on the page: where each position puts what it addresses,
 // the CSS of a tag's display state and of a pan, the anchors a position is relative to, and
-// `render`, which puts one state of a slide on its canvas and on every tag it addresses.
+// `planState`, which plans one state of a slide on its canvas and on every tag it addresses.
 
 /** The canvas origin, which is the anchor a position with no `relto` is measured from. */
 const ORIGIN = { x: 0, y: 0 };
@@ -62,20 +62,17 @@ function declarations(slide, name, display) {
 }
 
 /**
- * Centre the transforms of one slot on the element's own box.
+ * The declarations that centre the transforms of one slot on the element's own box.
  *
  * Without this a `scale` grows the element about the origin of the whole frame and moves it
- * far across the slide. Both declarations are written here, on the one element the runtime
+ * far across the slide. Both declarations are planned here, on the one element the runtime
  * transforms, and never as a rule in the stylesheet: they re-anchor the element's own
  * `transform` attribute as much as the properties beside it, so a selector broad enough to
  * reach a group typst positioned displaces it, silently and with no transform property set
  * at all. A labelled group is not always a tag site, because a region's footprint carries
  * a label too, and its children are the region's content. See *Findings*.
  */
-function centreTransforms(element) {
-  element.style.transformBox = "fill-box";
-  element.style.transformOrigin = "center";
-}
+const CENTRED = { "transform-box": "fill-box", "transform-origin": "center" };
 
 /**
  * The tags whose anchor this slide's plan asks for, as a set of names.
@@ -165,7 +162,7 @@ function viewport(slide, state) {
 }
 
 /**
- * Put one state of a slide on its canvas, on its epoch renderings, and on every
+ * Plan one state of a slide on its canvas, on its epoch renderings, and on every
  * occurrence of every tag it addresses.
  *
  * The pan goes on the canvas and never on the frame inside it: the epoch renderings are
@@ -177,8 +174,9 @@ function viewport(slide, state) {
  * replaces and moves a tag moves it by the same amount in the rendering it leaves and in
  * the one it arrives at.
  *
- * Every animation of the step, the boundary's included, is created here in one task, so
- * none of them is told when it began and the browser starts them all on the same frame.
+ * Every effect of the step, the boundary's included, is planned into `effects`, and the
+ * caller applies them in one task, so none of the animations is told when it began and the
+ * browser starts them all on the same frame.
  *
  * `step` is the state whose own operations are being walked, which is the higher of the
  * two a step runs between, forwards and backwards alike: one step is one schedule, and a
@@ -192,7 +190,13 @@ function viewport(slide, state) {
  * mirrored about the length of the step it undoes, so the operation that arrived last is
  * the one that leaves first, and the step ends where the earlier state began.
  */
-function render(slide, index, options, { from = null, step = index, reverse = false } = {}) {
+function planState(
+  effects,
+  slide,
+  index,
+  options,
+  { from = null, step = index, reverse = false } = {},
+) {
   const state = slide?.states[index];
   if (state === undefined) {
     return;
@@ -201,13 +205,13 @@ function render(slide, index, options, { from = null, step = index, reverse = fa
   const mirror =
     reverse && options !== null ? span(slide.states[step]?.span, options) : null;
   if (slide.canvas !== null && slide.size !== null) {
-    put(slide.canvas, viewport(slide, state), options === null
+    plan(effects, slide.canvas, viewport(slide, state), options === null
       ? null
       : { translate: scheduled(options, timings.pan, mirror) });
   }
   for (const [name, display] of Object.entries(state.tags ?? {})) {
     const own = timings.tags?.[name] ?? {};
-    const effects =
+    const timed =
       options === null
         ? null
         : {
@@ -216,11 +220,11 @@ function render(slide, index, options, { from = null, step = index, reverse = fa
             scale: scheduled(options, own.scale, mirror),
           };
     for (const element of slide.slots.get(name) ?? []) {
-      centreTransforms(element);
-      put(element, declarations(slide, name, display), effects);
+      plan(effects, element, CENTRED);
+      plan(effects, element, declarations(slide, name, display), timed);
     }
   }
-  putEpoch(slide, index, from, options, mirror);
-  putSubslides(slide, index);
+  planEpoch(effects, slide, index, from, options, mirror);
+  planSubslides(effects, slide, index);
   slide.shown = index;
 }

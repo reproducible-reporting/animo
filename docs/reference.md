@@ -81,6 +81,20 @@ A duration of zero means that kind of motion is not animated.
 | `"ease-out"`    | off at full speed and slows down to a stop   |
 | `"ease-in-out"` | off slowly, speeds up, and slows to a stop   |
 
+The HTML presentation takes its `<title>` from `set document(title: ..)`
+and its language from `set text(lang: ..)`, as any typst document exported to HTML does.
+The `description`, `author` and `keywords` of `set document(..)` become `<meta>` elements.
+In the HTML target, typst refuses a `set document` rule after the show rule,
+so these rules come first:
+
+```typst
+#set document(title: [Animo Tour], author: "A. Author")
+#set text(lang: "en")
+#show: animo.with(width: 16cm, height: 9cm)
+```
+
+A title that holds markup becomes its plain text.
+
 Taught in [Slides](slides.md) and [Presenting](presenting.md#motion).
 
 ## Slides
@@ -379,10 +393,17 @@ They change what typst lays out, so each of them starts a new
 [epoch](structural.md#epochs). All four take the same `delay:` and `duration:` as the
 continuous primitives, where they time the crossfade of the region that changed.
 
+All four also take `transition:`, which says how the region that changed crosses the boundary.
+The `transition` argument defaults to `auto`, which is the deck's own transition, the crossfade,
+and it also takes the name of a transition, of which `"crossfade"` is the one that exists.
+Two operations that change one region at one boundary have to name the same transition,
+as they have to agree about their timing.
+The `transition` argument is HTML only, because two pages have nothing between them.
+
 ### `anim.replace`
 
 ```typst
-replace(name, body, delay: 0, duration: auto)
+replace(name, body, delay: 0, duration: auto, transition: auto)
 ```
 
 Lay out `body` at the tag site instead of what is there, keeping the wrappers `apply` put
@@ -397,7 +418,7 @@ Taught in [Structural Animations](structural.md#structural-animation-primitives)
 ### `anim.remove`
 
 ```typst
-remove(name, delay: 0, duration: auto)
+remove(name, delay: 0, duration: auto, transition: auto)
 ```
 
 Lay out nothing at the tag site, keeping the wrappers.
@@ -411,7 +432,7 @@ Taught in [Structural Animations](structural.md#structural-animation-primitives)
 ### `anim.apply`
 
 ```typst
-apply(name, delay: 0, duration: auto, ..fns)
+apply(name, delay: 0, duration: auto, transition: auto, ..fns)
 ```
 
 Wrap what is laid out at the tag site in each function, the last one outermost.
@@ -426,7 +447,7 @@ Taught in [Structural Animations](structural.md#structural-animation-primitives)
 ### `anim.reset`
 
 ```typst
-reset(name, delay: 0, duration: auto)
+reset(name, delay: 0, duration: auto, transition: auto)
 ```
 
 Back to the body as written, with every wrapper dropped.

@@ -246,8 +246,8 @@ ENTERED = 'slide(BEFOREbackground: rgb("#204080"))[\n  = A slide\n  With a line 
 
 @pytest.mark.parametrize("html", [False, True])
 @pytest.mark.parametrize("value", ["auto", "none", '"crossfade"'])
-def test_a_transition_takes_auto_none_or_a_strategy(typst: TypstRunner, value, html):
-    """A strategy may be named, so a richer one later is a value added and not a type changed."""
+def test_a_transition_takes_auto_none_or_a_name(typst: TypstRunner, value, html):
+    """A transition may be named, so a richer one later is a value added and not a type changed."""
     typst.ok(deck(ENTERED.replace("BEFORE", f"transition: {value}, ")), html=html)
 
 
@@ -256,7 +256,7 @@ def test_a_transition_that_is_none_of_them_is_refused(typst: TypstRunner, html):
     """A misspelt transition would otherwise be a slide that quietly keeps the default.
 
     Typst refuses it rather than the runtime, because the runtime has no way to report it
-    and a name it did not recognise would fall back to the deck's own strategy.
+    and a name it did not recognise would fall back to the deck's own transition.
     """
     typst.fails(
         deck(ENTERED.replace("BEFORE", 'transition: "fade", ')),
@@ -302,15 +302,15 @@ def test_a_transition_reaches_the_html_output(typst: TypstRunner):
     assert page.count('data-animo-transition="auto"') == 1
 
 
-def test_a_named_strategy_travels_as_its_name(typst: TypstRunner):
-    """`auto` stays `auto` rather than resolving to the deck's own strategy in typst.
+def test_a_named_transition_travels_as_its_name(typst: TypstRunner):
+    """`auto` stays `auto` rather than resolving to the deck's own transition in typst.
 
-    Which strategy `auto` means is the runtime's constant, so resolving it here would put
+    Which transition `auto` means is the runtime's constant, so resolving it here would put
     the same answer in two places and let them drift.
     """
     page = typst.html(
         deck(ENTERED.replace("BEFORE", 'transition: "crossfade", ')),
-        name="strategy.html",
+        name="named.html",
     ).read_text()
     assert page.count('data-animo-transition="crossfade"') == 1
 

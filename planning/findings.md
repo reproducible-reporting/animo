@@ -1385,6 +1385,27 @@ with nothing exported: in the presentation mode, where each state is a page, occ
 tag in a one-slide document is its rendering in state *i*, and `move`'s `dx`, `scale`'s `x` and
 the presence of a `hide` say what that state did to it.
 
+## The head of a page that a package builds itself
+
+Measured on typst 0.15.0.
+
+- A document that builds no `html` element of its own gets a head from typst. It has `lang` from
+  `set text(lang: .., region: ..)`, written as `nl-BE`, a `<title>` holding the plain text of
+  `document(title:)`, and `<meta>` elements for the description and the authors. Typst 0.15.0
+  names the latter `authors`, where HTML defines `author`.
+- A document whose only element is an `html` element is taken as it is. Typst adds neither the
+  title nor the language.
+- A package reads both in a context, as `document.title`, `document.author`, `text.lang` and
+  `text.region`.
+- `html.title` refuses content with markup in it, with the message
+  `HTML raw text element cannot have non-text children`, so a title made of content has to be
+  reduced to its text first.
+- A `set document` rule is refused when a show rule has put the document in an element
+  (`document set rules are not allowed inside of containers`). A show rule that returns the
+  document as it is, or in a context block, leaves the rule at the top level. In the HTML target
+  the deck's show rule builds the page as elements, so a `set document` there has to come before
+  it.
+
 ## Other verified behaviour
 
 - `target()` returns `"html"` or `"paged"`, which is the clean way to branch. The

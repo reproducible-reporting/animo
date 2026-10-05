@@ -182,20 +182,96 @@
   runtime-files.map(name => read("js/" + name + ".js")).join("\n")
 }
 
+// Content as the plain text it reads as, for an element of the head that takes text only.
+//
+// Typst writes its own `<title>` from the plain text of `document(title:)`, and a deck builds
+// its head itself, so this does what typst does there: it keeps the text and drops the
+// markup around it, and an element that holds no text, such as an image, contributes
+// nothing.
+#let plain-text(value) = {
+  if value == none {
+    ""
+  } else if type(value) == str {
+    value
+  } else if value.has("text") {
+    value.text
+  } else if value.has("children") {
+    value.children.map(plain-text).join()
+  } else if value.has("body") {
+    plain-text(value.body)
+  } else if value.has("child") {
+    plain-text(value.child)
+  } else if value.func() in ([ ].func(), linebreak) {
+    " "
+  } else if value.func() == smartquote {
+    if value.double { "\"" } else { "'" }
+  } else {
+    ""
+  }
+}
+
+// The elements of the head that say what the page is, from typst's own settings.
+//
+// These are the ones typst writes into a head it builds itself: a title, a description, the
+// authors and the keywords, each from `document`. A deck builds its head itself, so it
+// writes them here, and an author states them once, with `set document(..)`, as for any
+// other typst document.
+//
+// Must be called in a context.
+#let head-metadata() = {
+  if document.title != none {
+    html.title(plain-text(document.title))
+  }
+  let meta(name, content) = html.elem("meta", attrs: (
+    name: name,
+    content: content,
+  ))
+  if document.description != none {
+    meta("description", plain-text(document.description))
+  }
+  for author in document.author {
+    meta("author", author)
+  }
+  if document.keywords.len() != 0 {
+    meta("keywords", document.keywords.join(", "))
+  }
+}
+
+// The language of the page, as typst writes it on a page it builds itself.
+//
+// Must be called in a context.
+#let page-lang() = {
+  if text.region == none { text.lang } else { text.lang + "-" + text.region }
+}
+
 // The HTML page a deck becomes: the stylesheet, the runtime and the stage that holds the slides.
-#let html-shell(shape, timing, body) = html.html({
+//
+// The deck element carries the deck's settings as one JSON attribute, which the runtime reads
+// once at load. The settings are structured and not all of them are lengths, so they travel
+// as data rather than as custom properties.
+//
+// Must be called in a context.
+#let html-shell(shape, timing, config, body) = html.html(lang: page-lang(), {
   html.head({
     html.meta(charset: "utf-8")
     html.elem("meta", attrs: (
       name: "viewport",
       content: "width=device-width, initial-scale=1",
     ))
+    head-metadata()
     html.elem("style", stylesheet(shape, timing))
     // A module script is deferred by default, so the runtime finds the slides in place.
     html.elem("script", attrs: (type: "module"), runtime-script())
   })
   let stage = html.elem("div", attrs: (class: "animo-stage"), body)
-  html.body(html.elem("div", attrs: (class: "animo-deck"), stage))
+  html.body(html.elem(
+    "div",
+    attrs: (
+      class: "animo-deck",
+      data-animo-config: json.encode(config, pretty: false),
+    ),
+    stage,
+  ))
 })
 
 #let animo(
@@ -217,7 +293,7 @@
   let timing = deck-timing(primitive-duration, transition-duration, easing)
   context {
     if target() == "html" {
-      html-shell(shape, timing, {
+      html-shell(shape, timing, (:), {
         deck-shape.update(shape)
         body
       })

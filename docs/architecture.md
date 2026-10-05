@@ -2,7 +2,7 @@
 description: >-
   How a slide becomes an HTML presentation: the epoch renderings, the five rules the
   browser runtime obeys, the two transform slots of a tag site,
-  where the transition strategy is selected,
+  where the transition of a boundary is selected, the two phases of a step,
   and how the runtime is divided into files, a controller and events.
 ---
 
@@ -45,8 +45,13 @@ Every epoch is laid out with every region at its footprint,
 so the renderings are interchangeable outside the regions that change.
 
 The plan holds one entry per state, with the display state of every addressed tag,
-the pan, and the epoch the state belongs to;
+the pan, the epoch the state belongs to,
+and the `handout` flag as the paged outputs resolve it;
 and one entry per epoch, naming the region groups that the boundary into it redraws.
+A region record carries the `transition` its operations named, and it is left out for `auto`,
+so a deck that names none carries none.
+A record may also carry `args`, which the runtime hands to the transition with the record
+and which typst does not emit yet.
 
 A state also carries the `wait:` before it is entered, the `hold:` before the state after
 it is, and the timing of the operations its own subslide performed, and an epoch's region
@@ -176,24 +181,38 @@ and has to sit above the continuous transforms rather than inside them.
 The epoch renderings sit in the frame the canvas holds, so moving the canvas moves all of
 them together and keeps them registered.
 
-## Where the Transition Strategy Is Selected
+## Where the Transition of an Epoch Boundary Is Selected
 
-`transitions` in `src/js/boundaries.js` holds one entry per strategy,
-and the single `const transition = transitions.crossfade` beside it selects one for every
-boundary of every deck.
-A strategy is handed the epoch renderings, the epoch the step leaves and the one it
-enters, the groups of the regions the boundary redraws, and how the step moves;
-an empty list of regions is its instruction to snap,
+`transitions` in `src/js/boundaries.js` holds one entry per transition of an epoch boundary,
+and each region record of the plan names the entry that carries it.
+A record that names none takes `crossfade`.
+The author names a transition with the `transition:` argument of a structural operation,
+so one boundary may carry one region with one transition and another region with another.
+Typst refuses a name that is not in `epoch-transition-names` in `src/anim.typ`,
+and it refuses two operations that change one region at one boundary and name two transitions.
+
+`planEpoch` first plans the state at rest for every transition alike.
+The rendering of the state being shown is visible and opaque,
+every other rendering is hidden and transparent,
+and every region group is opaque in the rendering being shown and transparent in the others.
+It then groups the region records of the boundary by transition
+and hands each transition the records it carries,
+together with the epoch renderings, the epoch the step leaves and the one it enters,
+and how the step moves.
+A step that crosses no boundary hands no records to any transition,
 which is what a deep link, a step inside one epoch, and a reader who asked for less motion
 all produce.
 
-A strategy writes the state it is arriving at as inline style
+A transition plans the state it is arriving at for the elements it carries,
+in place of their state at rest,
 and animates from what the element was showing into it,
-exactly as a display state is written.
+exactly as a display state is planned.
 An interrupted boundary therefore continues from where it is,
 and a backward step lands on the earlier rendering exactly.
+A transition runs while the step is planned and nothing has been written,
+so the geometry it reads is the geometry of the page before the step.
 
-The seam exists because the crossfade is not the only conceivable strategy.
+The seam exists because the crossfade is not the only conceivable transition.
 A **morph** would pair the tags that exist in both epochs, move them to their new places,
 and crossfade only the rest;
 it is why both renderings stay laid out and readable rather than being hidden with
@@ -204,10 +223,14 @@ it is why both renderings stay laid out and readable rather than being hidden wi
 `slideTransitions` in `src/js/boundaries.js` is the same seam one container out,
 and a table of its own rather than an entry in the one above,
 because the two are handed different things.
-An epoch strategy gets the renderings of one slide and the regions a boundary carries
-across, which is what it holds still.
-A slide strategy gets two containers and has nothing to hold still,
+A transition of an epoch boundary gets the renderings of one slide
+and the regions a boundary carries across, which is what it holds still.
+A transition of a slide boundary gets two containers and has nothing to hold still,
 since two slides share nothing, so the whole container is the unit.
+
+The slide that owns a boundary is the one with the higher number,
+which is the slide a forward step enters,
+and its `data-animo-transition` chooses the transition in both directions.
 
 The crossfade there animates `opacity` on the two containers,
 through the `mix-blend-mode: plus-lighter` the stylesheet puts on every slide,
@@ -242,11 +265,28 @@ so a cut has no animation in it at all rather than one of zero length.
 
 ## One Clock
 
-Every animation of a step, the boundary's included, is created in one task,
+A step is put on the page in two phases.
+The first plans it: `plan` in `src/js/effects.js` records an effect per element and property,
+with what the element shows now, what it is to show, and the timing that takes it there,
+and nothing is written.
+The second, `apply`, writes every style of the step, then reads what the elements compute,
+and then creates every animation.
+Every read of the step therefore comes before every write of it,
+and the engine recalculates style once per step rather than once per element.
+
+Every animation of a step, the boundary's included, is created in that one task,
 and none of them is told when it began,
 so the browser starts them all on the same frame.
 Motion is driven by the Web Animations API rather than by CSS transitions,
 so the inline style is the state and the animation is only how it got there.
+
+An effect may name any CSS property.
+`PROPERTIES` in `src/js/effects.js` lists the properties whose unset value the engine
+reports as a keyword, such as `none` for `translate`, with the value that keyword stands for.
+Every other property is read as the engine reports it.
+An effect animates only the properties whose value the step changes,
+because a `translate` or `scale` that is equal at both ends stops chromium from drawing an
+`opacity` animated beside it. See *Findings*.
 
 An operation's `delay:` becomes that animation's own delay rather than a timer of its own,
 which keeps the single clock when a step's operations arrive in an order.
@@ -293,15 +333,15 @@ A top level `const` is initialised when the script reaches its file,
 so a file may use one at load time only if it comes after the file that defines it.
 Only `boot.js` calls into the other files at load time, and it is the last one.
 
-| File            | Holds                                                                     |
-| --------------- | ------------------------------------------------------------------------- |
-| `slides.js`     | `readSlide`, the registry of slides, `count`, `clamp` and `parseHash`     |
-| `effects.js`    | `timing`, `scheduled`, `span`, `put` and `showing`                        |
-| `display.js`    | positions and anchors, the CSS of a display state and a pan, and `render` |
-| `boundaries.js` | the epoch strategies, the slide strategies, `putEpoch` and `putSubslides` |
-| `controller.js` | the position, `show`, `step`, `jump`, and the clock with its pause        |
-| `input.js`      | key, pointer and hash events, turned into intents by the active mode      |
-| `boot.js`       | preparing the page, reading the slides and the first `jump`               |
+| File            | Holds                                                                        |
+| --------------- | ---------------------------------------------------------------------------- |
+| `slides.js`     | `config`, `readSlide`, the registry of slides, `count`, `clamp`, `parseHash` |
+| `effects.js`    | `timing`, `scheduled`, `span`, `showing`, `plan` and `apply`                 |
+| `display.js`    | positions and anchors, the CSS of a display state and a pan, `planState`     |
+| `boundaries.js` | the transitions of both boundaries, `planEpoch`, `planSubslides`             |
+| `controller.js` | the position, `show`, `step`, `jump`, and the clock with its pause           |
+| `input.js`      | key, pointer and hash events, turned into intents by the active mode         |
+| `boot.js`       | preparing the page, reading the slides and the first `jump`                  |
 
 ## The Controller and Its Events
 
@@ -367,6 +407,11 @@ inspector, which is how a step that does not do what the timeline says is diagno
   slide as JSON, keyed by tag name. That is the whole of what the browser is told,
   so a wrong step is either in this attribute or in the runtime, and the attribute says
   which.
+- The deck element carries `data-animo-config`, the settings of the deck as JSON,
+  which the runtime reads once at load.
+  No setting exists yet, so its value is `{}`.
+- The root element carries `lang`, and the head a `<title>`, from `set text(lang: ..)` and
+  `set document(title: ..)`, as typst writes them into a head it builds itself.
 - The root element carries `data-animo` with the position the runtime has reached,
   which is the same value as the fragment,
   `data-animo-mode` with the name of the active mode,

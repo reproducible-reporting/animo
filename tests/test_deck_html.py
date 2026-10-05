@@ -14,7 +14,7 @@ import re
 
 import numpy as np
 import pytest
-from decks import deck
+from decks import PREAMBLE, deck
 from harness import EPOCH_GROUPS, TypstRunner, screenshot, state_hash
 
 DECK = deck("slide[One]", "slide[Two]", "slide[Three]")
@@ -90,6 +90,55 @@ def test_a_canvas_larger_than_the_viewport_scales_with_it(page, open_page, typst
     # One centimetre of margin, thirty of offset and the width of the word "far".
     assert ratio > 31 / 16
     assert ratio < 32 / 16
+
+
+# What the page says about itself.
+
+# A deck whose document states its title, its language and the rest of what typst writes into a
+# head it builds itself. The title holds markup and a quotation, which a `<title>` holds as text.
+DESCRIBED = deck("slide[One]").replace(
+    PREAMBLE,
+    PREAMBLE
+    + '#set document(title: [An _Animo_ "Deck"], author: ("A. Author", "B. Author"),\n'
+    + '  description: [What it is *about*.], keywords: ("slides", "typst"))\n'
+    + '#set text(lang: "nl", region: "be")\n',
+    1,
+)
+
+
+def test_the_page_takes_its_title_and_language_from_the_document(open_page, typst: TypstRunner):
+    """An author states them once, with `set document` and `set text`, as in any typst document.
+
+    A downloaded copy of a deck and a bookmark of it are named by the `<title>`, and a screen
+    reader chooses its voice by the `lang`.
+    """
+    page = open_page(typst.html(DESCRIBED, name="described.html"))
+    assert page.title() == 'An Animo "Deck"'
+    assert page.evaluate("() => document.documentElement.lang") == "nl-BE"
+    meta = page.evaluate(
+        """() => Array.from(document.head.querySelectorAll('meta[name]'),
+            (element) => [element.name, element.content])"""
+    )
+    assert meta == [
+        ["viewport", "width=device-width, initial-scale=1"],
+        ["description", "What it is about."],
+        ["author", "A. Author"],
+        ["author", "B. Author"],
+        ["keywords", "slides, typst"],
+    ]
+
+
+def test_a_document_that_states_nothing_has_no_title_and_typsts_language(open_page, three_slides):
+    """No title is invented, and the language is typst's default for text, as typst writes it."""
+    page = open_page(three_slides)
+    assert page.evaluate("() => document.querySelector('title')") is None
+    assert page.evaluate("() => document.documentElement.lang") == "en"
+
+
+def test_the_deck_element_carries_its_settings_as_json(open_page, three_slides):
+    """The channel for the settings of the controls exists before any setting does."""
+    page = open_page(three_slides)
+    assert page.locator(".animo-deck").get_attribute("data-animo-config") == "{}"
 
 
 # The tempo.
