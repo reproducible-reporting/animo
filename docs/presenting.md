@@ -118,16 +118,27 @@ its own, so restating it in the show rule changes the tempo of the whole deck
 and leaves the primitives that stated a duration alone.
 A step lasts as long as its slowest primitive, and a `delay:` pushes that out further.
 
-`transition-duration` is how long the crossfade into a slide takes,
-and is spent only at a boundary whose [`transition:`](slides.md#slide-transitions) is not `none`.
+`transition-duration` is how long the transition into a slide takes.
+A slide whose [`init`](slides.md#slide-transitions) states a `duration:` of its own takes that
+instead.
 How long a slide stands is decided by the presenter and by the timeline.
 
+Both durations are defaults.
 A duration of zero means that kind of motion lands without animating,
+unless a primitive or an `init` states a duration of its own,
 so hard cuts between slides, with the subslides still moving, are written as:
 
 ```typst
 #show: animo.with(transition-duration: 0)
 ```
+
+A slide of that deck that names a transition in its `init` and states no `duration:` is
+entered with a cut, and [Slide Transitions](slides.md#the-decks-own-transition) shows how to
+push one slide in anyway.
+
+A reader whose browser asks for reduced motion gets no motion at all,
+whatever the deck, a primitive or an `init` states.
+Every step then snaps into place, as a deep link does.
 
 ## Live Preview
 

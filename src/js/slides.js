@@ -60,10 +60,13 @@ function readSlide(element) {
     epochs,
     states: plan.states ?? [],
     count: Math.max(1, Number(element.dataset.animoStates ?? 1)),
-    // How the boundary above this slide is crossed: the name of a transition, `auto` for
-    // the deck's own, or `none` for a cut. It is the setting of the slide a forward step
-    // enters and is used in both directions.
-    transition: element.dataset.animoTransition ?? "auto",
+    // How the boundary above this slide is crossed: the name of a transition, or `auto` for
+    // the deck's own, and its parameters with the duration the slide's `init` stated.
+    // It is the setting of the slide a forward step enters and is used in both directions.
+    transition: {
+      name: element.dataset.animoTransition ?? "auto",
+      args: JSON.parse(element.dataset.animoTransitionArgs || "{}"),
+    },
     margin: plan.margin ?? 0,
     size: plan.canvas ?? null,
     // The renderings of a `per-subslide`, by state: one label per state of the slide, and

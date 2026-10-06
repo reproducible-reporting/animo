@@ -49,7 +49,7 @@ page, and the handout shows no more of the canvas than the states it keeps.
 
 Everything about time is **absent rather than approximated** in both static types.
 A page has no clock, so [`wait:`, `hold:`, `delay:` and `duration:`](continuous.md#timing)
-say nothing there, and neither does [`transition:`](slides.md#slide-transitions).
+say nothing there, and neither does a [transition](slides.md#slide-transitions).
 A deck that plays itself in a browser is the same pages on paper as a deck that waits for a
 presenter, to the pixel.
 

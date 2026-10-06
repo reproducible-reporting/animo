@@ -170,12 +170,12 @@ Four arguments decide *when* and *how long* rather than *what*.
 All of them are plain numbers of **seconds**, because typst has no time literal of its own,
 e.g. `2s` does not parse.
 
-| Argument    | Says                                        | Written on      |
-| ----------- | ------------------------------------------- | --------------- |
-| `wait:`     | when a subslide comes up                    | `sub`, `#slide` |
-| `hold:`     | how long a subslide stays up                | `sub`, `#slide` |
-| `delay:`    | when one operation inside a subslide starts | any primitive   |
-| `duration:` | how long that operation then takes          | any primitive   |
+| Argument    | Says                                        | Written on            |
+| ----------- | ------------------------------------------- | --------------------- |
+| `wait:`     | when a subslide comes up                    | `sub`, `init`         |
+| `hold:`     | how long a subslide stays up                | `sub`, `init`         |
+| `delay:`    | when one operation inside a subslide starts | any primitive         |
+| `duration:` | how long that operation then takes          | any primitive, `init` |
 
 All four are HTML only.
 The paged outputs are one page per state with nothing between them,
@@ -187,18 +187,17 @@ Both arguments can be used to start the next animation without waiting for the p
 They control the gap between two subslides, but do so in slightly different ways.
 `wait:` is the delay before the subslide it is specified in;
 `hold:` is the delay before the next subslide.
-Both are written on a `sub`, and on `#slide` for the initial state, which has no `sub`:
+Both are written on a `sub`, and on [`init`](slides.md#slide-transitions) for the initial
+state, which has no `sub`:
 
 ```typst
-#slide(
-  wait: 2,                     // entered two seconds after the slide before it
-  animation: {
-    import anim: *
-    sub(reveal("a"))           // waits for the presenter
-    sub(wait: 3, reveal("b"))  // comes up three seconds later
-    sub(hold: 4, reveal("c"))  // waits for presenter and stays up for four seconds
-  },
-)[...]
+#slide(animation: {
+  import anim: *
+  init(wait: 2)              // entered two seconds after the slide before it
+  sub(reveal("a"))           // waits for the presenter
+  sub(wait: 3, reveal("b"))  // comes up three seconds later
+  sub(hold: 4, reveal("c"))  // waits for presenter and stays up for four seconds
+})[...]
 ```
 
 The default of both is `none`, in which case the presenter must click to proceed.
@@ -215,7 +214,7 @@ together.
 A gap that both its neighbours time is refused, and the message names them both,
 across a slide boundary as well.
 Which of the two to use depends on which subslide the statement is about:
-`wait: 0` on a slide says that this slide needs no click,
+`init(wait: 0)` on a slide says that this slide needs no click,
 and `hold: 0` on the subslide before says that the deck does not stop there.
 
 Timing does not take the deck away from the presenter.
@@ -227,6 +226,7 @@ for how a presenter can control animations that start automatically.
 Every primitive takes both.
 `delay:` defaults to zero and when set to a positive value, it delays that one operation within its subslide.
 `duration:` defaults to `auto`, which is the deck's own `primitive-duration`.
+A duration of zero makes the operation jump to its new state.
 
 ```typst
 animation: {
@@ -252,6 +252,8 @@ Every operation keeps its own duration; only the moment it starts at is turned a
 The number `auto` stands for is the deck's [`primitive-duration`](presenting.md#motion),
 so a deck that sets the global `primitive-duration` reaches every primitive with the default
 and leaves alone the ones that asked for something else.
+This holds for a `primitive-duration` of zero as well,
+in which case only the primitives that state a duration of their own move.
 
 A duration **may run past the subslide it is in**.
 An operation still running when the next subslide is triggered is overtaken rather than cut
@@ -267,11 +269,12 @@ The handout shows one page per slide, and `handout:` says which state that is.
 - `handout: false` takes one away, including the final state.
 
 Every state carries the flag.
-The initial state has no `sub` of its own, so its flag is written on the slide:
+The initial state has no `sub` of its own, so its flag is written on `init`:
 
 ```typst
-#slide(handout: true, animation: {
+#slide(animation: {
   import anim: *
+  init(handout: true)
   sub(reset("gap"))
 })[
   This sentence reserves room for a #tag("gap")[word] the `reset` brings in.

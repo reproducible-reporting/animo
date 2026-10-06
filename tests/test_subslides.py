@@ -124,16 +124,14 @@ def test_a_state_can_be_taken_out_of_the_handout_and_others_put_in(paged: PagedR
     assert_identical(handout[0], presentation[1], what="the handout and the middle state")
 
 
-def test_the_slide_flag_hands_out_the_initial_state(paged: PagedRunner):
+def test_the_init_flag_hands_out_the_initial_state(paged: PagedRunner):
     """The page the handout keeps is the state the body declared, and not the final one.
 
     This is the case the argument exists for: a timeline that restores what the body hides
     leaves a final state on which the slide makes no point.
     """
-    animation = timeline('sub(move("m", dx: 3cm))')
-    source = paged.typst.source(
-        deck(f"slide(handout: true, animation: {animation})[{mark('m', '0cm', '0cm')}]")
-    )
+    animation = timeline("init(handout: true)", 'sub(move("m", dx: 3cm))')
+    source = paged.typst.source(deck(f"slide(animation: {animation})[{mark('m', '0cm', '0cm')}]"))
     handout = paged.png(source)
     presentation = paged.png(source, mode="presentation")
     assert len(presentation) == 2
@@ -142,13 +140,13 @@ def test_the_slide_flag_hands_out_the_initial_state(paged: PagedRunner):
     assert_identical(handout[1], presentation[1], what="the second page and the final state")
 
 
-def test_the_slide_flag_and_the_step_flag_choose_their_pages_independently(paged: PagedRunner):
+def test_the_init_flag_and_the_step_flag_choose_their_pages_independently(paged: PagedRunner):
     """ "Keep the first" and "drop the last" are the same slide's business, and neither
     says anything about the other."""
-    animation = timeline('sub(handout: false, move("m", dx: 3cm))')
+    animation = timeline("init(handout: true)", 'sub(handout: false, move("m", dx: 3cm))')
     source = paged.typst.source(
         deck(
-            f"slide(handout: true, animation: {animation})[{mark('m', '0cm', '0cm')}]",
+            f"slide(animation: {animation})[{mark('m', '0cm', '0cm')}]",
             "slide[plain]",
         )
     )
@@ -160,10 +158,13 @@ def test_the_slide_flag_and_the_step_flag_choose_their_pages_independently(paged
 
 
 def test_a_slide_without_a_timeline_can_be_left_out_of_the_handout(paged: PagedRunner):
-    """Its only state is also its final one, so nothing but the slide's own flag could
+    """Its only state is also its final one, so nothing but the flag on its `init` could
     take its page away."""
     source = paged.typst.source(
-        deck(f"slide(handout: false)[{mark('m', '0cm', '0cm')}]", "slide[plain]")
+        deck(
+            f"slide(animation: anim.init(handout: false))[{mark('m', '0cm', '0cm')}]",
+            "slide[plain]",
+        )
     )
     handout = paged.png(source)
     presentation = paged.png(source, mode="presentation")
@@ -173,7 +174,7 @@ def test_a_slide_without_a_timeline_can_be_left_out_of_the_handout(paged: PagedR
 
 
 @pytest.mark.parametrize("flag", ["auto", "true", "false"])
-def test_the_static_presentation_ignores_the_slide_flag(paged: PagedRunner, flag: str):
+def test_the_static_presentation_ignores_the_init_flag(paged: PagedRunner, flag: str):
     """The presentation renders every state whatever the flags say, down to the pixel."""
     animation = timeline('sub(move("m", dx: 3cm))')
     body = mark("m", "0cm", "0cm")
@@ -181,8 +182,9 @@ def test_the_static_presentation_ignores_the_slide_flag(paged: PagedRunner, flag
         paged.typst.source(deck(f"slide(animation: {animation})[{body}]")),
         mode="presentation",
     )
+    flagged = timeline(f"init(handout: {flag})", 'sub(move("m", dx: 3cm))')
     stated = paged.png(
-        paged.typst.source(deck(f"slide(handout: {flag}, animation: {animation})[{body}]")),
+        paged.typst.source(deck(f"slide(animation: {flagged})[{body}]")),
         mode="presentation",
     )
     assert len(stated) == len(plain)

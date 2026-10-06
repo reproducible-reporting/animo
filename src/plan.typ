@@ -203,10 +203,10 @@
 // How a state's `wait:` or `hold:` is written, for a message that names both sides of a
 // gap that two numbers claim.
 //
-// State 0 has no `sub`, so its two numbers are `#slide`'s own, and every later state is
+// State 0 has no `sub`, so its two numbers are its `init`'s own, and every later state is
 // the step of the `sub` with that index.
 #let gap-site(state, what) = if state == 0 {
-  "slide(" + what + ": ..)"
+  "init(" + what + ": ..)"
 } else {
   "sub " + str(state) + "'s " + what + ":"
 }
@@ -293,9 +293,9 @@
 // tag sites is read off the plan rather than by checking and walking the timeline a second
 // time.
 //
-// `handout`, `wait` and `hold` are the flags of state 0, which are `#slide(handout: ..)`,
-// `#slide(wait: ..)` and `#slide(hold: ..)`: every state carries all three, and the
-// initial state has no `sub` to write any of them on.
+// The `handout`, `wait` and `hold` of state 0 are the ones of the timeline's `init`, because
+// every state carries all three and the initial state has no `sub` to write them on.
+// The plan carries that `init` as well, for the transition into the slide.
 //
 // `wait` times the gap before a state and `hold` the gap after it, so every gap inside a
 // slide is named by two states and may be timed by at most one of them.
@@ -304,8 +304,8 @@
 // that step lasts in full, which is what a backward step mirrors its operations about.
 // A step walked backwards therefore reads both off the state it leaves.
 // State 0 is entered by no step, and is untimed and unspanned.
-#let resolve(animation, handout: auto, wait: none, hold: none) = {
-  let steps = check-timeline(animation)
+#let resolve(animation) = {
+  let (init, steps) = check-timeline(animation)
   // State 0 is resolved from the timeline like every other state, out of which operation
   // addresses each name first, so nothing about it is read at a tag site.
   let start = initial(steps)
@@ -318,9 +318,9 @@
       display: display,
       slide: slide,
       epoch: 0,
-      handout: handout,
-      wait: wait,
-      hold: hold,
+      handout: init.handout,
+      wait: init.wait,
+      hold: init.hold,
       timing: untimed,
       span: unspanned,
     ),
@@ -373,7 +373,7 @@
   //
   // State 0 goes through the same rule rather than through a case of its own, which is what
   // makes a slide with no `sub` at all work: its only state is also its last one, so `auto`
-  // keeps it and `#slide(handout: false)` leaves the slide out of the handout.
+  // keeps it and `init(handout: false)` leaves the slide out of the handout.
   let last = states.len() - 1
   check-gaps(states)
   (
@@ -387,6 +387,7 @@
       )),
     epochs: epochs,
     steps: steps,
+    init: init,
   )
 }
 

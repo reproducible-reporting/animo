@@ -18,7 +18,6 @@
 // page, and the HTML target renders one per epoch, each covering the whole run of states
 // that share its content and all of them in one frame.
 
-#import "anim.typ": check-gap, check-handout
 #import "canvas.typ": (
   anchors-of, auto-extent, body-box, body-extent, canvas-label, explicit-extent,
   geometry-label, origin-marker, paged-display, paged-pan, record-placements,
@@ -171,7 +170,7 @@
       + str(index - 1)
       + " and slide "
       + str(index)
-      + " is timed twice, by hold: on the last step of the first and by slide(wait: ..) "
+      + " is timed twice, by hold: on the last state of the first and by init(wait: ..) "
       + "on the second; one gap takes one number, so keep whichever of the two reads "
       + "better where it stands and drop the other",
   )
@@ -228,36 +227,6 @@
   refuse(which, index, stack-view, ink),
 )
 
-// The transitions a slide boundary may be given by name.
-//
-// The list lives here rather than only in the runtime because typst is what refuses a
-// misspelling, and it has to do so at compile time.
-// A name the runtime did not recognise would be a slide that quietly took the default.
-#let transition-names = ("crossfade",)
-
-// How a slide is entered, as the browser runtime reads it.
-//
-// `auto` is the deck's own transition and `none` is a cut, both typst literals; a string
-// names a transition outright.
-// A name is accepted although animo has one transition, so that a richer one is a value
-// added to `transition-names` rather than a change of what the argument takes.
-//
-// The boundary above a slide belongs to that slide and is crossed the same way in both
-// directions, so stepping back over it undoes exactly what stepping forward over it did.
-// The paged outputs ignore this entirely: two consecutive pages have nothing between them
-// to describe.
-#let transition-name(value) = {
-  assert(
-    value == auto or value == none or value in transition-names,
-    message: "transition takes `auto`, which is the deck's own, `none`, which cuts, or "
-      + "one of "
-      + repr(transition-names)
-      + ", got "
-      + describe(value),
-  )
-  if value == none { "none" } else if value == auto { "auto" } else { value }
-}
-
 // A colour overlay, as the paged outputs draw it.
 //
 // A background colour is the page's own `fill`, which is behind everything, and an overlay
@@ -276,30 +245,29 @@
   radius: 0pt,
 )
 
+/// One slide of the deck: a viewport onto a canvas that carries the body.
+/// The arguments say what the slide is, and `animation` says when anything happens to it.
+///
+/// - body (content): What is on the slide.
+/// - animation (array): The timeline, a code block of an optional `init(..)` call and
+///   `sub(..)` calls, with `import anim: *` inside it.
+/// - canvas (auto, dictionary): The canvas, sized to the content when `auto`, or stated as
+///   `(width:, height:)`.
+/// - background (none, color, content): The layer behind everything.
+/// - overlay (none, color, content): The layer in front of everything.
+/// - numbered (bool): Whether the slide counter counts this slide.
+/// -> content
 #let slide(
   body,
   animation: (),
   canvas: auto,
   background: none,
   overlay: none,
-  transition: auto,
-  wait: none,
-  hold: none,
-  handout: auto,
   numbered: true,
 ) = {
   let (fill: back-fill, ink: back-ink) = split-layer("background", background)
   let (fill: front-fill, ink: front-ink) = split-layer("overlay", overlay)
-  let entered = transition-name(transition)
-  // The initial state has no `sub` of its own, so its handout flag and the two numbers
-  // that time the gaps on either side of it are written here and resolved with every
-  // other state's.
-  let plan = resolve(
-    animation,
-    handout: check-handout("slide", handout),
-    wait: check-gap("slide", "wait", wait),
-    hold: check-gap("slide", "hold", hold),
-  )
+  let plan = resolve(animation)
   let asked = timeline-asks(plan)
   let names = asked.names
   position.step()
@@ -326,6 +294,21 @@
   context {
     let shape = deck-shape.get()
     let index = position.get().first()
+    // How the boundary above this slide is crossed, which is what the timeline's `init`
+    // says: the name of a transition, or `auto` for the deck's own, and the parameters the
+    // transition took, with the duration of `init` beside them when it states one.
+    // It belongs to this slide and is crossed the same way in both directions, so stepping
+    // back over it undoes exactly what stepping forward over it did.
+    // The paged outputs ignore it: two consecutive pages have nothing between them to
+    // describe.
+    let entered = {
+      let given = plan.init.transition
+      let args = if given == auto { (:) } else { given.args }
+      if plan.init.duration != auto {
+        args.insert("duration", plan.init.duration)
+      }
+      (name: if given == auto { "auto" } else { given.name }, args: args)
+    }
     let viewport = (width: shape.width, height: shape.height)
     let inner = (
       width: viewport.width - 2 * shape.margin,
@@ -454,7 +437,16 @@
           // entry in the plan below, for the reason the plan itself is an attribute: it
           // is one value per slide, and a browser's element inspector shows it beside
           // the slide it is about.
-          data-animo-transition: entered,
+          // The parameters travel beside the name, so the name stays one string.
+          data-animo-transition: entered.name,
+          ..if entered.args.len() == 0 { (:) } else {
+            (
+              data-animo-transition-args: json.encode(
+                entered.args,
+                pretty: false,
+              ),
+            )
+          },
           // What the browser runtime applies: the resolved display state of every state,
           // state 0 included, which the resolver reads from the timeline alone.
           // The margin and the canvas travel beside the states, because the runtime

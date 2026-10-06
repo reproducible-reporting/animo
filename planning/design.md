@@ -73,12 +73,13 @@ The initial version has the following (non)features:
 - **Numbering**: a slide number the deck reads with `slide-number()` and `slide-count()`, and a
   number finer than a slide, which is content laid out once per subslide with `per-subslide`
   and chosen by the browser rather than a value baked into a frame
-- A **crossfade or a hard cut between slides**, and nothing else between them
+- A **transition between slides**, which is a crossfade, a push, a cover or a wipe, or a hard
+  cut when it takes no time
 - Zero templating or styling features
 - Zero HTML and CSS in a deck's source: every setting the runtime reads is an argument of
   the deck's show rule, so an author is never expected to call `html.elem`
 - No footer or header support, just use `#place` and wrap `#slide` to implement recurring elements
-- Handout pages chosen per subslide with `sub(handout: ..)` and `#slide(handout: ..)`,
+- Handout pages chosen per subslide with `init(handout: ..)` and `sub(handout: ..)`,
   defaulting to the final state
 - Output types, which are paged modes rather than file formats:
   - An HTML presentation for presenting in a browser, the only animated one.
@@ -96,10 +97,6 @@ Example usage:
   // The overlay is drawn over everything else and belongs to the viewport, so
   // a `pan` moves the slide under it. Same for the background, behind it.
   overlay: place(bottom + right, dx: -1cm, dy: -1cm)[#emph[A talk]],
-  // `transition` says how this slide is entered: `auto` is the deck's own
-  // transition, `none` cuts, and a string names a transition. It is `auto` by
-  // default, and `"crossfade"` is the one transition there is.
-  transition: auto,
   // `numbered` decides whether this slide is counted by the slide counter.
   // It says nothing about whether or how a number is shown; that is the
   // author's job, with `#place` and a wrapper around `#slide`.
@@ -112,8 +109,13 @@ Example usage:
       - Each call to `sub` creates a subslide; the block joins them into a list.
       - The state before the first `sub` is a subslide of its own: it is the
         slide exactly as the body declares it.
+      - `init` is about that initial state, and it comes before the first `sub`
+        if it is there at all. It says how the slide is entered, here with a
+        push upwards over one second instead of the deck's own transition.
+        It also takes `wait`, `hold` and `handout`, as `sub` does.
     */
     import anim: *
+    init(push(direction: btt), duration: 1)
     sub(
       hide("line1"),
       reveal("line3"),
@@ -187,34 +189,17 @@ Example usage:
 ### Slides
 
 ```typst
-slide(body, animation: (), canvas: auto, background: none, overlay: none,
-      transition: auto, wait: none, hold: none, handout: auto, numbered: true, ..)
+slide(body, animation: (), canvas: auto, background: none, overlay: none, numbered: true, ..)
 ```
 
-- `animation` is the timeline, a code block of `sub(..)` calls (see *Animation primitives*).
+The arguments of `slide` say what the slide is, and `animation` says when anything happens to
+it, the way it is entered included.
+
+- `animation` is the timeline, a code block of an optional `init(..)` call followed by
+  `sub(..)` calls (see *Animation primitives*).
+  The transition into the slide, the gaps on either side of its initial state and the handout
+  flag of that state are arguments of `init`.
 - `background` and `overlay` are the section after next.
-- `transition` says how this slide is **entered**: `auto` is the deck's own transition,
-  `none` cuts, and a string names a transition, of which `"crossfade"` is the one that exists and
-  is what `auto` means.
-  A boundary uses the setting of the slide being entered, in both directions, so
-  stepping back over a boundary undoes exactly what stepping forward over it did. The duration
-  is the deck's own, `transition-duration:` on the show rule, defaulting to `0.4`, so a deck makes
-  every `auto` slide cut by setting it to zero and `prefers-reduced-motion: reduce` does the
-  same. HTML only: the paged outputs put the two slides on two pages and there is nothing
-  between them.
-- `wait` and `hold` are each a number of seconds, or `none` for a presenter click. `wait` is the
-  delay before this slide is entered, measured from the moment the previous slide's last state
-  came up. `hold` is the delay before the state after this slide's initial one is entered,
-  measured from the moment that initial state came up, which on a slide with no `sub` at all is
-  the boundary into the next slide. Their subslide counterparts are `sub(wait: ..)` and
-  `sub(hold: ..)`, and the rules are the same ones at both levels (see *Timing*). Both are
-  written here for the reason `handout` is: a slide's initial state has no `sub` of its own.
-- `handout` says whether the handout keeps this slide's **initial state**,
-  and takes the same three values as its subslide counterpart `sub(handout: ..)`:
-  `auto` keeps that state only when it is also the slide's last one,
-  `true` asks for the page, and `false` gives it up.
-  The initial state has no `sub` of its own, which is why its flag is written here
-  (see *Animation primitives*).
 - `numbered` decides only whether the slide is **counted** by the slide counter. A title or
   section slide is typically `numbered: false`. It does not decide whether or how a number is
   *shown*: there is no header or footer machinery, so displaying a number is the author's job,
@@ -656,6 +641,37 @@ A call carrying only keyword arguments is legal for the same reason,
 though `sub(wait: a)` in front of `sub(wait: b, ..ops)` is `sub(wait: a + b, ..ops)`
 with one extra state, since a wait is measured from its predecessor's trigger (see *Timing*).
 
+```typst
+init(transition, duration: auto, wait: none, hold: none, handout: auto)
+```
+
+`init(..)` is about the slide's **initial state**, state 0, which is the slide as the body
+declares it and has no `sub` of its own.
+It adds no state, so the subslides after it keep their numbers.
+A timeline holds at most one `init`, before its first `sub`, and a second one or one after a
+`sub` is refused, so that what it says never depends on where it was written.
+A timeline without `init` is one whose `init` states nothing.
+
+- `transition` is how the slide is **entered**, one of the transition functions of
+  *Transitions*. It is optional, and a slide without it takes the deck's own transition.
+- `duration:` is how long the transition into the slide takes, in seconds.
+  `auto` is the deck's `transition-duration:`, and zero is a hard cut, whatever `transition`
+  names.
+- `wait:` and `hold:` time the gaps on either side of state 0 and `handout:` says whether the
+  handout keeps it.
+  Each takes the values and has the meaning of its counterpart on `sub`, described below and
+  under *Timing*.
+
+The boundary into a slide uses its `init`, in both directions, so stepping back over a boundary
+undoes exactly what stepping forward over it did.
+That `init` belongs to the slide with the higher number, which is the slide a forward step
+enters, and so the setting is written on the slide it is about rather than on the slide that
+happens to precede it in the file.
+The `init` of the first slide of a deck has no boundary to time, so its `transition`,
+`duration:` and `wait:` say nothing.
+All of it but `handout:` is HTML only, because the paged outputs put two slides on two pages
+with nothing between them.
+
 `sub` takes three keyword arguments of its own.
 `wait:` and `hold:` are under *Timing*.
 `handout:` says whether the handout shows that subslide, and is three-valued:
@@ -668,10 +684,10 @@ with one extra state, since a wait is measured from its predecessor's trigger (s
   of the handout entirely.
 
 Every state carries this flag, the initial state included.
-That state has no `sub` of its own, so its flag is written as `#slide(handout: ..)`,
-with the same three values and the same meaning (see *Slides*).
+That state has no `sub` of its own, so its flag is written as `init(handout: ..)`,
+with the same three values and the same meaning.
 A slide with no `sub` at all has only state 0, which is therefore also its last state,
-so `auto` keeps it and `#slide(handout: false)` leaves the slide out of the handout.
+so `auto` keeps it and `init(handout: false)` leaves the slide out of the handout.
 
 The resolver therefore resolves the flag to a boolean per state, and the handout renders the
 states whose resolved flag is true. This makes `handout:` the only thing that says what a
@@ -841,25 +857,62 @@ Notes and consequences:
   does not undo a `move`. Several operations on one tag in one `sub` apply in the order written,
   as continuous operations do, so `apply("x", f, g)` in one subslide equals two subslides
   and lays out `g(f(content))`.
-- **How a region crosses its boundary.** All four take `transition:`, which names the transition
-  that carries the region they change across the epoch boundary. `auto`, the default, is the
-  deck's own transition, and a string names a transition, of which `"crossfade"` is the one that
-  exists. It is an argument of the operation rather than of `sub`, so that one subslide can
-  carry one region with one transition and another region with another. Two operations that
-  change one region at one boundary and name two transitions are refused, as two that disagree
-  about `delay:` are. The argument is HTML only, because two pages have nothing between them.
+- **How a region crosses its boundary.** All four take `transition:`, one of the transition
+  functions of *Transitions*, which carries the region they change across the epoch boundary.
+  `auto`, the default, is the crossfade, whatever the deck's `transition:` says, because that
+  argument is about slide boundaries. The operation's own `delay:` and `duration:` time the
+  transition, and a `duration:` of zero is a hard cut of the region. It is an argument of the
+  operation rather than of `sub`, so that one subslide can carry one region with one transition
+  and another region with another. Two operations that change one region at one boundary and
+  name two transitions are refused, as two that disagree about `delay:` are. The argument is
+  HTML only, because two pages have nothing between them.
 - Because `replace` and `apply` carry content and functions, plan descriptors are no longer
   pure data in the strict sense. Tier-1 tests should therefore assert on the *resolved
   structure* (tag names, per-state flags, epoch boundaries and counts) rather than on the
   payloads, which do not compare usefully.
+
+### Transitions
+
+A **transition** is the way a boundary is crossed, and it is named by a function of the `anim`
+module, so that it is written where the timeline is written and an editor can show the
+parameters each one takes.
+
+| Transition              | What it does                                         | Slide | Region |
+| ----------------------- | ---------------------------------------------------- | ----- | ------ |
+| `crossfade()`           | fades the outgoing content out and the incoming in   | yes   | yes    |
+| `push(direction: rtl)`  | moves the incoming slide in and the outgoing one out | yes   | no     |
+| `cover(direction: rtl)` | moves the incoming slide in over the outgoing one    | yes   | no     |
+| `wipe(direction: ltr)`  | uncovers the incoming slide behind a moving edge     | yes   | no     |
+
+A transition is written in three places:
+
+- as the positional argument of `init`, for the boundary into the slide;
+- as `transition:` on a structural primitive, for the region it changes;
+- as `transition:` on the deck's show rule, for every slide whose `init` names none.
+
+A transition says what the crossing looks like and nothing about time.
+The time is stated by the call that causes the change, which is the structural primitive for a
+region and `init` for a slide, so one `sub` states the timing of all its operations in one way,
+and a transition never receives a number it would have to refuse.
+A **hard cut** is a crossing that takes no time, so it is written as `duration: 0` rather than
+as a transition of its own, and every transition with a duration of zero is the same cut.
+
+A `direction` is the direction of travel on a forward step, one of `ltr`, `rtl`, `ttb` and
+`btt`, which are typst's own directions.
+A backward step plays the same transition from the other end, so it travels the other way.
+A transition a region cannot take, such as a push, is refused on a structural primitive at
+compile time.
+The names, the parameters and their values are checked in typst rather than only in the
+runtime, because a transition the runtime did not recognise would be a boundary that quietly
+took a default.
 
 ### Timing
 
 Four arguments decide *when* and *how long* rather than *what*, and keeping them apart by name is
 the whole of their API. `wait:` and `hold:` time a **subslide**, the first naming the gap before
 it and the second the gap after it; `delay:` times an **operation inside a subslide**; `duration:`
-says
-how long that operation then takes. All of them are plain numbers of seconds, because typst has
+says how long that operation then takes, and on `init` how long the transition into the slide
+takes. All of them are plain numbers of seconds, because typst has
 no time literal of its own and `2s` would not parse, and because one unit across the whole
 surface is what keeps two numbers on one call comparable. All of them are HTML only: the paged
 outputs are one page per state with nothing between them, so there is no clock for any of them
@@ -870,15 +923,25 @@ runtime accepts either spelling.
 
 **Three arguments of the deck's show rule say what motion costs when nothing else does.**
 `primitive-duration:` is how long one animation primitive takes, `transition-duration:` how long
-a transition between two slides takes, and `easing:` is the timing function both of them follow:
+a transition between two slides takes, and `easing:` is the timing function both of them follow.
+A fourth, `transition:`, is the transition of every slide whose `init` names none, the
+crossfade by default, as in `transition: anim.push(direction: btt)`.
+It reaches the runtime in the deck's configuration, `data-animo-config`, rather than as a custom
+property, because it is structured and no media query has to reach it:
 
 ```typst
 #show: animo.with(primitive-duration: 0.2, transition-duration: 0, easing: "ease-out")
 ```
 
 The two durations are numbers of seconds like every other time an author writes, `0.4` each by
-default, and a zero means that kind of motion is not animated, so the deck above cuts
-between its slides while the steps inside them keep moving. `easing:` takes one of `"linear"`,
+default. They are defaults and nothing more, so a call that states a `duration:` of its own
+takes that one, and a zero is the default of a deck whose motion of that kind is not animated
+unless a call asks for it. The deck above cuts between its slides while the steps inside them
+keep moving. A slide of that deck that is to be pushed in states the duration as well as the
+transition, as in `init(push(), duration: 0.4)`, because `init(push())` takes the deck's
+`transition-duration:`, which is zero there, and is a cut. The manual has to say so where it
+teaches `init`, because a transition that is named and not seen is the mistake this rule
+invites. `easing:` takes one of `"linear"`,
 `"ease"`, `"ease-in"`, `"ease-out"` and `"ease-in-out"`, the last being the default, and a
 name outside that list is refused at compile time, because a timing function the browser
 rejects would throw in the middle of a talk. The three reach the runtime as the custom
@@ -895,14 +958,14 @@ levels:
 - `sub(wait: 2, ..ops)` brings that subslide up two seconds after the previous state came up,
   instead of on a presenter click; `sub(hold: 2, ..ops)` keeps it up for two seconds and then
   brings up whatever follows it, which on the last `sub` of a slide is the next slide;
-- `#slide(wait: 2, ..)` enters that slide two seconds after the previous slide's last state came
-  up; `#slide(hold: 2, ..)` holds its initial state for two seconds, which on a slide with no
+- `init(wait: 2)` enters that slide two seconds after the previous slide's last state came
+  up; `init(hold: 2)` holds its initial state for two seconds, which on a slide with no
   `sub` at all is again the boundary into the next slide.
 
 `none`, the default of both, waits for the presenter. Two spellings of one gap is one keyword
 more than the surface needs, and it is here because each of them is the natural one for a
 different sentence. "This slide needs no click" is about the slide being entered and is
-`#slide(wait: 0)`; "do not stop here, run straight on" is about the motion that is playing and is
+`init(wait: 0)`; "do not stop here, run straight on" is about the motion that is playing and is
 `sub(hold: 0)` on the subslide that plays it, which is also where the author is looking. Neither
 covers the whole surface alone. `wait:` has no reading on the first state of a deck, which has no
 predecessor, and `hold:` has none on the last, which has no successor; neither of those cases
@@ -951,7 +1014,8 @@ already showing the state it is entered at, and it moves into that state rather 
 into it. Going forward the audience saw one motion, the step running inside the slide while the
 boundary carried it away, so a backward step that snapped the slide into place would crossfade a
 picture that was never shown. The two clocks stay their own: the slide moves on
-`--animo-primitive-duration` and the boundary crosses on `--animo-transition-duration`,
+`--animo-primitive-duration` and the boundary crosses on the duration of the slide's `init`,
+which is `--animo-transition-duration` unless it states one,
 started on one frame as the forward join started them.
 A forward step is the asymmetry that makes this safe to state.
 It snaps, because a slide keeps the state it was last shown in and may be entered at state 0
@@ -1041,22 +1105,20 @@ API effect's duration, exactly where `delay:` becomes that effect's delay, so th
 has one clock, an interrupted subslide is unchanged, and a backward step keeps every operation's own
 duration while mirroring the moment it starts at.
 
-**A reader who asked for less motion gets none, whatever the deck or the timeline says.** Every
-duration before `duration:` is a custom property on `:root`, and that is the only reason
-`prefers-reduced-motion: reduce` works at all: it is one media query over two custom
-properties, and a number written in a typst source is invisible to it. The deck writes its own
-`primitive-duration:` and `transition-duration:` into the same `:root`,
-after the stylesheet that holds the query,
-so both declarations in the query are `!important`
+**A reader who asked for less motion gets none, whatever the deck or the timeline says.**
+A number written in a typst source is invisible to a media query, so the reader's preference
+reaches the runtime as a custom property of its own on `:root`, `--animo-motion`, which is
+`auto` unless `prefers-reduced-motion: reduce` sets it to `none`.
+The runtime reads it at every step, and while it is `none` every step snaps, whatever duration
+the deck or a call states, and takes the same path a deep link takes.
+It is a property of its own rather than a zero written over the deck's durations, because a
+deck duration is a default that a call's own `duration:` overrides, so a zeroed default would
+leave every stated duration animating.
+The deck writes its own `:root` block after the stylesheet that holds the query,
+so the declaration in the query is `!important`
 and the guard wins by cascade weight rather than by source order.
 That covers a stylesheet an author adds to the page as well, which source order alone did not,
 as chromium 151 and firefox 153 both showed.
-An explicit `duration:` is therefore zeroed when `--animo-primitive-duration` is zero,
-by the runtime rather than by the stylesheet, and takes the same snapping path a deep link takes.
-Making `duration:` a multiple of `--animo-primitive-duration` instead of a number of seconds
-would get the same property arithmetically, and it was rejected for its unit:
-`delay: 0.2, duration: 5` would then be two numbers on one call meaning seconds and multiples of
-something else.
 
 A `delay:` goes the same way, and neither of the two gap numbers does. A step whose duration is
 zero has no motion for one operation to arrive late inside, so the runtime drops the delays of a
@@ -1172,11 +1234,12 @@ Animations are then performed in the browser:
   outgoing rendering down to the regions it hands over
 - a slide boundary crossfades the two **slide containers** by the same means: `plus-lighter` on
   the containers inside the stage, which isolates, the outgoing one kept laid out until the
-  two have crossed, and `--animo-transition-duration` rather than `--animo-primitive-duration`
-  for its length.
+  two have crossed, and the duration of the slide's `init`, `--animo-transition-duration`
+  unless it states one, rather than `--animo-primitive-duration` for its length.
   Nothing is scoped here, because the two slides share nothing to hold still, which is why
-  the whole container is the unit. `transition: none` and a duration of zero take the same
-  path, which is no animation at all and one container shown in place of the other.
+  the whole container is the unit. A duration of zero, which is a hard cut whatever the
+  transition, takes the path with no animation at all, one container shown in place of the
+  other.
   Two things differ from the epoch crossfade, and both are measured rather than chosen.
   A slide outside a boundary is hidden with `display` where a frame is hidden with `visibility`,
   because a frame nobody is watching has to keep the geometry the morph will read while a slide
@@ -1184,6 +1247,16 @@ Animations are then performed in the browser:
   of a long deck out costs seconds of first paint. And the deck's surround is a colour on the
   page rather than on the element that isolates the blend, whose own ground would otherwise be
   summed into both slides (see *Findings* for both)
+- a slide boundary that pushes, covers or wipes animates `translate` or a `clip-path` inset on
+  the two containers instead. A transition is a function of the boundary's owner, the slide with
+  the higher number, and of a progress `p` from 0, where the owner has not arrived, to 1, where
+  it has. A forward step animates each container from what it shows to the state at 1 and a
+  backward step to the state at 0, which is the mirror *Timing* prescribes, and a slide that had
+  no layout before the step starts at the far end. The owner comes later in the document, so it
+  is in front in both directions. These transitions overlap two opaque slides, which would add
+  under `plus-lighter`, so both containers take `mix-blend-mode: normal` until the deck moves
+  again, which is as long as the slide being left keeps its layout; a single slide renders the
+  same under either blend (see *Findings*). The stage clips a slide pushed out of it
 
 Five rules make this work:
 
@@ -1325,13 +1398,13 @@ the ones it leaves alone, because a property that holds still in the keyframes s
 from drawing the ones beside it (see *Findings*). A primitive takes `0.4s` and eases in and
 out; both are custom properties on `:root`,
 written there by the deck from its `primitive-duration:` and `easing:` arguments,
-so the values are in the stylesheet rather than in the runtime
-and `prefers-reduced-motion: reduce` sets the duration to zero,
-which is also what a deep link and the first paint get. A slide boundary has a third such
-property, `--animo-transition-duration`, also `0.4s`, so a deck of hard cuts states one argument;
-`prefers-reduced-motion` zeroes that one too. An operation that states a
-`duration:` of its own overrides the first of the three for itself, and a zeroed
-`--animo-primitive-duration` still zeroes it, so reduced motion is decided in one place
+so the values are in the stylesheet rather than in the runtime.
+A slide boundary has a third such property, `--animo-transition-duration`, also `0.4s`, so a
+deck of hard cuts states one argument.
+An operation that states a `duration:` of its own overrides the first of the three for itself,
+and an `init` that states one overrides the third, also where the deck's own is zero.
+Reduced motion is decided in one place, `--animo-motion`, which `prefers-reduced-motion: reduce`
+sets to `none` and under which every step snaps, as a deep link and the first paint do
 (see *Timing*).
 
 An operation's `delay:` and `duration:` become the effect's own delay and duration rather than a
@@ -1407,14 +1480,14 @@ A panned subslide is therefore a page showing a different part of the canvas,
 so panning survives into the paged output.
 Everything under *Timing* is absent rather than approximated.
 A page has no clock, so `wait:`, `hold:`, `delay:` and `duration:` say nothing here.
-Neither does `transition:`, which describes what happens between two pages
+Neither does a transition, which describes what happens between two pages
 that are simply consecutive.
 
 **Static handouts.** One page per state whose `handout` flag resolves to true, which by default is
 the **final state of the slide** and no other: the viewport at its final position, like the
 static presentation. Extra pages are asked for with `sub(handout: true, ..)`, and with
-`#slide(handout: true)` for the slide's initial state. Pages are given up with
-`sub(handout: false, ..)` and `#slide(handout: false)`, so an ordinary slide contributes one page
+`init(handout: true)` for the slide's initial state. Pages are given up with
+`sub(handout: false, ..)` and `init(handout: false)`, so an ordinary slide contributes one page
 and an author who says so contributes any number, the empty one included.
 This is lossy by construction for slides that
 overwrite content: a `replace` destroys what it replaces, and only an explicit `handout: true`
@@ -1721,27 +1794,59 @@ These were the open questions of the earlier drafts. They are settled; the evide
   The same argument settles it as settles `wait:` and `hold:` under *Timing*: a marker
   whose meaning depends on its position in the block is harder to read and to validate than a
   keyword on the subslide it belongs to. It also keeps one more name out of the top-level namespace,
-  and it means `sub` remains the only thing a timeline block contains, which is what lets `sub`
-  validate its own arguments (see the `import *` footgun under *Findings*).
+  and it keeps a timeline block down to `sub` calls and at most one `init` before them, which is
+  what lets the timeline refuse anything else (see the `import *` footgun under *Findings*).
 
-- **Can the handout keep a slide's initial state?** Yes, with `#slide(handout: ..)`.
+- **Can the handout keep a slide's initial state?** Yes, with `init(handout: ..)`.
   The flag belongs to a state, and the initial state has no `sub` of its own,
-  so it is written on the slide, with the three values `sub(handout: ..)` takes.
+  so it is written on `init`, which is the call about that state,
+  with the three values `sub(handout: ..)` takes.
   This matters as soon as a timeline restores what the body hides,
   since the handout then keeps the completed slide rather than the state the timeline filled in.
-  The alternative was a leading `sub` carrying the flag and nothing else,
-  which keeps every handout page chosen in one place.
+  The choice also fills a gap: a slide with no `sub` at all can be left out of the handout.
+  The next entry says why the flag is on `init` rather than on the slide or on a leading `sub`.
+
+- **Where does a slide say what happens to its initial state?** In `init(..)`, the first call
+  of its timeline, which takes the transition into the slide, its `duration:`, the `wait:` and
+  `hold:` around state 0 and its `handout:` flag.
+  The arguments of `slide` then say what the slide is, its canvas, its layers and whether it is
+  counted, and the timeline says when anything happens to it, which is the separation the
+  package is built on.
+  The first answer was a leading `sub` carrying the flags and nothing else.
   It does not name the initial state, though:
   it is a second state with the same pixels, which shifts every subslide index by one,
   and it has to be written `sub(wait: 0, handout: true)` to avoid a presenter click
   that changes nothing.
-  The two gap numbers read the same way.
-  `#slide(wait: ..)` times the entry into the initial state and `#slide(hold: ..)` the exit
-  from it, so `#slide(handout: ..)` says whether that state is kept,
-  and a slide's own arguments are where its initial state is spoken about at every level.
-  The shorter form is also the one that is easier to explain.
-  The choice also fills a gap that existed before:
-  a slide with no `sub` at all could not be left out of the handout, and now it can.
+  The second answer was a set of slide arguments, `transition:`, `wait:`, `hold:` and
+  `handout:`, beside the ones that describe the slide.
+  It made the slide's signature a mix of what and when, and it put the transition of the slide
+  in a different call from the transitions of its regions.
+  `init` adds no state, so it keeps every subslide index, and it takes the keywords of `sub`
+  with the meaning they have there, so the initial state is spoken about the way every other
+  state is.
+  It is a call of its own rather than a keyword of the first `sub`, because a slide without
+  `sub` has an initial state too.
+  A timeline holds it at most once and before its first `sub`, so its position carries no
+  meaning, which is the condition the previous entry puts on a call between `sub` calls.
+
+- **Where is the timing of a transition stated, and what is a hard cut?** On the call that
+  causes the change, and a hard cut is a duration of zero.
+  A structural primitive states the `delay:` and `duration:` of the transition that carries its
+  region, as a continuous primitive states its own, so one `sub` times all its operations one
+  way. `init` states the `duration:` of the transition into the slide, because no primitive
+  causes that change, and `wait:` takes the place of a delay there.
+  A transition is then only what the crossing looks like.
+  A cut is the crossing that takes no time, so `duration: 0` with any transition is a cut,
+  which the runtime already treated as one code path, and a transition named `cut` would have
+  been a transition that refused a duration.
+  It follows that a deck's durations are defaults that a stated `duration:` overrides, also
+  when the default is zero, since otherwise a deck of hard cuts could not push one slide in.
+  The cost is that `init(push())` in such a deck is a cut, so the manual says that a named
+  transition in a deck of cuts needs its duration too.
+  Reduced motion then needs a property of its own, `--animo-motion`, because zeroing a
+  default no longer stops a stated duration.
+  A per-slide `easing` was dropped with the dictionary form of a transition, because a
+  primitive has none, and easing on every call is left for when a deck needs it.
 
 - **Must the syntax become heavier (body as a function)?** No. `sanor` threads a mutable
   context through the body (`s => ([body], s)`) only because it accumulates actions while
@@ -1832,23 +1937,23 @@ These were the open questions of the earlier drafts. They are settled; the evide
   three well. It is also what makes a mid-flight assertion reproducible, because a test pauses
   the animation and states a `currentTime` instead of racing it, and it is where an operation's
   own `duration:` and the epoch crossfade's shared clock belong. The two values live in CSS,
-  as `--animo-primitive-duration` and `--animo-easing` on `:root`, which is what lets
-  `prefers-reduced-motion: reduce` set the duration to zero; the deck writes them there from
+  as `--animo-primitive-duration` and `--animo-easing` on `:root`, beside the `--animo-motion`
+  that `prefers-reduced-motion: reduce` sets to `none`; the deck writes them there from
   its show rule arguments, so an author states them in typst and not in a `#slide` argument.
   A duration of zero is a step that snaps, which is the same path a deep link takes.
 
 - **How does an author state the deck's tempo?** As three arguments of the deck's show rule,
   `primitive-duration:`, `transition-duration:` and `easing:`,
   which the deck writes into the `:root` block of its own stylesheet beside its geometry.
-  The values have to end up in CSS, because
-  that is the only form `prefers-reduced-motion: reduce` can reach and because the runtime
-  reads them at every step, so restating one costs no second pass over the timeline. Leaving
+  The values end up in CSS, beside the `--animo-motion` that `prefers-reduced-motion: reduce`
+  sets, and the runtime reads them at every step, so restating one costs no second pass over
+  the timeline. Leaving
   the author to write that CSS was the first answer, and it was wrong on two counts. Writing a
   `<style>` element from typst means calling `html.elem`, guarded by a `target()` test because
   the paged outputs have no `html` module, which is markup in a deck's source and a guard an
   author has to know about. Such a stylesheet also lands after animo's own, where it outranked
   the reduced-motion query in chromium 151 and firefox 153, so a deck that restated its tempo
-  quietly took the guarantee away from the reader. Making the query's two declarations
+  quietly took the guarantee away from the reader. Making the query's declaration
   `!important` settles both that stylesheet and the deck's own block, because the guard then
   wins by cascade weight rather than by source order. An easing is checked against a list of
   five names in typst rather than passed through, because a timing function the browser
@@ -2094,31 +2199,39 @@ These were the open questions of the earlier drafts. They are settled; the evide
   rather than a place one cannot go. Tags and regions are refused there rather than ignored, for
   the reason *Tags* gives for raw cetz draw commands: a silent no-op is a poor diagnosis.
 
-- **What happens between two slides?** A crossfade, or nothing. `#slide(transition: auto)` is the
-  default and crossfades; `transition: none` cuts. The boundary takes the setting of the slide
-  being **entered**, in both directions, so stepping back over a boundary undoes exactly what
-  stepping forward over it did, and the setting is written on the slide it is about, not on the
-  slide that happens to precede it in the file. The mechanism is the one the epoch crossfade
-  already proves, `plus-lighter` on the two containers inside an isolated stacking context, which
-  is what keeps two opaque backgrounds from dipping halfway through. Two slides are laid out
+- **What happens between two slides?** A transition, which may take no time. A slide without
+  a transition of its own takes the deck's, the crossfade unless the show rule's `transition:`
+  names another, and `init(duration: 0)` cuts. The boundary takes the `init` of the slide with
+  the higher number, which is the slide a forward step **enters**, in both directions, so
+  stepping back over a boundary undoes exactly what stepping forward over it did, and the
+  setting is written on the slide it is about, not on the slide that happens to precede it in
+  the file. The crossfade uses the mechanism the epoch crossfade already proves,
+  `plus-lighter` on the two containers inside an isolated stacking context, which is what keeps
+  two opaque backgrounds from dipping halfway through. A push, a cover and a wipe move or clip
+  the containers instead, and blend them normally while they overlap. Two slides are laid out
   while they cross and no more, because laying every slide of a long deck out for the whole
   session costs it seconds of first paint (see *Findings*). The length is the deck's
-  `transition-duration:`, 0.4 seconds, beside `primitive-duration:` and `easing:`:
-  a deck with nothing but hard cuts sets it to zero, `prefers-reduced-motion: reduce` does
-  the same, and `transition: none` and a zero duration take one code path. Richer transitions
-  (a wipe, a push) are left for later, and the argument is already open to them: beside the
-  typst literals `auto` and `none` it takes the name of a transition, so a second
-  one is a value added to a list rather than a change of what the argument takes. The list of
-  names lives in typst rather than only in the runtime, because a misspelling has to be refused
-  at compile time: a name the runtime did not recognise would be a slide that quietly took the
-  default.
+  `transition-duration:`, 0.4 seconds, beside `primitive-duration:` and `easing:`, unless the
+  slide's `init` states one.
+  A transition is a function of the `anim` module, as in `push(direction: ttb)`, rather than a
+  name per variant or a dictionary. A parameter is then a named argument, so a misspelt one is
+  refused by typst at the call that wrote it, a misspelt transition is an unknown variable, and
+  an editor shows each transition's parameters and their defaults. The functions live in the
+  `anim` module, where new transitions add no names to the namespace of the slide body.
+  A direction is a typst direction, `ltr`, `rtl`, `ttb` or `btt`,
+  which is the value the pdfpc helpers of other typst presentation packages take for a slide
+  transition, and it is the direction of travel on a forward step.
+  The values of the parameters are checked in typst rather than only in the runtime, because a
+  mistake has to be refused at compile time: a value the runtime did not recognise would be a
+  slide that quietly took a default.
 
 - **Where is the transition of an epoch boundary named?** On the structural operation, as
   `transition:`, beside its `delay:` and `duration:`. What crosses a boundary is a region, and
   two regions of one boundary can want two transitions, such as a morph for an equation whose
   terms move and a crossfade for the caption replaced beside it. An argument of `sub` would make
   that cost two subslides. A region already takes its timing from its operations, and its
-  transition follows the same rule and the same refusal.
+  transition follows the same rule and the same refusal. It takes the transition functions a
+  slide takes, because one concept has one spelling, and refuses the ones a region cannot take.
 
 - **Where do the title and the language of the HTML page come from?** From `set document(..)`
   and `set text(lang: ..)`, as for any typst document, so nothing is stated twice. Typst writes
@@ -2129,16 +2242,16 @@ These were the open questions of the earlier drafts. They are settled; the evide
   side of the gap it times, and yes. The three knobs are `wait:`, `hold:` and `delay:`, and
   *Timing* states them. `wait:` names the gap before the subslide it is written on and `hold:`
   the gap after it, both at both levels, and a slide's initial state is timed by
-  `#slide(wait: ..)` and `#slide(hold: ..)` because it has no `sub` of its own.
+  `init(wait: ..)` and `init(hold: ..)` because it has no `sub` of its own.
 
   Only `wait:` was in the first draft, which stated the rule as the delay before a subslide on the
-  grounds that a "hold this state for *n* seconds" keyword would need two slide-level names to
+  grounds that a "hold this state for *n* seconds" keyword would need two names to
   cover a slide's first and last states, and recorded as a real cost that the other form
   survives editing better. Using the package is what reopened it. Two of the three grounds did
-  not survive. The two-keyword claim is wrong: `#slide(hold: ..)` times state 0, every later
+  not survive. The two-keyword claim is wrong: `init(hold: ..)` times state 0, every later
   state is a `sub` that carries its own, and the last state of a slide with no `sub` at all *is*
-  state 0, so one slide-level keyword covers it either way. And the coverage `wait:` alone was
-  supposed to buy is not there: `#slide(wait: ..)` on the first slide of a deck does nothing,
+  state 0, so one keyword covers it either way. And the coverage `wait:` alone was
+  supposed to buy is not there: `init(wait: ..)` on the first slide of a deck does nothing,
   because a gap is read when its state is entered from a predecessor and state 0 of slide 1 has
   none. What is left is that the two forms are natural for different sentences and fail in
   opposite directions when a timeline is edited, which is why both are implemented.

@@ -136,9 +136,10 @@ def test_a_document_that_states_nothing_has_no_title_and_typsts_language(open_pa
 
 
 def test_the_deck_element_carries_its_settings_as_json(open_page, three_slides):
-    """The channel for the settings of the controls exists before any setting does."""
+    """The deck's own transition is the setting a deck that states nothing still has."""
     page = open_page(three_slides)
-    assert page.locator(".animo-deck").get_attribute("data-animo-config") == "{}"
+    config = page.locator(".animo-deck").get_attribute("data-animo-config")
+    assert config == '{"transition":{"name":"crossfade"}}'
 
 
 # The tempo.
@@ -152,6 +153,7 @@ TEMPO_PROPERTIES = """() => {
         step: style.getPropertyValue('--animo-primitive-duration').trim(),
         slide: style.getPropertyValue('--animo-transition-duration').trim(),
         easing: style.getPropertyValue('--animo-easing').trim(),
+        motion: style.getPropertyValue('--animo-motion').trim(),
     };
 }"""
 
@@ -168,6 +170,7 @@ def test_the_deck_writes_its_tempo_into_the_stylesheet(page, open_page, typst: T
         "step": "0.2s",
         "slide": "0s",
         "easing": "ease-out",
+        "motion": "",
     }
 
 
@@ -175,17 +178,20 @@ def test_reduced_motion_outranks_a_deck_that_asked_for_motion(page, open_page, t
     """The deck writes its `:root` block after animo's stylesheet, so order cannot decide this.
 
     The reduced-motion query carries `!important` for that reason, and this is the test
-    that says so: without it the deck's own durations would win, and a reader who asked
-    for less motion would get the deck's answer instead of theirs.
+    that says so: without it a later `:root` block could set the property back, and a reader
+    who asked for less motion would get the deck's answer instead of theirs.
+    The deck's durations stay as stated, because they are defaults that a duration written
+    in the timeline overrides, so the query sets a property of its own.
     """
     page.emulate_media(reduced_motion="reduce")
     source = deck(
         "slide[One]", "slide[Two]", timing="primitive-duration: 2, transition-duration: 2"
     )
     open_page(typst.html(source, name="reduced-tempo.html"))
+    page.add_style_tag(content=":root { --animo-motion: auto }")
     properties = page.evaluate(TEMPO_PROPERTIES)
-    assert properties["step"] == "0s"
-    assert properties["slide"] == "0s"
+    assert properties["motion"] == "none"
+    assert properties["step"] == "2s"
 
 
 # The navigation.

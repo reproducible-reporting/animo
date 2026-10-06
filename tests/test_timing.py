@@ -42,10 +42,12 @@ def resolved(timeline: str, *assertions: str, wait: str = "none", hold: str = "n
     assertions
         Typst expressions, each asserted with the plan bound to `plan`.
     wait, hold
-        The slide's own two gap numbers, as typst literals.
-        They are what `#slide(wait: ..)` and `#slide(hold: ..)` hand the resolver
-        for state 0.
+        The two gap numbers of the initial state, as typst literals.
+        Anything but `none` is written as an `init(wait: .., hold: ..)` ahead of the
+        timeline.
     """
+    if wait != "none" or hold != "none":
+        timeline = f"init(wait: {wait}, hold: {hold})\n{timeline}"
     steps = "\n".join("  " + line for line in timeline.splitlines())
     return "\n".join(
         (
@@ -54,7 +56,7 @@ def resolved(timeline: str, *assertions: str, wait: str = "none", hold: str = "n
             "  import anim: *",
             steps,
             "}",
-            f"#let plan = resolve(timeline, wait: {wait}, hold: {hold})",
+            "#let plan = resolve(timeline)",
             "#let names = timeline-asks(plan).names",
             *assertions,
             "",
@@ -183,8 +185,8 @@ sub(hide("a"))
     )
 
 
-def test_the_slide_writes_the_wait_of_its_initial_state(typst: TypstRunner):
-    """State 0 has no `sub` of its own, so `#slide(wait: ..)` is where its wait is written."""
+def test_init_writes_the_wait_of_the_initial_state(typst: TypstRunner):
+    """State 0 has no `sub` of its own, so `init(wait: ..)` is where its wait is written."""
     typst.ok(
         resolved(
             'sub(wait: 1, reveal("a"))',
@@ -252,7 +254,7 @@ sub(hide("a"))
 
 
 def test_the_slide_writes_the_hold_of_its_initial_state(typst: TypstRunner):
-    """State 0 has no `sub`, so how long it is held is written on the slide.
+    """State 0 has no `sub`, so how long it is held is written on `init`.
 
     This is the gap the author thinks of as "how long the slide stands there before it
     starts moving", and it is one keyword rather than two: every later state is a `sub`
@@ -314,11 +316,11 @@ sub(wait: 2, reveal("b"))
     assert "sub 3's wait:" in result.stderr
 
 
-def test_the_slides_own_hold_can_collide_with_the_first_subs_wait(typst: TypstRunner):
-    """State 0's two numbers are `#slide`'s, so the slide is one side of that gap."""
+def test_the_hold_of_init_can_collide_with_the_first_subs_wait(typst: TypstRunner):
+    """State 0's two numbers are its `init`'s, so `init` is one side of that gap."""
     typst.fails(
         resolved('sub(wait: 1, reveal("a"))', hold="2"),
-        "slide(hold: ..)",
+        "init(hold: ..)",
     )
 
 
@@ -368,17 +370,20 @@ def test_a_slide_boundary_timed_from_both_sides_is_refused(typst: TypstRunner):
     result = typst.fails(
         deck(
             "slide(animation: { import anim: *\n  sub(hold: 1) })[= First]",
-            "slide(wait: 2)[= Second]",
+            "slide(animation: anim.init(wait: 2))[= Second]",
         ),
         "timed twice",
     )
     assert "slide 1 and slide 2" in result.stderr
 
 
-def test_the_slides_own_hold_can_time_the_boundary_after_it(typst: TypstRunner):
-    """A slide with no `sub` has one state, so `#slide(hold: ..)` times its boundary."""
+def test_the_hold_of_init_can_time_the_boundary_after_it(typst: TypstRunner):
+    """A slide with no `sub` has one state, so `init(hold: ..)` times its boundary."""
     typst.fails(
-        deck("slide(hold: 1)[= First]", "slide(wait: 2)[= Second]"),
+        deck(
+            "slide(animation: anim.init(hold: 1))[= First]",
+            "slide(animation: anim.init(wait: 2))[= Second]",
+        ),
         "timed twice",
     )
 
@@ -392,9 +397,9 @@ def test_a_hold_does_not_reach_across_a_slide_that_says_nothing(typst: TypstRunn
     """
     typst.ok(
         deck(
-            "slide(hold: 1)[= First]",
+            "slide(animation: anim.init(hold: 1))[= First]",
             "slide[= Second]",
-            "slide(wait: 2)[= Third]",
+            "slide(animation: anim.init(wait: 2))[= Third]",
         )
     )
 
@@ -602,11 +607,16 @@ def test_two_boundaries_are_timed_independently(typst: TypstRunner):
 
 # Tier 2: a page has no clock.
 
-TIMED = timeline(
+TIMED_STEPS = (
     'sub(wait: 2, reveal("a", delay: 0.4, duration: 3))',
     'sub(replace("b", delay: 0.3, duration: 2)[A longer claim than the one it replaces.])',
     "sub(pan(dx: 1cm, delay: 0.1, duration: 0.1))",
 )
+
+TIMED = timeline(*TIMED_STEPS)
+
+TIMED_ENTRY = timeline("init(wait: 1)", *TIMED_STEPS)
+"""The timed steps on a slide whose own entry is timed as well."""
 
 UNTIMED = timeline(
     'sub(reveal("a"))',
@@ -621,10 +631,10 @@ BODY = '#tag("a")[Hidden at first.]\n  #tag("b")[A claim.]'
 def test_the_paged_outputs_are_unchanged_by_any_of_the_three(paged: PagedRunner, mode):
     """One page per state with nothing between them, so no number has a clock here.
 
-    The slide-level wait is on the deck as well as the subslide one, because all three
+    The wait of `init` is on the deck as well as the subslide one, because all three
     are absent rather than approximated on paper.
     """
-    timed = paged.png(deck(f"slide(wait: 1, animation: {TIMED})[{BODY}]"), mode=mode)
+    timed = paged.png(deck(f"slide(animation: {TIMED_ENTRY})[{BODY}]"), mode=mode)
     plain = paged.png(deck(f"slide(animation: {UNTIMED})[{BODY}]"), mode=mode)
     assert len(timed) == len(plain)
     for index, (one, other) in enumerate(zip(timed, plain, strict=True)):

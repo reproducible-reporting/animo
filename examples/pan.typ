@@ -19,10 +19,11 @@
   body,
 )
 
-// `handout: true` on the slide keeps the overview, which the last state has panned away
+// `handout: true` on `init` keeps the overview, which the last state has panned away
 // from: a handout page is the viewport of one state and shows no more of the canvas.
-#slide(handout: true, animation: {
+#slide(animation: {
   import anim: *
+  init(handout: true)
   // `relto` shows the tag the way a fresh slide shows its first line,
   // which is at the deck's own margin.
   sub(handout: true, pan(relto: "right"))

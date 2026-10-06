@@ -184,6 +184,19 @@ Text that should not be dragged into the crossfade.
 Stepping backwards returns exactly the earlier rendering,
 and a deep link into a later epoch shows that epoch without animating into it.
 
+The dissolve takes the `duration:` of the primitive that changes the region,
+which is the deck's `primitive-duration` unless the primitive states one,
+and the `delay:` of the primitive holds it back.
+A `duration:` of zero swaps the content at once, which is a hard cut of the region:
+
+```typst
+sub(replace("claim", duration: 0)[The second answer.])
+```
+
+The dissolve is the `crossfade()` [transition](reference.md#transitions),
+which the `transition:` argument of the four primitives may also name explicitly.
+The transitions that move a whole slide, such as a push, are refused there.
+
 ## Selecting States for Handouts
 
 `replace` and `remove` **destroy** what they replace or remove,

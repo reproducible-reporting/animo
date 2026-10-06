@@ -144,8 +144,9 @@
 //
 // `epochs` holds, per epoch, the groups that the boundary starting it redraws, which is
 // what the transition carries from the outgoing frame to the incoming one, each with the
-// timing of the operations that changed it and the transition they named for it, which is
-// left out for `auto`. The first epoch begins no boundary and its list is empty.
+// timing of the operations that changed it and the name of the transition they named for
+// it, with its parameters when it has any, both left out for `auto`.
+// The first epoch begins no boundary and its list is empty.
 //
 // A state also carries the `wait` before it is entered, the `hold` before the state after
 // it is, the `timing` of the operations its own step performed and the `span` of that
@@ -174,7 +175,14 @@
     regions: groups.map(region => (
       group: region.group,
       ..entry("timing", pruned-timing(region.timing)),
-      ..entry("transition", if region.transition != auto { region.transition }),
+      ..if region.transition != auto {
+        (
+          transition: region.transition.name,
+          ..entry("args", if region.transition.args.len() > 0 {
+            region.transition.args
+          }),
+        )
+      },
     )),
   )),
 )

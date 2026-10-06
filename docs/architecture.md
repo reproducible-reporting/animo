@@ -35,8 +35,9 @@ the renderings of a slide then define each glyph they share once between them in
 once each, which takes a deck of several epochs a slide down by about 40% on the wire.
 The slide container clips the canvas.
 The container also carries `data-animo-transition`, which is how the boundary above the
-slide is crossed: one value per slide, so it is an attribute rather than an entry in the
-plan, for the reason the plan itself is an attribute.
+slide is crossed, as the slide's `init` says.
+It is one value per slide, so it is an attribute rather than an entry in the plan,
+for the reason the plan itself is an attribute.
 
 An epoch is a run of consecutive states in which no content changes,
 so a slide with no structural operation emits exactly one rendering
@@ -48,10 +49,10 @@ The plan holds one entry per state, with the display state of every addressed ta
 the pan, the epoch the state belongs to,
 and the `handout` flag as the paged outputs resolve it;
 and one entry per epoch, naming the region groups that the boundary into it redraws.
-A region record carries the `transition` its operations named, and it is left out for `auto`,
-so a deck that names none carries none.
-A record may also carry `args`, which the runtime hands to the transition with the record
-and which typst does not emit yet.
+A region record carries the name of the `transition` its operations named, and it is left out
+for `auto`, so a deck that names none carries none.
+A record also carries `args` when the transition has parameters,
+which the runtime hands to the transition with the record.
 
 A state also carries the `wait:` before it is entered, the `hold:` before the state after
 it is, and the timing of the operations its own subslide performed, and an epoch's region
@@ -120,14 +121,17 @@ A deep link, including the one `typst watch` reloads into; the first paint, whic
 link to wherever the fragment points; and a jump that is not a step across one boundary,
 which `Home` and `End` are.
 
-A reader who has asked their system for reduced motion gets every duration at zero,
-which Animo's own stylesheet sets under `prefers-reduced-motion: reduce`.
-Those two declarations are `!important`, because the deck writes its own durations into the
-same `:root` further down the page and would otherwise outrank them.
+The deck's `primitive-duration:` and `transition-duration:` are defaults,
+which a `duration:` written in the timeline overrides, also when the default is zero.
+A reader who has asked their system for reduced motion therefore needs a signal of their own,
+because a media query cannot reach a number written in a typst source.
+Animo's own stylesheet sets `--animo-motion: none` under `prefers-reduced-motion: reduce`,
+and the runtime snaps every step while it is set.
+The declaration is `!important`, because a stylesheet added to the page comes after it and
+would otherwise outrank it.
 A step that lands without motion lands whole, so a `delay:` is dropped with the duration it
-was holding an operation back inside, and a `duration:` written in the timeline is zeroed
-with it. That last one is why the rule lives in the runtime rather than in the stylesheet:
-a media query cannot reach a number written in a typst source.
+was holding an operation back inside, and a `duration:` written in the timeline is ignored
+with it.
 A `wait:` and a `hold:` are not touched, because zeroing them would run an autoplaying deck
 through itself at once.
 
@@ -188,7 +192,7 @@ and each region record of the plan names the entry that carries it.
 A record that names none takes `crossfade`.
 The author names a transition with the `transition:` argument of a structural operation,
 so one boundary may carry one region with one transition and another region with another.
-Typst refuses a name that is not in `epoch-transition-names` in `src/anim.typ`,
+Typst refuses a transition that is not in `region-transitions` in `src/transition.typ`,
 and it refuses two operations that change one region at one boundary and name two transitions.
 
 `planEpoch` first plans the state at rest for every transition alike.
@@ -231,14 +235,37 @@ since two slides share nothing, so the whole container is the unit.
 The slide that owns a boundary is the one with the higher number,
 which is the slide a forward step enters,
 and its `data-animo-transition` chooses the transition in both directions.
+The parameters of the transition, every one of them stated by typst, travel as JSON in
+`data-animo-transition-args`, together with the `duration` its `init` stated.
+`auto` resolves to the transition in the `data-animo-config` of the deck element,
+and a `duration` beside `auto` applies to that transition.
 
-The crossfade there animates `opacity` on the two containers,
+A slide transition is a function of the owner and of a progress `p`,
+which is 0 where the owner has not arrived and 1 where it has.
+Each entry of `slideTransitions` gives the display state of the owner and of the other slide
+at the two ends, and the runtime animates each container from what it is showing to the end
+the step heads for.
+A forward step heads for 1 and a backward step for 0,
+so the backward step is the forward one played from the other end and needs no direction.
+A slide that had no layout before the step starts at the far end instead,
+which for a push is outside the stage.
+The owner comes later in the document, so it is in front in both directions.
+
+The crossfade animates `opacity` on the two containers,
 through the `mix-blend-mode: plus-lighter` the stylesheet puts on every slide,
 inside the `isolation: isolate` on the stage.
 A plain crossfade handles two opaque grounds incorrectly,
 and the surround therefore sits on `body` rather than on the stage:
 the ground of the element that isolates a blend is inside the group it isolates,
 so a surround written there would be summed into both slides.
+
+A push and a cover animate `translate` and a wipe animates an `inset` as `clip-path`.
+These three overlap two opaque slides, which would add to a third colour under
+`plus-lighter`, so they set `mix-blend-mode: normal` on both containers for the boundary.
+The blend stays until the deck moves again,
+because the slide being left is still laid out under the owner when a cover or a wipe ends.
+A single slide renders the same under either blend.
+The stage clips a slide that a push moved out of it.
 
 **Two slides are laid out at a time and no more**:
 the one being shown, and the one a boundary is crossing from.
@@ -260,7 +287,7 @@ even while the holder still defines it.
 A boundary animates only for a step between neighbouring slides.
 A deep link, the first paint, `Home`, `End` and any longer jump snap,
 which is the rule the epoch crossfade already uses.
-`transition: none` and a duration of zero reach the same `null` timing,
+A duration of zero reaches a `null` timing, whatever the transition,
 so a cut has no animation in it at all rather than one of zero length.
 
 ## One Clock
@@ -309,8 +336,8 @@ It is also the one step that can land further back than one state, since a gap o
 join the deck ran through and a backward step walks back over the whole of it.
 A join that ran out of a slide leaves the slide such a step walks back into below its own
 last state, and that is the only case where the slide being entered moves rather than snaps:
-it takes `--animo-primitive-duration` while the boundary takes `--animo-transition-duration`,
-both started on one frame, which is how the forward join ran them.
+it takes `--animo-primitive-duration` while the boundary takes the duration of the slide's
+`init`, both started on one frame, which is how the forward join ran them.
 A `setTimeout` rather than an animation of zero size, because *Findings* records that the
 document timeline is not a clock, and a deck waiting out a long step is a page with
 nothing to draw.

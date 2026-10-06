@@ -500,7 +500,7 @@ def test_handout_true_adds_exactly_one_page_in_its_place(paged: PagedRunner):
 
 # How a region crosses a boundary.
 
-DISAGREE = 'sub(replace("a", transition: "crossfade")[A2], replace("b")[B2])'
+DISAGREE = 'sub(replace("a", transition: crossfade())[A2], replace("b")[B2])'
 """One step whose two structural operations name the transition in two ways."""
 
 
@@ -509,8 +509,8 @@ def test_two_operations_in_one_region_may_not_disagree_about_their_transition(
 ):
     """A region crosses a boundary once, so it is carried by one transition.
 
-    `auto` and the name it stands for are two answers, as a duration of `auto` and the deck's
-    own number are, because the deck's own transition is not a name the resolver can see.
+    `auto` and `crossfade()` are two answers, as a duration of `auto` and the deck's own
+    number are, so a step that writes both is refused rather than read as one.
     """
     body = '#region[#tag("a")[A] #tag("b")[B]]'
     source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")

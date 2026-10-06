@@ -10,29 +10,28 @@ SPDX-License-Identifier: Apache-2.0
 */
 
 /*
-  A reader who asked for less motion gets none, whatever the deck asks for.
+  A reader who asked for less motion gets none, whatever the deck or the timeline asks for.
 
-  The time that motion takes is the deck's own.
+  The time that motion takes is the deck's own default.
   `--animo-primitive-duration`, `--animo-transition-duration` and `--animo-easing` are
   written from the `primitive-duration:`, `transition-duration:` and `easing:` arguments of
   the show rule, into the `:root` block that is appended to this file.
   The runtime reads them at every step, so a value reaches every operation that asked for
-  nothing of its own.
+  nothing of its own, and an operation that states a duration takes that one instead.
 
-  That appended block comes after this rule, and a stylesheet added to the page comes after
-  both, so the two declarations here are `!important` and the guard wins by cascade weight
-  rather than by source order. Measured in chromium 151 and firefox 153, a later `:root`
-  declaration of the same property outranks this query without it.
+  A media query cannot reach a number written in a typst source, so zeroing the defaults
+  would leave every stated duration moving. The reader's preference is a property of its
+  own instead, and the runtime snaps every step while it is `none`, which is what a deep
+  link and a reload get in any case.
 
-  A duration of zero means a step snaps, which is what a deep link and a reload get in any
-  case. The zero reaches an operation that states a `duration:` of its own as well, because
-  the runtime reads these properties at every step and a media query cannot reach a number
-  written in a typst source.
+  A stylesheet added to the page comes after this rule, so the declaration here is
+  `!important` and the guard wins by cascade weight rather than by source order.
+  Measured in chromium 151 and firefox 153, a later `:root` declaration of the same property
+  outranks this query without it.
 */
 @media (prefers-reduced-motion: reduce) {
   :root {
-    --animo-primitive-duration: 0s !important;
-    --animo-transition-duration: 0s !important;
+    --animo-motion: none !important;
   }
 }
 
@@ -109,6 +108,9 @@ body {
   rasterises the same whether or not it is in a transition. A single slide added to the
   transparent backdrop of the isolated stage is that slide, so this changes nothing outside
   a boundary.
+  A push, a cover and a wipe overlap two opaque slides, which have to cover rather than add,
+  so the runtime writes `mix-blend-mode: normal` on the two slides they cross, and a single
+  slide renders the same under that blend as well. See *Findings*.
 */
 .animo-slide {
   display: none;

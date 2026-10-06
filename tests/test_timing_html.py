@@ -62,7 +62,7 @@ SECOND = 1000
 
 PLAYING = deck(
     f'slide(animation: {{ import anim: *\n  sub(wait: 1, reveal("a"))\n  sub()\n}})[\n  {LINE}\n]',
-    "slide(wait: 1)[= Second]",
+    "slide(animation: anim.init(wait: 1))[= Second]",
 )
 
 
@@ -75,7 +75,8 @@ def playing(typst: TypstRunner):
 # The same deck timed from the other side: `hold:` names the gap after the step it is
 # written on, where `wait:` names the gap before it, so these two decks run identically.
 HELD = deck(
-    "slide(hold: 1, animation: { import anim: *\n"
+    "slide(animation: { import anim: *\n"
+    "  init(hold: 1)\n"
     '  sub(hold: 1, reveal("a"))\n'
     "  sub()\n"
     f"}})[\n  {LINE}\n]",
@@ -109,7 +110,7 @@ def chained(typst: TypstRunner):
 #
 # The deck runs itself into its second slide the moment it is painted, so the state before
 # the join is reachable for exactly no time by the clock alone.
-JOINED = deck("slide(hold: 0)[= First]", "slide[= Second]")
+JOINED = deck("slide(animation: anim.init(hold: 0))[= First]", "slide[= Second]")
 
 
 @pytest.fixture
@@ -178,7 +179,7 @@ def travelled(typst: TypstRunner):
 
 
 # A whole slide the deck runs through, which is the join that spans more than one boundary.
-FLASHED = deck("slide[= First]", "slide(hold: 0)[= Second]", "slide[= Third]")
+FLASHED = deck("slide[= First]", "slide(animation: anim.init(hold: 0))[= Second]", "slide[= Third]")
 
 
 @pytest.fixture
@@ -847,14 +848,36 @@ def test_a_backward_step_ends_on_the_state_it_walked_back_to(deck_at, staggered)
     assert [presentation.styles(name)[0]["opacity"] for name in "abc"] == ["0"] * 3
 
 
-def test_a_zero_deck_duration_snaps_a_stated_duration(page, deck_at, slow_reveal):
-    """The reduced-motion rule, and the one assertion here that must not regress.
+def test_a_stated_duration_moves_under_a_zero_deck_duration(page, deck_at, slow_reveal):
+    """The deck's duration is a default, so a zero there leaves a stated duration alone.
 
-    A media query cannot reach a number written in a typst source, so the runtime is where
-    it is enforced, in the one line that already reads the property for a step and a delay.
+    This is what lets a deck whose primitives land at once still move the one that says so.
     """
     presentation: Deck = deck_at(slow_reveal)
     page.add_style_tag(content=":root { --animo-primitive-duration: 0s }")
+    presentation.press("ArrowRight")
+    assert presentation.animating == [{"opacity"}]
+    presentation.settle()
+    assert [style["opacity"] for style in presentation.styles("a")] == ["1"]
+
+
+def test_a_zero_deck_duration_snaps_an_operation_that_states_none(page, deck_at, typst):
+    """The other half of the default: an operation without a duration takes the zero."""
+    presentation: Deck = deck_at(animated(typst, LINE, 'sub(reveal("a"))', name="plain.html"))
+    page.add_style_tag(content=":root { --animo-primitive-duration: 0s }")
+    presentation.press("ArrowRight")
+    assert presentation.animating == []
+    assert [style["opacity"] for style in presentation.styles("a")] == ["1"]
+
+
+def test_no_motion_snaps_a_stated_duration(page, deck_at, slow_reveal):
+    """The reduced-motion rule, and the one assertion here that must not regress.
+
+    A media query cannot reach a number written in a typst source, so the query sets
+    `--animo-motion` and the runtime snaps every step while it is `none`.
+    """
+    presentation: Deck = deck_at(slow_reveal)
+    page.add_style_tag(content=":root { --animo-motion: none }")
     presentation.press("ArrowRight")
     assert presentation.animating == []
     assert [style["opacity"] for style in presentation.styles("a")] == ["1"]
@@ -1155,15 +1178,28 @@ def test_a_forward_step_snaps_a_slide_that_was_left_further_on(page, deck_at, ty
 def test_a_snapping_step_drops_a_delay_with_the_duration(page, deck_at, delayed):
     """A step with no motion in it has no moment for an operation to be late for.
 
-    `--animo-primitive-duration: 0ms` is the one line a reader who asked for less motion reaches
+    `--animo-motion: none` is the one line a reader who asked for less motion reaches
     through the media query in animo's own stylesheet, and it is where the runtime reads
     the question: a step that snaps snaps whole, delays and all.
     """
     presentation: Deck = deck_at(delayed)
-    page.add_style_tag(content=":root { --animo-primitive-duration: 0ms }")
+    page.add_style_tag(content=":root { --animo-motion: none }")
     presentation.press("ArrowRight")
     assert presentation.animating == []
     assert [style["opacity"] for style in presentation.styles("a")] == ["1"]
+
+
+def test_a_delay_under_a_zero_deck_duration_holds_back_a_jump(page, deck_at, delayed):
+    """A delay is still a moment when the duration is zero, so the operation jumps late.
+
+    The deck's duration is a default and not a reader's request, so it drops no delay.
+    """
+    presentation: Deck = deck_at(delayed)
+    page.add_style_tag(content=":root { --animo-primitive-duration: 0ms }")
+    presentation.press("ArrowRight")
+    assert presentation.animating == [{"opacity"}]
+    assert [style["opacity"] for style in presentation.scrub(DELAY / 2).styles("a")] == ["0"]
+    assert [style["opacity"] for style in presentation.scrub(DELAY * 2).styles("a")] == ["1"]
 
 
 def test_reduced_motion_drops_a_delay(page, deck_at, typst: TypstRunner):

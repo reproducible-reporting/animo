@@ -22,25 +22,30 @@ A star import brings in the body-level names and the `anim` module as a name.
 The timeline vocabulary is imported inside an `animation` block with `import anim: *`,
 where shadowing typst's own `hide`, `move` and `scale` is harmless.
 
-| Name                            | Kind               | Written in           |
-| ------------------------------- | ------------------ | -------------------- |
-| [`animo`](#animo)               | document show rule | the top of the file  |
-| [`slide`](#slide)               | element            | the document         |
-| [`tag`](#tag)                   | element            | a slide body         |
-| [`region`](#region)             | element            | a slide body         |
-| [`per-subslide`](#per-subslide) | element            | a body or a layer    |
-| [`slide-number`](#slide-number) | context function   | anywhere             |
-| [`slide-count`](#slide-count)   | context function   | anywhere             |
-| [`anim.sub`](#animsub)          | subslide           | an `animation` block |
-| [`anim.reveal`](#animreveal)    | continuous         | a `sub` call         |
-| [`anim.hide`](#animhide)        | continuous         | a `sub` call         |
-| [`anim.move`](#animmove)        | continuous         | a `sub` call         |
-| [`anim.scale`](#animscale)      | continuous         | a `sub` call         |
-| [`anim.pan`](#animpan)          | continuous, slide  | a `sub` call         |
-| [`anim.replace`](#animreplace)  | structural         | a `sub` call         |
-| [`anim.remove`](#animremove)    | structural         | a `sub` call         |
-| [`anim.apply`](#animapply)      | structural         | a `sub` call         |
-| [`anim.reset`](#animreset)      | structural         | a `sub` call         |
+| Name                               | Kind               | Written in            |
+| ---------------------------------- | ------------------ | --------------------- |
+| [`animo`](#animo)                  | document show rule | the top of the file   |
+| [`slide`](#slide)                  | element            | the document          |
+| [`tag`](#tag)                      | element            | a slide body          |
+| [`region`](#region)                | element            | a slide body          |
+| [`per-subslide`](#per-subslide)    | element            | a body or a layer     |
+| [`slide-number`](#slide-number)    | context function   | anywhere              |
+| [`slide-count`](#slide-count)      | context function   | anywhere              |
+| [`anim.init`](#animinit)           | initial state      | an `animation` block  |
+| [`anim.sub`](#animsub)             | subslide           | an `animation` block  |
+| [`anim.reveal`](#animreveal)       | continuous         | a `sub` call          |
+| [`anim.hide`](#animhide)           | continuous         | a `sub` call          |
+| [`anim.move`](#animmove)           | continuous         | a `sub` call          |
+| [`anim.scale`](#animscale)         | continuous         | a `sub` call          |
+| [`anim.pan`](#animpan)             | continuous, slide  | a `sub` call          |
+| [`anim.replace`](#animreplace)     | structural         | a `sub` call          |
+| [`anim.remove`](#animremove)       | structural         | a `sub` call          |
+| [`anim.apply`](#animapply)         | structural         | a `sub` call          |
+| [`anim.reset`](#animreset)         | structural         | a `sub` call          |
+| [`anim.crossfade`](#animcrossfade) | transition         | `init`, `transition:` |
+| [`anim.push`](#animpush)           | transition         | `init`, `transition:` |
+| [`anim.cover`](#animcover)         | transition         | `init`, `transition:` |
+| [`anim.wipe`](#animwipe)           | transition         | `init`, `transition:` |
 
 ## The Document
 
@@ -48,28 +53,33 @@ where shadowing typst's own `hide`, `move` and `scale` is harmless.
 
 ```typst
 animo(body, width: 16cm, height: 9cm, margin: 1cm,
-      primitive-duration: 0.4, transition-duration: 0.4, easing: "ease-in-out")
+      primitive-duration: 0.4, transition-duration: 0.4, easing: "ease-in-out",
+      transition: anim.crossfade())
 ```
 
 The shape and the tempo of the deck, applied as a document show rule.
 
-| Argument              | Type    | Default         | Meaning                                             |
-| --------------------- | ------- | --------------- | --------------------------------------------------- |
-| `body`                | content |                 | the document, given by the show rule                |
-| `width`               | length  | `16cm`          | the width of a slide, which is the viewport's width |
-| `height`              | length  | `9cm`           | the height of a slide                               |
-| `margin`              | length  | `1cm`           | the inset of the body inside the viewport           |
-| `primitive-duration`  | number  | `0.4`           | seconds one animation primitive takes               |
-| `transition-duration` | number  | `0.4`           | seconds a transition into a slide takes             |
-| `easing`              | string  | `"ease-in-out"` | the timing function both of them follow             |
+| Argument              | Type       | Default            | Meaning                                             |
+| --------------------- | ---------- | ------------------ | --------------------------------------------------- |
+| `body`                | content    |                    | the document, given by the show rule                |
+| `width`               | length     | `16cm`             | the width of a slide, which is the viewport's width |
+| `height`              | length     | `9cm`              | the height of a slide                               |
+| `margin`              | length     | `1cm`              | the inset of the body inside the viewport           |
+| `primitive-duration`  | number     | `0.4`              | default seconds of one primitive                    |
+| `transition-duration` | number     | `0.4`              | default seconds of a transition into a slide        |
+| `easing`              | string     | `"ease-in-out"`    | the timing function both of them follow             |
+| `transition`          | transition | `anim.crossfade()` | the transition of a slide whose `init` names none   |
 
 ```typst
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 ```
 
-The two durations are HTML only, because the paged outputs put every state on a page of its
-own with nothing in between.
-A duration of zero means that kind of motion is not animated.
+The two durations and `transition` are HTML only, because the paged outputs put every state on
+a page of its own with nothing in between.
+The `transition` argument takes one of the [transitions](#transitions).
+The two durations are defaults, and a duration of zero means that kind of motion is not
+animated unless a primitive or an `init` states a duration of its own.
+A reader whose browser asks for reduced motion gets no motion at all.
 
 `easing` takes one of five names, which are the CSS timing functions of the same name:
 
@@ -102,28 +112,26 @@ Taught in [Slides](slides.md) and [Presenting](presenting.md#motion).
 ### `slide`
 
 ```typst
-slide(body, animation: (), canvas: auto, background: none, overlay: none,
-      transition: auto, wait: none, hold: none, handout: auto, numbered: true)
+slide(body, animation: (), canvas: auto, background: none, overlay: none, numbered: true)
 ```
 
 One slide of the deck.
 
-| Argument     | Type                            | Default | Meaning                                                       |
-| ------------ | ------------------------------- | ------- | ------------------------------------------------------------- |
-| `body`       | content                         |         | what is on the slide                                          |
-| `animation`  | block of `sub` calls            | `()`    | the timeline                                                  |
-| `canvas`     | `auto` or `(width:, height:)`   | `auto`  | the canvas, sized to the content or stated                    |
-| `background` | `none`, colour or content       | `none`  | the layer behind everything                                   |
-| `overlay`    | `none`, colour or content       | `none`  | the layer in front of everything                              |
-| `transition` | `auto`, `none` or `"crossfade"` | `auto`  | how the boundary into this slide is crossed                   |
-| `wait`       | `none` or number                | `none`  | seconds before this slide is entered, or a presenter's click  |
-| `hold`       | `none` or number                | `none`  | seconds the initial state stands before the subslide after it |
-| `handout`    | `auto`, `true` or `false`       | `auto`  | whether the handout keeps the initial state                   |
-| `numbered`   | `bool`                          | `true`  | whether the slide counter counts this slide                   |
+| Argument     | Type                                  | Default | Meaning                                     |
+| ------------ | ------------------------------------- | ------- | ------------------------------------------- |
+| `body`       | content                               |         | what is on the slide                        |
+| `animation`  | block of an `init` and of `sub` calls | `()`    | the timeline                                |
+| `canvas`     | `auto` or `(width:, height:)`         | `auto`  | the canvas, sized to the content or stated  |
+| `background` | `none`, colour or content             | `none`  | the layer behind everything                 |
+| `overlay`    | `none`, colour or content             | `none`  | the layer in front of everything            |
+| `numbered`   | `bool`                                | `true`  | whether the slide counter counts this slide |
 
 ```typst
-#slide(transition: none, background: navy)[= A slide]
+#slide(background: navy, animation: anim.init(duration: 0))[= A slide]
 ```
+
+How the slide is entered, the gaps around its initial state and whether the handout keeps that
+state are arguments of [`anim.init`](#animinit).
 
 Taught in [Slides](slides.md), and `canvas:` in [The Viewport](viewport.md#how-large-the-canvas-is).
 
@@ -267,6 +275,37 @@ Taught in [Numbering](numbering.md).
 
 ## Steps
 
+### `anim.init`
+
+```typst
+init(..transition, duration: auto, wait: none, hold: none, handout: auto)
+```
+
+The initial state of the slide, which is the slide as its body declares it before the first
+`sub`. It adds no subslide.
+A timeline holds at most one `init`, before its first `sub`.
+
+| Argument       | Type                      | Default | Meaning                                                           |
+| -------------- | ------------------------- | ------- | ----------------------------------------------------------------- |
+| `..transition` | transition                |         | how the slide is entered                                          |
+| `duration`     | `auto` or number          | `auto`  | seconds the transition takes, or the deck's `transition-duration` |
+| `wait`         | `none` or number          | `none`  | seconds before this slide is entered, or a presenter's click      |
+| `hold`         | `none` or number          | `none`  | seconds the initial state stands before the subslide after it     |
+| `handout`      | `auto`, `true` or `false` | `auto`  | whether the handout keeps the initial state                       |
+
+Without a transition, the slide takes the deck's own.
+A `duration` of zero is a hard cut, whatever the transition.
+The boundary between two slides takes the `init` of the slide with the higher number,
+in both directions.
+The transition, `duration` and `wait` are HTML only.
+
+```typst
+init(push(direction: btt), duration: 0.6, handout: true)
+```
+
+Taught in [Slides](slides.md#slide-transitions),
+and `wait`, `hold` and `handout` in [Continuous Animations](continuous.md#timing).
+
 ### `anim.sub`
 
 ```typst
@@ -394,8 +433,10 @@ They change what typst lays out, so each of them starts a new
 continuous primitives, where they time the crossfade of the region that changed.
 
 All four also take `transition:`, which says how the region that changed crosses the boundary.
-The `transition` argument defaults to `auto`, which is the deck's own transition, the crossfade,
-and it also takes the name of a transition, of which `"crossfade"` is the one that exists.
+The `transition` argument defaults to `auto`, which is the crossfade whatever the deck's own
+transition is, and it also takes the [transition](#transitions) `crossfade()`.
+The other transitions move a whole slide and are refused here.
+A `duration` of zero is a hard cut of the region.
 Two operations that change one region at one boundary have to name the same transition,
 as they have to agree about their timing.
 The `transition` argument is HTML only, because two pages have nothing between them.
@@ -457,6 +498,62 @@ sub(reset("claim"))
 ```
 
 Taught in [Structural Animations](structural.md#structural-animation-primitives).
+
+## Transitions
+
+A transition says what crossing a boundary looks like, and nothing about how long it takes.
+The call that causes the crossing states the time:
+[`init`](#animinit) for a slide and the structural primitive for a region.
+A transition is written in three places:
+
+- as the first argument of [`init`](#animinit), for the boundary into a slide;
+- as `transition:` of a [structural primitive](#structural-primitives), for a region;
+- as `transition:` of [`animo`](#animo), for every slide whose `init` names none.
+
+The `direction` parameter is `ltr`, `rtl`, `ttb` or `btt`,
+the direction of travel on a forward step.
+A backward step travels the other way.
+
+| Transition       | Slide | Region |
+| ---------------- | ----- | ------ |
+| `anim.crossfade` | yes   | yes    |
+| `anim.push`      | yes   | no     |
+| `anim.cover`     | yes   | no     |
+| `anim.wipe`      | yes   | no     |
+
+### `anim.crossfade`
+
+```typst
+crossfade()
+```
+
+The outgoing content fades out while the incoming content fades in.
+
+### `anim.push`
+
+```typst
+push(direction: rtl)
+```
+
+The incoming slide moves in from one edge and moves the outgoing slide out at the opposite one.
+
+### `anim.cover`
+
+```typst
+cover(direction: rtl)
+```
+
+The incoming slide moves in from one edge over the outgoing slide, which stays where it is.
+
+### `anim.wipe`
+
+```typst
+wipe(direction: ltr)
+```
+
+The incoming slide is uncovered behind an edge that travels across the outgoing slide.
+
+Taught in [Slides](slides.md#slide-transitions).
 
 ## Command Lines
 

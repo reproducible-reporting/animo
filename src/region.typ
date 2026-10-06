@@ -219,6 +219,16 @@
   }
 }
 
+/// An area laid out afresh whenever its content changes, inside a footprint that never
+/// changes.
+///
+/// - body (content): What is laid out afresh.
+/// - width (auto, length, ratio): The width of the footprint, measured when `auto`.
+/// - height (auto, length, ratio): The height of the footprint, measured when `auto`.
+/// - align (alignment): Where a state smaller than the footprint sits.
+/// - clip (auto, bool): Whether the footprint clips, which is `true` when a size is given.
+/// - name (none, str): Makes the footprint a site the continuous primitives reach.
+/// -> content
 #let region(
   body,
   width: auto,

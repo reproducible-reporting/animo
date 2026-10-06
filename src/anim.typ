@@ -11,6 +11,10 @@
 // not define, so `rotate("b", 45deg)` would quietly call `std.rotate` and return content.
 
 #import "site.typ": describe
+#import "transition.typ": (
+  check-region-transition, cover, crossfade, is-transition, push, transition-of,
+  wipe,
+)
 
 // The operations that change only how already-rendered content is displayed,
 // and that address a tag.
@@ -172,12 +176,27 @@
 // the step keeps one clock, and both say nothing in the paged outputs, which have no clock
 // to measure on.
 
+/// Fade a tag in. A tag whose first display operation is `reveal` starts hidden, and keeps
+/// its space while it is.
+///
+/// - name (str): The name of the tag.
+/// - delay (int, float): Seconds this operation is held back inside its subslide.
+/// - duration (auto, int, float): Seconds it then takes. `auto` is the
+///   `primitive-duration:` of the deck.
+/// -> dictionary
 #let reveal(name, delay: 0, duration: auto) = (
   kind: "reveal",
   name: check-tag-name("reveal", name),
   timing: timing-of("reveal", delay, duration),
 )
 
+/// Fade a tag out. It keeps its space.
+///
+/// - name (str): The name of the tag.
+/// - delay (int, float): Seconds this operation is held back inside its subslide.
+/// - duration (auto, int, float): Seconds it then takes. `auto` is the
+///   `primitive-duration:` of the deck.
+/// -> dictionary
 #let hide(name, delay: 0, duration: auto) = (
   kind: "hide",
   name: check-tag-name("hide", name),
@@ -194,6 +213,19 @@
 // The anchor of a tag is the corner of its wrapper as the body laid it out, so it excludes
 // the tag's own display state: an absolute `move` is idempotent, and a `move(relto: ..)` is
 // unaffected by whatever moved the tag it is relative to.
+/// Move a tag, per axis to a position with `x` and `y` or by an offset with `dx` and `dy`.
+///
+/// - name (str): The name of the tag.
+/// - x (none, length): Where the anchor goes horizontally, measured from the canvas
+///   origin or from the tag `relto` names.
+/// - y (none, length): The same, vertically.
+/// - dx (none, length): How far it moves horizontally from where it is.
+/// - dy (none, length): The same, vertically.
+/// - relto (none, str): The tag whose anchor `x` and `y` are measured from.
+/// - delay (int, float): Seconds this operation is held back inside its subslide.
+/// - duration (auto, int, float): Seconds it then takes. `auto` is the
+///   `primitive-duration:` of the deck.
+/// -> dictionary
 #let move(
   name,
   x: none,
@@ -227,6 +259,16 @@
 //
 // `f` together with either of the others is refused rather than resolved by a precedence
 // rule, because a call that gives both says two different things.
+/// Set the scale factor of a tag about its own centre. The factor is set, not multiplied.
+///
+/// - name (str): The name of the tag.
+/// - f (none, int, float, ratio): The factor of both axes.
+/// - fx (none, int, float, ratio): The factor of the horizontal axis.
+/// - fy (none, int, float, ratio): The factor of the vertical axis.
+/// - delay (int, float): Seconds this operation is held back inside its subslide.
+/// - duration (auto, int, float): Seconds it then takes. `auto` is the
+///   `primitive-duration:` of the deck.
+/// -> dictionary
 #let scale(name, f: none, fx: none, fy: none, delay: 0, duration: auto) = {
   let name = check-tag-name("scale", name)
   assert(
@@ -259,6 +301,19 @@
 // An axis given neither stays where it is, unless `relto` asks for the tag,
 // in which case that axis goes to the anchor itself.
 // Positive values move the viewport right and down, so the content moves left and up.
+/// Move the viewport over the canvas, per axis to a position with `x` and `y` or by an offset
+/// with `dx` and `dy`. Positive values move the viewport right and down.
+///
+/// - x (none, length): Where the anchor goes horizontally, measured from the canvas
+///   origin or from the tag `relto` names.
+/// - y (none, length): The same, vertically.
+/// - dx (none, length): How far it moves horizontally from where it is.
+/// - dy (none, length): The same, vertically.
+/// - relto (none, str): The tag whose anchor `x` and `y` are measured from.
+/// - delay (int, float): Seconds this operation is held back inside its subslide.
+/// - duration (auto, int, float): Seconds it then takes. `auto` is the
+///   `primitive-duration:` of the deck.
+/// -> dictionary
 #let pan(
   x: none,
   y: none,
@@ -288,35 +343,28 @@
 // and so wraps whatever the first holds, including a later replacement,
 // and `reset` sets both back to the body as written.
 
-// On a structural operation a delay holds back the crossfade of the region it changes and
-// a duration says how long that crossfade takes, and the epoch boundary lasts until the
+// On a structural operation a delay holds back the transition of the region it changes and
+// a duration says how long that transition takes, and the epoch boundary lasts until the
 // last of them has finished.
+// A duration of zero is a hard cut of the region.
 //
-// `transition:` says how the region it changes crosses the boundary: `auto` is the deck's
-// own transition, which is the crossfade, and a string names a transition.
+// `transition:` says how the region it changes crosses the boundary: `auto` is the
+// crossfade, and a transition function names one (see `transition.typ`).
 // It is an argument of the operation rather than of `sub`, so that one step can carry one
 // region with one transition and another region with another.
 
-// The transitions an epoch boundary may carry a region with, by name.
-//
-// The list lives here rather than only in the runtime because typst is what refuses a
-// misspelling, and it has to do so at compile time.
-// A name the runtime did not recognise would be a region that quietly took the default.
-#let epoch-transition-names = ("crossfade",)
-
-// Check how a structural operation carries its region across the boundary.
-#let check-transition(kind, value) = {
-  assert(
-    value == auto or value in epoch-transition-names,
-    message: kind
-      + " takes transition as `auto`, which is the deck's own, or one of "
-      + repr(epoch-transition-names)
-      + ", got "
-      + describe(value),
-  )
-  value
-}
-
+/// Lay out `body` at the tag instead of what is there, keeping the wrappers `apply` put
+/// around it. The region around the tag is redrawn.
+///
+/// - name (str): The name of the tag.
+/// - body (content): The replacement.
+/// - delay (int, float): Seconds the transition of the region is held back inside its
+///   subslide.
+/// - duration (auto, int, float): Seconds the transition of the region takes. `auto` is the
+///   `primitive-duration:` of the deck, and `0` is a hard cut.
+/// - transition (auto, array): How the region crosses the boundary. `auto` and
+///   `crossfade()` are the crossfade.
+/// -> dictionary
 #let replace(name, body, delay: 0, duration: auto, transition: auto) = {
   assert(
     type(body) == content,
@@ -327,19 +375,41 @@
     name: check-tag-name("replace", name),
     body: body,
     timing: timing-of("replace", delay, duration),
-    transition: check-transition("replace", transition),
+    transition: check-region-transition("replace", transition),
   )
 }
 
+/// Lay out nothing at the tag, keeping the wrappers. A tag whose first content operation is
+/// `reset` starts removed.
+///
+/// - name (str): The name of the tag.
+/// - delay (int, float): Seconds the transition of the region is held back inside its
+///   subslide.
+/// - duration (auto, int, float): Seconds the transition of the region takes. `auto` is the
+///   `primitive-duration:` of the deck, and `0` is a hard cut.
+/// - transition (auto, array): How the region crosses the boundary. `auto` and
+///   `crossfade()` are the crossfade.
+/// -> dictionary
 #let remove(name, delay: 0, duration: auto, transition: auto) = (
   kind: "remove",
   name: check-tag-name("remove", name),
   timing: timing-of("remove", delay, duration),
-  transition: check-transition("remove", transition),
+  transition: check-region-transition("remove", transition),
 )
 
 // Named style properties are refused rather than guessed at:
 // animo does not inspect content, so it cannot know which `set` rule a property belongs to.
+/// Wrap what is laid out at the tag in each function, the last one outermost.
+///
+/// - name (str): The name of the tag.
+/// - delay (int, float): Seconds the transition of the region is held back inside its
+///   subslide.
+/// - duration (auto, int, float): Seconds the transition of the region takes. `auto` is the
+///   `primitive-duration:` of the deck, and `0` is a hard cut.
+/// - transition (auto, array): How the region crosses the boundary. `auto` and
+///   `crossfade()` are the crossfade.
+/// - fns (function): The functions, such as `text.with(fill: red)` or `strong`.
+/// -> dictionary
 #let apply(name, delay: 0, duration: auto, transition: auto, ..fns) = {
   let name = check-tag-name("apply", name)
   assert(
@@ -370,30 +440,68 @@
     name: name,
     fns: fns.pos(),
     timing: timing-of("apply", delay, duration),
-    transition: check-transition("apply", transition),
+    transition: check-region-transition("apply", transition),
   )
 }
 
+/// Lay out the tag as the body wrote it, with every wrapper dropped.
+///
+/// - name (str): The name of the tag.
+/// - delay (int, float): Seconds the transition of the region is held back inside its
+///   subslide.
+/// - duration (auto, int, float): Seconds the transition of the region takes. `auto` is the
+///   `primitive-duration:` of the deck, and `0` is a hard cut.
+/// - transition (auto, array): How the region crosses the boundary. `auto` and
+///   `crossfade()` are the crossfade.
+/// -> dictionary
 #let reset(name, delay: 0, duration: auto, transition: auto) = (
   kind: "reset",
   name: check-tag-name("reset", name),
   timing: timing-of("reset", delay, duration),
-  transition: check-transition("reset", transition),
+  transition: check-region-transition("reset", transition),
 )
+
+// The kind of a timeline entry, which is a one-element array holding a record, or `none`
+// for anything else.
+#let entry-kind(value) = {
+  if (
+    type(value) == array
+      and value.len() == 1
+      and type(value.first()) == dictionary
+  ) {
+    value.first().at("kind", default: none)
+  }
+}
 
 // Check that a value is an operation of one of the primitives above.
 //
 // The message has to name the star import, because the failure it produces is a value that
 // looks like nothing in particular, several lines away from the call that made it.
+// A transition and an `init` are values of animo's own that belong elsewhere, so each gets
+// a message that says where.
 #let check-op(value, position) = {
+  let where = "argument " + str(position) + " of sub"
+  if is-transition(value) {
+    panic(
+      where
+        + " is a transition, which sub does not take; the transition into a slide is "
+        + "the first argument of init, as in init(push()), and the one of a region is "
+        + "the transition: of the structural primitive that changes it",
+    )
+  }
+  if entry-kind(value) == "init" {
+    panic(
+      where
+        + " is an init(..) call, which comes before the first sub rather than inside one",
+    )
+  }
   let ok = (
     type(value) == dictionary and value.at("kind", default: none) in op-kinds
   )
   if not ok {
     panic(
-      "argument "
-        + str(position)
-        + " of sub is not an animo operation, but "
+      where
+        + " is not an animo operation, but "
         + describe(value)
         + "; `import anim: *` leaves every name animo does not define bound to the "
         + "standard library, so a primitive that does not exist, such as `rotate`, "
@@ -406,7 +514,7 @@
 // Check that a handout flag is one of the three values it takes.
 //
 // The flag belongs to a state, and two of animo's calls carry one:
-// `sub` for the state its step brings about, and `#slide` for the initial state,
+// `sub` for the state its step brings about, and `init` for the initial state,
 // which has no `sub` of its own.
 // `which` names the call, because the two are written in different places and a reader
 // of the message is looking at one of them.
@@ -423,9 +531,8 @@
 
 // Check that a `wait:` or a `hold:` is one of the values it takes.
 //
-// Both belong to a step, and two of animo's calls carry each:
-// `sub` for the step it is written on, and `#slide` for the slide it is written on,
-// whose initial state has no `sub` of its own.
+// Both belong to a state, and two of animo's calls carry each:
+// `sub` for the state its step brings about, and `init` for the initial state.
 // `which` names the call, for the reason `check-handout` takes the same argument,
 // and `what` names the keyword, because the two are refused in the same words.
 #let check-gap(which, what, value) = {
@@ -442,12 +549,21 @@
 // which is the page the handout shows anyway.
 // `true` adds a page that the handout would otherwise lose, and `false` takes one away.
 //
-// `wait:` and `hold:` are each a number of seconds, or `none` for a presenter click.
-// `wait:` is the delay before this step is entered and `hold:` the delay before the step
-// after it is, so the two name the gaps on either side of this step, and one gap is named
-// by at most one of them (see `check-gaps` in `plan.typ`).
+// `wait:` and `hold:` name the gaps on either side of this step, and one gap is named by at
+// most one of them (see `check-gaps` in `plan.typ`).
 // Both are measured from the moment the step they are timed against was triggered rather
 // than from the moment that step's motion finished.
+
+/// One subslide: the operations that happen together in one step of the presenter.
+///
+/// - wait (none, int, float): Seconds before this subslide is entered, measured from the
+///   moment the previous state came up, or `none` for a presenter click.
+/// - hold (none, int, float): Seconds before the state after this one is entered, measured
+///   from the moment this one came up, or `none` for a presenter click.
+/// - handout (auto, bool): Whether the handout keeps this state. `auto` keeps it only when it
+///   is the last state of the slide.
+/// - ops (dictionary): The operations, which are calls of the primitives of this module.
+/// -> array
 #let sub(wait: none, hold: none, handout: auto, ..ops) = {
   assert(
     ops.named().len() == 0,
@@ -468,15 +584,84 @@
   )
 }
 
-// Check that a timeline is one, and hand back its steps.
+// The `init` of a timeline that writes none, which states nothing.
+#let no-init = (
+  kind: "init",
+  transition: auto,
+  duration: auto,
+  wait: none,
+  hold: none,
+  handout: auto,
+)
+
+// `init(..)` is about the initial state, state 0, which has no `sub` of its own.
 //
-// The `animation` argument is a code block of `sub(..)` calls, which joins into an array.
+// It adds no state, so the subslides after it keep their numbers, and it returns a
+// one-element array for the reason `sub` does.
+// `duration:` belongs to the transition into the slide, because no primitive causes that
+// change, and `wait:` takes the place of a delay there.
+// A duration of zero is a hard cut, whatever the transition.
+
+/// The initial state of the slide, which is the slide as the body declares it: how it is
+/// entered, the gaps on either side of it and whether the handout keeps it.
+///
+/// Written at most once, before the first `sub`.
+///
+/// - transition (array): How the slide is entered, such as `push(direction: btt)`.
+///   Without it, the slide takes the transition of the deck.
+/// - duration (auto, int, float): Seconds the transition into the slide takes.
+///   `auto` is the `transition-duration:` of the deck, and `0` is a hard cut.
+/// - wait (none, int, float): Seconds before the slide is entered, measured from the moment
+///   the last state of the previous slide came up, or `none` for a presenter click.
+/// - hold (none, int, float): Seconds before the first subslide is entered, measured from
+///   the moment the initial state came up, or `none` for a presenter click.
+/// - handout (auto, bool): Whether the handout keeps the initial state. `auto` keeps it only
+///   when the slide has no `sub`.
+/// -> array
+#let init(
+  ..transition,
+  duration: auto,
+  wait: none,
+  hold: none,
+  handout: auto,
+) = {
+  assert(
+    transition.named().len() == 0,
+    message: "init takes no named argument besides duration, wait, hold and handout, got "
+      + repr(transition.named().keys()),
+  )
+  let given = transition.pos()
+  assert(
+    given.len() <= 1,
+    message: "init takes at most one transition, got " + str(given.len()),
+  )
+  (
+    (
+      ..no-init,
+      transition: if given.len() == 0 { auto } else {
+        transition-of("init", "its first argument", given.first())
+      },
+      duration: check-duration("init", duration),
+      wait: check-gap("init", "wait", wait),
+      hold: check-gap("init", "hold", hold),
+      handout: check-handout("init", handout),
+    ),
+  )
+}
+
+// Check that a timeline is one, and hand back its `init` and its steps.
+//
+// The `animation` argument is a code block of an optional `init(..)` call followed by
+// `sub(..)` calls, which joins into an array.
 // Everything else is a mistake with a recognisable shape, so each gets its own message.
+// `init` is refused anywhere but first, so that what it says never depends on where it was
+// written.
 #let check-timeline(animation) = {
   if animation == none {
     // A code block that joined nothing, which is a timeline with no steps.
-    ()
-  } else if (
+    return (init: no-init, steps: ())
+  }
+  if (
     type(animation) == dictionary
       and animation.at("kind", default: none) == "sub"
   ) {
@@ -484,22 +669,45 @@
       "the animation argument received the inside of a sub(..) call; "
         + "sub returns its step as a one-element array, so pass the call itself",
     )
-  } else if type(animation) != array {
+  }
+  if type(animation) != array {
     panic(
-      "the animation argument takes a code block of sub(..) calls, got "
+      "the animation argument takes a code block of an optional init(..) call and "
+        + "sub(..) calls, got "
         + describe(animation)
         + "; a content block is the slide body, not its timeline",
     )
-  } else {
-    for (position, step) in animation.enumerate(start: 1) {
-      assert(
-        type(step) == dictionary and step.at("kind", default: none) == "sub",
-        message: "step "
-          + str(position)
-          + " of the animation argument is not a sub(..) call, but "
-          + describe(step),
-      )
-    }
-    animation
   }
+  let init = no-init
+  let steps = ()
+  for (position, entry) in animation.enumerate(start: 1) {
+    let kind = if type(entry) == dictionary { entry.at("kind", default: none) }
+    let where = "entry " + str(position) + " of the animation argument"
+    if kind == "init" {
+      assert(
+        steps.len() == 0,
+        message: where
+          + " is an init(..) call after a sub(..) call; init comes first",
+      )
+      assert(
+        position == 1,
+        message: where
+          + " is a second init(..) call; a timeline holds at most one",
+      )
+      init = entry
+    } else if kind == "transition" {
+      panic(
+        where
+          + " is a transition on its own; the transition into the slide is the first "
+          + "argument of init, as in init(push())",
+      )
+    } else {
+      assert(
+        kind == "sub",
+        message: where + " is not a sub(..) call, but " + describe(entry),
+      )
+      steps.push(entry)
+    }
+  }
+  (init: init, steps: steps)
 }

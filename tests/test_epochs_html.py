@@ -313,7 +313,7 @@ def test_a_region_that_names_the_crossfade_crosses_as_one_that_names_nothing(
         animated(
             typst,
             REFLOWING,
-            f'sub(replace("claim", transition: "crossfade")[{LONGER}])',
+            f'sub(replace("claim", transition: crossfade())[{LONGER}])',
             'sub(reset("claim"))',
             name="named.html",
         )

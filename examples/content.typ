@@ -55,8 +55,9 @@
   This paragraph is outside the region, and never moves.
 ]
 
-#slide(handout: true, animation: {
+#slide(animation: {
   import anim: *
+  init(handout: true)
   // `reset` is what makes the word start out removed: it is not laid out at all until
   // this step, and the tag's own box keeps the room for it meanwhile.
   sub(reset("word"))

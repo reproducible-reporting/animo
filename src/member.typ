@@ -15,6 +15,7 @@
 // and a group in the output is addressed by a label.
 
 #import "anim.typ": default-timing
+#import "transition.typ": written
 
 // The label of the report that says which region a site belongs to.
 #let member-label = label("animo-member")
@@ -159,8 +160,8 @@
 // inside an explicit region and between two operations on one tag.
 // The comparison is over an operation's timing as a whole rather than over one field of it,
 // because a timing record may gain more fields.
-// A transition is compared as it was written, so `auto` and the name of the transition it
-// stands for are two answers, as a duration of `auto` and the deck's own number are.
+// A transition is compared as it was written, so `auto` and `crossfade()` are two answers,
+// as a duration of `auto` and the deck's own number are.
 //
 // Which region a tag belongs to is a layout-time fact, so this reads the membership reports
 // and runs where the other layout-informed refusals run, in a context block of its own after
@@ -171,9 +172,14 @@
 #let check-boundaries(index, epochs, members) = {
   for epoch in range(1, epochs.len()) {
     for holder in changed-members(epochs, epoch, members) {
-      for (field, what, remedy) in (
-        ("timings", "their timing", "give them the same timing"),
-        ("transitions", "their transition", "give them the same transition"),
+      for (field, what, remedy, shown) in (
+        ("timings", "their timing", "give them the same timing", repr),
+        (
+          "transitions",
+          "their transition",
+          "give them the same transition",
+          written,
+        ),
       ) {
         let values = boundary-values(epochs, epoch, holder, field)
         if values.len() < 2 { continue }
@@ -190,9 +196,9 @@
               + " change one region at one boundary and disagree about "
               + what
               + ", "
-              + repr(first.value)
+              + shown(first.value)
               + " against "
-              + repr(other.value)
+              + shown(other.value)
               + "; a region crosses a boundary once, so there is nothing to choose "
               + "between them: "
               + remedy

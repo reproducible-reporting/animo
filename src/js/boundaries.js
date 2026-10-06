@@ -141,68 +141,213 @@ function transitionOf(name) {
  * renderings of one slide and the regions a boundary carries across, which it holds
  * still; a slide transition is given two containers and has nothing to hold still, since
  * the two slides share nothing. One table would take the union of both and every entry
- * would ignore half of it. The seam is the same one, and richer slide transitions than a
- * crossfade and a cut are a second entry here, as the morph is a second entry above.
+ * would ignore half of it.
  *
- * `options` is how the boundary moves, or `null` when it snaps, which is what a cut, a
- * duration of zero, a deep link and any jump between slides that are not neighbours all
- * produce.
+ * A slide transition is a function of the boundary's owner, the slide with the higher
+ * number, and of a progress `p` that is 0 where the owner is not there yet and 1 where it
+ * is. `at(p, args)` gives the display state of the owner and of the other slide at one of
+ * those two ends, and `planSlides` animates from what each container is showing into the
+ * end a step is heading for. A forward step heads for 1 and a backward step for 0, so a
+ * backward step is the forward one played from the other end and needs no direction of its
+ * own. The owner comes later in the document, so it is in front in both directions.
+ *
+ * `blend` is the `mix-blend-mode` both containers take for the boundary, and the empty
+ * string leaves the stylesheet's `plus-lighter`. Two slides that overlap while both are
+ * opaque have to cover rather than add, because two opaque grounds of different colours sum
+ * to a third colour. A crossfade is the one transition that wants them to add.
+ *
+ * A `direction` is the direction of travel on a forward step, which typst writes as `ltr`,
+ * `rtl`, `ttb` or `btt`. Typst states every parameter, its defaults included, so the
+ * runtime holds no defaults of its own.
  */
 const slideTransitions = {
   /**
-   * Crossfade the two whole containers, and hand every other slide's opacity to zero.
+   * Fade the owner in over the other slide, which fades out.
    *
-   * The slide being entered animates up from zero and the one being left down to it,
-   * both through the `plus-lighter` the stylesheet puts on every slide, so the two add
-   * to exactly one opaque slide at every moment and nothing dips halfway through, which
-   * two slides of different background colours would otherwise do badly.
-   * Every other slide is snapped to zero rather than left alone: that is what a slide
-   * carries when it becomes the one being entered, so a boundary always has an opacity
-   * to animate up from, and it is what cancels an animation left in flight on a slide
-   * the deck has stepped past.
+   * The two add to exactly one opaque slide at every moment through the `plus-lighter` the
+   * stylesheet puts on every slide, so nothing dips halfway through, which two slides of
+   * different background colours would otherwise do badly.
    */
-  crossfade(effects, shown, leaving, options) {
-    for (const [number, slide] of deck) {
-      const active = number === shown;
-      const crossing = active || number === leaving;
-      plan(
-        effects,
-        slide.element,
-        { opacity: active ? "1" : "0" },
-        crossing ? { opacity: options } : null,
-      );
-    }
+  crossfade: {
+    blend: "",
+    at: (p) => ({ owner: { opacity: String(p) }, other: { opacity: String(1 - p) } }),
+  },
+  /** Move the owner in from one edge while it moves the other slide out at the opposite one. */
+  push: {
+    blend: "normal",
+    at: (p, { direction }) => ({
+      owner: { opacity: "1", translate: travelled(direction, p - 1) },
+      other: { opacity: "1", translate: travelled(direction, p) },
+    }),
+  },
+  /** Move the owner in from one edge over the other slide, which stays where it is. */
+  cover: {
+    blend: "normal",
+    at: (p, { direction }) => ({
+      owner: { opacity: "1", translate: travelled(direction, p - 1) },
+      other: { opacity: "1" },
+    }),
+  },
+  /**
+   * Reveal the owner over the other slide behind an edge that travels across the stage.
+   *
+   * The clip is an `inset` whose one side shrinks from the whole stage to nothing, and the
+   * other three sides stay at zero, so the two ends of the boundary interpolate.
+   */
+  wipe: {
+    blend: "normal",
+    at: (p, { direction }) => ({
+      owner: { opacity: "1", "clip-path": hidden(direction, 1 - p) },
+      other: { opacity: "1" },
+    }),
   },
 };
 
-/** The transition a boundary takes when its slide says `auto`, which is every ordinary one. */
-const defaultSlideTransition = "crossfade";
+/** The way each direction travels, as a fraction of the stage along each axis. */
+const TRAVEL = {
+  ltr: { x: 1, y: 0 },
+  rtl: { x: -1, y: 0 },
+  ttb: { x: 0, y: 1 },
+  btt: { x: 0, y: -1 },
+};
 
 /**
- * The transition of a slide boundary, by the name the slide that owns the boundary carries.
+ * A `translate` that has carried a container `fraction` of the stage along a direction.
  *
- * `auto` resolves here rather than in typst, so that the deck's own transition is one
- * constant and a slide that named nothing follows it.
- * `none` resolves here too, and to the same entry: a cut still writes what the two
- * containers are showing, and what makes it a cut is the `null` timing `boundaryTiming`
- * hands it. So only a name of a transition overrides the default, which is why the lookup
- * falls through rather than branching on the two literals.
- * A name typst does not know is refused at compile time, so nothing unknown arrives.
+ * A percentage of a container's own box is a fraction of the stage, because a slide fills
+ * it, so a pushed slide keeps its place at any window size without the runtime measuring
+ * one.
+ *
+ * No travel is the empty string, which is the slide at rest, rather than a translate of
+ * zero. An engine computes the two to different strings, so the next boundary would find a
+ * difference where there is none and animate a property that does not change, which in
+ * chromium 151 stops the `opacity` beside it from being drawn. See *Findings*.
  */
-function slideTransitionOf(name) {
-  return slideTransitions[name] ?? slideTransitions[defaultSlideTransition];
+function travelled(direction, fraction) {
+  const { x, y } = TRAVEL[direction];
+  return fraction === 0 ? "" : `${100 * x * fraction || 0}% ${100 * y * fraction || 0}%`;
 }
 
 /**
- * How the boundary above one slide is crossed, or `null` when it cuts.
+ * A `clip-path` that hides the part of a container that an edge travelling along a
+ * direction has not reached, which is `fraction` of the stage.
  *
- * The slide named is the one a forward step enters, and its setting is what both
- * directions take, so stepping back over a boundary undoes exactly what stepping forward
- * over it did.
+ * The side clipped is the one the edge travels towards. The sides follow the order of
+ * `inset`: top, right, bottom, left. Nothing hidden is the slide at rest, for the reason
+ * `travelled` gives.
  */
-function boundaryTiming(number) {
-  const name = deck.get(number)?.transition;
-  return name !== undefined && name !== "none" ? timing("--animo-transition-duration") : null;
+function hidden(direction, fraction) {
+  if (fraction === 0) {
+    return "";
+  }
+  const side = { ltr: 1, rtl: 3, ttb: 2, btt: 0 }[direction];
+  const sides = [0, 0, 0, 0];
+  sides[side] = 100 * fraction;
+  return `inset(${sides.map((value) => `${value}%`).join(" ")})`;
+}
+
+/** The transition a boundary takes when neither its slide nor the deck names one. */
+const defaultSlideTransition = "crossfade";
+
+/**
+ * The transition the boundary above one slide takes, as `{name, args}`, or `null` for a
+ * slide the deck does not have.
+ *
+ * `auto` resolves here rather than in typst, to the deck's own transition, which the deck
+ * states in its configuration and which is the crossfade on a page that states none.
+ * A `duration` the slide's `init` states travels in `args` either way, because it belongs
+ * to the slide rather than to the transition.
+ * A name or a parameter typst does not know is refused at compile time, so nothing unknown
+ * arrives.
+ */
+function slideTransitionOf(number) {
+  const slide = deck.get(number);
+  if (slide === undefined) {
+    return null;
+  }
+  if (slide.transition.name !== "auto") {
+    return slide.transition;
+  }
+  const { name = defaultSlideTransition, ...args } = config.transition ?? {};
+  return { name, args: { ...args, ...slide.transition.args } };
+}
+
+/**
+ * How a boundary that takes a transition is crossed, or `null` when it cuts.
+ *
+ * The deck's `--animo-transition-duration` is the default of a slide whose `init` states no
+ * `duration`, and one it states overrides it, also when the deck's is zero, which is how a
+ * deck of hard cuts pushes one slide in. A duration of zero is a cut, whatever the
+ * transition. A reader who asked for less motion gets a cut everywhere, because `timing`
+ * reads `--animo-motion` first.
+ */
+function boundaryTiming(transition) {
+  if (transition === null) {
+    return null;
+  }
+  const own = timing("--animo-transition-duration");
+  if (own === null) {
+    return null;
+  }
+  const { duration } = transition.args;
+  const options = duration === undefined ? own : { ...own, duration: duration * 1000 };
+  return options.duration > 0 ? options : null;
+}
+
+/**
+ * Plan every slide container of the deck, and the boundary a step crosses between two.
+ *
+ * Every slide is planned at rest first: the slide being shown opaque, every other one
+ * transparent, and none of them moved, clipped or blended by a transition. A slide that
+ * becomes the one being entered therefore always starts from a state this function wrote.
+ * The two slides a boundary crosses are then planned by its transition, in place of their
+ * state at rest, and the properties of theirs that their transition does not name move to
+ * rest on the boundary's clock. That is what takes a slide that a push left half way out of
+ * the stage back into it when a crossfade interrupts the push.
+ *
+ * `options` is how the boundary moves, or `null` when it snaps, which is what a cut, a
+ * duration of zero, a deep link and any jump between slides that are not neighbours all
+ * produce. A boundary that snaps leaves both slides at rest.
+ *
+ * Each container animates from what it is showing, so an interrupted boundary continues
+ * from where it is and stepping back undoes it. The exception is a slide in `fresh`, which
+ * had no layout before this step and shows nothing worth continuing from: it starts at the
+ * far end of the transition instead, which for a push is outside the stage.
+ *
+ * The transition's blend stays on the two slides after the boundary has been crossed, for as
+ * long as the slide being left keeps its layout. A slide that a cover or a wipe has covered
+ * is still laid out under the owner, and under `plus-lighter` the two would add.
+ */
+function planSlides(effects, shown, leaving, options, transition, fresh) {
+  for (const [number, slide] of deck) {
+    const rest = { opacity: number === shown ? "1" : "0", translate: "", "clip-path": "" };
+    const crossing = options !== null && (number === shown || number === leaving);
+    plan(effects, slide.element, rest, crossing ? timed(rest, options) : null);
+    // A blend is not animated, because no value between two of them exists.
+    plan(effects, slide.element, { "mix-blend-mode": "" });
+  }
+  if (options === null || leaving === null) {
+    return;
+  }
+  const entry = slideTransitions[transition.name] ?? slideTransitions[defaultSlideTransition];
+  const { args } = transition;
+  const owner = Math.max(shown, leaving);
+  const p = shown === owner ? 1 : 0;
+  const end = entry.at(p, args);
+  const start = entry.at(1 - p, args);
+  for (const [number, role] of [
+    [owner, "owner"],
+    [Math.min(shown, leaving), "other"],
+  ]) {
+    const element = deck.get(number).element;
+    plan(effects, element, end[role], timed(end[role], options), fresh.has(number) ? start[role] : null);
+    plan(effects, element, { "mix-blend-mode": entry.blend });
+  }
+}
+
+/** One options object per property of a display state, which is what `plan` takes. */
+function timed(state, options) {
+  return Object.fromEntries(Object.keys(state).map((property) => [property, options]));
 }
 
 /**

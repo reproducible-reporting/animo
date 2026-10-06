@@ -48,19 +48,23 @@ function milliseconds(value) {
  * How a step moves, read from the stylesheet at every step, or `null` when it snaps.
  *
  * The values live in CSS rather than in this file: the deck writes its `primitive-duration:`,
- * `transition-duration:` and `easing:` arguments there, and a reader who asked for less motion
- * gets a duration of zero from the media query that outranks them.
+ * `transition-duration:` and `easing:` arguments there.
  * `property` is which duration is wanted: a primitive within a slide and a slide boundary
  * have one each, so a deck of hard cuts between slides keeps the motion inside them.
- * A duration of zero and a `transition: none` therefore reach the same `null`, which is
- * the one path that has no animation in it at all.
+ *
+ * The duration is a default, so a deck duration of zero is still a step that moves when an
+ * operation states a duration of its own, and an effect snaps only when it ends up with no
+ * time at all (see `scheduled`).
+ * The one thing that snaps a whole step is `--animo-motion: none`, which the stylesheet's
+ * media query sets for a reader who asked for less motion, because a media query cannot
+ * reach a number written in a typst source.
  */
 function timing(property = "--animo-primitive-duration") {
   const style = getComputedStyle(document.documentElement);
-  const duration = milliseconds(style.getPropertyValue(property));
-  if (!(duration > 0)) {
+  if (style.getPropertyValue("--animo-motion").trim() === "none") {
     return null;
   }
+  const duration = Math.max(0, milliseconds(style.getPropertyValue(property)));
   // An easing the stylesheet does not state is no easing at all.
   const easing = style.getPropertyValue("--animo-easing").trim() || "linear";
   return { duration, easing, fill: "none" };
@@ -80,11 +84,11 @@ function timing(property = "--animo-primitive-duration") {
  * the animation is created, so an effect that does not hold its first keyframe while it
  * waits shows the state it is going to reach and then jumps back to where it started.
  *
- * A step that snaps stays snapped, delays and durations alike: `options` is `null` when the
- * deck's duration is zero, which is what a reader who asked for less motion, a deep link
- * and the first paint all get. A `duration:` that an operation states is covered by the
- * same rule and by no second one, because a media query cannot reach a number written in a
- * typst source.
+ * A step that snaps stays snapped, delays and durations alike: `options` is `null` for a
+ * reader who asked for less motion, a deep link and the first paint.
+ * An effect with no time at all, no delay and a duration of zero, snaps as well, which is
+ * what an operation that takes the deck's duration of zero and a hard cut both are.
+ * A delay with a duration of zero holds the effect back and then jumps.
  *
  * `mirror` is how long the step lasts, and it turns the schedule around.
  * A backward step is the forward one played from the other end, so an operation that ran
@@ -102,6 +106,9 @@ function scheduled(options, timing, mirror = null) {
   const own = duration === options.duration ? options : { ...options, duration };
   const stated = (timing?.delay ?? 0) * 1000;
   const delay = mirror === null ? stated : mirror - stated - duration;
+  if (!(duration > 0) && !(delay > 0)) {
+    return null;
+  }
   return delay > 0 ? { ...own, delay, fill: "backwards" } : own;
 }
 
@@ -143,6 +150,9 @@ const PROPERTIES = {
   opacity: { rest: "1" },
   translate: { rest: "0px 0px", none: "none" },
   scale: { rest: "1", none: "none" },
+  // No clip and a clip at the element's own box paint the same on a slide, which clips at
+  // its box already, and only the second interpolates with the clip of a wipe.
+  "clip-path": { rest: "inset(0px)", none: "none" },
 };
 
 /** What an element is showing right now, for the CSS properties named. */
@@ -187,8 +197,12 @@ function keyframeName(name) {
  * `options` is `null` for a state that snaps, and otherwise one options object per property
  * of `to`, because two operations of one step may start at different moments and an effect
  * has one delay. A property it has no options for snaps.
+ *
+ * `start` states where an animated property starts, in place of what the element is showing,
+ * for an element whose current value is no point on the route to the new one: a slide that
+ * a push brings in has not been laid out, and it starts outside the stage.
  */
-function plan(effects, element, to, options = null) {
+function plan(effects, element, to, options = null, start = null) {
   let own = effects.get(element);
   if (own === undefined) {
     own = new Map();
@@ -196,7 +210,8 @@ function plan(effects, element, to, options = null) {
   }
   for (const [property, value] of Object.entries(to)) {
     const timing = options?.[property] ?? null;
-    const from = timing === null ? null : showing(element, [property])[property];
+    const from =
+      timing === null ? null : (start?.[property] ?? showing(element, [property])[property]);
     own.set(property, { to: value, timing, from });
   }
 }

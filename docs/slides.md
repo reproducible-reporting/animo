@@ -128,23 +128,103 @@ Four rules govern both overlay and background layers.
 
 ## Slide Transitions
 
-`transition:` says how a slide is **entered**:
-`auto`, the default, is the deck's own transition, and `none` cuts abruptly.
-A transition may also be named, and `"crossfade"` is the only one implemented so far,
-which is what `auto` defaults to.
+A slide says how it is **entered** with `init(..)`, which is the first call of its timeline.
+The `init` call is about the **initial state** of the slide,
+the slide as its body declares it before the first `sub`, and it adds no subslide.
+Its first argument is the transition into the slide:
 
 ```typst
-#slide(transition: none)[
-  = Arrived without a fade
+#slide(animation: {
+  import anim: *
+  init(push(direction: btt))
+  sub(reveal("detail"))
+})[
+  = Pushed up into view
+  #tag("detail")[A detail that comes later.]
 ]
 ```
 
-A transition moves nothing.
-Two slides share nothing to hold still, so the whole slide is what crosses,
-and the subslide state of the slide being entered is in place before it comes up.
-How long a crossfade takes is the deck's
-[`transition-duration`](presenting.md#motion) rather than an argument here,
-so turning every boundary into a hard cut is one argument on the show rule.
+A slide with no other use for a timeline writes the call on its own, without the import:
 
-This is an HTML-only argument.
-The paged outputs cannot have any transitions by definition, so they ignore it.
+```typst
+#slide(animation: anim.init(anim.push()))[
+  = Pushed in from the right
+]
+```
+
+The `anim` module holds one function per transition:
+
+| Transition              | What happens on a forward step                                          |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `crossfade()`           | the slide fades in while the slide before it fades out                  |
+| `push(direction: rtl)`  | the slide moves in from one edge and moves the slide before it out      |
+| `cover(direction: rtl)` | the slide moves in from one edge over the slide before it               |
+| `wipe(direction: ltr)`  | the slide is revealed over the slide before it behind a travelling edge |
+
+The `direction` parameter takes a typst direction:
+`ltr` travels from left to right, `rtl` from right to left,
+`ttb` from top to bottom and `btt` from bottom to top.
+A push and a cover default to `rtl`, so the slide comes in from the right,
+and a wipe defaults to `ltr`.
+A parameter or a value that a transition does not take is refused when the deck is compiled.
+
+The `duration:` argument of `init` is how long the transition takes, in seconds.
+It defaults to `auto`, which is the deck's
+[`transition-duration`](presenting.md#motion).
+A duration of zero is a **hard cut**, whatever the transition:
+
+```typst
+#slide(animation: anim.init(duration: 0))[
+  = Arrived without a fade
+]
+
+#slide(animation: anim.init(anim.wipe(direction: ttb), duration: 0.8))[
+  = Wiped in from the top, slowly
+]
+```
+
+The boundary between two slides belongs to the slide with the higher number,
+so stepping back over it plays the same transition backwards.
+Stepping back from a slide that was pushed in from the right moves it out to the right again
+and brings the slide before it back from the left.
+
+A transition changes nothing inside either slide.
+The subslide state of the slide being entered is in place before it comes up.
+
+The `init` call also takes `wait:`, `hold:` and `handout:`,
+which mean for the initial state what they mean for a subslide on a `sub`.
+[Continuous Animations](continuous.md#timing) explains the first two,
+and [Selecting States for Handouts](continuous.md#selecting-states-for-handouts) the third.
+The `init` call is written at most once, before the first `sub`,
+and Animo refuses it anywhere else.
+
+### The Deck's Own Transition
+
+A slide whose `init` names no transition takes the deck's own,
+which is the `transition:` argument of the show rule and defaults to `anim.crossfade()`:
+
+```typst
+#show: animo.with(transition: anim.push(direction: btt))
+```
+
+How long it takes is the deck's `transition-duration`,
+which is the default of every `init` that states no `duration:`.
+A `transition-duration` of zero makes a hard cut the default.
+A slide in such a deck that names a transition and states no duration takes that zero,
+and is entered with a cut rather than with the transition it names.
+A slide that is to be pushed in states its duration as well:
+
+```typst
+#show: animo.with(transition-duration: 0)
+
+#slide(animation: anim.init(anim.push(), duration: 0.4))[
+  = The one slide that is pushed in
+]
+```
+
+A reader whose browser asks for reduced motion gets a hard cut at every boundary,
+whatever the deck and its slides state.
+
+Transitions are HTML only.
+The paged outputs put two slides on two pages with nothing between them,
+so they ignore the transition, the `duration:` and the `wait:` of `init`.

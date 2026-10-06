@@ -9,6 +9,8 @@ Every slide publishes the canvas it settled on as metadata, which is the only ch
 that reaches the paged and the HTML target alike.
 """
 
+from html import escape
+
 import pytest
 from decks import PREAMBLE, deck
 from harness import TypstRunner
@@ -241,32 +243,96 @@ def test_numbered_counts_slides_and_position_counts_all_of_them(typst: TypstRunn
 
 # A slide with ink of its own, so that a comparison of two renderings is about a page
 # that holds something rather than about an empty one.
-ENTERED = 'slide(BEFOREbackground: rgb("#204080"))[\n  = A slide\n  With a line of text.\n]'
+# INIT is replaced by the arguments of the slide's `init`, which is where a slide says how it
+# is entered.
+ENTERED = (
+    'slide(animation: anim.init(INIT), background: rgb("#204080"))[\n'
+    "  = A slide\n  With a line of text.\n]"
+)
+
+
+def entered(arguments: str = "") -> str:
+    """The slide above, entered as an `init` with these arguments says."""
+    return ENTERED.replace("INIT", arguments)
+
+
+# Every form the transition into a slide takes, with and without a duration of its own.
+TRANSITIONS = [
+    "",
+    "duration: 0",
+    "anim.crossfade()",
+    "anim.push()",
+    "anim.cover()",
+    "anim.wipe()",
+    "anim.crossfade(), duration: 1",
+    "anim.push(direction: ltr), duration: 0.6",
+    "anim.cover(direction: btt)",
+    "anim.wipe(direction: ttb), duration: 0",
+]
 
 
 @pytest.mark.parametrize("html", [False, True])
-@pytest.mark.parametrize("value", ["auto", "none", '"crossfade"'])
-def test_a_transition_takes_auto_none_or_a_name(typst: TypstRunner, value, html):
-    """A transition may be named, so a richer one later is a value added and not a type changed."""
-    typst.ok(deck(ENTERED.replace("BEFORE", f"transition: {value}, ")), html=html)
+@pytest.mark.parametrize("value", TRANSITIONS)
+def test_init_takes_a_transition_and_a_duration(typst: TypstRunner, value, html):
+    """A transition is a function of `anim`, and the duration is `init`'s own."""
+    typst.ok(deck(entered(value)), html=html)
+
+
+# A transition the runtime cannot take, with what the diagnosis says about it.
+# Each is written on the second slide, so that the first slide is a control that compiles.
+REFUSED_TRANSITIONS = [
+    ('"push"', "init takes its first argument as a transition, such as crossfade()"),
+    ("1", "init takes its first argument as a transition"),
+    ('(name: "push")', "init takes its first argument as a transition"),
+    ("anim.fade()", "module `anim` does not contain `fade`"),
+    ("anim.push(speed: 2)", "unexpected argument: speed"),
+    ("anim.crossfade(direction: ltr)", "unexpected argument: direction"),
+    ("anim.push(duration: 1)", "unexpected argument: duration"),
+    ("anim.push(direction: left)", "push takes direction as one of ltr, rtl, ttb and btt"),
+    ('anim.wipe(direction: "ltr")', "wipe takes direction as one of ltr, rtl, ttb and btt"),
+    ('anim.cover(), easing: "linear"', "init takes no named argument besides duration, wait"),
+    ("anim.push(), duration: -1", "init takes duration as a number of seconds that is not"),
+    ('anim.push(), duration: "1s"', "init takes duration as a number of seconds"),
+]
 
 
 @pytest.mark.parametrize("html", [False, True])
-def test_a_transition_that_is_none_of_them_is_refused(typst: TypstRunner, html):
+@pytest.mark.parametrize(("value", "message"), REFUSED_TRANSITIONS)
+def test_a_transition_the_runtime_cannot_take_is_refused(typst: TypstRunner, value, message, html):
     """A misspelt transition would otherwise be a slide that quietly keeps the default.
 
     Typst refuses it rather than the runtime, because the runtime has no way to report it
-    and a name it did not recognise would fall back to the deck's own transition.
+    and a name or a parameter it did not recognise would fall back to a default.
+    Refused in every target, so that a deck that compiles to a PDF compiles to a
+    presentation as well.
     """
-    typst.fails(
-        deck(ENTERED.replace("BEFORE", 'transition: "fade", ')),
-        "transition takes `auto`",
-        html=html,
-    )
+    typst.fails(deck(entered(), entered(value)), message, html=html)
+
+
+@pytest.mark.parametrize("html", [False, True])
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ("auto", "animo takes transition as a transition, such as crossfade()"),
+        ('"crossfade"', "animo takes transition as a transition"),
+        ('(name: "push", direction: ttb)', "animo takes transition as a transition"),
+        ("anim.push(duration: 1)", "unexpected argument: duration"),
+        ("anim.wipe(direction: up)", "unknown variable: up"),
+    ],
+)
+def test_a_deck_transition_the_runtime_cannot_take_is_refused(
+    typst: TypstRunner, value, message, html
+):
+    """The deck takes one of the transition functions, and nothing about time.
+
+    Its duration is the show rule's `transition-duration:`, so a transition there takes no
+    duration, as it takes none anywhere else.
+    """
+    typst.fails(deck(entered(), timing=f"transition: {value}"), message, html=html)
 
 
 @pytest.mark.parametrize("mode", ["handout", "presentation"])
-@pytest.mark.parametrize("value", ["auto", "none", '"crossfade"'])
+@pytest.mark.parametrize("value", ["duration: 0", "anim.crossfade()", TRANSITIONS[-3]])
 def test_a_transition_leaves_the_paged_outputs_byte_identical(typst: TypstRunner, value, mode):
     """ "Ignored in the paged outputs" means the bytes and not merely the look.
 
@@ -274,45 +340,72 @@ def test_a_transition_leaves_the_paged_outputs_byte_identical(typst: TypstRunner
     reach either paged output at all. SVG rather than PDF, because a PDF carries the
     moment it was written and two compilations of one document therefore differ in it.
     """
-    plain = typst.svg(
-        deck(ENTERED.replace("BEFORE", "")),
-        name=f"plain-{value}-{mode}.svg",
-        sysinp={"animo": mode},
-    )
+    plain = typst.svg(deck(entered()), name=f"plain-{mode}.svg", sysinp={"animo": mode})
     stated = typst.svg(
-        deck(ENTERED.replace("BEFORE", f"transition: {value}, ")),
-        name=f"stated-{value}-{mode}.svg",
+        deck(entered(value)),
+        name=f"stated-{TRANSITIONS.index(value)}-{mode}.svg",
         sysinp={"animo": mode},
     )
     assert stated == plain
 
 
-def test_a_transition_reaches_the_html_output(typst: TypstRunner):
+def test_a_cut_reaches_the_html_output_as_a_duration_of_zero(typst: TypstRunner):
     """The control for the byte-identity above, which would otherwise pass on an argument
     that animo ignored everywhere.
 
     It travels as one attribute per slide rather than as an entry in the plan, for the
     reason the plan itself is an attribute: an inspector shows it beside the slide.
+    A cut is no transition of its own, so the slide keeps the deck's and states no time.
     """
+    page = typst.html(deck(entered("duration: 0"), entered()), name="cut.html").read_text()
+    assert page.count('data-animo-transition="auto"') == 2
+    arguments = escape('{"duration":0.0}')
+    assert page.count(f'data-animo-transition-args="{arguments}"') == 1
+    assert page.count("data-animo-transition-args") == 1
+
+
+def test_the_parameters_of_a_transition_travel_beside_its_name(typst: TypstRunner):
+    """The name stays one string, a direction is its typst name, and the duration of `init`
+    travels with the parameters, because the runtime reads the two together."""
+    page = typst.html(deck(entered(TRANSITIONS[-3])), name="parameters.html").read_text()
+    assert page.count('data-animo-transition="push"') == 1
+    arguments = escape('{"direction":"ltr","duration":0.6}')
+    assert page.count(f'data-animo-transition-args="{arguments}"') == 1
+
+
+def test_a_transition_states_every_parameter_it_takes(typst: TypstRunner):
+    """Typst holds the defaults, so the runtime never has to guess a direction."""
+    page = typst.html(deck(entered("anim.wipe()")), name="defaults.html").read_text()
+    arguments = escape('{"direction":"ltr"}')
+    assert page.count(f'data-animo-transition-args="{arguments}"') == 1
+
+
+def test_the_deck_states_its_own_transition_in_its_configuration(typst: TypstRunner):
+    """`auto` means the deck's transition, which the deck writes once rather than every slide."""
     page = typst.html(
-        deck(ENTERED.replace("BEFORE", "transition: none, "), ENTERED.replace("BEFORE", "")),
-        name="transition.html",
+        deck(entered(), timing="transition: anim.push(direction: ttb)"),
+        name="deck-transition.html",
     ).read_text()
-    assert page.count('data-animo-transition="none"') == 1
+    configuration = escape('{"transition":{"name":"push","direction":"ttb"}}')
+    assert f'data-animo-config="{configuration}"' in page
     assert page.count('data-animo-transition="auto"') == 1
 
 
 def test_a_named_transition_travels_as_its_name(typst: TypstRunner):
-    """`auto` stays `auto` rather than resolving to the deck's own transition in typst.
+    """A slide without a transition stays `auto` rather than resolving to the deck's own in
+    typst.
 
-    Which transition `auto` means is the runtime's constant, so resolving it here would put
-    the same answer in two places and let them drift.
+    Which transition `auto` means is the deck's, which the deck states once in its
+    configuration, so resolving it here would put the same answer in every slide.
     """
-    page = typst.html(
-        deck(ENTERED.replace("BEFORE", 'transition: "crossfade", ')),
-        name="named.html",
-    ).read_text()
+    page = typst.html(deck(entered("anim.crossfade()")), name="named.html").read_text()
     assert page.count('data-animo-transition="crossfade"') == 1
+
+
+def test_the_old_arguments_of_a_slide_are_gone(typst: TypstRunner):
+    """What a slide says about time is said in `init`, and typst refuses the old spelling."""
+    for argument in ("transition: none", "wait: 1", "hold: 1", "handout: true"):
+        typst.fails(deck(f"slide({argument})[body]"), "unexpected argument")
 
 
 # The arguments a later version fills in.
@@ -326,25 +419,28 @@ def test_a_timeline_that_is_not_one_is_refused_by_the_slide(typst: TypstRunner):
     """
     typst.fails(
         deck("slide(animation: (1,))[body]"),
-        "step 1 of the animation argument is not a sub(..) call",
+        "entry 1 of the animation argument is not a sub(..) call",
     )
 
 
 # The handout flag of the initial state.
 
+# A slide whose `init` states the handout flag of its initial state, which replaces FLAG.
+KEEP = "slide(animation: anim.init(handout: FLAG))[body]"
 
-def test_the_slide_takes_the_handout_flag_of_its_initial_state(typst: TypstRunner):
+
+def test_init_takes_the_handout_flag_of_the_initial_state(typst: TypstRunner):
     """What it resolves to is asserted in `test_plan.py`; this is the one assertion that
     `#slide` is on that path at all rather than ignoring the argument."""
-    typst.ok(deck("slide(handout: true)[body]", "slide(handout: false)[body]"))
+    typst.ok(deck(KEEP.replace("FLAG", "true"), KEEP.replace("FLAG", "false")))
 
 
-def test_a_handout_flag_on_a_slide_that_is_not_a_flag_is_refused(typst: TypstRunner):
-    """The message names the slide rather than `sub`, because the two flags are written in
+def test_a_handout_flag_on_init_that_is_not_a_flag_is_refused(typst: TypstRunner):
+    """The message names `init` rather than `sub`, because the two flags are written in
     different places and a reader of the message is looking at one of them."""
     typst.fails(
-        deck("slide(handout: 1)[body]"),
-        "the handout argument of slide takes auto, true or false",
+        deck(KEEP.replace("FLAG", "1")),
+        "the handout argument of init takes auto, true or false",
     )
 
 
@@ -353,7 +449,7 @@ def test_a_handout_that_holds_no_page_at_all_is_refused(typst: TypstRunner):
     default size, which looks like a rendering failure rather than like the flag doing
     what it was told. So the deck says what really happened."""
     typst.fails(
-        deck("slide(handout: false)[body]", "slide(handout: false)[body]"),
+        deck(KEEP.replace("FLAG", "false"), KEEP.replace("FLAG", "false")),
         "every state of this deck gave up its handout page",
     )
 
@@ -361,13 +457,13 @@ def test_a_handout_that_holds_no_page_at_all_is_refused(typst: TypstRunner):
 def test_one_page_anywhere_is_enough_for_the_deck(typst: TypstRunner):
     """The refusal is about the whole handout, so a slide that contributes nothing is
     not a mistake as long as another one does."""
-    typst.ok(deck("slide(handout: false)[body]", "slide[body]"))
+    typst.ok(deck(KEEP.replace("FLAG", "false"), "slide[body]"))
 
 
 def test_a_handout_that_holds_no_page_is_only_refused_in_the_handout(typst: TypstRunner):
     """The presentation renders every state whatever the flags say, and the HTML output
     has no pages to give up."""
-    source = deck("slide(handout: false)[body]")
+    source = deck(KEEP.replace("FLAG", "false"))
     typst.ok(source, sysinp={"animo": "presentation"})
     typst.ok(source, html=True)
 

@@ -149,6 +149,13 @@
   }
 }
 
+/// Mark a part of a slide so that the timeline can address it by name.
+///
+/// - name (str): What the timeline refers to.
+/// - body (content): What is marked.
+/// - wrap (auto, function, none): The container the tag site becomes: `auto`, `box`,
+///   `block`, `none` or a function.
+/// -> content
 #let tag(name, body, wrap: auto) = {
   check-name("a tag", name)
   if type(body) != content {

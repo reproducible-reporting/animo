@@ -75,10 +75,11 @@ function show(position, animate = false) {
   // container has one opacity, so the slide passed through would have to be faded out
   // beside the one being left, and one slide to hand over is what this seam is shaped for.
   const neighbour = Math.abs(wanted.slide - from) === 1;
-  const boundary =
-    animate && crossing && neighbour
-      ? boundaryTiming(Math.max(wanted.slide, from))
-      : null;
+  // The boundary belongs to the slide with the higher number, in both directions, so a
+  // backward step undoes exactly what the forward step over it did.
+  const transition =
+    animate && crossing && neighbour ? slideTransitionOf(Math.max(wanted.slide, from)) : null;
+  const boundary = boundaryTiming(transition);
   const slide = deck.get(wanted.slide);
   // Which state the slide being entered is showing, which is where its own motion starts
   // and which is not the deck's position when a join is being walked back over.
@@ -106,6 +107,14 @@ function show(position, animate = false) {
   // It is `inert` meanwhile: it is on screen only to be crossed from, and neither a pointer
   // nor the keyboard has any business in it.
   const leaving = boundary === null ? null : from;
+  // The slides that had no layout before this step, which a transition brings in from its
+  // far end rather than from what they show.
+  const fresh = new Set();
+  for (const [number, other] of deck) {
+    if (!other.element.matches("[data-animo-current], [data-animo-leaving]")) {
+      fresh.add(number);
+    }
+  }
   for (const [number, other] of deck) {
     other.element.toggleAttribute("data-animo-current", number === current.slide);
     other.element.toggleAttribute("data-animo-leaving", number === leaving);
@@ -123,11 +132,8 @@ function show(position, animate = false) {
   // one clock, and so that no part of the plan reads a style another part has written.
   // The slide being entered takes the deck's own step where the boundary takes the deck's
   // slide duration: a join is two clocks started on one frame, going back as coming.
-  // The boundary belongs to the slide with the higher number, in both directions, so a
-  // backward step undoes exactly what the forward step over it did.
   const effects = new Map();
-  const owner = deck.get(Math.max(current.slide, from));
-  slideTransitionOf(owner?.transition ?? "auto")(effects, current.slide, leaving, boundary);
+  planSlides(effects, current.slide, leaving, boundary, transition, fresh);
   const options = moving ? timing() : null;
   planState(effects, slide, current.state, options, {
     from: left,

@@ -263,9 +263,18 @@ What it could do later belongs in a GitHub issue.
 
 `typstyle` formats every `.typ` file through `pre-commit`, so formatting is not a judgement call.
 Indentation is two spaces, as `.editorconfig` says.
-Doc comments are plain `//` comments:
-the manual is a Markdown site rather than a `tidy` document,
-so nothing would read a `///` comment.
+A function an author calls carries a `///` doc comment,
+because tinymist shows it as hover documentation and signature help.
+These are the names `lib.typ` exports and the functions of the `anim` module.
+The comment follows the syntax that
+[tinymist documents](https://myriad-dreamin.github.io/tinymist/feature/docs.html):
+
+- the description is typst markup, not Markdown;
+- each parameter gets a line of the form `/// - name (type): description`;
+- the returned value gets a line of the form `/// -> type`.
+
+Every other comment is a plain `//` comment,
+because the manual is a Markdown site rather than a `tidy` document.
 
 ### Python
 

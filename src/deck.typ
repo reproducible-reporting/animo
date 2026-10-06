@@ -16,6 +16,7 @@
 #import "anim.typ": check-seconds
 #import "runtime.typ": pt-of
 #import "site.typ": describe
+#import "transition.typ": crossfade, transition-of
 
 // The shape a deck has when its show rule is not told otherwise.
 // Stated once, because the show rule's own arguments default to it as well.
@@ -66,7 +67,7 @@
     message: "every state of this deck gave up its handout page, so the handout holds "
       + "no page at all; handout: is the only thing that says what a handout holds, "
       + "so let at least one state keep its page with sub(handout: true) or "
-      + "slide(handout: true)",
+      + "init(handout: true)",
   )
 }
 
@@ -274,6 +275,21 @@
   ))
 })
 
+/// The shape and the tempo of the deck, applied as a document show rule.
+///
+/// - body (content): The document, given by the show rule.
+/// - width (length): The width of a slide.
+/// - height (length): The height of a slide.
+/// - margin (length): The inset of the body inside a slide.
+/// - primitive-duration (int, float): Seconds a primitive takes when it states no
+///   `duration:`.
+/// - transition-duration (int, float): Seconds the transition into a slide takes when its
+///   `init` states no `duration:`.
+/// - easing (str): The timing function of both, one of `"linear"`, `"ease"`, `"ease-in"`,
+///   `"ease-out"` and `"ease-in-out"`.
+/// - transition (array): The transition into every slide whose `init` names none, such as
+///   `anim.push(direction: btt)`.
+/// -> content
 #let animo(
   body,
   width: deck-defaults.width,
@@ -282,6 +298,7 @@
   primitive-duration: 0.4,
   transition-duration: 0.4,
   easing: "ease-in-out",
+  transition: crossfade(),
 ) = {
   assert(
     margin * 2 < width and margin * 2 < height,
@@ -291,9 +308,15 @@
   // Checked in every target, although only the HTML one has a clock to measure it on,
   // so that a deck that compiles to a PDF compiles to a presentation as well.
   let timing = deck-timing(primitive-duration, transition-duration, easing)
+  // The transition of every slide whose `init` names none, checked in every target for the
+  // reason the tempo is.
+  // Its duration is `transition-duration:` above, because a transition says nothing about
+  // time.
+  let own = transition-of("animo", "transition", transition)
+  let config = (transition: (name: own.name, ..own.args))
   context {
     if target() == "html" {
-      html-shell(shape, timing, (:), {
+      html-shell(shape, timing, config, {
         deck-shape.update(shape)
         body
       })

@@ -46,16 +46,17 @@
 // a number.
 #let step-counter = counter("animo-step")
 
-// The number of the slide being laid out, or `none` on a slide that is not counted.
-//
-// Must be called in a context, because it reads a counter.
+/// The number of the slide being laid out, or `none` on a slide that is not counted.
+/// Called in a context.
+///
+/// -> int
 #let slide-number() = {
   if numbered-flag.get() { slide-counter.get().first() }
 }
 
-// How many slides of the deck carry a number.
-//
-// Must be called in a context, because it reads a counter.
+/// How many slides of the deck carry a number. Called in a context.
+///
+/// -> int
 #let slide-count() = slide-counter.final().first()
 
 // The label of the rendering that belongs to one state of the slide.
@@ -192,6 +193,13 @@
   }
 }
 
+/// Content laid out once per subslide, of which the one belonging to the subslide on screen
+/// is shown.
+///
+/// - f (function): Called with `(number:, count:, step:, steps:)`, the number of the
+///   subslide in its slide and in the deck and how many there are, and returns content.
+/// - wrap (auto, function): The container the stack becomes: `auto`, `box` or `block`.
+/// -> content
 #let per-subslide(f, wrap: auto) = {
   assert(
     type(f) == function,

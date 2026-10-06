@@ -122,7 +122,7 @@
 
 // `hold: 0` sends the deck on the moment this step is triggered, so the circle's growth
 // and the crossfade into the next slide run together and the two slides read as one build.
-// It is written here rather than as `wait: 0` on the slide that follows because the
+// It is written here rather than as `init(wait: 0)` on the slide that follows because the
 // sentence is about the motion on this slide.
 #slide(animation: {
   import anim: *
@@ -152,13 +152,16 @@
   ]
 ]
 
+// A slide that answers the one before it is pushed in from below, so that the two read as
+// one movement. The direction is the direction of travel on a forward step.
 #slide(background: dark)[
   #align(center + horizon, text(size: 2em, fill: white, weight: "bold")[
     ... but you don't have to!
   ])
 ]
 
-#slide[
+// This slide is pushed up into view, and `init` is where a slide says how it is entered.
+#slide(animation: anim.init(anim.push(direction: btt)))[
   = Animations
 
   ```typst
@@ -190,8 +193,9 @@
   #tag("second")[Appears second and stays.]
 ]
 
-#slide(handout: true, animation: {
+#slide(animation: {
   import anim: *
+  init(handout: true)
   // Each step reveals the next piece of the derivation and pans so that the piece
   // just finished sits at the top of the viewport, which is how a long argument
   // stays readable on a slide that is four times as tall as the screen.
@@ -222,7 +226,7 @@
   ])
 
   #tag("step1")[
-    #tag("sol")[*The solution*]
+    #tag("sol")[*Answer*]
 
     1. Eliminate the mean by writing $u_k = x_k - mu$.
       The three given statistics translate into the following equations:
@@ -300,9 +304,8 @@
 
 // The one slide of this deck that is entered with a cut rather than a crossfade.
 // A dark full-bleed ground arriving out of a light slide reads better as a change of
-// chapter than as a dissolve, and `transition:` is written on the slide it is about.
+// chapter than as a dissolve, and a cut is a transition that takes no time.
 #slide(
-  transition: none,
   background: rect(
     fill: tiling(
       size: (1cm, 1cm),
@@ -331,6 +334,7 @@
   )),
   animation: {
     import anim: *
+    init(duration: 0)
     sub(reveal("canvas"))
     sub(pan(dy: 6cm))
     sub(reveal("clipped"))
@@ -419,16 +423,17 @@
   }
 ]
 
-// `handout: true` keeps the initial state, which is the one that shows the reserved gap.
+// `init(handout: true)` keeps the initial state, which is the one that shows the reserved gap.
 // Without it the handout would keep only the final state, where the sentence is complete
 // and the slide makes no point.
 //
-// `wait: 0.3` enters this slide a third of a second after the circles scatter, so the deck
+// `init(wait: 0.3)` enters this slide a third of a second after the circles scatter, so the deck
 // crosses this boundary on its own, and one press back plays the scatter in reverse.
 // It is written here rather than as `hold: 0.3` on the slide before, whose timeline is
 // written by a loop that would need a condition to time its last step alone.
-#slide(handout: true, wait: 0.3, animation: {
+#slide(animation: {
   import anim: *
+  init(wait: 0.3, handout: true)
   sub(reset("1"))
 })[
   = Space Is Reserved
@@ -529,11 +534,11 @@
   = Timer controls (in HTML)
 
   #tag("timed1")[
-    1. `wait:` on a `sub` or on a `#slide` autoplays its animation after waiting the given number of seconds.
+    1. `wait:` on a `sub` or on `init` autoplays its animation after waiting the given number of seconds.
   ]
 
   #tag("timed2")[
-    2. `hold:` on a `sub` or on a `#slide` has the same autoplay effect on the *next* (sub)slide.
+    2. `hold:` on a `sub` or on `init` has the same autoplay effect on the *next* (sub)slide.
   ]
 
   #tag("d1")[
@@ -630,7 +635,8 @@
   ]
 ]
 
-#slide[
+// The last slide is wiped in from the left, slower than the deck's own transitions.
+#slide(animation: anim.init(anim.wipe(direction: ltr), duration: 1))[
   #place(center + horizon, text(size: 1.2em, fill: dark, weight: "bold")[
     Thank you for watching!
   ])

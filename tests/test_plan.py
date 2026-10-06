@@ -35,9 +35,11 @@ def resolved(timeline: str, *assertions: str, handout: str = "auto") -> str:
         what the timeline asks of the tag sites to `asked`
         and the continuous names to `names`.
     handout
-        The slide's own handout flag, as a typst literal.
-        It is what `#slide(handout: ..)` hands the resolver for state 0.
+        The handout flag of the initial state, as a typst literal.
+        Anything but `auto` is written as an `init(handout: ..)` ahead of the timeline.
     """
+    if handout != "auto":
+        timeline = f"init(handout: {handout})\n{timeline}"
     steps = "\n".join("  " + line for line in timeline.splitlines())
     return "\n".join(
         (
@@ -46,7 +48,7 @@ def resolved(timeline: str, *assertions: str, handout: str = "auto") -> str:
             "  import anim: *",
             steps,
             "}",
-            f"#let plan = resolve(timeline, handout: {handout})",
+            "#let plan = resolve(timeline)",
             "#let asked = timeline-asks(plan)",
             "#let names = asked.names",
             *assertions,
@@ -709,11 +711,80 @@ def test_the_offending_argument_is_named_by_its_position(typst: TypstRunner):
 
 
 def test_a_step_that_is_not_a_sub_call_is_refused(typst: TypstRunner):
-    """A timeline is a code block of `sub(..)` calls and nothing else."""
+    """A timeline is a code block of an optional `init(..)` and `sub(..)` calls."""
     typst.fails(
         PRELUDE + '#let plan = resolve(((kind: "reveal", name: "a"),))\n',
-        "step 1 of the animation argument is not a sub(..) call",
+        "entry 1 of the animation argument is not a sub(..) call",
     )
+
+
+def test_init_sets_the_flags_of_the_initial_state(typst: TypstRunner):
+    """State 0 has no `sub`, so its three flags are the ones `init` states."""
+    typst.ok(
+        resolved(
+            'init(wait: 1, hold: 2, handout: false)\nsub(reveal("a"))',
+            "#assert.eq(plan.states.len(), 2)",
+            "#assert.eq(plan.states.at(0).wait, 1.0)",
+            "#assert.eq(plan.states.at(0).hold, 2.0)",
+            "#assert.eq(plan.states.at(0).handout, false)",
+        )
+    )
+
+
+def test_init_carries_the_transition_into_the_slide(typst: TypstRunner):
+    """The plan holds the `init` as it was written, for the slide to emit."""
+    typst.ok(
+        resolved(
+            "init(push(direction: btt), duration: 0.6)",
+            '#assert.eq(plan.init.transition.name, "push")',
+            '#assert.eq(plan.init.transition.args, (direction: "btt"))',
+            "#assert.eq(plan.init.duration, 0.6)",
+        )
+    )
+
+
+def test_a_timeline_without_init_states_nothing_about_the_initial_state(typst: TypstRunner):
+    """The defaults are the ones of an `init` with no arguments."""
+    typst.ok(
+        resolved(
+            'sub(reveal("a"))',
+            "#assert.eq(plan.init.transition, auto)",
+            "#assert.eq(plan.init.duration, auto)",
+            "#assert.eq(plan.states.at(0).wait, none)",
+        )
+    )
+
+
+@pytest.mark.parametrize(
+    ("timeline", "message"),
+    [
+        ('sub(reveal("a"))\ninit()', "is an init(..) call after a sub(..) call; init comes first"),
+        ("init()\ninit()", "is a second init(..) call; a timeline holds at most one"),
+        ("push()", "is a transition on its own; the transition into the slide is the first"),
+        ("sub(push())", "argument 1 of sub is a transition, which sub does not take"),
+        ("sub(init())", "argument 1 of sub is an init(..) call, which comes before the first sub"),
+        ("init(push(), wipe())", "init takes at most one transition, got 2"),
+        ('init("push")', "init takes its first argument as a transition"),
+        ("init(dration: 1)", "init takes no named argument besides duration, wait, hold"),
+        ("init(duration: -1)", "init takes duration as a number of seconds that is not negative"),
+        ("init(push(direction: left))", "push takes direction as one of ltr, rtl, ttb and btt"),
+    ],
+    ids=[
+        "after-sub",
+        "twice",
+        "bare-transition",
+        "transition-in-sub",
+        "init-in-sub",
+        "two-transitions",
+        "name",
+        "misspelt-argument",
+        "negative-duration",
+        "direction",
+    ],
+)
+def test_a_misplaced_or_malformed_init_is_refused(typst: TypstRunner, timeline, message):
+    """`init` comes first and at most once, so its meaning never depends on its position."""
+    typst.fails(resolved(timeline), message)
 
 
 def test_a_content_block_as_a_timeline_is_refused(typst: TypstRunner):
@@ -854,14 +925,18 @@ def call(opening: str, arguments: str) -> str:
     return f"{opening}, {arguments}){body}"
 
 
+CROSSFADE = '(kind: "transition", name: "crossfade", args: (:))'
+"""The record `crossfade()` puts in a plan."""
+
+
 @pytest.mark.parametrize("opening", STRUCTURAL)
 def test_every_structural_primitive_takes_a_transition(typst: TypstRunner, opening):
     """The transition is chosen per operation, so one step can carry two regions two ways."""
     typst.ok(
         resolved(
-            f"sub({call(opening, 'transition: "crossfade"')})\n"
+            f"sub({call(opening, 'transition: crossfade()')})\n"
             f"sub({call(opening, 'transition: auto')})",
-            '#assert.eq(plan.epochs.at(1).transitions, (a: ("crossfade",)))',
+            f"#assert.eq(plan.epochs.at(1).transitions, (a: ({CROSSFADE},)))",
             "#assert.eq(plan.epochs.at(2).transitions, (a: (auto,)))",
         )
     )
@@ -871,25 +946,35 @@ def test_the_transitions_of_an_epoch_follow_its_operations_in_order(typst: Typst
     """One entry per operation, beside the timings, so a boundary can compare them."""
     typst.ok(
         resolved(
-            'sub(replace("a")[x], apply("a", emph, transition: "crossfade"), remove("b"))',
-            '#assert.eq(plan.epochs.at(1).transitions, (a: (auto, "crossfade"), b: (auto,)))',
+            'sub(replace("a")[x], apply("a", emph, transition: crossfade()), remove("b"))',
+            f"#assert.eq(plan.epochs.at(1).transitions, (a: (auto, {CROSSFADE}), b: (auto,)))",
         )
     )
 
 
 @pytest.mark.parametrize("opening", STRUCTURAL)
-def test_a_misspelled_transition_is_refused(typst: TypstRunner, opening):
-    """A name the runtime did not know would be a region that quietly took the default."""
+def test_a_transition_that_moves_a_slide_is_refused_on_a_region(typst: TypstRunner, opening):
+    """A push, a cover and a wipe move a whole slide, which no region can do."""
     kind = opening.split("(")[0]
     typst.fails(
-        resolved(f"sub({call(opening, 'transition: "crosfade"')})"),
-        f'{kind} takes transition as `auto`, which is the deck\'s own, or one of ("crossfade",)',
+        resolved(f"sub({call(opening, 'transition: push()')})"),
+        f"{kind} cannot carry a region with push(direction: rtl), because a region takes "
+        "crossfade()",
     )
 
 
-def test_a_transition_that_is_not_a_name_is_refused(typst: TypstRunner):
-    """`none` is the cut of a slide boundary, and an epoch boundary does not take it."""
-    typst.fails(resolved('sub(replace("a", transition: none)[x])'), "got none")
+@pytest.mark.parametrize("value", ['"crossfade"', "none", '(name: "crossfade")'])
+def test_a_transition_that_is_not_a_transition_function_is_refused(typst: TypstRunner, value):
+    """A name or a dictionary is what a transition was before it became a function."""
+    typst.fails(
+        resolved(f'sub(replace("a", transition: {value})[x])'),
+        "replace takes transition as a transition, such as crossfade()",
+    )
+
+
+def test_a_misspelled_transition_is_an_unknown_variable(typst: TypstRunner):
+    """A transition is a function, so typst refuses a misspelling before animo sees it."""
+    typst.fails(resolved('sub(replace("a", transition: crosfade())[x])'), "unknown variable")
 
 
 # What the browser is handed.
@@ -995,6 +1080,7 @@ def test_a_region_carries_the_transition_its_operations_named(typst: TypstRunner
     """A name travels, and `auto` travels as nothing, so a deck that names none is unchanged.
 
     The runtime reads a region with no `transition` as one that crossfades.
+    A transition without parameters carries no `args`.
     """
     typst.ok(
         resolved(
@@ -1002,7 +1088,7 @@ def test_a_region_carries_the_transition_its_operations_named(typst: TypstRunner
             "#let timing = (delay: 0.0, duration: auto)",
             "#context {",
             "  let boundaries = ((), (",
-            '    (group: "a", timing: timing, transition: "crossfade"),',
+            f'    (group: "a", timing: timing, transition: {CROSSFADE}),',
             '    (group: "b", timing: timing, transition: auto),',
             "  ))",
             "  let epochs = browser-plan(plan, names, boundaries).epochs",

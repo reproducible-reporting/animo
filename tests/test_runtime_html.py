@@ -151,7 +151,7 @@ def test_a_step_across_a_boundary_leaves_one_slide_and_enters_the_next(
 def test_a_cut_is_a_step_that_is_not_animated(page, deck_at, typst: TypstRunner):
     """`animated` says that motion was let run, and a cut lets none run."""
     page.add_init_script(RECORDER)
-    source = deck("slide[One]", "slide(transition: none)[Two]")
+    source = deck("slide[One]", "slide(animation: anim.init(duration: 0))[Two]")
     presentation: Deck = deck_at(typst.html(source, name="cut.html"))
     forget(page)
     presentation.press("ArrowRight")
@@ -185,7 +185,7 @@ def test_a_join_is_two_positions_with_a_boundary_between(page, timed_deck_at, ty
     and states all of them.
     """
     page.add_init_script(RECORDER)
-    source = deck("slide(hold: 0)[One]", "slide[Two]")
+    source = deck("slide(animation: anim.init(hold: 0))[One]", "slide[Two]")
     presentation: Deck = timed_deck_at(typst.html(source, name="join.html"))
     presentation.run_for(1)
     assert summary(recorded(page)) == [
