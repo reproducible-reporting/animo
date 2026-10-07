@@ -539,8 +539,8 @@ morph()
 
 The content that the outgoing and the incoming region share moves from its old place to its
 new one, and the rest fades out and in where it is.
-A tag moves as one, unless the primitive changes it, and the letters of text that is not a
-tag are matched one by one.
+A tag moves as one, unless the primitive changes it, and the letters, shapes and images
+outside a tag are matched one by one by their shape.
 `init` and the deck refuse it, because a morph carries a region.
 
 ```typst

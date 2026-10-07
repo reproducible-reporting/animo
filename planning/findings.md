@@ -1017,6 +1017,65 @@ The morph reads the displayed place of an outgoing element through it,
 and takes the running morph translations back out to find where an incoming element is laid
 out.
 
+**A stroke and a raster image sum like a letter.**
+The same comparison on a rectangle with a 1.5 pt stroke and no fill, and on a raster image of
+30 by 15 pixels drawn at 60 pt wide, each moved by 127.3 pt and 31.7 pt so that both copies are
+resampled on the way, at the midpoint of the step:
+
+| Engine       | Stroke, largest difference and pixels above 2/255 | Image, the same  |
+| ------------ | ------------------------------------------------- | ---------------- |
+| chromium 151 | 1/255, 0 of 785                                   | 2/255, 0 of 3945 |
+| firefox 153  | 1/255, 0 of 744                                   | 2/255, 0 of 3741 |
+| webkit 26.5  | 1/255, 0 of 744                                   | 1/255, 0 of 3741 |
+
+The antialiasing along both edges of a stroke and the smoothing of a resampled image do not
+show in the sum, so a morph of a shape or an image needs nothing a morph of a letter does not.
+
+## Typst writes a shape from its own origin
+
+What a morph compares when it pairs two shapes or two images, in the SVG typst 0.15.0 writes
+for an `html.frame`.
+
+- Every shape is a `<path>` whose `d` starts at `M 0 0`, and its place is a
+  `transform="translate(..)"` on the path or on a group around it.
+  Two copies of a shape at two places therefore have one `d`, as two copies of a letter have
+  one `href`.
+  A rectangle is `M 0 0v 28.35h 28.35v -28.35Z`, a circle four relative cubic Béziers after an
+  `m`, a line `M 0 0h 28.35`, and a regular polygon an `m` followed by `l` and `h` segments.
+- The bar of a fraction is a stroked path `M 0 0h 5.819` beside the glyphs of the fraction,
+  so a numerator that grows gives the bar another `d`.
+- The paint is in attributes beside the `d`: `fill`, `fill-rule`, `stroke`, `stroke-width`,
+  `stroke-linecap`, `stroke-linejoin` and `stroke-miterlimit`.
+  Recolouring a shape changes `fill` or `stroke` and leaves the `d` alone.
+  Every `fill-rule` seen was `nonzero`.
+- An image is an `<image xlink:href="data:image/png;base64,.." width=".." height=".." preserveAspectRatio="none"/>` without `x` and `y`, so its place is the transform above it.
+- A clipped box is a `<g transform="translate(..)" clip-path="url(#c..)">` that holds what it
+  clips, and the clip path's own `<path>` is in that group's user space.
+- A gradient fill is `fill="url(#r..)"`, a `linearGradient` in `userSpaceOnUse` whose
+  `gradientTransform` scales it to the size of the shape.
+
+## A `translate` carries an element's clip and gradient, not an ancestor's clip
+
+Measured by moving one element of a frame by a whole number of CSS pixels with a CSS
+`translate` and comparing what is drawn at the new place with what was drawn at the old one,
+with the paint servers and clip paths moved into another `<svg>`, as the runtime hoists them.
+The same in chromium 151, firefox 153 and webkit 26.5.
+
+- **A group carries its own clip.** A clipped box translated on the group that holds its
+  `clip-path` arrives with the same edges, to within 2/255. The clip path is in the group's
+  user space, and the `translate` changes that space.
+- **A clip above the moved element stays where it is.** Translating what a clipped box holds,
+  and not the box, moves the content out of the clip, which hides the part that has left it.
+  The same content drawn without the clip does reach below it.
+- **A gradient moves with its shape.** A rectangle with a gradient fill translated on its own
+  `<path>` arrives with the same colours, to within 2/255, also when the gradient is defined
+  in another `<svg>`. `userSpaceOnUse` is the user space of the element that references the
+  gradient, which the `translate` moves.
+
+So a morph moves a shape with its gradient and a tag with the clips inside it, and a match
+whose two elements sit under clips at two places would be cut off at an edge that its
+partner does not have.
+
 ## `hide()` cannot be undone in the browser
 
 Typst's `hide()` lays content out but emits **nothing** to draw: the labelled group is

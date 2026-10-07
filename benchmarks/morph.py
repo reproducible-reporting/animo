@@ -5,7 +5,8 @@
 
 Two things are measured, in every engine `setup.sh` installs.
 The step: a slide whose paragraph of about 500 or about 3000 letters reflows when a clause
-is inserted at its start, so that nearly every letter moves. The time is that of the key
+is inserted at its start, so that nearly every letter moves, and a slide whose cetz plot of
+1000 marks changes its axis range, so that every mark moves. The time is that of the key
 press, which plans and applies the whole step in one task, and the frames that follow say
 whether the browser keeps up with the animations it was given.
 The diff: `commonSubsequence` from `src/js/morph.js` on two lists of 3000 glyph names that
@@ -54,6 +55,30 @@ DECK = """\
 # paragraph on the slide.
 PARAGRAPHS = {"500 letters": (80, 11), "3000 letters": (480, 4.5)}
 
+# The slide with a plot of 1000 equal marks at places spread by two modular sequences, whose
+# axis range grows by a quarter, which moves every mark towards the origin.
+PLOT = """\
+#import "@preview/animo:0.1.1": *
+#import "@preview/cetz:0.5.2"
+#show: animo
+#let marks(range) = cetz.canvas({
+  import cetz.draw: *
+  line((0, 0), (10, 0))
+  line((0, 0), (0, 6))
+  for i in array.range(1000) {
+    let x = calc.rem(i * 37, 1000) / 1000
+    let y = calc.rem(i * 61 + 17, 997) / 997
+    circle((x * 10 / range, y * 6 / range), radius: 0.04, fill: blue, stroke: none)
+  }
+})
+#slide(animation: {
+  import anim: *
+  sub(replace("plot", transition: morph())[#marks(1.25)])
+})[
+  #region[#tag("plot")[#marks(1)]]
+]
+"""
+
 # Plan and apply the step, as a key press does, and report how long it took, how many
 # animations it started, and the intervals of the frames drawn during the 400 ms after it.
 STEP = """async () => {
@@ -69,9 +94,9 @@ STEP = """async () => {
         frames.push(now - last);
         last = now;
     }
-    const glyphs = document.querySelectorAll(
-        '[data-typst-label="animo-epoch-0"] use').length;
-    return {took, animations, frames, glyphs};
+    const count = (selector) => document.querySelectorAll(
+        `[data-typst-label="animo-epoch-0"] ${selector}`).length;
+    return {took, animations, frames, glyphs: count("use"), paths: count("path")};
 }"""
 
 # The diff alone, on two lists of `n` names in which `changes` of the first list's names are
@@ -104,10 +129,15 @@ def main() -> None:
     parser.add_argument("--engine", action="append", help="limit to these engines")
     args = parser.parse_args()
     WORK.mkdir(parents=True, exist_ok=True)
+    sources = {
+        name: (f"morph-{words}", DECK.format(words=words, size=size))
+        for name, (words, size) in PARAGRAPHS.items()
+    }
+    sources["1000 marks"] = ("morph-plot", PLOT)
     decks = {}
-    for name, (words, size) in PARAGRAPHS.items():
-        source = WORK / f"morph-{words}.typ"
-        source.write_text(DECK.format(words=words, size=size))
+    for name, (stem, text) in sources.items():
+        source = WORK / f"{stem}.typ"
+        source.write_text(text)
         target = source.with_suffix(".html")
         outcome = compile_typst(source, target, fmt="html", features=("html",))
         assert outcome.ok, outcome
@@ -133,6 +163,7 @@ def main() -> None:
                 frames = [frame for run in runs for frame in run["frames"][1:]]
                 own["steps"][name] = {
                     "glyphs": runs[0]["glyphs"],
+                    "paths": runs[0]["paths"],
                     "animations": runs[0]["animations"],
                     "step_ms": statistics.median(run["took"] for run in runs),
                     "frame_ms_median": statistics.median(frames),

@@ -7,8 +7,8 @@
     "typst": "typst 0.15.0 (3ae52774)",
     "typst_libc": "musl",
     "animo": "0.1.1",
-    "commit": "6ce177c-dirty",
-    "measured": "2026-10-07 05:46:34+0200"
+    "commit": "6315c79-dirty",
+    "measured": "2026-10-07 20:03:04+0200"
   },
   "engines": {
     "chromium": {
@@ -16,26 +16,36 @@
       "steps": {
         "500 letters": {
           "glyphs": 464,
+          "paths": 0,
           "animations": 930,
-          "step_ms": 44.1999999997206,
-          "frame_ms_median": 17.00000000023283,
-          "frame_ms_max": 46.39999999990687
+          "step_ms": 44,
+          "frame_ms_median": 16.549999999813735,
+          "frame_ms_max": 39
         },
         "3000 letters": {
           "glyphs": 2827,
+          "paths": 0,
           "animations": 5656,
-          "step_ms": 234.20000000018626,
-          "frame_ms_median": 91.20000000018626,
-          "frame_ms_max": 136.39999999990687
+          "step_ms": 242.6000000005588,
+          "frame_ms_median": 98.5,
+          "frame_ms_max": 108.79999999981374
+        },
+        "1000 marks": {
+          "glyphs": 0,
+          "paths": 1002,
+          "animations": 2006,
+          "step_ms": 92.90000000037253,
+          "frame_ms_median": 50.59999999962747,
+          "frame_ms_max": 120.79999999981374
         }
       },
       "diff": {
-        "25": 2.7000000001862645,
-        "50": 3.6999999997206032,
-        "100": 4.399999999906868,
+        "25": 2.599999999627471,
+        "50": 3.7999999998137355,
+        "100": 5,
         "200": 11.5,
-        "400": 27.800000000279397,
-        "800": 61
+        "400": 28.700000000186265,
+        "800": 75.1000000005588
       }
     },
     "firefox": {
@@ -43,26 +53,36 @@
       "steps": {
         "500 letters": {
           "glyphs": 464,
+          "paths": 0,
           "animations": 930,
-          "step_ms": 60,
+          "step_ms": 66,
           "frame_ms_median": 17,
           "frame_ms_max": 51
         },
         "3000 letters": {
           "glyphs": 2827,
+          "paths": 0,
           "animations": 5656,
           "step_ms": 306,
-          "frame_ms_median": 27,
-          "frame_ms_max": 297
+          "frame_ms_median": 25,
+          "frame_ms_max": 341
+        },
+        "1000 marks": {
+          "glyphs": 0,
+          "paths": 1002,
+          "animations": 2006,
+          "step_ms": 134,
+          "frame_ms_median": 16.0,
+          "frame_ms_max": 118
         }
       },
       "diff": {
         "25": 2,
-        "50": 3,
+        "50": 4,
         "100": 5,
         "200": 11,
-        "400": 26,
-        "800": 59
+        "400": 22,
+        "800": 49
       }
     }
   }

@@ -262,17 +262,20 @@ so the same stack in the body is its epoch count times the numbers above.
 A [morph](structural.md#morphing-what-shifts) costs nothing at compile time,
 because the browser matches the two versions of a region when the step runs.
 Its cost is in the browser, at the key press and in the frames of the motion,
-and it grows with the number of letters that move.
+and it grows with the number of letters and shapes that move.
 
 Measured with `benchmarks/morph.py` on a slide whose paragraph reflows behind a clause
 inserted at its start, so that nearly every letter moves,
+and on a slide whose cetz plot of 1000 equal marks changes its axis range,
+so that every mark moves,
 in chromium 151 and firefox 153 at a window of 1280 by 720 pixels,
 on an Intel Core i7-4790 in October 2026:
 
-| Letters that move | Animations | Key press, chromium and firefox | Frame, chromium and firefox |
-| ----------------- | ---------- | ------------------------------- | --------------------------- |
-| 464               | 930        | 44 ms and 60 ms                 | 17 ms and 17 ms             |
-| 2827              | 5656       | 234 ms and 306 ms               | 91 ms and 27 ms             |
+| What moves   | Animations | Key press, chromium and firefox | Frame, chromium and firefox |
+| ------------ | ---------- | ------------------------------- | --------------------------- |
+| 464 letters  | 930        | 44 ms and 66 ms                 | 17 ms and 17 ms             |
+| 2827 letters | 5656       | 243 ms and 306 ms               | 99 ms and 25 ms             |
+| 1000 marks   | 2006       | 93 ms and 134 ms                | 51 ms and 16 ms             |
 
 The frame is the median interval between two frames during the motion,
 so 17 ms is the full rate of the display.

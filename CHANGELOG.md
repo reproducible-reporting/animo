@@ -39,6 +39,10 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   matched by their shape, so a reflowing paragraph needs no tags.
   `init` and the show rule refuse it.
   The example deck `morph.typ` shows it.
+- Match shapes and images in a morph beside the letters, in reading order.
+  A shape is matched when its outline and its stroke width are the same in both versions,
+  whatever its colour, and an image when it is the same image at the same size.
+  What sits inside a clipped box is matched only when the box stays where it is.
 - Write the `<title>`, the `lang` and the `<meta>` elements of the HTML presentation
   from `set document(..)` and `set text(lang: ..)`.
 - Carry the resolved `handout` flag of every state in the plan of the HTML presentation,

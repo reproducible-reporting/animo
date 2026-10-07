@@ -206,8 +206,8 @@ The example deck for this section is
 ([HTML](https://reproducible-reporting.github.io/animo/examples/morph.html){ target="\_blank" rel="noopener" },
 [PDF presentation](https://reproducible-reporting.github.io/animo/examples/morph-presentation.pdf),
 [PDF handouts](https://reproducible-reporting.github.io/animo/examples/morph-handouts.pdf)).
-It shows a paragraph that reflows, a crossfade and a morph of the same change side by side,
-and an equation that grows.
+It shows a paragraph that reflows, a paragraph whose shapes move with its words,
+a crossfade and a morph of the same change side by side, and an equation that grows.
 
 The `morph()` transition moves the content that the outgoing and the incoming version of a
 region share from its old place to its new one, and fades only what differs:
@@ -230,12 +230,30 @@ What the morph moves is decided by what the two versions show.
   no tags. A letter that changes colour moves and changes colour on the way.
   A letter that changes size or weight has another shape, so it fades out where it was and
   in where it lands.
-- **A tag** moves as one, which is how to carry a box, a figure or anything else that is not
-  text. Two sites of one name are paired in the order they appear.
+- **Shapes and images** are matched by their geometry, in reading order together with the
+  letters, so a box beside a word moves with the word.
+  A rectangle, a circle, a line, a fraction bar or a mark of a plot is matched when its
+  outline and its stroke width are the same in both versions, and an image when it is the
+  same image at the same size.
+  A shape that changes colour moves and changes colour on the way.
+- **A tag** moves as one, which is how to carry a figure or a drawing as a whole.
+  Two sites of one name are paired in the order they appear.
   A tag that the primitive itself changes is not carried as one,
-  because its content differs between the versions, and its letters are matched instead.
+  because its content differs between the versions, and what it holds is matched instead.
 - **Everything else** fades out and in where it is, as in a crossfade.
-  That includes lines, rules, fraction bars and images.
+  That includes a shape that changes size or stroke width, such as the bar of a fraction
+  whose numerator grows, and an image that changes size.
+
+A box with `clip: true` hides what lies outside its edges,
+and the morph does not move those edges along with what it moves inside the box.
+So the content of a clipped box is matched only when the box is at the same place in both
+versions, and it fades when the box moves.
+A tag around the clipped box carries the box and its content as one.
+
+A plot draws its marks as equal shapes, and equal shapes are paired in the order the plot
+draws them.
+When a point is added at the start of the data, each mark therefore moves to the place of
+the next point rather than staying where it is.
 
 The morph takes the `delay:` and `duration:` of the primitive, as the crossfade does.
 A `duration:` of zero is a hard cut, stepping backwards plays the morph backwards,

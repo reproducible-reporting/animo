@@ -37,6 +37,28 @@
 
 #slide(animation: {
   import anim: *
+  sub(replace("size", transition: morph())[small, solid and blue])
+})[
+  = Shapes in a Paragraph
+
+  // A shape is matched by its geometry, as a letter is by its shape, so a box and a small
+  // figure keep their place among the words. A shape that changes size fades instead.
+  #region[
+    A #tag("size", wrap: none)[small] box #box(width: 0.8cm, height: 0.35cm, fill: blue)
+    and a figure #box(baseline: 20%, stack(
+      dir: ltr,
+      spacing: 3pt,
+      circle(radius: 0.2cm, fill: red),
+      polygon.regular(size: 0.45cm, vertices: 3, fill: green),
+      line(start: (0cm, 0.4cm), end: (0.5cm, 0cm), stroke: 2pt + gray),
+    ))
+    move with the words around them when the paragraph reflows, and a fraction $a/b$
+    moves as well, because its bar keeps its length.
+  ]
+]
+
+#slide(animation: {
+  import anim: *
   sub(
     replace("left")[a few words more,],
     replace("right", transition: morph())[a few words more,],

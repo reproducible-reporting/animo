@@ -2270,21 +2270,62 @@ These were the open questions of the earlier drafts. They are settled; the evide
      Without that exception, `replace("eq", transition: morph())` on a tag inside an explicit
      region would move the old equation as one block onto the new one and match none of its
      terms. Unequal multiplicity leaves the extra groups unmatched.
-  1. A **glyph match** pairs the `<use>` elements of the unclaimed ink by a longest common
-     subsequence of their `href`. Typst names a glyph by a hash of its outline at its size,
-     and the fill is an attribute of the `<use>` and not part of the hash, so equal names mean
-     equal shapes whatever their colour (see *Findings*). A glyph that changes size or weight
-     gets another name and is not matched, which is right for a morph that does not scale.
-     Spaces are not elements of typst's output, so a word is carried as its letters.
+
+  1. An **ink match** pairs the glyphs, shapes and images of the unclaimed content by a longest
+     common subsequence of one key per element, taken in document order, so that a box beside
+     a word keeps its place among the letters and neither is diffed apart from the other.
+     The key is what the element draws, without its place and without its colour.
+
+     - A glyph is a `<use>`, and its key is the `href`. Typst names a glyph by a hash of its
+       outline at its size, and the fill is an attribute of the `<use>` and not part of the
+       hash, so equal names mean equal shapes whatever their colour (see *Findings*).
+       A glyph that changes size or weight gets another name and is not matched, which is
+       right for a morph that does not scale.
+       Spaces are not elements of typst's output, so a word is carried as its letters.
+     - A shape is a `<path>`, and its key is the `d` with the stroke width, cap, join, miter
+       limit and dash. Typst starts the `d` of every shape at the shape's own origin and puts
+       its place in a transform, so two copies of one shape at two places have one `d`
+       (see *Findings*). The stroke width is in the key because a route does not scale a
+       stroke. The `fill-rule` is not, because typst writes `nonzero` on every path.
+     - An image is an `<image>`, and its key is the `href`, which holds the image's data,
+       with the `width` and the `height`.
+
+     The colours stay out of every key, `fill` and `stroke` alike, and so does a gradient.
+     Two copies whose colours differ sum to the interpolation of the two colours under the
+     crossfade's `plus-lighter`, for a stroke and an image as for a glyph, and a gradient moves
+     with the shape that uses it (see *Findings*).
+     Each distinct key is numbered before the diff, so the diff compares numbers rather than
+     the long strings of a path's `d` or an image's data.
 
   A tag is how an author makes content move as one, and a paragraph that reflows is carried by
-  its glyphs without any tag.
-  Matching geometry that is not text, such as a fraction bar or a table rule, is left for later.
+  its glyphs and shapes without any tag.
+  A shape that changes size, such as the bar of a fraction whose numerator grows, has another
+  `d` and is crossfaded.
+  Elements of one key are paired in document order, which for a plot is the order it draws its
+  marks in. When one point is added at the start of the data, every mark therefore moves to
+  the place of the next point, and the routes cross the plot although a pairing exists in which
+  no mark moves. That limitation is accepted. A pairing that minimises the total distance is the
+  assignment problem, which the Hungarian method solves in time cubic in the number of marks.
+  Finding near partners more cheaply gives up the linear cost of the match and brings edge
+  cases of its own, in which the pairing a mark gets is harder to predict than its place in
+  the order the plot draws.
   The subsequence is found with a diff of the Myers kind, whose cost grows with the number
-  of glyphs times the number of differences, and a region whose glyphs differ in more than a
-  fixed number of places matches no glyphs and crossfades them, because a crossfade is always
+  of elements times the number of differences, and a region whose ink differs in more than a
+  fixed number of places matches none of it and crossfades it, because a crossfade is always
   correct. The bound is 400 differences, which the diff of two lists of 3000 glyphs takes about
   10 ms to reach in chromium 151 and firefox 153, measured with `benchmarks/morph.py`.
+
+  **A match has the same clips above it in both regions.**
+  A CSS `translate` carries the clip of the element it moves, but not the clip of an ancestor,
+  which stays where the ancestor is laid out (see *Findings*).
+  A copy that travels under a clip at another place than its partner's is cut off at an edge
+  its partner does not have, and the two no longer sum to one opaque element.
+  So the clips between an element and its region group, each named by its `clip-path` and
+  placed by its matrix on the screen, are part of the key of an ink match,
+  and a tag match needs them equal as well.
+  The content of a clipped box that moves is therefore crossfaded,
+  and a tag around the box carries the box and its content as one.
+  The clip path's id is a hash of its path, so equal names mean equal clips.
 
   A morph interrupted by the next boundary continues from what the page shows:
   an outgoing element is measured where it is displayed and an incoming one where it is laid
@@ -2541,6 +2582,12 @@ These need the prototype to answer.
   scaling for figures. This has to be seen in motion before it is decided; the extra nested box
   under *Findings* is needed either way, since the two slots are separated by coordinate space
   and not merely by how many properties each one uses.
+
+- Whether a group of shapes that travel one distance should move as one animation, as the
+  glyphs of a run do. A cetz drawing that moves as a whole is better put in a tag, which
+  already moves as one. A plot of 1000 marks whose axis range changes, so that each mark has a
+  route of its own, costs a key press of 93 ms in chromium 151 and 134 ms in firefox 153, and
+  chromium then draws a frame every 51 ms, measured with `benchmarks/morph.py`.
 
 ## Development Infrastructure
 

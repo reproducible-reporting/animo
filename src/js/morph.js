@@ -33,6 +33,41 @@ const MORPH_STILL = 0.01;
 /** No `translate`, as a keyframe states it. */
 const AT_REST = "0px 0px";
 
+/** The elements that draw ink of their own, which are the candidates of a match below tags. */
+const INK = new Set(["use", "path", "image"]);
+
+/**
+ * The elements whose content is never drawn where it sits: definitions, the paths of a clip
+ * and the outlines of a glyph. The walk for ink does not enter them, wherever typst puts them.
+ */
+const NOT_INK = new Set([
+  "clipPath",
+  "defs",
+  "filter",
+  "linearGradient",
+  "marker",
+  "mask",
+  "pattern",
+  "radialGradient",
+  "symbol",
+]);
+
+/**
+ * The attributes of a `<path>` that shape its ink, apart from its `d`.
+ *
+ * The stroke width is among them because a route does not scale a stroke. The colours are not,
+ * because two copies of different colours sum to their interpolation (see *Findings*). Neither
+ * is `fill-rule`, which typst writes as `nonzero` on every path.
+ */
+const PATH_SHAPE = [
+  "stroke-width",
+  "stroke-linecap",
+  "stroke-linejoin",
+  "stroke-miterlimit",
+  "stroke-dasharray",
+  "stroke-dashoffset",
+];
+
 /**
  * Plan the translations of the matches in the regions a morph carries.
  *
@@ -58,7 +93,7 @@ function morphRegions(effects, slide, { stack, from, to, regions, options, mirro
       if (incoming[index] === undefined) {
         return;
       }
-      const pairs = matches(group, incoming[index], changed);
+      const pairs = matches(slide, group, incoming[index], changed, screen);
       const routes = rigid(
         pairs.map((pair) => measured(slide, pair, screen)),
         slide.morphed,
@@ -94,14 +129,17 @@ function movesAsOne(label) {
  *
  * First the tag matches: two labelled groups of one name, paired by their index among the
  * groups of that name in document order. A tag the boundary changes is not one, because its
- * content differs, and what it holds is matched in its place. Then the glyph matches: the
- * `<use>` elements outside every matched group, paired by a longest common subsequence of
- * the glyphs they show. Typst names a glyph by a hash of its outline, and the fill is not
- * part of it, so a pair has the same shape whatever its colour. See *Findings*.
+ * content differs, and what it holds is matched in its place. Then the ink matches: the
+ * glyphs, paths and images outside every matched group, paired by a longest common
+ * subsequence of their keys in document order, so a box beside a word keeps its place among
+ * the letters. Every match has the same clips above it in both regions.
  */
-function matches(outgoing, incoming, changed) {
+function matches(slide, outgoing, incoming, changed, screen) {
   const pairs = [];
   const claimed = new Set();
+  const clips = new Map();
+  const above = (element, region) =>
+    clipsAbove(slide, element, { region, laidOut: region === incoming }, clips, screen);
   const candidates = (region) =>
     Array.from(region.querySelectorAll("[data-typst-label]")).filter(
       (group) => movesAsOne(group.dataset.typstLabel) && !changed.has(group.dataset.typstLabel),
@@ -122,18 +160,34 @@ function matches(outgoing, incoming, changed) {
     const index = seen.get(name) ?? 0;
     seen.set(name, index + 1);
     const partner = partners.get(name)?.[index];
-    if (partner === undefined || within(group, claimed) || within(partner, claimed)) {
+    if (
+      partner === undefined ||
+      within(group, claimed) ||
+      within(partner, claimed) ||
+      above(group, outgoing) !== above(partner, incoming)
+    ) {
       continue;
     }
     claimed.add(group);
     claimed.add(partner);
     pairs.push([group, partner]);
   }
-  const before = glyphs(outgoing, claimed);
-  const after = glyphs(incoming, claimed);
+  const before = ink(outgoing, claimed);
+  const after = ink(incoming, claimed);
+  // Each key as a small number, so the diff compares numbers and not long strings.
+  const numbers = new Map();
+  const numbered = (element, region) => {
+    const key = `${inkKey(element)}|${above(element, region)}`;
+    let number = numbers.get(key);
+    if (number === undefined) {
+      number = numbers.size;
+      numbers.set(key, number);
+    }
+    return number;
+  };
   const common = commonSubsequence(
-    before.map((use) => use.href.baseVal),
-    after.map((use) => use.href.baseVal),
+    before.map((element) => numbered(element, outgoing)),
+    after.map((element) => numbered(element, incoming)),
     MORPH_DIFFERENCES,
   );
   for (const [i, j] of common ?? []) {
@@ -152,15 +206,15 @@ function within(element, claimed) {
   return false;
 }
 
-/** The `<use>` elements of a region in document order, leaving out the claimed groups. */
-function glyphs(region, claimed) {
+/** The glyphs, paths and images of a region in document order, leaving out claimed groups. */
+function ink(region, claimed) {
   const found = [];
   const walk = (node) => {
     for (const child of node.children) {
-      if (claimed.has(child)) {
+      if (claimed.has(child) || NOT_INK.has(child.localName)) {
         continue;
       }
-      if (child.localName === "use") {
+      if (INK.has(child.localName)) {
         found.push(child);
       } else {
         walk(child);
@@ -168,6 +222,59 @@ function glyphs(region, claimed) {
     }
   };
   walk(region);
+  return found;
+}
+
+/**
+ * What an element draws, as a string that two elements share when they show the same ink.
+ *
+ * Typst writes a glyph as a `<use>` of a definition named by a hash of its outline, a shape as
+ * a `<path>` whose `d` starts at its own origin, and an image as an `<image>` without a
+ * position of its own, so in each case the place is in a transform and the key leaves it out.
+ * The colours are left out of every key. See *Findings*.
+ */
+function inkKey(element) {
+  if (element.localName === "use") {
+    return `g:${element.href.baseVal}`;
+  }
+  if (element.localName === "image") {
+    const size = ["width", "height"].map((name) => element.getAttribute(name));
+    return `i:${element.href.baseVal} ${size.join(" ")}`;
+  }
+  const shape = PATH_SHAPE.map((name) => element.getAttribute(name) ?? "");
+  return `p:${element.getAttribute("d")} ${shape.join(" ")}`;
+}
+
+/**
+ * The clips above an element inside its region, as a string, with the place of each on the
+ * screen.
+ *
+ * A `translate` carries a clip on the element itself but not the clip of an ancestor, which
+ * stays where it is and cuts a moving element off at its edge (see *Findings*). Two copies
+ * under two clips would then not sum to one opaque element, so a match needs the same clips
+ * at the same places on both sides. A clip is named by its `clip-path`, whose id is a hash of
+ * the clip's path. An element of the incoming region is placed as it is laid out, which leaves
+ * out a morph translation that is still running above the clip.
+ */
+function clipsAbove(slide, element, side, clips, screen) {
+  const parent = element.parentElement;
+  if (parent === null || parent === side.region) {
+    return "";
+  }
+  let found = clips.get(parent);
+  if (found === undefined) {
+    found = clipsAbove(slide, parent, side, clips, screen);
+    const clip = parent.getAttribute("clip-path");
+    if (clip !== null) {
+      const { a, b, c, d, e, f } = matrixOf(parent, screen);
+      const shift = side.laidOut ? running(slide, parent, screen) : { x: 0, y: 0 };
+      const place = [a, b, c, d, e - shift.x, f - shift.y]
+        .map((value) => value.toFixed(2))
+        .join(" ");
+      found = `${found}${clip} ${place};`;
+    }
+    clips.set(parent, found);
+  }
   return found;
 }
 
@@ -282,12 +389,23 @@ function walkBack(trace, offset, n, m) {
 function measured(slide, [outgoing, incoming], screen) {
   const start = origin(slide, outgoing, screen);
   const end = origin(slide, incoming, screen);
-  for (const node of morphedChain(slide, incoming)) {
+  const shift = running(slide, incoming, screen);
+  return {
+    outgoing,
+    incoming,
+    delta: { x: end.x - shift.x - start.x, y: end.y - shift.y - start.y },
+  };
+}
+
+/** The morph translations still running on an element and above it, on the screen. */
+function running(slide, element, screen) {
+  const total = { x: 0, y: 0 };
+  for (const node of morphedChain(slide, element)) {
     const offset = onScreen(node, translation(node), screen);
-    end.x -= offset.x;
-    end.y -= offset.y;
+    total.x += offset.x;
+    total.y += offset.y;
   }
-  return { outgoing, incoming, delta: { x: end.x - start.x, y: end.y - start.y } };
+  return total;
 }
 
 /**
@@ -295,18 +413,22 @@ function measured(slide, [outgoing, incoming], screen) {
  *
  * `getScreenCTM()` includes the element's own `translate` in all three engines, and the `x`
  * and `y` of a `<use>` are an offset inside it. See *Findings*.
- * A `<use>` that typst wrote carries no transform of its own, so one that no morph is moving
- * has the matrix of its parent, which the glyphs of a run share.
+ * A glyph, a path or an image that no morph is moving has no `translate`, so its matrix is its
+ * parent's followed by its own `transform` attribute, and the glyphs of a run share the
+ * parent's.
  */
 function origin(slide, element, screen) {
   const x = element.x?.baseVal?.value ?? 0;
-  const y = element.y?.baseVal?.value ?? 0;
-  const own =
-    element.localName === "use" &&
-    !slide.morphed.has(element) &&
-    !element.hasAttribute("transform");
-  const matrix = own ? matrixOf(element.parentNode, screen) : element.getScreenCTM();
-  const point = new DOMPoint(x, y).matrixTransform(matrix);
+  let point = new DOMPoint(x, element.y?.baseVal?.value ?? 0);
+  if (INK.has(element.localName) && !slide.morphed.has(element)) {
+    const own = element.transform.baseVal.consolidate();
+    if (own !== null) {
+      point = point.matrixTransform(own.matrix);
+    }
+    point = point.matrixTransform(matrixOf(element.parentNode, screen));
+  } else {
+    point = point.matrixTransform(element.getScreenCTM());
+  }
   return { x: point.x, y: point.y };
 }
 

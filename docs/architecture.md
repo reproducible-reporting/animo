@@ -242,9 +242,20 @@ and translated on their outer slot.
 A tag whose name the plan lists under `names` of the region record is one the boundary
 changes, and it is not matched as a whole.
 Typst writes `names` only on a record whose transition is the morph.
-Then the glyphs: the `<use>` elements outside every matched group,
-paired by `commonSubsequence`, a diff of the Myers kind over their `href`.
-Above `MORPH_DIFFERENCES` differences it gives up and the glyphs are crossfaded.
+Then the ink: the `<use>`, `<path>` and `<image>` elements outside every matched group,
+in document order and outside every `<defs>`, `<clipPath>` and glyph `<symbol>`,
+paired by `commonSubsequence`, a diff of the Myers kind over one key per element.
+`inkKey` writes the key from what the element draws apart from its place and its colour.
+For a glyph that is the `href`.
+For a path it is the `d` and the stroke attributes other than the colour,
+because typst writes every shape from its own origin and puts its place in a `transform`.
+For an image it is the `href`, the `width` and the `height`.
+`clipsAbove` appends the clips between the element and its region, each with its place on
+the screen, so that a match never moves under a clip that is in another place in the other
+region, and the same rule applies to a tag match.
+Each distinct key is replaced by a small integer before the diff, which then compares
+numbers.
+Above `MORPH_DIFFERENCES` differences the diff gives up and the ink is crossfaded.
 The glyphs of one text run that all travel the same distance are carried by one animation
 on the run instead of one each.
 
