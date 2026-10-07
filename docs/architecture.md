@@ -28,7 +28,7 @@ A slide is one container element in the stage, as large as the stage,
 carrying its plan as JSON in `data-animo-plan`,
 and inside it a `.animo-canvas` element holding **one `html.frame` for the whole slide**,
 in which **one rendering per epoch** is placed at one point, in epoch order.
-Each rendering is a labelled box, so it becomes a `<g data-typst-label="animo-epoch-N">`
+Each rendering is a labelled block, so it becomes a `<g data-typst-label="animo-epoch-N">`
 the runtime can show, hide and blend.
 One frame and not one per epoch, because typst's deduplicator has the frame for its scope:
 the renderings of a slide then define each glyph they share once between them instead of
@@ -38,6 +38,20 @@ The container also carries `data-animo-transition`, which is how the boundary ab
 slide is crossed, as the slide's `init` says.
 It is one value per slide, so it is an attribute rather than an entry in the plan,
 for the reason the plan itself is an attribute.
+
+The epoch renderings are one kind of **stack**,
+which is a set of renderings placed at one point of which the runtime shows one at a time.
+Every rendering of a stack is labelled `animo-<kind>-<index>`,
+and the renderings of one stack are the children of one group.
+The kind says what the index counts.
+The epoch renderings of a slide are its `epoch` stack,
+and every `per-subslide` is a `subslide` stack with one rendering per state of the slide.
+`src/stack.typ` builds both kinds.
+Nothing about a stack travels in the plan.
+`readStacks` in `src/js/stacks.js` finds every stack of a slide by its labels,
+and `stackKinds` plans each stack for a state by its kind.
+An epoch stack is planned by `planEpoch` and the transitions of its boundaries,
+and a subslide stack snaps to the rendering of the state and hides the others.
 
 An epoch is a run of consecutive states in which no content changes,
 so a slide with no structural operation emits exactly one rendering
@@ -202,7 +216,7 @@ and every region group is opaque in the rendering being shown and transparent in
 It then settles what an earlier morph is still moving, as the next section says.
 It then groups the region records of the boundary by transition
 and hands each transition the records it carries,
-together with the epoch renderings, the epoch the step leaves and the one it enters,
+together with the epoch stack, the epoch the step leaves and the one it enters,
 and how the step moves.
 A step that crosses no boundary hands no records to any transition,
 which is what a deep link, a step inside one epoch, and a reader who asked for less motion
@@ -394,9 +408,10 @@ Only `boot.js` calls into the other files at load time, and it is the last one.
 | File            | Holds                                                                        |
 | --------------- | ---------------------------------------------------------------------------- |
 | `slides.js`     | `config`, `readSlide`, the registry of slides, `count`, `clamp`, `parseHash` |
+| `stacks.js`     | the kinds of stack, `readStacks`, `planStacks` and the subslide stack        |
 | `effects.js`    | `timing`, `scheduled`, `span`, `showing`, `plan` and `apply`                 |
 | `display.js`    | positions and anchors, the CSS of a display state and a pan, `planState`     |
-| `boundaries.js` | the transitions of both boundaries, `planEpoch`, `planSubslides`             |
+| `boundaries.js` | the transitions of both boundaries and `planEpoch`                           |
 | `morph.js`      | the matches of a morph, their routes, and `settleMorphs`                     |
 | `controller.js` | the position, `show`, `step`, `jump`, and the clock with its pause           |
 | `input.js`      | key, pointer and hash events, turned into intents by the active mode         |

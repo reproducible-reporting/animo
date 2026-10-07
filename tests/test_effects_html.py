@@ -127,23 +127,24 @@ def test_a_later_effect_on_an_element_and_property_replaces_the_earlier(engine):
     assert found == ["0.5", 1]
 
 
-# A slide of two epoch renderings, each holding the groups of two regions, as `readSlide`
-# would build it from a deck, for the epoch boundary below.
+# A slide with an epoch stack of two renderings, each holding the groups of two regions, as
+# `readSlide` would build it from a deck, for the epoch boundary below.
 SLIDE = """
 const svg = document.querySelector('svg');
-const renderings = [0, 1].map(() => {
+const stack = { kind: 'epoch', element: svg, renderings: [], regions: [] };
+for (const epoch of [0, 1]) {
     const rendering = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    const regions = ['a', 'b'].map((name) => {
+    stack.renderings.push(rendering);
+    stack.regions.push(['a', 'b'].map((name) => {
         const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         group.dataset.typstLabel = name;
         rendering.append(group);
         return group;
-    });
+    }));
     svg.append(rendering);
-    return { element: rendering, regions };
-});
+}
 const slide = {
-    renderings,
+    stacks: [stack],
     states: [{ epoch: 0 }, { epoch: 1 }],
     epochs: [[], [
         { group: 'a', transition: 'probe', args: { side: 'left' } },
@@ -168,9 +169,10 @@ def test_each_region_of_a_boundary_is_carried_by_the_transition_it_names(engine)
             const seen = [];
             transitions.probe = (effects, slide, {{ regions }}) => seen.push(regions);
             const effects = new Map();
-            planEpoch(effects, slide, 1, 0, {TIMING}, null);
-            const timed = (rendering, region) =>
-                effects.get(renderings[rendering].regions[region]).get('opacity').timing !== null;
+            const step = {{ index: 1, from: 0, options: {TIMING}, mirror: null }};
+            planEpoch(effects, slide, stack, step);
+            const timed = (epoch, region) =>
+                effects.get(stack.regions[epoch][region]).get('opacity').timing !== null;
             return {{
                 seen,
                 a: [timed(0, 0), timed(1, 0)],
@@ -190,8 +192,9 @@ def test_a_region_that_names_a_transition_the_runtime_lacks_is_crossfaded(engine
             {SLIDE}
             slide.epochs[1][0].transition = 'nothing-by-this-name';
             const effects = new Map();
-            planEpoch(effects, slide, 1, 0, {TIMING}, null);
-            return effects.get(renderings[1].regions[0]).get('opacity').timing !== null;
+            const step = {{ index: 1, from: 0, options: {TIMING}, mirror: null }};
+            planEpoch(effects, slide, stack, step);
+            return effects.get(stack.regions[1][0]).get('opacity').timing !== null;
         }}"""
     )
     assert found is True

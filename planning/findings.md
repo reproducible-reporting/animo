@@ -1405,7 +1405,7 @@ Measured on typst 0.15.0, over the word `hidden` at 11 pt:
 The height is the same either way, so a footprint over renderings that all lay something out is
 unaffected. An epoch that lays nothing out has an extent of zeroes, and the largest ascent is then
 zero while the largest descent is still a line, which makes the footprint a line taller than the
-content it holds and lowers the rendering inside it by the same amount. So `inline-region`
+content it holds and lowers the rendering inside it by the same amount. So `inline-extent`
 measures every rendering inside a box.
 
 ## Introspection: the fields of a nested structure, and one occurrence per page

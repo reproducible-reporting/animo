@@ -37,26 +37,27 @@ function readSlide(element) {
   // The first epoch begins no boundary.
   const epochs = (plan.epochs ?? [{}]).map((epoch) => epoch.regions ?? []);
   const carried = new Set(epochs.flat().map((region) => region.group));
+  const stacks = readStacks(element);
+  // The region groups a boundary may carry, in every rendering of an epoch stack, by epoch.
+  // A group is looked up once here rather than per step, and by its own label, because a
+  // label is a tag name and a name is whatever the author wrote.
+  for (const stack of stacks) {
+    if (stack.kind === "epoch") {
+      stack.regions = stack.renderings.map((rendering) =>
+        Array.from(rendering.querySelectorAll("[data-typst-label]")).filter((group) =>
+          carried.has(group.dataset.typstLabel),
+        ),
+      );
+    }
+  }
   return {
     element,
     canvas: element.querySelector(":scope > .animo-canvas"),
     slots,
-    // The epoch renderings, in epoch order, each with the region groups a boundary may
-    // carry across. A group is looked up once here rather than per step, and by its own
-    // label, because a label is a tag name and a name is whatever the author wrote.
-    // The renderings are groups placed at one point in the slide's single frame rather
-    // than frames of their own, which is what shares their glyph definitions.
-    renderings: Array.from(
-      element.querySelectorAll(
-        ':scope > .animo-canvas [data-typst-label^="animo-epoch-"]',
-      ),
-      (rendering) => ({
-        element: rendering,
-        regions: Array.from(rendering.querySelectorAll("[data-typst-label]")).filter(
-          (group) => carried.has(group.dataset.typstLabel),
-        ),
-      }),
-    ),
+    // Every stack of the slide: the stack of its epoch renderings, and a stack for every
+    // `per-subslide` in every epoch rendering and layer that lays it out.
+    // A stack is looked up once here rather than per step, as the tag slots above are.
+    stacks,
     epochs,
     states: plan.states ?? [],
     count: Math.max(1, Number(element.dataset.animoStates ?? 1)),
@@ -69,16 +70,6 @@ function readSlide(element) {
     },
     margin: plan.margin ?? 0,
     size: plan.canvas ?? null,
-    // The renderings of a `per-subslide`, by state: one label per state of the slide, and
-    // any number of groups under each, because one slide may carry several stacks and one
-    // stack sits in every epoch rendering it was written in.
-    // A stack is looked up once here rather than per step, as the tag slots above are.
-    subslides: Array.from(element.querySelectorAll('[data-typst-label^="animo-subslide-"]'))
-      .reduce((found, group) => {
-        const state = Number(group.dataset.typstLabel.slice("animo-subslide-".length));
-        (found[state] ??= []).push(group);
-        return found;
-      }, []),
     // Where the tags the plan is relative to sit, measured when the slide is first shown.
     anchors: null,
     // The elements a morph is still moving, each with the epoch of its rendering, the label of

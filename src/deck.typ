@@ -170,6 +170,7 @@
 // Function declarations are hoisted, so only a top level `const` needs that care.
 #let runtime-files = (
   "slides",
+  "stacks",
   "effects",
   "display",
   "boundaries",

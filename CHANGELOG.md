@@ -65,6 +65,10 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   which are joined into the one script of the page.
 - Plan every effect of a step before writing any of them, and accept any CSS property in an
   effect, so that a transition can read the page as it was before the step.
+- Build the epoch renderings of a slide and the renderings of a `per-subslide` as stacks of one
+  kind each, labelled `animo-<kind>-<index>`, with one implementation in typst and one in the
+  runtime, which chooses the rendering of every stack by its kind.
+  The emitted pages are unchanged.
 
 ### Fixes
 

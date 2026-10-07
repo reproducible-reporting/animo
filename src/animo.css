@@ -201,8 +201,12 @@ body {
 }
 
 /*
-  One epoch rendering at a time, which is the first one until the runtime says otherwise,
-  so a deck whose script never ran still shows a slide.
+  Each kind of stack states here which of its renderings a page whose script never ran shows,
+  which is the first one, and how the others are hidden.
+  `stack.typ` labels the renderings, and `stacks.js` chooses between them.
+
+  An epoch stack shows one epoch rendering at a time, so a deck whose script never ran still
+  shows a slide.
   The renderings are groups placed at one point in the slide's single frame, so that
   typst's deduplicator, whose scope is the frame, defines each glyph they share once
   between them. See *Findings*.
@@ -239,18 +243,16 @@ body {
 }
 
 /*
-  A stack of renderings, one per state of the slide, of which the runtime shows the one
-  belonging to the state the deck is on.
-  A number finer than a slide number is made of these renderings, because one frame covers a
-  run of states, so the value cannot be ink chosen when the frame is rendered and every value
-  is rendered instead.
-  Opacity rather than visibility, because a stack in the body sits inside an epoch frame, and
-  a frame that is not being shown is hidden with `visibility`, which a descendant may take
-  back.
-  A rendering that took its visibility back would then paint out of a frame nobody is
-  watching, where one at opacity 1 inside a hidden frame stays hidden.
-  The first rendering is the one a deck whose script never ran shows, which is the same
-  rule the first epoch frame follows.
+  A subslide stack holds one rendering of a `per-subslide` per state of the slide, of which
+  the runtime shows the one belonging to the state the deck is on.
+  A number finer than a slide number is made of these renderings, because one epoch rendering
+  covers a run of states, so the value cannot be ink chosen when the frame is rendered and
+  every value is rendered instead.
+  Opacity rather than visibility, because a stack in the body sits inside an epoch rendering,
+  and a rendering that is not being shown is hidden with `visibility`, which a descendant may
+  take back.
+  A rendering that took its visibility back would then paint out of an epoch rendering nobody
+  is watching, where one at opacity 1 inside a hidden one stays hidden.
 */
 .animo-slide [data-typst-label^="animo-subslide-"] {
   opacity: 0;

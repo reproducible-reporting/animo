@@ -1201,8 +1201,13 @@ The same tagged content feeds three output types:
 
 **HTML presentation.** A slide is rendered as *one* `html.frame`, i.e. one inline SVG, laid
 out on the canvas, holding one rendering per epoch. The epoch renderings are `#place`d on top
-of each other at the origin of that frame, in epoch order, each a labelled `box` so that it
-becomes a `<g data-typst-label="animo-epoch-N">` the runtime can address. One frame and not one
+of each other at the origin of that frame, in epoch order, each a labelled block so that it
+becomes a `<g data-typst-label="animo-epoch-N">` the runtime can address. Together they are
+the slide's epoch **stack**. A stack is a set of renderings placed at one point, of which the
+runtime shows one at a time. Each rendering of a stack is labelled `animo-<kind>-<index>`, and
+the kind says what the index counts and how the runtime chooses the rendering it shows. The
+renderings of a `per-subslide` are a stack of the other kind, `subslide`, with one rendering
+per state of the slide. One frame and not one
 per epoch, because typst's deduplicator has the frame for its scope: the renderings of a slide
 then define each glyph they share once between them rather than once each, which is the only
 part of that duplication a package can reach (see *Findings*). The canvas element sits inside

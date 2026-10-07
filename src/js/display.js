@@ -162,8 +162,8 @@ function viewport(slide, state) {
 }
 
 /**
- * Plan one state of a slide on its canvas, on its epoch renderings, and on every
- * occurrence of every tag it addresses.
+ * Plan one state of a slide on its canvas, on its stacks, and on every occurrence of every
+ * tag it addresses.
  *
  * The pan goes on the canvas and never on the frame inside it: the epoch renderings are
  * stacked in that frame, so moving the canvas moves them all and keeps them registered.
@@ -224,7 +224,6 @@ function planState(
       plan(effects, element, declarations(slide, name, display), timed);
     }
   }
-  planEpoch(effects, slide, index, from, options, mirror);
-  planSubslides(effects, slide, index);
+  planStacks(effects, slide, { index, from, options, mirror });
   slide.shown = index;
 }

@@ -14,11 +14,9 @@
 //
 // A subslide number uses the mechanism the rest of the package rests on.
 // Typst renders every value, and the browser chooses which of them is shown.
-// `per-subslide` lays its callback out once per state, stacks the renderings in a container
-// with the footprint of the largest, and labels each of them, and the runtime then shows the
-// one belonging to the state it is on.
-// The paged outputs know their state and lay out that one rendering, in a container of the
-// same size, so all three outputs agree to the pixel.
+// `per-subslide` lays its callback out once per state and puts the renderings in a stack of
+// the kind `subslide`, and the runtime shows the rendering of the state it is on.
+// `stack.typ` says how a stack agrees with the paged outputs.
 //
 // The stack is one rendering per state wherever it sits, so an overlay is the place to put
 // it.
@@ -26,9 +24,9 @@
 // the body is the same content multiplied by the number of epochs.
 
 #import "plan.typ": ask-stack-view, inside
-#import "footprint.typ": finite, inline-footprint, inline-placed, measured-at
-#import "site.typ": describe, reserved
-#import "wrap.typ": filling, literal-wrapper, wrapper-literals
+#import "site.typ": describe
+#import "stack.typ": block-stack, inline-stack
+#import "wrap.typ": literal-wrapper, wrapper-literals
 
 // What `numbered:` counts, and which slide carries a number at all.
 //
@@ -58,13 +56,6 @@
 ///
 /// -> int
 #let slide-count() = slide-counter.final().first()
-
-// The label of the rendering that belongs to one state of the slide.
-//
-// The runtime shows the one whose number is the state it is on and hides the others, so
-// the number here is the state index, which is what the fragment and `data-animo-states`
-// count, rather than the number an author reads.
-#let subslide-group(state) = reserved + "subslide-" + str(state)
 
 // The subslide numbers one rendering of a `per-subslide` callback is handed.
 //
@@ -102,58 +93,6 @@
   })
 }
 
-// One rendering of the stack, labelled so that the runtime can find it.
-//
-// A rendering of `none` lays nothing out, not even an empty wrapper, exactly as a tag site
-// whose content an epoch removed does.
-// There is nothing to show or hide, so the state has no group and the runtime passes over it.
-#let labelled(wrapper, state, rendering) = if rendering != none {
-  [#wrapper(rendering)#label(subslide-group(state))]
-}
-
-// The stack on a line: the footprint an implicit region takes over its epochs, taken over
-// the states of the slide instead, with every rendering placed in it.
-//
-// `shown` is the state to lay out, or `none` for all of them, which is the HTML target.
-#let inline-stack(renderings, shown) = {
-  let shared = inline-footprint(renderings)
-  box(
-    width: shared.width,
-    height: shared.ascent + shared.descent,
-    baseline: shared.descent,
-    {
-      for (state, rendering) in renderings.enumerate() {
-        if shown == none or shown == state {
-          inline-placed(shared, state, labelled(box, state, rendering))
-        }
-      }
-    },
-  )
-}
-
-// The stack between paragraphs: a block as wide as its container and as tall as the
-// tallest state laid out at that width.
-//
-// The width has to come from `layout`, exactly as a region's does, because a rendering
-// that states a ratio, which is what a progress bar is, has nothing else to be a ratio of.
-#let block-stack(renderings, shown) = layout(size => {
-  let width = if finite(size.width) { size.width } else { auto }
-  let height = calc.max(
-    ..measured-at(renderings, width).map(it => it.height),
-  )
-  block(
-    width: if width == auto { auto } else { 100% },
-    height: height,
-    {
-      for (state, rendering) in renderings.enumerate() {
-        if shown == none or shown == state {
-          place(top + left, labelled(filling, state, rendering))
-        }
-      }
-    },
-  )
-})
-
 // What container the renderings of a stack become, as `tag` decides it for a tag site.
 //
 // The axis is hugging versus filling, and `auto` measures the first rendering rather than
@@ -188,9 +127,9 @@
   // that lays nothing out says nothing about whether it hugs or fills.
   let first = renderings.find(it => it != none)
   let wrapper = stack-wrapper(wrap, if first == none { [] } else { first })
-  if wrapper == box { inline-stack(renderings, stack-view.state) } else {
-    block-stack(renderings, stack-view.state)
-  }
+  if wrapper == box {
+    inline-stack("subslide", renderings, stack-view.state)
+  } else { block-stack("subslide", renderings, stack-view.state) }
 }
 
 /// Content laid out once per subslide, of which the one belonging to the subslide on screen

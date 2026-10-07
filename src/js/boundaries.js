@@ -3,8 +3,8 @@
 
 // How a step crosses a boundary, of an epoch inside a slide and of a slide inside the deck.
 //
-// A slide is one `html.frame` holding one rendering per content state, stacked at one
-// point, of which one is shown at a time. A step that stays inside an epoch touches only
+// A slide is one `html.frame` holding a stack of one rendering per content state, of which
+// one is shown at a time, and which `stacks.js` calls an `epoch` stack. A step that stays inside an epoch touches only
 // the display state of the rendering it is already showing. A step that crosses a boundary
 // hands over the regions whose content changed, which is what `transitions` below does,
 // and leaves everything else alone, because the two renderings are pixel-identical outside
@@ -31,11 +31,11 @@
  * transparent in the others. A transition plans effects for what it carries in place of
  * those, and an effect it plans replaces the one at rest for the same element and property.
  *
- * Each transition is handed the effects of the step being planned, the slide, the epoch a step
- * leaves and the one it enters, the records of the regions it carries, how the step moves
- * and how long it lasts when it is running backwards, and takes what it needs of that: the
- * crossfade below needs no `from`, where a morph would read the outgoing rendering's
- * geometry. It runs in the phase that reads and writes nothing, so any geometry it reads is
+ * Each transition is handed the effects of the step being planned, the slide, its epoch stack,
+ * the epoch a step leaves and the one it enters, the records of the regions it carries, how
+ * the step moves and how long it lasts when it is running backwards, and takes what it needs
+ * of that: the crossfade below needs no `from`, where the morph reads the outgoing
+ * rendering's geometry. It runs in the phase that reads and writes nothing, so any geometry it reads is
  * the geometry of the page before the step.
  *
  * A transition plans the state it is arriving at and animates from what the element was
@@ -66,35 +66,34 @@ const transitions = {
    * and the two renderings crossfade as they are. Nothing outside the changed area is still
    * in that case, so there is nothing to contain the blend to.
    */
-  crossfade(effects, slide, { to, regions, options, mirror }) {
+  crossfade(effects, slide, { stack, to, regions, options, mirror }) {
     // An entry with no group of its own names the rendering itself, which is what a change
     // that no region bounds redraws: a `wrap: none` tag outside any region has no box to
     // confine the change to. The rendering then hands its own ink over as a region hands
     // its own, and every region in it stays opaque, because each rendering is a complete
     // picture and the crossfade is between the two of them.
     const whole = regions.find((region) => region.group === null);
-    slide.renderings.forEach((rendering, epoch) => {
+    stack.renderings.forEach((rendering, epoch) => {
       const active = epoch === to;
       if (whole !== undefined) {
         // A rendering hands its own ink over only if it is showing any: the one being left,
         // and any that a boundary this one interrupted is still fading out. One that is
         // showing none has nothing to hand over and stays hidden where it is.
-        const leaving =
-          !active && getComputedStyle(rendering.element).visibility === "visible";
+        const leaving = !active && getComputedStyle(rendering).visibility === "visible";
         if (active || leaving) {
           plan(
             effects,
-            rendering.element,
+            rendering,
             { visibility: "visible", opacity: active ? "1" : "0" },
             { opacity: scheduled(options, whole.timing, mirror) },
           );
         }
-        for (const group of rendering.regions) {
+        for (const group of stack.regions[epoch]) {
           plan(effects, group, { opacity: "1" });
         }
         return;
       }
-      for (const group of rendering.regions) {
+      for (const group of stack.regions[epoch]) {
         const carried = regions.find((region) => region.group === group.dataset.typstLabel);
         if (carried === undefined) {
           continue;
@@ -102,7 +101,7 @@ const transitions = {
         // A rendering that hands a region over is opaque, and paints through the
         // visibility that region takes back while the rest of it stays hidden.
         if (!active) {
-          plan(effects, rendering.element, { opacity: "1" });
+          plan(effects, rendering, { opacity: "1" });
           plan(effects, group, { visibility: "visible" });
         }
         // A delayed region crossfades late and a long one crossfades slowly, which is what
@@ -361,7 +360,8 @@ function timed(state, options) {
 }
 
 /**
- * Plan the epoch rendering that a state belongs to, and the regions its boundaries carry.
+ * Plan the epoch rendering that a state belongs to, and the regions its boundaries carry,
+ * which is how an epoch stack is planned for a state.
  *
  * Which rendering is shown is decided here, for every transition alike: the one the state
  * belongs to is shown and opaque, every other one is hidden and transparent, and every
@@ -384,15 +384,15 @@ function timed(state, options) {
  * A record with no group stands for the whole rendering, which holds every region, so a
  * step that carries one carries nothing else.
  */
-function planEpoch(effects, slide, index, from, options, mirror) {
+function planEpoch(effects, slide, stack, { index, from, options, mirror }) {
   const to = slide.states[index]?.epoch ?? 0;
-  slide.renderings.forEach((rendering, epoch) => {
+  stack.renderings.forEach((rendering, epoch) => {
     const active = epoch === to;
-    plan(effects, rendering.element, {
+    plan(effects, rendering, {
       visibility: active ? "visible" : "hidden",
       opacity: active ? "1" : "0",
     });
-    for (const group of rendering.regions) {
+    for (const group of stack.regions[epoch]) {
       plan(effects, group, { visibility: "", opacity: active ? "1" : "0" });
     }
   });
@@ -421,26 +421,6 @@ function planEpoch(effects, slide, index, from, options, mirror) {
     named.set(name, [...(named.get(name) ?? []), record]);
   }
   for (const [name, regions] of named) {
-    transitionOf(name)(effects, slide, { from, to, regions, options, mirror });
+    transitionOf(name)(effects, slide, { stack, from, to, regions, options, mirror });
   }
-}
-
-/**
- * Plan the rendering that belongs to a state, out of the stack that holds one per state.
- *
- * This is how a value finer than a slide number reaches the page at all.
- * One epoch rendering covers a run of states, so typst renders every value and the choice
- * is made here.
- *
- * It snaps rather than animating, in a step that animates as much as in one that does not.
- * A number is read rather than watched, and two numbers crossfading into each other are
- * two numbers neither of which can be read; the stylesheet's `plus-lighter` would make
- * them add rather than cover as well.
- */
-function planSubslides(effects, slide, index) {
-  slide.subslides.forEach((groups, state) => {
-    for (const group of groups) {
-      plan(effects, group, { opacity: state === index ? "1" : "0" });
-    }
-  });
 }

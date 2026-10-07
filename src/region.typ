@@ -10,17 +10,18 @@
 // It measures every epoch once, which keeps the cost linear in epochs and independent of how
 // many tags the region holds.
 //
-// The two functions that shape a region receive one rendering per epoch, `none` for an
-// epoch with nothing to lay out, and a function that builds the container, and they know
-// nothing about tags.
+// A region between paragraphs is shaped by `block-region` below, which receives one
+// rendering per epoch, `none` for an epoch with nothing to lay out, and a function that
+// builds the container, and which knows nothing about tags.
 // An explicit region and a tag that is its own region therefore share one measurement.
 // A tag is its own region when its content changes and no explicit region holds it.
-// The box they reserve is measured by `footprint.typ`.
+// Such a tag on a line is an `inline-stack` of `stack.typ` that places the rendering of its
+// epoch, and `stack.typ` also measures the box a region reserves.
 //
-// Both must be called in a context, because they measure.
+// `block-region` must be called in a context, because it measures.
 
 #import "canvas.typ": anchor-marker, site-marker
-#import "footprint.typ": finite, inline-footprint, inline-placed, measured-at
+#import "stack.typ": finite, measured-at
 #import "member.typ": member
 #import "plan.typ": ask, provide, varies
 #import "site.typ": (
@@ -30,29 +31,6 @@
 
 // The label every footprint carries, so that it can be read back.
 #let footprint-label = label("animo-footprint")
-
-// A region on a line, in the box `inline-footprint` measures, with its baseline pinned.
-//
-// `container(sized, inner, footprint)` builds the region from the sized box function,
-// the placed content and a description of the footprint.
-#let inline-region(renderings, epoch, container) = {
-  let shared = inline-footprint(renderings)
-  let height = shared.ascent + shared.descent
-  let current = renderings.at(epoch)
-  container(
-    box.with(width: shared.width, height: height, baseline: shared.descent),
-    if current != none { inline-placed(shared, epoch, current) },
-    (
-      kind: "inline",
-      width: shared.width,
-      height: height,
-      measured: shared.extents.map(it => (
-        width: it.width,
-        height: it.ascent + it.descent,
-      )),
-    ),
-  )
-}
 
 // A requested size resolved against the size of the container, or `auto`.
 //

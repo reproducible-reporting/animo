@@ -40,10 +40,8 @@ const AT_REST = "0px 0px";
  * opacity. Every region group a record names is paired with the group of the same label and
  * the same index in the other rendering, because a tag of several sites is a region per site.
  */
-function morphRegions(effects, slide, { from, to, regions, options, mirror }) {
-  const leaving = slide.renderings[from];
-  const entering = slide.renderings[to];
-  if (leaving === undefined || entering === undefined) {
+function morphRegions(effects, slide, { stack, from, to, regions, options, mirror }) {
+  if (stack.renderings[from] === undefined || stack.renderings[to] === undefined) {
     return;
   }
   for (const record of regions) {
@@ -51,8 +49,8 @@ function morphRegions(effects, slide, { from, to, regions, options, mirror }) {
     if (timing === null) {
       continue;
     }
-    const outgoing = regionGroups(leaving, record.group);
-    const incoming = regionGroups(entering, record.group);
+    const outgoing = regionGroups(stack, from, record.group);
+    const incoming = regionGroups(stack, to, record.group);
     const changed = new Set(record.names ?? []);
     // The screen matrix of every parent read so far, because the glyphs of a run share one.
     const screen = new Map();
@@ -72,12 +70,12 @@ function morphRegions(effects, slide, { from, to, regions, options, mirror }) {
   }
 }
 
-/** The groups of a region in one rendering, or the rendering itself for the whole one. */
-function regionGroups(rendering, label) {
+/** The groups of a region in one epoch rendering, or the rendering itself for the whole one. */
+function regionGroups(stack, epoch, label) {
   if (label === null) {
-    return [rendering.element];
+    return [stack.renderings[epoch]];
   }
-  return rendering.regions.filter((group) => group.dataset.typstLabel === label);
+  return stack.regions[epoch].filter((group) => group.dataset.typstLabel === label);
 }
 
 /**
@@ -88,7 +86,7 @@ function regionGroups(rendering, label) {
  * thing of its own, so what it holds is matched in its place.
  */
 function movesAsOne(label) {
-  return !label.startsWith("animo-") || label.startsWith("animo-subslide-");
+  return !label.startsWith("animo-") || stackLabel(label)?.kind === "subslide";
 }
 
 /**
@@ -329,7 +327,7 @@ function morphedChain(slide, element) {
     if (slide.morphed.has(node)) {
       found.push(node);
     }
-    if (node.dataset?.typstLabel?.startsWith("animo-epoch-")) {
+    if (stackLabel(node.dataset?.typstLabel)?.kind === "epoch") {
       break;
     }
   }

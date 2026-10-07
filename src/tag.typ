@@ -24,10 +24,11 @@
 #import "canvas.typ": anchor-marker, site-marker
 #import "member.typ": member
 #import "plan.typ": ask, pristine, provide, varies
-#import "region.typ": block-region, footprint-label, inline-region
+#import "region.typ": block-region, footprint-label
 #import "site.typ": (
   check-container-child, check-name, describe, display-of, displayed,
 )
+#import "stack.typ": inline-stack
 #import "wrap.typ": choose-wrapper, outer-of, slots
 
 // What a tag site lays out in one epoch, with its wrappers applied, or `none` for nothing.
@@ -142,7 +143,7 @@
         })#label(name)]
     }
     if outer-of(name, wrapper) == box {
-      inline-region(renderings, view.epoch, container)
+      inline-stack(none, renderings, view.epoch, container: container)
     } else {
       block-region(renderings, view.epoch, container)
     }

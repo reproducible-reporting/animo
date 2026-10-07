@@ -32,7 +32,8 @@
   view-of,
 )
 #import "number.typ": numbered-flag, slide-counter, step-counter
-#import "site.typ": describe, reserved
+#import "site.typ": describe
+#import "stack.typ": block-stack
 #import "region.typ": region-counter
 #import "runtime.typ": browser-plan, pt-of
 
@@ -125,18 +126,6 @@
     )
   }
 }
-
-// The label that the rendering of one epoch carries in the output.
-//
-// A slide is one frame, and the epoch renderings are boxes placed at one point inside it,
-// so each of them becomes a group the runtime can show, hide and blend. The number is the
-// epoch's own, and the reserved prefix keeps the label out of the author's namespace.
-//
-// One frame rather than one per epoch, because the scope of typst's deduplicator is the
-// frame.
-// The renderings of a slide then define each glyph they share once between them instead of
-// once each. See *Findings*.
-#let epoch-group(epoch) = reserved + "epoch-" + str(epoch)
 
 // Where a slide sits in the deck, counting every slide.
 // This is what addresses a slide in the URL and in the DOM, so it counts the slides
@@ -493,32 +482,26 @@
                 + "; height: "
                 + unit-length(size.height),
             ),
-            // One frame for the whole slide, holding one rendering per epoch, in epoch
-            // order. Each covers every state that shares its content, so stepping inside
-            // an epoch needs no rendering at all, and the runtime shows one rendering at
-            // a time and crossfades the changed regions at a boundary.
+            // One frame for the whole slide, holding a stack of one rendering per epoch.
+            // Each covers every state that shares its content, so stepping inside an epoch
+            // needs no rendering at all, and the runtime shows one rendering at a time and
+            // crossfades the changed regions at a boundary.
             //
-            // The renderings are placed at one point rather than laid out in sequence,
-            // which is what stacks them, and each is a labelled box so that it becomes a
-            // group the runtime can address. The frame's own extent is the block around
-            // them and not the union of what they hold, which is what keeps the canvas
+            // One frame rather than one per epoch, because the scope of typst's
+            // deduplicator is the frame, so the renderings define each glyph they share once
+            // between them instead of once each. See *Findings*.
+            // The stack is the size of the canvas, and the frame's own extent is that block
+            // and not the union of what the renderings hold, which is what keeps the canvas
             // element the box animo computed.
-            html.frame(block(
-              width: size.width,
-              height: size.height,
-              {
-                for epoch in range(plan.epochs.len()) {
-                  place(top + left, [#box(
-                      width: size.width,
-                      height: size.height,
-                      // One frame per epoch, so every frame records its own.
-                      laid-out(
-                        view-of(plan, names, index, epoch: epoch),
-                        recorded: records,
-                      ),
-                    )#label(epoch-group(epoch))])
-                }
-              },
+            html.frame(block-stack(
+              "epoch",
+              // One rendering per epoch, so every rendering records its own.
+              range(plan.epochs.len()).map(epoch => laid-out(
+                view-of(plan, names, index, epoch: epoch),
+                recorded: records,
+              )),
+              none,
+              size: size,
             )),
           )
           // Last, so that it paints last: the three layers are positioned siblings with no
