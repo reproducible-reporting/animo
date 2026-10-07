@@ -56,6 +56,25 @@ def test_equal_content_in_two_frames_gets_the_same_id(typst: TypstRunner):
     assert ids[2] != ids[0], "two different glyphs got the same id"
 
 
+def test_a_glyph_has_one_id_whatever_its_fill(typst: TypstRunner):
+    """The fill is an attribute of the `<use>`, so it does not enter the glyph's hash.
+
+    A size and a weight do, because they change the outline. This is what lets a morph match a
+    glyph whose colour changes and refuse one whose size changes.
+    """
+    markup = typst.html(
+        "#html.frame[A #text(fill: red)[A] #text(fill: gradient.linear(red, blue))[A]"
+        " #text(size: 22pt)[A] *A*]\n"
+    ).read_text()
+    uses = re.findall(r'<use xlink:href="#([^"]+)"[^>]* fill="([^"]+)"', markup)
+    assert len(uses) == 5
+    ids = [name for name, _ in uses]
+    fills = [fill for _, fill in uses]
+    assert len(set(fills[:3])) == 3, "the three letters did not get three fills"
+    assert ids[0] == ids[1] == ids[2], "a fill changed the id of a glyph"
+    assert len({ids[0], ids[3], ids[4]}) == 3, "a size or a weight left the id of a glyph alone"
+
+
 # What the redundancy costs on the wire.
 
 # Deflate's sliding window, which no `zlib` setting raises: a repeat further back than this

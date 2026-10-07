@@ -952,6 +952,29 @@ def test_the_transitions_of_an_epoch_follow_its_operations_in_order(typst: Typst
     )
 
 
+MORPH = '(kind: "transition", name: "morph", args: (:))'
+"""The record `morph()` puts in a plan."""
+
+
+@pytest.mark.parametrize("opening", STRUCTURAL)
+def test_every_structural_primitive_takes_the_morph(typst: TypstRunner, opening):
+    """A morph carries a region, so it is a transition of the primitive that changes one."""
+    typst.ok(
+        resolved(
+            f"sub({call(opening, 'transition: morph()')})",
+            f"#assert.eq(plan.epochs.at(1).transitions, (a: ({MORPH},)))",
+        )
+    )
+
+
+def test_the_morph_takes_no_parameter(typst: TypstRunner):
+    """It has none to take yet, and a function refuses what it does not take."""
+    typst.fails(
+        resolved('sub(replace("a", transition: morph(scale: true))[x])'),
+        "unexpected argument: scale",
+    )
+
+
 @pytest.mark.parametrize("opening", STRUCTURAL)
 def test_a_transition_that_moves_a_slide_is_refused_on_a_region(typst: TypstRunner, opening):
     """A push, a cover and a wipe move a whole slide, which no region can do."""
@@ -978,6 +1001,28 @@ def test_a_misspelled_transition_is_an_unknown_variable(typst: TypstRunner):
 
 
 # What the browser is handed.
+
+
+def test_a_region_that_morphs_carries_the_tags_the_boundary_changes(typst: TypstRunner):
+    """A morph moves a tag as one only while its content stays, so it is told which changed.
+
+    A region that crossfades carries no names, because nothing reads them there.
+    """
+    typst.ok(
+        resolved(
+            'sub(replace("a")[x])',
+            "#let timing = (delay: 0.0, duration: auto)",
+            "#context {",
+            "  let boundaries = ((), (",
+            f'    (group: "r", timing: timing, transition: {MORPH}, names: ("a", "b")),',
+            f'    (group: "s", timing: timing, transition: {CROSSFADE}, names: ("c",)),',
+            "  ))",
+            "  let epochs = browser-plan(plan, names, boundaries).epochs",
+            '  assert.eq(epochs.at(1).regions, ((group: "r", transition: "morph",',
+            '    names: ("a", "b")), (group: "s", transition: "crossfade")))',
+            "}",
+        )
+    )
 
 
 def test_every_state_of_the_browser_plan_holds_every_addressed_tag(typst: TypstRunner):

@@ -210,8 +210,8 @@
   }
 }
 
-// The groups a boundary redraws, as the browser addresses them, each with its timing and its
-// transition.
+// The groups a boundary redraws, as the browser addresses them, each with its timing, its
+// transition and the names of the tags the boundary changes in it.
 //
 // A key is animo's own way of naming a region, and a group in the output is addressed by a
 // label, so the two are joined here from the reports of the sites that own their keys.
@@ -242,6 +242,7 @@
       group: group,
       timing: first("timings", default-timing),
       transition: first("transitions", auto),
+      names: holder.names,
     ))
   }
   groups

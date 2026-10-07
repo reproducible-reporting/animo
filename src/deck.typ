@@ -16,7 +16,7 @@
 #import "anim.typ": check-seconds
 #import "runtime.typ": pt-of
 #import "site.typ": describe
-#import "transition.typ": crossfade, transition-of
+#import "transition.typ": check-slide-transition, crossfade
 
 // The shape a deck has when its show rule is not told otherwise.
 // Stated once, because the show rule's own arguments default to it as well.
@@ -173,6 +173,7 @@
   "effects",
   "display",
   "boundaries",
+  "morph",
   "controller",
   "input",
   "boot",
@@ -312,7 +313,7 @@
   // reason the tempo is.
   // Its duration is `transition-duration:` above, because a transition says nothing about
   // time.
-  let own = transition-of("animo", "transition", transition)
+  let own = check-slide-transition("animo", "transition", transition)
   let config = (transition: (name: own.name, ..own.args))
   context {
     if target() == "html" {

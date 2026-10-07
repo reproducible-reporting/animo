@@ -579,6 +579,11 @@ Relevant because stacking several frames in one document puts duplicate ids in o
   *kind char* + hex of `hash128(key)`, from the `Deduplicator` in
   `crates/typst-svg/src/lib.rs` (`DedupId(char, u128)`).
 
+- A glyph's id does not depend on its fill, which is an attribute of the `<use>` element.
+  The letter `A` at 11 pt has one id in black, in red and under a gradient, and another id
+  each at 22 pt and in bold. This is what lets a morph match a glyph whose colour changes
+  (*Resolved Design Decisions*).
+
 - Equal ids therefore always mean equal content. Browsers resolve `<use xlink:href="#g..">`
   to the first matching id in the document. For a glyph definition that is harmless,
   and it is why stacking frames does not corrupt glyph rendering.
@@ -968,6 +973,49 @@ The alternative leaves both classes on the labelled group and composes them nume
 It also works, but it obliges the runtime to know the current value of every continuous
 property in both frames before it can write a FLIP transform,
 which is state the stacked-frame design otherwise never has to keep.
+
+## A morph keeps the `plus-lighter` sum
+
+Measured on two renderings of one frame summed under `plus-lighter`, as a crossfade sums them:
+`Hello world` and `Oh, Hello world` at 30 pt, whose ten shared letters are 51.3 pt apart.
+The outgoing copy of each shared letter is translated from its own place to the place of the
+incoming copy, and the incoming copy from the outgoing place to its own, while the outgoing
+rendering fades out and the incoming one in, all with one linear timing.
+The reference is one opaque copy of each letter at the same point of the route.
+
+| Engine       | Largest difference at 0, 25, 50, 75 and 100 % | Ink pixels above 2/255 at 50 % |
+| ------------ | --------------------------------------------- | ------------------------------ |
+| chromium 151 | 0, 1, 1, 1, 0                                 | 0 of 2015                      |
+| firefox 153  | 10, 8, 6, 8, 0                                | 75 of 1924                     |
+| webkit 26.5  | 0, 21, 59, 1, 0                               | 10 of 1944                     |
+
+The differences are out of 255.
+So the morph needs no change of the blend, no clone of an element and no opacity of its own.
+A plain opacity crossfade of the same pair, without `plus-lighter`, differs by more than
+32/255.
+
+**The firefox difference is not the sum.** It is there at the start of the step, where only
+the outgoing copy is visible, and with no animation at all: one letter at one position on the
+screen rasterises differently in firefox 153 when it reaches that position through a CSS
+`translate` than when it reaches it through its own `x` attribute, by 10/255 on 184 of 1909
+ink pixels. The same comparison on a deck scaled to a 1280 pixel window gave 22/255.
+A morph shows the outgoing copy reached one way and the incoming copy the other,
+and the difference is gone at the end of the step, where only the incoming copy is left at
+its own place.
+`will-change: transform` and `will-change: translate` on the letters leave it unchanged.
+Webkit 26.5 draws the two placements alike. Chromium 151 does on some loads of the page and
+differs by 50/255 on a dozen pixels on others.
+
+**The webkit difference** is on the antialiased corners of a letter's stem, at the edge of the
+letter's box, on no more than a dozen pixels, while the two copies are moving. It was not
+traced further.
+
+**`getScreenCTM()` includes the element's own `translate`.**
+In all three engines, on a `<use>` and on a `<g>`, for an inline `translate` and for one an
+animation is running, and in a rendering that is `visibility: hidden`.
+The morph reads the displayed place of an outgoing element through it,
+and takes the running morph translations back out to find where an incoming element is laid
+out.
 
 ## `hide()` cannot be undone in the browser
 

@@ -149,6 +149,7 @@ const slide = {
         { group: 'a', transition: 'probe', args: { side: 'left' } },
         { group: 'b' },
     ]],
+    morphed: new Map(),
 };
 """
 

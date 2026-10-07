@@ -44,6 +44,16 @@
 /// -> array
 #let crossfade() = transition-value("crossfade", (:))
 
+/// Move the content that the outgoing and the incoming region share from its old place to its
+/// new one, and fade the rest out and in where it is.
+///
+/// Usable as the `transition:` of a structural primitive.
+/// A tag moves as one, unless the primitive changes it, and the letters of text that is not
+/// a tag move one by one, so a paragraph that reflows is carried without tagging it.
+///
+/// -> array
+#let morph() = transition-value("morph", (:))
+
 /// Move the incoming slide in from one edge while it moves the outgoing slide out at the
 /// opposite one.
 ///
@@ -82,8 +92,10 @@
 )
 
 // The transitions a region can take across an epoch boundary.
-// A slide can take every transition above.
-#let region-transitions = ("crossfade",)
+#let region-transitions = ("crossfade", "morph")
+
+// The transitions a slide can take, which are the ones that need no region to carry.
+#let slide-transitions = ("crossfade", "push", "cover", "wipe")
 
 // Whether a value is what a transition function returned.
 #let is-transition(value) = (
@@ -113,6 +125,23 @@
       + describe(value),
   )
   value.first()
+}
+
+// Check the transition into a slide, which `init` and the deck name, and give back its record.
+#let check-slide-transition(who, where, value) = {
+  let record = transition-of(who, where, value)
+  assert(
+    record.name in slide-transitions,
+    message: who
+      + " cannot enter a slide with "
+      + written(record)
+      + ", because a slide takes "
+      + slide-transitions.map(name => name + "()").join(", ", last: " or ")
+      + " and a "
+      + record.name
+      + " carries a region across an epoch boundary",
+  )
+  record
 }
 
 // Check the transition of a structural primitive, which carries a region across an epoch

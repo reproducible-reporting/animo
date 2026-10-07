@@ -43,6 +43,7 @@ where shadowing typst's own `hide`, `move` and `scale` is harmless.
 | [`anim.apply`](#animapply)         | structural         | a `sub` call          |
 | [`anim.reset`](#animreset)         | structural         | a `sub` call          |
 | [`anim.crossfade`](#animcrossfade) | transition         | `init`, `transition:` |
+| [`anim.morph`](#animmorph)         | transition         | `transition:`         |
 | [`anim.push`](#animpush)           | transition         | `init`, `transition:` |
 | [`anim.cover`](#animcover)         | transition         | `init`, `transition:` |
 | [`anim.wipe`](#animwipe)           | transition         | `init`, `transition:` |
@@ -434,7 +435,7 @@ continuous primitives, where they time the crossfade of the region that changed.
 
 All four also take `transition:`, which says how the region that changed crosses the boundary.
 The `transition` argument defaults to `auto`, which is the crossfade whatever the deck's own
-transition is, and it also takes the [transition](#transitions) `crossfade()`.
+transition is, and it also takes the [transitions](#transitions) `crossfade()` and `morph()`.
 The other transitions move a whole slide and are refused here.
 A `duration` of zero is a hard cut of the region.
 Two operations that change one region at one boundary have to name the same transition,
@@ -517,6 +518,7 @@ A backward step travels the other way.
 | Transition       | Slide | Region |
 | ---------------- | ----- | ------ |
 | `anim.crossfade` | yes   | yes    |
+| `anim.morph`     | no    | yes    |
 | `anim.push`      | yes   | no     |
 | `anim.cover`     | yes   | no     |
 | `anim.wipe`      | yes   | no     |
@@ -528,6 +530,24 @@ crossfade()
 ```
 
 The outgoing content fades out while the incoming content fades in.
+
+### `anim.morph`
+
+```typst
+morph()
+```
+
+The content that the outgoing and the incoming region share moves from its old place to its
+new one, and the rest fades out and in where it is.
+A tag moves as one, unless the primitive changes it, and the letters of text that is not a
+tag are matched one by one.
+`init` and the deck refuse it, because a morph carries a region.
+
+```typst
+sub(replace("eq", transition: morph())[$ (a + b)^2 = a^2 + 2 a b + b^2 $])
+```
+
+Taught in [Structural Animations](structural.md#morphing-what-shifts).
 
 ### `anim.push`
 

@@ -146,6 +146,8 @@
 // what the transition carries from the outgoing frame to the incoming one, each with the
 // timing of the operations that changed it and the name of the transition they named for
 // it, with its parameters when it has any, both left out for `auto`.
+// A region that morphs also carries the names of the tags the boundary changes in it, because
+// a morph moves a tag as one only while its content stays the same.
 // The first epoch begins no boundary and its list is empty.
 //
 // A state also carries the `wait` before it is entered, the `hold` before the state after
@@ -181,6 +183,7 @@
           ..entry("args", if region.transition.args.len() > 0 {
             region.transition.args
           }),
+          ..if region.transition.name == "morph" { (names: region.names) },
         )
       },
     )),

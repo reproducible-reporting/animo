@@ -81,6 +81,9 @@ function readSlide(element) {
       }, []),
     // Where the tags the plan is relative to sit, measured when the slide is first shown.
     anchors: null,
+    // The elements a morph is still moving, each with the epoch of its rendering, the label of
+    // the region that holds it and where its route ends, which `morph.js` keeps.
+    morphed: new Map(),
     // Which state this slide is showing, or `null` while it has never been rendered.
     // Its own rather than the deck's position, because a backward step that walks back
     // over a join leaves one slide and rewinds another, and the state it rewinds from is

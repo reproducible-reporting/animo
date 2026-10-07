@@ -33,6 +33,12 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 - Add a `transition:` argument to `replace`, `remove`, `apply` and `reset`,
   which names the transition that carries the changed region across the boundary.
   It takes `auto` or `crossfade()`, and the plan carries the name per region.
+- Add the `morph()` transition for a region, written as the `transition:` of a structural
+  primitive. It moves the content that both versions of the region share to its new place
+  and fades the rest. A tag moves as one unless the primitive changes it, and letters are
+  matched by their shape, so a reflowing paragraph needs no tags.
+  `init` and the show rule refuse it.
+  The example deck `morph.typ` shows it.
 - Write the `<title>`, the `lang` and the `<meta>` elements of the HTML presentation
   from `set document(..)` and `set text(lang: ..)`.
 - Carry the resolved `handout` flag of every state in the plan of the HTML presentation,

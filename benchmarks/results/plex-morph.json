@@ -1,0 +1,69 @@
+{
+  "environment": {
+    "host": "plex",
+    "cpu": "Intel(R) Core(TM) i7-4790 CPU @ 3.60GHz",
+    "cores": 8,
+    "platform": "Linux-7.2.8-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "typst": "typst 0.15.0 (3ae52774)",
+    "typst_libc": "musl",
+    "animo": "0.1.1",
+    "commit": "6ce177c-dirty",
+    "measured": "2026-10-07 05:46:34+0200"
+  },
+  "engines": {
+    "chromium": {
+      "version": "151.0.7922.34",
+      "steps": {
+        "500 letters": {
+          "glyphs": 464,
+          "animations": 930,
+          "step_ms": 44.1999999997206,
+          "frame_ms_median": 17.00000000023283,
+          "frame_ms_max": 46.39999999990687
+        },
+        "3000 letters": {
+          "glyphs": 2827,
+          "animations": 5656,
+          "step_ms": 234.20000000018626,
+          "frame_ms_median": 91.20000000018626,
+          "frame_ms_max": 136.39999999990687
+        }
+      },
+      "diff": {
+        "25": 2.7000000001862645,
+        "50": 3.6999999997206032,
+        "100": 4.399999999906868,
+        "200": 11.5,
+        "400": 27.800000000279397,
+        "800": 61
+      }
+    },
+    "firefox": {
+      "version": "153.0",
+      "steps": {
+        "500 letters": {
+          "glyphs": 464,
+          "animations": 930,
+          "step_ms": 60,
+          "frame_ms_median": 17,
+          "frame_ms_max": 51
+        },
+        "3000 letters": {
+          "glyphs": 2827,
+          "animations": 5656,
+          "step_ms": 306,
+          "frame_ms_median": 27,
+          "frame_ms_max": 297
+        }
+      },
+      "diff": {
+        "25": 2,
+        "50": 3,
+        "100": 5,
+        "200": 11,
+        "400": 26,
+        "800": 59
+      }
+    }
+  }
+}

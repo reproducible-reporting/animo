@@ -94,6 +94,20 @@ A release build is compiled once, while a deck being written is recompiled
 after every edit that lands, and typst memoises across recompiles inside one `watch`
 process, so the cold compile time does not describe what writing a deck feels like.
 
+## What a Morph Costs
+
+[`morph.py`](morph.py) measures the one cost that is paid in the browser rather than in the
+compiler, which is the morph of a region at a key press.
+It compiles a slide whose paragraph of about 500 or about 3000 letters reflows behind an
+inserted clause, presses the key in every engine that can be launched, and records how long
+the press took, how many animations it started and the intervals of the frames that follow.
+It also times the diff that matches the letters on its own, at a growing number of
+differences, which is where the bound in `src/js/morph.js` comes from.
+
+```bash
+./benchmarks/morph.py --output benchmarks/results/$(hostname)-morph.json
+```
+
 ## The Results
 
 One JSON file per machine under `results/`, committed.

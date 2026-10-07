@@ -880,6 +880,7 @@ parameters each one takes.
 | Transition              | What it does                                         | Slide | Region |
 | ----------------------- | ---------------------------------------------------- | ----- | ------ |
 | `crossfade()`           | fades the outgoing content out and the incoming in   | yes   | yes    |
+| `morph()`               | moves the shared content and fades the rest          | no    | yes    |
 | `push(direction: rtl)`  | moves the incoming slide in and the outgoing one out | yes   | no     |
 | `cover(direction: rtl)` | moves the incoming slide in over the outgoing one    | yes   | no     |
 | `wipe(direction: ltr)`  | uncovers the incoming slide behind a moving edge     | yes   | no     |
@@ -901,7 +902,8 @@ A `direction` is the direction of travel on a forward step, one of `ltr`, `rtl`,
 `btt`, which are typst's own directions.
 A backward step plays the same transition from the other end, so it travels the other way.
 A transition a region cannot take, such as a push, is refused on a structural primitive at
-compile time.
+compile time, and a transition a slide cannot take, which is the morph, is refused in `init`
+and on the deck.
 The names, the parameters and their values are checked in typst rather than only in the
 runtime, because a transition the runtime did not recognise would be a boundary that quietly
 took a default.
@@ -1232,6 +1234,22 @@ Animations are then performed in the browser:
   the outgoing epoch rendering and in in the incoming one, with `mix-blend-mode: plus-lighter`
   on the epoch renderings inside the canvas, which isolates, and `visibility` scoping the
   outgoing rendering down to the regions it hands over
+- a structural step whose primitive names `morph()` crossfades the region in the same way and
+  also animates `translate` on the **matches** inside it.
+  A match is a pair of elements, one in the outgoing region and one in the incoming one,
+  that show the same ink.
+  The outgoing element travels from its own place to the place of the incoming one,
+  and the incoming element travels from the place of the outgoing one to its own,
+  so the two are at one position at every moment.
+  Their opacities are those of the crossfade, `1 - t` and `t`, which `plus-lighter` adds to
+  one, so the pair reads as one opaque element on the path and a pair whose colours differ
+  reads as the interpolation of the two colours.
+  Nothing is cloned and no opacity is touched beyond the crossfade's own.
+  Unmatched content fades out or in where it is.
+  The translations are animation effects and never inline style, so a slide at rest carries no
+  morph translation, and the outgoing element jumps back to its own place when its animation
+  ends, at which point its opacity is zero.
+  *Resolved Design Decisions* says what a match is
 - a slide boundary crossfades the two **slide containers** by the same means: `plus-lighter` on
   the containers inside the stage, which isolates, the outgoing one kept laid out until the
   two have crossed, and the duration of the slide's `init`, `--animo-transition-duration`
@@ -1242,7 +1260,7 @@ Animations are then performed in the browser:
   other.
   Two things differ from the epoch crossfade, and both are measured rather than chosen.
   A slide outside a boundary is hidden with `display` where a frame is hidden with `visibility`,
-  because a frame nobody is watching has to keep the geometry the morph will read while a slide
+  because a frame nobody is watching has to keep the geometry the morph reads while a slide
   outside a boundary is wanted neither for its ink nor for its geometry, and laying every slide
   of a long deck out costs seconds of first paint. And the deck's surround is a colour on the
   page rather than on the element that isolates the blend, whose own ground would otherwise be
@@ -1279,7 +1297,7 @@ Five rules make this work:
      weaker argument that a typst rendering paints nothing where it has no ink. `visibility`
      and not `opacity` or `display`: a descendant can take `visibility` back, while the
      rendering stays laid out, so the geometry of a rendering nobody is watching stays readable,
-     which is what the morph will need.
+     which is what the morph needs.
      Every rendering that is not the one being entered takes part, and not only the one the
      step is leaving, because a boundary crossed while an earlier one is still running finds
      more than one of them painting the region. They then all leave on the new boundary's
@@ -1324,7 +1342,7 @@ Five rules make this work:
    twice, in two wrappers of the same kind, so every tag site emits a labelled outer group with
    an unlabelled inner group inside it (see *Findings*). Continuous primitives address the
    inner group (`[data-typst-label="x"] > g`); anything belonging to an epoch *boundary*,
-   the region crossfade today and the morph later, addresses the labelled outer group.
+   the region crossfade and the morph, addresses the labelled outer group.
    CSS gives each element only one `translate` and one `scale`,
    so the split is what keeps the two classes from clobbering each other.
    The order follows from how a boundary effect is measured:
@@ -1332,7 +1350,9 @@ Five rules make this work:
    and must sit *above* the continuous transforms rather than inside them,
    or a tag that is being scaled or (later) rotated while its region reflows
    moves by the wrong amount in the wrong direction.
-   A morph added later works this out.
+   The morph measures a match on the screen and maps the difference into the user space of
+   the parent of the element it translates, through the inverse of that parent's
+   `getScreenCTM()`, which holds every transform above the element, typst's own included.
    Opacity is exempt from the ordering argument, since the two slots simply multiply,
    but it follows the same convention.
 
@@ -1648,9 +1668,9 @@ With reflow bounded by regions rather than either forbidden or global:
    `remove`, and as the initial state a `reset` declares.
    It was dropped because it reflowed the whole slide; inside a region
    that is precisely what it is supposed to do.
-1. What is *not* achieved is animated reflow: content that moves because of reflow jumps to its
-   new place behind a crossfade. A morph primitive is the way out, and nothing in this design
-   precludes adding one later.
+1. Content that moves because of reflow jumps to its new place behind a crossfade, unless the
+   primitive that causes the reflow names `morph()`, which carries the content that both
+   renderings share to its new place.
 
 ## Resolved Design Decisions
 
@@ -1708,10 +1728,11 @@ These were the open questions of the earlier drafts. They are settled; the evide
   A **small edit inside a large paragraph** reads badly. Everything after the edit shifts by a
   few pixels, and two copies of the same words a few pixels apart are an illegible smear for
   the rest of the paragraph, where the part *before* the edit stays crisp because it did not
-  move. This is the case a morph would exist for, and it is why the transition of an epoch
+  move. This is the case the morph exists for, and it is why the transition of an epoch
   boundary is a named, swappable one from the first release of Animo.
-  Until a morph exists, the authoring advice is to put a region around what is replaced
-  wholesale and to keep what merely shifts out of it.
+  The authoring advice is to name `morph()` on the primitive when content shifts,
+  and otherwise to put a region around what is replaced wholesale
+  and to keep what merely shifts out of it.
 
 - **Does every slide compute the union of its placements?** No. Only a slide whose timeline
   pans does. The union is the one part of laying out a slide whose cost grows with the number
@@ -1752,7 +1773,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
   and selects among them from the timeline, in the style of `sanor`'s named cases.
   It is expressible under the measuring mechanism above, so feasibility does not decide it.
   What decides it is the interaction with duplicate tags,
-  and it is sharpest in the case of the future morph:
+  and it is sharpest in the case of the morph:
 
   - Because every site sharing a tag name receives the **same** replacement content, the sub-tags
     inside it, their multiplicities and their document order match automatically between the
@@ -2233,6 +2254,40 @@ These were the open questions of the earlier drafts. They are settled; the evide
   transition follows the same rule and the same refusal. It takes the transition functions a
   slide takes, because one concept has one spelling, and refuses the ones a region cannot take.
 
+- **What does a morph match?** A morph matches two kinds of pair inside the pair of region
+  groups the boundary carries, in this order of precedence,
+  and an element inside a matched pair is not matched again.
+
+  1. A **tag match** pairs two labelled groups of one name by their index among the groups
+     of that name in the region, in document order, and translates the outer slots.
+     A tag the boundary itself changes is not matched as a whole, because its content differs
+     between the renderings, and what it holds is matched in its place.
+     Without that exception, `replace("eq", transition: morph())` on a tag inside an explicit
+     region would move the old equation as one block onto the new one and match none of its
+     terms. Unequal multiplicity leaves the extra groups unmatched.
+  1. A **glyph match** pairs the `<use>` elements of the unclaimed ink by a longest common
+     subsequence of their `href`. Typst names a glyph by a hash of its outline at its size,
+     and the fill is an attribute of the `<use>` and not part of the hash, so equal names mean
+     equal shapes whatever their colour (see *Findings*). A glyph that changes size or weight
+     gets another name and is not matched, which is right for a morph that does not scale.
+     Spaces are not elements of typst's output, so a word is carried as its letters.
+
+  A tag is how an author makes content move as one, and a paragraph that reflows is carried by
+  its glyphs without any tag.
+  Matching geometry that is not text, such as a fraction bar or a table rule, is left for later.
+  The subsequence is found with a diff of the Myers kind, whose cost grows with the number
+  of glyphs times the number of differences, and a region whose glyphs differ in more than a
+  fixed number of places matches no glyphs and crossfades them, because a crossfade is always
+  correct. The bound is 400 differences, which the diff of two lists of 3000 glyphs takes about
+  10 ms to reach in chromium 151 and firefox 153, measured with `benchmarks/morph.py`.
+
+  A morph interrupted by the next boundary continues from what the page shows:
+  an outgoing element is measured where it is displayed and an incoming one where it is laid
+  out, which is its displayed place less the running morph translations on it and above it.
+  A morph translation that the next step leaves behind in a region that step carries again
+  runs on to its end on the new boundary's clock, and every other one snaps to rest, as the
+  crossfade of a region the step does not carry does.
+
 - **Where do the title and the language of the HTML page come from?** From `set document(..)`
   and `set text(lang: ..)`, as for any typst document, so nothing is stated twice. Typst writes
   neither into a head that a package builds, so the deck's show rule reads them in a context and
@@ -2475,8 +2530,9 @@ These need the prototype to answer.
   interrupted crossfade had reached. The same answer repairs the dip that a short gap
   already produced.
 
-- Whether a FLIP morph should ever scale. Non-uniform `scale` distorts glyph strokes, so text
-  morphs probably want translate-only, with the size change carried by the crossfade, leaving
+- Whether a morph should ever scale. It translates only, and a glyph that changes size is not
+  matched, so its size change is carried by the crossfade. Scaling would let a heading that
+  changes size morph, and non-uniform `scale` distorts glyph strokes, which suggests leaving
   scaling for figures. This has to be seen in motion before it is decided; the extra nested box
   under *Findings* is needed either way, since the two slots are separated by coordinate space
   and not merely by how many properties each one uses.

@@ -201,8 +201,13 @@ function keyframeName(name) {
  * `start` states where an animated property starts, in place of what the element is showing,
  * for an element whose current value is no point on the route to the new one: a slide that
  * a push brings in has not been laid out, and it starts outside the stage.
+ *
+ * `end` states where an animated property ends, in place of the state written, for an
+ * effect that is a route and not a state: a morph carries an outgoing element to the place of
+ * the incoming one, and the element is back at rest once the animation is over, which is
+ * when the crossfade has made it transparent.
  */
-function plan(effects, element, to, options = null, start = null) {
+function plan(effects, element, to, options = null, { start = null, end = null } = {}) {
   let own = effects.get(element);
   if (own === undefined) {
     own = new Map();
@@ -212,7 +217,7 @@ function plan(effects, element, to, options = null, start = null) {
     const timing = options?.[property] ?? null;
     const from =
       timing === null ? null : (start?.[property] ?? showing(element, [property])[property]);
-    own.set(property, { to: value, timing, from });
+    own.set(property, { to: value, timing, from, end: end?.[property] ?? null });
   }
 }
 
@@ -232,7 +237,11 @@ function apply(effects) {
       element.style.setProperty(property, effect.to);
     }
   }
-  // Read after every write of the step, so that the engine recalculates style once.
+  // Read after every write of the step, and before any animation is created, so that the
+  // engine recalculates style once. An animation created between two reads makes the second
+  // one recalculate the style of the page again, which costs a step of a few thousand
+  // elements seconds in chromium 151.
+  const animations = [];
   for (const [element, own] of effects) {
     const names = [...own].filter(([, effect]) => effect.timing !== null).map(([name]) => name);
     if (names.length === 0) {
@@ -241,7 +250,11 @@ function apply(effects) {
     // What the element now computes, rather than what was just written: an engine
     // normalises what it computes, and chromium 151 gives back `0px` for the `0px 0px` of
     // a tag at rest, so comparing the two spellings finds a difference where there is none.
-    const into = showing(element, names);
+    // An effect with an `end` of its own ends there instead, and is not read at all, which
+    // is what keeps a morph of a few thousand glyphs from reading as many styles.
+    const unstated = names.filter((name) => own.get(name).end === null);
+    const shown = unstated.length === 0 ? {} : showing(element, unstated);
+    const into = Object.fromEntries(names.map((name) => [name, own.get(name).end ?? shown[name]]));
     // Only the properties this step actually changes, because in chromium 151 a `translate`
     // or `scale` that is equal at both ends stops the browser from drawing the `opacity`
     // beside it, and the element stays as it was until the step ends and then jumps.
@@ -263,10 +276,14 @@ function apply(effects) {
     for (const group of groups.values()) {
       const frame = (pick) =>
         Object.fromEntries(group.names.map((name) => [keyframeName(name), pick(name)]));
-      element.animate(
+      animations.push([
+        element,
         [frame((name) => own.get(name).from), frame((name) => into[name])],
         { ...group.timing, id: ANIMATION_ID },
-      );
+      ]);
     }
+  }
+  for (const [element, keyframes, options] of animations) {
+    element.animate(keyframes, options);
   }
 }

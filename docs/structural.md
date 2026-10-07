@@ -164,8 +164,10 @@ two copies of the same words a few pixels apart are a smear rather than a moveme
 A small edit near the start of a long paragraph is the case to avoid,
 since everything after the edit moves a little and ghosts against itself.
 
-Avoiding this is up to the author.
-Put a [region](regions.md) around what is replaced wholesale,
+There are two ways to avoid it.
+Name the [morph](#morphing-what-shifts) on the primitive, which moves what shifts instead of
+dissolving it.
+Or put a [region](regions.md) around what is replaced wholesale,
 and keep out of it whatever only shifts as a consequence:
 
 ```typst
@@ -196,6 +198,67 @@ sub(replace("claim", duration: 0)[The second answer.])
 The dissolve is the `crossfade()` [transition](reference.md#transitions),
 which the `transition:` argument of the four primitives may also name explicitly.
 The transitions that move a whole slide, such as a push, are refused there.
+
+## Morphing What Shifts
+
+The example deck for this section is
+[`morph.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/morph.typ)
+([HTML](https://reproducible-reporting.github.io/animo/examples/morph.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/examples/morph-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/examples/morph-handouts.pdf)).
+It shows a paragraph that reflows, a crossfade and a morph of the same change side by side,
+and an equation that grows.
+
+The `morph()` transition moves the content that the outgoing and the incoming version of a
+region share from its old place to its new one, and fades only what differs:
+
+```typst
+#slide(animation: {
+  import anim: *
+  sub(replace("aside", transition: morph())[and a clause inserted near the start])
+})[
+  #region[
+    The quick brown fox #tag("aside", wrap: none)[] jumps over the lazy dog,
+    and every word after the insertion moves to its new place.
+  ]
+]
+```
+
+What the morph moves is decided by what the two versions show.
+
+- **Letters** are matched by their shape, in reading order, so a paragraph that reflows needs
+  no tags. A letter that changes colour moves and changes colour on the way.
+  A letter that changes size or weight has another shape, so it fades out where it was and
+  in where it lands.
+- **A tag** moves as one, which is how to carry a box, a figure or anything else that is not
+  text. Two sites of one name are paired in the order they appear.
+  A tag that the primitive itself changes is not carried as one,
+  because its content differs between the versions, and its letters are matched instead.
+- **Everything else** fades out and in where it is, as in a crossfade.
+  That includes lines, rules, fraction bars and images.
+
+The morph takes the `delay:` and `duration:` of the primitive, as the crossfade does.
+A `duration:` of zero is a hard cut, stepping backwards plays the morph backwards,
+and a deep link shows the state without motion.
+Two operations that change one region at one boundary name the same transition,
+so the morph is written on each of them:
+
+```typst
+sub(
+  replace("aside", transition: morph())[and a clause],
+  apply("word", text.with(fill: red), transition: morph()),
+)
+```
+
+The morph moves content and never scales it.
+A region whose letters differ in more than 400 places matches none of them and crossfades
+them, because the matching would take too long.
+A morph of a few hundred letters costs a step a few tens of milliseconds;
+see [Performance](performance.md#what-a-morph-costs) for the numbers.
+`init` and the deck's `transition:` refuse `morph()`, because a morph carries a region
+across a boundary inside a slide.
+The paged outputs show one state per page and nothing between two pages,
+so a morph changes nothing there.
 
 ## Selecting States for Handouts
 

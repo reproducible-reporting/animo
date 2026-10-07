@@ -463,9 +463,12 @@
   ]
 ]
 
+// The morph moves the letters of the equation apart to make room for the inserted factors.
+// The factors start hidden and are revealed once the room is made,
+// so that they do not fade in over the letters that are still moving.
 #slide(animation: {
   import anim: *
-  sub(reset("ft"))
+  sub(reset("ft", transition: morph()), reveal("ft", delay: 0.4))
 })[
   = Animated Equations
 

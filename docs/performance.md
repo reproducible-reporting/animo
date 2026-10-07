@@ -257,6 +257,33 @@ Put it in the **overlay** and not in the body.
 An overlay is one rendering per slide where the body is one rendering per epoch,
 so the same stack in the body is its epoch count times the numbers above.
 
+## What a Morph Costs
+
+A [morph](structural.md#morphing-what-shifts) costs nothing at compile time,
+because the browser matches the two versions of a region when the step runs.
+Its cost is in the browser, at the key press and in the frames of the motion,
+and it grows with the number of letters that move.
+
+Measured with `benchmarks/morph.py` on a slide whose paragraph reflows behind a clause
+inserted at its start, so that nearly every letter moves,
+in chromium 151 and firefox 153 at a window of 1280 by 720 pixels,
+on an Intel Core i7-4790 in October 2026:
+
+| Letters that move | Animations | Key press, chromium and firefox | Frame, chromium and firefox |
+| ----------------- | ---------- | ------------------------------- | --------------------------- |
+| 464               | 930        | 44 ms and 60 ms                 | 17 ms and 17 ms             |
+| 2827              | 5656       | 234 ms and 306 ms               | 91 ms and 27 ms             |
+
+The frame is the median interval between two frames during the motion,
+so 17 ms is the full rate of the display.
+A paragraph of a few hundred letters therefore morphs smoothly in both engines,
+and a slide of several thousand moving letters moves at about ten frames a second in chromium.
+
+Matching the letters is the smaller part.
+The diff of two lists of 3000 letters takes about 10 ms at 400 differences,
+which is the bound above which a region's letters are crossfaded instead,
+and about 60 ms at 1600.
+
 ## Page Weight
 
 The HTML deck is one self-contained file: a stylesheet, a runtime, and one inline SVG per

@@ -161,6 +161,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | A faked clock drives a timer, not the document timeline      | `test_fake_clock.py`                  |
 | Styling from CSS: what is and is not reachable               | `test_css_styling.py`                 |
 | Cross-frame geometry, and the two nested transform slots     | `test_slots.py`                       |
+| A morph keeps the `plus-lighter` sum                         | `test_morph_sum.py`                   |
 | `hide()` cannot be undone in the browser                     | `test_hide.py`                        |
 | A panic that depends on `query` can be swallowed             | `test_convergence.py`                 |
 | Introspection: positions                                     | `test_introspection.py`               |

@@ -118,6 +118,14 @@ const transitions = {
       }
     });
   },
+  /**
+   * Crossfade the regions the boundary redraws, and carry what the two versions of each
+   * share from its old place to its new one, which `morphRegions` plans.
+   */
+  morph(effects, slide, context) {
+    transitions.crossfade(effects, slide, context);
+    morphRegions(effects, slide, context);
+  },
 };
 
 /** The transition a region takes when its record names none, which is every ordinary one. */
@@ -340,7 +348,9 @@ function planSlides(effects, shown, leaving, options, transition, fresh) {
     [Math.min(shown, leaving), "other"],
   ]) {
     const element = deck.get(number).element;
-    plan(effects, element, end[role], timed(end[role], options), fresh.has(number) ? start[role] : null);
+    plan(effects, element, end[role], timed(end[role], options), {
+      start: fresh.has(number) ? start[role] : null,
+    });
     plan(effects, element, { "mix-blend-mode": entry.blend });
   }
 }
@@ -401,8 +411,12 @@ function planEpoch(effects, slide, index, from, options, mirror) {
     }
   }
   const whole = records.find((record) => record.group === null);
+  const carried = whole === undefined ? records : [whole];
+  // Before the transitions, so that a morph of this step that matches an element again plans
+  // its route in place of where an earlier morph was taking it.
+  settleMorphs(effects, slide, to, carried, options, mirror);
   const named = new Map();
-  for (const record of whole === undefined ? records : [whole]) {
+  for (const record of carried) {
     const name = record.transition ?? defaultTransition;
     named.set(name, [...(named.get(name) ?? []), record]);
   }

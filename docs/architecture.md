@@ -199,6 +199,7 @@ and it refuses two operations that change one region at one boundary and name tw
 The rendering of the state being shown is visible and opaque,
 every other rendering is hidden and transparent,
 and every region group is opaque in the rendering being shown and transparent in the others.
+It then settles what an earlier morph is still moving, as the next section says.
 It then groups the region records of the boundary by transition
 and hands each transition the records it carries,
 together with the epoch renderings, the epoch the step leaves and the one it enters,
@@ -216,11 +217,41 @@ and a backward step lands on the earlier rendering exactly.
 A transition runs while the step is planned and nothing has been written,
 so the geometry it reads is the geometry of the page before the step.
 
-The seam exists because the crossfade is not the only conceivable transition.
-A **morph** would pair the tags that exist in both epochs, move them to their new places,
-and crossfade only the rest;
-it is why both renderings stay laid out and readable rather than being hidden with
-`display`.
+## The Morph
+
+`morph` in `transitions` plans the crossfade of its regions and then calls `morphRegions` in
+`src/js/morph.js`, which adds a `translate` animation to each **match** below the region
+groups.
+A match is a pair of elements, one in the outgoing region and one in the incoming one.
+Tags come first: two labelled groups of one name, paired by index in document order,
+and translated on their outer slot.
+A tag whose name the plan lists under `names` of the region record is one the boundary
+changes, and it is not matched as a whole.
+Typst writes `names` only on a record whose transition is the morph.
+Then the glyphs: the `<use>` elements outside every matched group,
+paired by `commonSubsequence`, a diff of the Myers kind over their `href`.
+Above `MORPH_DIFFERENCES` differences it gives up and the glyphs are crossfaded.
+The glyphs of one text run that all travel the same distance are carried by one animation
+on the run instead of one each.
+
+The distance of a match is measured on the screen, from where the outgoing element is
+displayed to where the incoming one is laid out, and mapped into the user space of each
+element's parent through the inverse of the parent's `getScreenCTM()`.
+Both renderings stay laid out under `visibility`, which is what makes the outgoing geometry
+readable at all.
+The outgoing element animates from what it shows to the incoming place, with an `end` of its
+own in the effect, and the incoming element from the outgoing place to rest.
+Neither is written as inline style, so the slide at rest carries no morph translation.
+The opacity is the crossfade's own, which `plus-lighter` sums to one opaque element on the
+route (see *Findings*).
+
+`slide.morphed` holds every element a morph is still moving, with the epoch of its rendering,
+the label of its region and where its route ends.
+`settleMorphs` reads it at every step, before any transition plans.
+A translation in a region the step carries again runs on to its end on the new boundary's
+clock, unless it is in the rendering being entered, and every other one snaps to rest.
+The measurement of an incoming element subtracts the translations that are still running on
+it and above it, which `getScreenCTM()` includes.
 
 ## Where the Slide Boundary Is Selected
 
@@ -366,6 +397,7 @@ Only `boot.js` calls into the other files at load time, and it is the last one.
 | `effects.js`    | `timing`, `scheduled`, `span`, `showing`, `plan` and `apply`                 |
 | `display.js`    | positions and anchors, the CSS of a display state and a pan, `planState`     |
 | `boundaries.js` | the transitions of both boundaries, `planEpoch`, `planSubslides`             |
+| `morph.js`      | the matches of a morph, their routes, and `settleMorphs`                     |
 | `controller.js` | the position, `show`, `step`, `jump`, and the clock with its pause           |
 | `input.js`      | key, pointer and hash events, turned into intents by the active mode         |
 | `boot.js`       | preparing the page, reading the slides and the first `jump`                  |

@@ -289,6 +289,12 @@ REFUSED_TRANSITIONS = [
     ("anim.crossfade(direction: ltr)", "unexpected argument: direction"),
     ("anim.push(duration: 1)", "unexpected argument: duration"),
     ("anim.push(direction: left)", "push takes direction as one of ltr, rtl, ttb and btt"),
+    (
+        "anim.morph()",
+        "init cannot enter a slide with morph(), because a slide takes crossfade(), push(), "
+        "cover() or wipe() and a morph carries a region across an epoch boundary",
+    ),
+    ("anim.morph(direction: ltr)", "unexpected argument: direction"),
     ('anim.wipe(direction: "ltr")', "wipe takes direction as one of ltr, rtl, ttb and btt"),
     ('anim.cover(), easing: "linear"', "init takes no named argument besides duration, wait"),
     ("anim.push(), duration: -1", "init takes duration as a number of seconds that is not"),
@@ -318,6 +324,7 @@ def test_a_transition_the_runtime_cannot_take_is_refused(typst: TypstRunner, val
         ('(name: "push", direction: ttb)', "animo takes transition as a transition"),
         ("anim.push(duration: 1)", "unexpected argument: duration"),
         ("anim.wipe(direction: up)", "unknown variable: up"),
+        ("anim.morph()", "animo cannot enter a slide with morph(), because a slide takes"),
     ],
 )
 def test_a_deck_transition_the_runtime_cannot_take_is_refused(

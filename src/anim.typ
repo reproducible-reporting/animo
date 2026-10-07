@@ -12,8 +12,8 @@
 
 #import "site.typ": describe
 #import "transition.typ": (
-  check-region-transition, cover, crossfade, is-transition, push, transition-of,
-  wipe,
+  check-region-transition, check-slide-transition, cover, crossfade,
+  is-transition, morph, push, wipe,
 )
 
 // The operations that change only how already-rendered content is displayed,
@@ -363,7 +363,7 @@
 /// - duration (auto, int, float): Seconds the transition of the region takes. `auto` is the
 ///   `primitive-duration:` of the deck, and `0` is a hard cut.
 /// - transition (auto, array): How the region crosses the boundary. `auto` and
-///   `crossfade()` are the crossfade.
+///   `crossfade()` are the crossfade, and `morph()` moves what the two versions share.
 /// -> dictionary
 #let replace(name, body, delay: 0, duration: auto, transition: auto) = {
   assert(
@@ -388,7 +388,7 @@
 /// - duration (auto, int, float): Seconds the transition of the region takes. `auto` is the
 ///   `primitive-duration:` of the deck, and `0` is a hard cut.
 /// - transition (auto, array): How the region crosses the boundary. `auto` and
-///   `crossfade()` are the crossfade.
+///   `crossfade()` are the crossfade, and `morph()` moves what the two versions share.
 /// -> dictionary
 #let remove(name, delay: 0, duration: auto, transition: auto) = (
   kind: "remove",
@@ -407,7 +407,7 @@
 /// - duration (auto, int, float): Seconds the transition of the region takes. `auto` is the
 ///   `primitive-duration:` of the deck, and `0` is a hard cut.
 /// - transition (auto, array): How the region crosses the boundary. `auto` and
-///   `crossfade()` are the crossfade.
+///   `crossfade()` are the crossfade, and `morph()` moves what the two versions share.
 /// - fns (function): The functions, such as `text.with(fill: red)` or `strong`.
 /// -> dictionary
 #let apply(name, delay: 0, duration: auto, transition: auto, ..fns) = {
@@ -452,7 +452,7 @@
 /// - duration (auto, int, float): Seconds the transition of the region takes. `auto` is the
 ///   `primitive-duration:` of the deck, and `0` is a hard cut.
 /// - transition (auto, array): How the region crosses the boundary. `auto` and
-///   `crossfade()` are the crossfade.
+///   `crossfade()` are the crossfade, and `morph()` moves what the two versions share.
 /// -> dictionary
 #let reset(name, delay: 0, duration: auto, transition: auto) = (
   kind: "reset",
@@ -639,7 +639,7 @@
     (
       ..no-init,
       transition: if given.len() == 0 { auto } else {
-        transition-of("init", "its first argument", given.first())
+        check-slide-transition("init", "its first argument", given.first())
       },
       duration: check-duration("init", duration),
       wait: check-gap("init", "wait", wait),
