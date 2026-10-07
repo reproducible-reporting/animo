@@ -220,7 +220,7 @@ def test_a_slide_with_one_epoch_measures_no_region(typst: TypstRunner):
     typst.ok(source, **PRESENTATION)
 
 
-# Which regions a content change redraws.
+# Which regions a content change crosses: the outermost region around what it changes.
 
 CHANGES = timeline(
     'sub(replace("a")[A2])',
@@ -246,14 +246,14 @@ CHANGED_REGIONS = (
     'let region(id) = (kind: "region", id: id)',
     'let implicit(name) = (kind: "tag", name: name)',
     "assert.eq(changed.at(0), (region(1),))",
-    "assert.eq(changed.at(1), (region(2),))",
-    'assert.eq(changed.at(2), (region(1),), message: "the inner region is redrawn by the outer")',
+    'assert.eq(changed.at(1), (region(1),), message: "the outer region holds the stack")',
+    'assert.eq(changed.at(2), (region(1),), message: "the inner region crosses with the outer")',
     'assert.eq(changed.at(3), (implicit("free"),))',
     'assert.eq(changed.at(4), (implicit("slot"),))',
 )
 
 
-def test_a_boundary_redraws_the_regions_that_hold_what_it_changes(typst: TypstRunner):
+def test_a_boundary_crosses_the_outermost_regions_around_what_it_changes(typst: TypstRunner):
     """Explicit, nested, implicit, and a region inside content that changes."""
     source = with_timeline(CHANGES, f"slide(animation: animation)[{CHANGES_BODY}]") + check(
         *CHANGED_REGIONS,

@@ -119,9 +119,9 @@ Animo has no header or footer machinery, so a recurring element is a wrapper aro
 `#slide` that fills one of the two [outer layers](slides.md#backgrounds-and-overlays).
 
 **Put it in the overlay.**
-An overlay is one rendering per slide, where the body is one rendering per *epoch*,
-so a stack of one rendering per subslide is paid for once in an overlay and once per epoch
-in the body. The overlay also belongs to the viewport, so a [pan](viewport.md) leaves it
+An overlay is one rendering per slide, where a region in the body is one rendering per
+*epoch*, so a stack of one rendering per subslide is paid for once in an overlay and once per
+epoch in a region. The overlay also belongs to the viewport, so a [pan](viewport.md) leaves it
 where it is, where a footer placed in the body travels with the canvas.
 
 ## What a Handout Shows

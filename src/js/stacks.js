@@ -12,17 +12,22 @@
 /**
  * How the rendering of a state is chosen, per kind of stack.
  *
- * `select(effects, slide, stack, step)` plans one stack of a slide for the state the step is
- * entering, as `planState` describes the step: `index` is that state, `from` the epoch the
- * slide was showing, `options` how the step moves and `mirror` how long it lasts when it runs
- * backwards.
+ * `select(effects, slide, stack, step, prepared)` plans one stack of a slide for the state the
+ * step is entering, as `planState` describes the step: `index` is that state, `from` the epoch
+ * the slide was showing, `options` how the step moves and `mirror` how long it lasts when it
+ * runs backwards.
  *
- * An `epoch` stack holds one rendering of the slide per content state, and a boundary between
+ * A kind may also have `read(stack)`, which adds what it needs to a stack once, when the slide
+ * is read, and `prepare(effects, slide, step)`, which plans what one step needs once per slide
+ * before any stack of the kind is planned, and whose result every `select` of the step is
+ * handed as `prepared`.
+ *
+ * An `epoch` stack holds one rendering of a region per content state, and a boundary between
  * two of them is crossed by the transitions of `boundaries.js`.
  * A `subslide` stack holds one rendering of a `per-subslide` per state, and snaps.
  */
 const stackKinds = {
-  epoch: { select: planEpoch },
+  epoch: { read: readEpochStack, prepare: planBoundary, select: planEpoch },
   subslide: { select: planSubslide },
 };
 
@@ -63,13 +68,22 @@ function readStacks(element) {
     }
     stack.renderings[found.index] = rendering;
   }
+  for (const stack of stacks.values()) {
+    stackKinds[stack.kind].read?.(stack);
+  }
   return Array.from(stacks.values());
 }
 
 /** Plan every stack of a slide for one state, each as its kind chooses. */
 function planStacks(effects, slide, step) {
+  const prepared = new Map();
+  for (const [kind, { prepare }] of Object.entries(stackKinds)) {
+    if (prepare !== undefined) {
+      prepared.set(kind, prepare(effects, slide, step));
+    }
+  }
   for (const stack of slide.stacks) {
-    stackKinds[stack.kind].select(effects, slide, stack, step);
+    stackKinds[stack.kind].select(effects, slide, stack, step, prepared.get(stack.kind));
   }
 }
 

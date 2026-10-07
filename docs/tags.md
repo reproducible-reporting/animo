@@ -248,4 +248,5 @@ there is the item's place in the list rather than a setting on it.
 The [Reference](reference.md#tag) has the table of which primitives reach which kind of
 tag site.
 In that table, `wrap: none` is the special case:
-such a tag has no group, so nothing continuous can address it.
+such a tag has no group, so nothing continuous can address it,
+and it has no box, so a structural primitive reaches it only inside a [region](regions.md).

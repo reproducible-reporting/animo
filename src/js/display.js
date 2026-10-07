@@ -105,6 +105,47 @@ function wantedAnchors(slide) {
 }
 
 /**
+ * The epoch of the rendering an element sits in, where an element outside every epoch stack
+ * counts as epoch 0, because the body around the stacks is laid out once for all epochs.
+ */
+function epochOf(element) {
+  for (let node = element; node !== null; node = node.parentElement) {
+    const found = stackLabel(node.dataset?.typstLabel);
+    if (found?.kind === "epoch") {
+      return found.index;
+    }
+  }
+  return 0;
+}
+
+/**
+ * The labelled group of the first site of a tag, or `undefined` for a tag the slide does
+ * not have.
+ *
+ * The first site is the first in document order among the sites of the lowest epoch, which is
+ * the site a paged output reads in the first page that lays the tag out. Document order alone
+ * would put a site that only a later epoch lays out first, when it comes earlier in the body.
+ * A tag that holds an epoch stack of its own has a slot in every rendering of the stack, and
+ * its group is the one around the stack.
+ */
+function firstSite(slide, name) {
+  let first;
+  let lowest = Infinity;
+  for (const slot of slide.slots.get(name) ?? []) {
+    const epoch = epochOf(slot);
+    if (epoch < lowest) {
+      first = slot;
+      lowest = epoch;
+    }
+  }
+  const group = first?.parentNode;
+  if (stackLabel(group?.dataset.typstLabel)?.kind === "epoch") {
+    return group.parentNode.closest("[data-typst-label]");
+  }
+  return group;
+}
+
+/**
  * Where the first site of every tag the plan asks about sits on the canvas, in points.
  *
  * The anchor is the origin of the tag's labelled group, which is the top-left corner of the
@@ -112,9 +153,7 @@ function wantedAnchors(slide) {
  * read as well, so the two targets resolve the same quantity rather than two neighbours.
  * It is mapped into the user space of the frame, whose units are typst points and whose
  * origin is the canvas origin, so the pan of the canvas cancels out of it.
- *
- * The first site is the first occurrence in document order, which is in the first epoch
- * rendering that lays the tag out, since the renderings are placed in epoch order.
+ * `firstSite` says which site is the first.
  *
  * It has to be read while the slide has a layout and before the runtime has written a
  * display state on it, because a tag around the anchor would otherwise move it by
@@ -123,8 +162,8 @@ function wantedAnchors(slide) {
 function measureAnchors(slide) {
   const anchors = new Map();
   for (const name of wantedAnchors(slide)) {
-    const group = slide.slots.get(name)?.[0]?.parentNode;
-    if (group === undefined) {
+    const group = firstSite(slide, name);
+    if (group === undefined || group === null) {
       // Typst refuses a timeline relative to a tag its slide does not have, so this is a
       // page edited by hand, and the position resolves as if nothing were relative to a tag.
       anchors.set(name, null);
@@ -165,8 +204,8 @@ function viewport(slide, state) {
  * Plan one state of a slide on its canvas, on its stacks, and on every occurrence of every
  * tag it addresses.
  *
- * The pan goes on the canvas and never on the frame inside it: the epoch renderings are
- * stacked in that frame, so moving the canvas moves them all and keeps them registered.
+ * The pan goes on the canvas and never on the frame inside it, so moving the canvas moves
+ * everything the frame holds and keeps the renderings of every stack registered.
  * The canvas is an HTML element, so its `translate` composes with nothing typst wrote.
  *
  * Continuous state is written on every occurrence in every rendering and not only in the

@@ -551,10 +551,10 @@ subslides**. It is the unit of reflow and the unit of redrawing.
   states needs, which is the closest thing to "just swap this element" that keeps the rest of
   the slide still.
 - **A `wrap: none` tag has no box, so it gets no implicit region.** Inside an explicit region
-  that region bounds it, as it bounds any tag it holds. Outside one, nothing bounds it: its
-  content change reflows the flow it sits in, so the area redrawn is the whole rendering, and
-  that is what the boundary hands over. The two renderings then cross as they are, since
-  nothing outside the change is still.
+  that region bounds it, as it bounds any tag it holds. Outside one, nothing would bound it, so
+  a structural primitive on such a tag is refused there, in every output type: a tag whose
+  content changes needs a box that the change stays inside, which is a wrapper or a region
+  around it.
 - `name` makes the region itself addressable, so the *region* can be moved, scaled, hidden or
   revealed like any tag. An unnamed region is invisible to the animation.
 - A region is **block-level**, and is always a `block(width: 100%, ..)`, so no detection is
@@ -841,9 +841,10 @@ Notes and consequences:
   because the implicit region reserves the footprint of the element's largest state
   either way.
   There it costs an epoch without any benefit, and `hide` is the right primitive.
-- Structural primitives work at every tag site, a `wrap: none` one included, because typst
-  renders the epoch and needs no group to do it. What such a site redraws outside an explicit
-  region is the whole rendering, since it has no box of its own; see *Regions*.
+- Structural primitives work at every tag site inside a region, a `wrap: none` one included,
+  because typst renders the epoch and needs no group to do it. Outside an explicit region a
+  `wrap: none` site has no box of its own that a change could stay inside, so a structural
+  primitive on it is refused; see *Regions*.
   Continuous primitives need a labelled group and so need a wrapped tag site. A tag site is
   content in either case: raw cetz draw commands are refused, and no primitive reaches them.
   See the table under *Tags*.
@@ -1181,7 +1182,7 @@ Renderings required per slide:
 
 | Output type         | Renderings                                    |
 | ------------------- | --------------------------------------------- |
-| HTML presentation   | one per epoch                                 |
+| HTML presentation   | one, with one per epoch in every region       |
 | Static presentation | one per state (S+1)                           |
 | Static handouts     | one per state with `handout` resolved to true |
 
@@ -1189,35 +1190,46 @@ A `background` or `overlay` that is content is rendered **once** beside these in
 its epochs, because neither layer can depend on one; in the paged outputs each is laid out once
 per page of the slide (see *Background and overlay*).
 
+In HTML the body of a slide is laid out once, and every region that sits in no other region
+lays its own body out once per epoch, as an epoch stack in its footprint (see *Architecture*).
+A slide with one epoch is one rendering and nothing more.
+
 A `per-subslide` is the one construct whose cost is counted in **states** rather than in epochs:
-it is one rendering per state of its slide, wherever it sits. In a layer that is one stack per
-slide, and in the body it is one stack per epoch rendering, which is why *Slides* says to put a
-number in a layer. Nothing about it travels in the plan, since the runtime finds the renderings
-by the label each of them carries.
+it is one rendering per state of its slide, wherever it sits. In a layer or in the body
+outside every region that is one stack per slide, and inside a region it is one stack per
+rendering of the region's epoch stack, which is why *Slides* says to put a number in a layer.
+Nothing about it travels in the plan, since the runtime finds the renderings by the label each
+of them carries.
 
 ### Architecture
 
 The same tagged content feeds three output types:
 
 **HTML presentation.** A slide is rendered as *one* `html.frame`, i.e. one inline SVG, laid
-out on the canvas, holding one rendering per epoch. The epoch renderings are `#place`d on top
-of each other at the origin of that frame, in epoch order, each a labelled block so that it
-becomes a `<g data-typst-label="animo-epoch-N">` the runtime can address. Together they are
-the slide's epoch **stack**. A stack is a set of renderings placed at one point, of which the
+out on the canvas, holding one rendering of the body. Everything outside the regions is the
+same in every epoch, so it is laid out once. Every region that sits in no other region, explicit
+or the implicit one of a tag, lays its body out once per epoch and places the renderings on top
+of each other at the corner of its footprint, in epoch order, each a labelled block so that it
+becomes a `<g data-typst-label="animo-epoch-N">` the runtime can address. Together they are the
+region's epoch **stack**. A stack is a set of renderings placed at one point, of which the
 runtime shows one at a time. Each rendering of a stack is labelled `animo-<kind>-<index>`, and
 the kind says what the index counts and how the runtime chooses the rendering it shows. The
 renderings of a `per-subslide` are a stack of the other kind, `subslide`, with one rendering
-per state of the slide. One frame and not one
-per epoch, because typst's deduplicator has the frame for its scope: the renderings of a slide
-then define each glyph they share once between them rather than once each, which is the only
-part of that duplication a package can reach (see *Findings*). The canvas element sits inside
-the slide container, which is the slide's visible box and clips it (`overflow: hidden`),
+per state of the slide. Stacks do not nest: a region inside the rendering of an epoch stack is
+laid out once per rendering already, so it lays out the epoch of that rendering. A region on
+paper lays out the epoch of its page, so an epoch stack exists only in HTML.
+One frame and not one per stack, because typst's deduplicator has the frame for its scope: the
+renderings of a slide then define each glyph they share once between them rather than once
+each, which is the only part of that duplication a package can reach (see *Findings*).
+The canvas element sits inside the slide container, which is the slide's visible box and clips
+it (`overflow: hidden`),
 between the background frame and the overlay frame, which are frames of the slide rather than
 renderings inside the canvas's frame and are not moved by a `pan`.
 The slide containers are the children of the **stage**, an element of the deck's aspect ratio
 that is the viewport of the HTML output: it clips, it isolates the blend between two slides,
 and the deck centres it on the page's surround.
-Each tagged element appears in every epoch rendering as a `<g data-typst-label="...">` group.
+Each tagged element appears as a `<g data-typst-label="...">` group, once outside every
+region and once in every rendering of the stack it sits in.
 Animations are then performed in the browser:
 
 - `reveal`/`hide` animate `opacity` on the tag's inner group
@@ -1235,10 +1247,10 @@ Animations are then performed in the browser:
   nobody is watching: a descendant may take its visibility back, so a stacked rendering that did
   would paint out of an epoch the slide is not showing, where one at `opacity: 1` inside a
   hidden epoch stays hidden (see *Findings*)
-- structural steps crossfade the changed **region**: the region's labelled group fades out in
-  the outgoing epoch rendering and in in the incoming one, with `mix-blend-mode: plus-lighter`
-  on the epoch renderings inside the canvas, which isolates, and `visibility` scoping the
-  outgoing rendering down to the regions it hands over
+- structural steps crossfade the changed **region**: the outgoing rendering of its epoch stack
+  fades out and the incoming one fades in, with `mix-blend-mode: plus-lighter` on the
+  renderings and `isolation: isolate` on the container of the stack, and every other stack
+  shows the rendering of the epoch being entered without animating
 - a structural step whose primitive names `morph()` crossfades the region in the same way and
   also animates `translate` on the **matches** inside it.
   A match is a pair of elements, one in the outgoing region and one in the incoming one,
@@ -1283,53 +1295,45 @@ Animations are then performed in the browser:
 
 Five rules make this work:
 
-1. Continuous state is applied to **all** epoch renderings of the slide at once, not only the
-   active one. Entering an epoch therefore never needs re-initialisation, and a subslide that
-   is both structural and continuous (a `replace` together with a `move`) animates in lockstep
+1. Continuous state is applied to **every** occurrence of a tag in every rendering of every
+   stack at once, not only in the rendering being shown. Entering an epoch therefore never
+   needs re-initialisation, and a subslide that is both structural and continuous (a `replace`
+   together with a `move`) animates in lockstep
    in the outgoing and the incoming rendering, so the composite reads correctly. Operations on
    a tag that is absent from an epoch are no-ops in that rendering.
 
 1. **The crossfade is scoped to the regions whose content state changed**, not to the whole
-   frame. Only the changed regions' labelled groups are animated, one fading out and one in,
-   and nothing else in either frame takes part. Two mechanisms together make that true, and
-   which does which matters:
+   frame. Only the epoch stacks of the changed regions are animated, one rendering fading out
+   and one in, and nothing else on the slide takes part. Two mechanisms together make that
+   true:
 
-   - **`visibility` scopes the epoch renderings a boundary is not entering.** One rendering is
-     shown at a time, and the others are `visibility: hidden`. A boundary gives their carried
-     regions their visibility back, and nothing else, so such a rendering paints in those
-     regions and nowhere else. Outside them the reader sees the incoming rendering
-     alone, which is what makes the containment exact *by construction* rather than by the
-     weaker argument that a typst rendering paints nothing where it has no ink. `visibility`
-     and not `opacity` or `display`: a descendant can take `visibility` back, while the
-     rendering stays laid out, so the geometry of a rendering nobody is watching stays readable,
-     which is what the morph needs.
-     Every rendering that is not the one being entered takes part, and not only the one the
+   - **The stack holds nothing but its region.** The renderings of a stack are the region's
+     body laid out once per epoch and nothing else, so the outgoing rendering has no ink
+     outside the region's footprint, and the containment outside the region is exact *by
+     construction*. A rendering that is not being shown is `visibility: hidden` rather than
+     `display: none`, because it stays laid out, so the geometry of a rendering nobody is
+     watching stays readable, which is what the morph needs.
+     Every rendering of the stack that is still painting takes part, and not only the one the
      step is leaving, because a boundary crossed while an earlier one is still running finds
      more than one of them painting the region. They then all leave on the new boundary's
      clock, under one easing, while the incoming rendering arrives under its complement, so the
      sum stays at one whatever each of them was showing when it began (see *Timing*).
      A step may also cross more than one boundary at once, which is what a backward step that
-     walked back over a join does, and it names the regions of all of them. That is the same
-     picture reached from the other side, and it takes the same clock: the boundaries it
-     crossed are steps the deck ran through, so the only clock left is the step's own, and the
-     timings their operations stated go with the schedules of the steps that stated them.
+     walked back over a join does, and it carries the stacks of all of them, each once. That is
+     the same picture reached from the other side, and it takes the same clock: the boundaries
+     it crossed are steps the deck ran through, so the only clock left is the step's own, and
+     the timings their operations stated go with the schedules of the steps that stated them.
      The boundaries such a step crosses are in the slide it is standing on, or in the slide it
      is entering when the join it walked back over ran out of a slide, and the handover is the
      same one either way.
-   - **`plus-lighter` on the epoch renderings makes the two halves of a region add.** They are
-     the outermost groups of the slide's one frame, so each of them adds to ink beside it,
-     which is what a blend needs and what is measured (see *Findings*): the outgoing region at
-     `1 - t` and the incoming at `t` come to exactly one opaque region, and nothing dips. A
-     single visible rendering added to a transparent backdrop is that rendering, so the blend
-     changes nothing outside a transition.
-     It sits on the rendering rather than on the region's own group so that one element carries
-     both halves of the mechanism, the blend and the `visibility` the boundary scopes with.
-     That was once forced rather than chosen: when the renderings were frames of their own, a
-     blend on a region's group was measured not to reach the frame below at all and degraded to
-     a plain opacity crossfade.
-     How far a group's blend reaches *past* its own frame is not the same in every engine,
-     which is why the canvas isolates rather than leaving the containment to the root of the
-     inline SVG (see *Findings*).
+   - **`plus-lighter` on the renderings makes the two halves add, inside a container that
+     isolates.** The renderings of a stack are siblings in one group, which carries
+     `isolation: isolate`, so the outgoing rendering at `1 - t` and the incoming at `t` come to
+     exactly one opaque region, and nothing dips. Without the isolation chromium 151 and webkit
+     26.5 add the two halves to the ink under the region as well, measured with the stack a few
+     groups deep, while firefox 153 needs none. A single visible
+     rendering added to a transparent backdrop is that rendering, so the blend changes nothing
+     outside a transition.
 
    The measured cost is 1/255 rounding inside the region against 62/255 for a plain opacity
    crossfade, and nothing at all outside it; see *Findings*.
@@ -1362,8 +1366,8 @@ Five rules make this work:
    but it follows the same convention.
 
 1. **`pan` belongs to the canvas element, not to what is inside it.** It is a slide primitive,
-   so it must not be applied per epoch: the renderings sit in the frame the canvas holds, and
-   moving the canvas moves all of them together and keeps the crossfade registered. This is also the one place
+   so it must not be applied per epoch: the body and its stacks sit in the frame the canvas
+   holds, and moving the canvas moves all of them together and keeps the crossfade registered. This is also the one place
    Animo touches a transform outside an SVG group, where rule 3's prohibition does not apply,
    although `translate` is used there too,
    for consistency and to leave `scale` free for a future zoom.
@@ -1404,8 +1408,13 @@ Both gap numbers travel rather than one resolved number per gap,
 because the gap across a slide boundary is timed by two slides and emitted by two calls,
 so the runtime is the first place that sees both sides of it.
 Each state also carries its resolved `handout:` flag, so that a view of the deck that shows one
-state per slide can show the state the handout shows. A region record of a boundary carries the
-`transition:` its operations named, and nothing for `auto`.
+state per slide can show the state the handout shows. Each boundary carries the names of the
+tags it changes, each with the timing and the `transition:` of the operations that changed it,
+and nothing for `auto`. The runtime finds the stacks a boundary crosses by those names, because
+a stack holds the groups of the tags laid out in it, and by comparing the renderings of each
+stack on the two sides of the boundary. A `wrap: none` tag becomes no group, so the boundary
+also names, by the group of the region that holds its stack, the tag whose timing and
+transition that stack takes, which only the membership reports know.
 
 **Motion is driven by the Web Animations API**, not by CSS transitions. A step writes the new
 display state as inline style and animates from what the element was showing to that, so the
@@ -1459,8 +1468,11 @@ resolutions differ by at most 0.0005 pt, and a pan read back off the rendered pa
 
 "The first site" needs one clause more, because a tag whose content changes is not laid out in
 every rendering of its slide. It is the first site in document order **in the first rendering
-that lays that site out**: the first epoch rendering holding a group of the name in HTML, since
-the renderings are placed in epoch order, and the first page that carries the marker on paper. The two
+that lays that site out**: in HTML the first in document order among the sites of the lowest
+epoch, where a site outside every stack counts as epoch 0 because the body around the stacks is
+laid out for every epoch, and on paper the first page that carries the marker. Document order
+alone would disagree with paper, because a site that only a later epoch lays out may come
+earlier in the body than one that every epoch lays out. The two
 coincide in the static presentation, whose pages are the states in order, so its first page
 holding the tag is the first state of that same epoch. The handout renders a subset of the
 states and so reads the first page it *keeps*, which is the one place the rule is a property of
@@ -1534,7 +1546,7 @@ the body:
   `[data-typst-label="line1"]` in slide 3 cannot affect slide 7. Matching *all* elements
   with the same tag inside one slide is the natural behaviour of such a selector, which is
   exactly the "several places, one tag" requirement, and it is also what applies continuous
-  state to every epoch rendering of the slide at once.
+  state to every rendering of every stack of the slide at once.
 - In the **paged** outputs, `#slide` resolves its own animation plan before rendering its
   subslides and hands the result to the body, so each tag site sees the plan of the slide it
   sits in.
@@ -1544,8 +1556,9 @@ Names share one namespace with the labels Animo emits for itself, since both end
 `animo-` is reserved for Animo's own labels, and `tag` and `region` refuse a name that starts
 with it. An unnamed region needs a label of its own, because a boundary crossfades it and only
 a labelled box becomes a group at all, so it gets `animo-region-<n>` with the region's own
-number, which is stable across the epoch renderings of its slide. The epoch renderings
-themselves take `animo-epoch-<n>` out of the same reserved prefix.
+number, which is the same in every output type. A region inside an epoch stack counts once,
+not once per rendering. The renderings of an epoch stack themselves take `animo-epoch-<n>` out
+of the same reserved prefix.
 
 The namespace is shared with **the document's own labels** too, and that half Animo cannot
 reserve: `#box[..]<x>` emits the same attribute a tag of that name does, and nothing in the
@@ -1704,25 +1717,36 @@ These were the open questions of the earlier drafts. They are settled; the evide
   `subslides`, which says the same thing and reads worse in the expression a progress bar is
   written as.
 
-- **What does a boundary crossfade when no region bounds the change?** The whole rendering.
-  A `wrap: none` tag outside an explicit region has no box, so there is no smaller area to
-  hand over. The alternative is a cut, which would make one tag site change abruptly where
-  every other one dissolves, and the manual says a structural step is a dissolve. The plan
-  names the rendering by carrying no group for that boundary, and the runtime fades the two
-  renderings into each other through the `plus-lighter` that a region crossfade already uses.
-  The sum is exact in chromium 151, firefox 153 and webkit 26.5, measured on the epoch
-  renderings of one frame, which is the structure the entry below rests on as well.
+- **What does a boundary crossfade when no region bounds the change?** Nothing, because such a
+  change is refused. A `wrap: none` tag outside an explicit region has no box, so there is no
+  area that could hold its change, and Animo refuses a structural primitive on it in every
+  output type rather than only in the one that could not show it. The refusal names the two
+  ways out, a wrapper or a region around the tag, which is the advice this document already
+  gives for a change that should read well.
+  An earlier answer crossfaded the whole rendering of the slide, which was possible while HTML
+  laid out the whole slide once per epoch. With the epoch stacks in the regions there is no
+  whole rendering to fade. Keeping one for this case would take a second structure chosen from
+  the layout reports, and a structure that depends on the reports it produces did not converge
+  when it was tried.
 
-- **Where does the crossfade's blend go?** On the epoch renderings, not on the regions' own
-  groups, with `visibility` scoping the outgoing rendering down to the regions it hands over.
-  The group-level blend was the design's first answer and it could not work when it was asked:
-  a slide was several frames then, and `plus-lighter` on a region's group was measured not to
-  reach the frame below (see *Findings*). The epoch renderings are the outermost groups of the
-  slide's one frame, which is what puts them within reach of each other, and keeping the blend
-  there keeps it on the same element the boundary scopes with `visibility`. Scoping by
-  `visibility` is the more important half of the pair anyway, because the containment
-  outside the region does not rest on the blend at all. *Architecture* rule 2 spells the pair
-  out.
+- **Which regions hold an epoch stack?** Every region that sits in no other region, and no
+  other. A region inside the rendering of a stack is laid out once per rendering already, so a
+  stack there would multiply the renderings by the epochs again. The outermost region is
+  therefore the one that crosses a boundary, with everything inside it, and two operations that
+  change two regions inside one region at one boundary have to agree about their timing and
+  their transition, as two operations inside one region do.
+
+- **Where does the crossfade's blend go?** On the renderings of an epoch stack, with
+  `isolation: isolate` on the group that holds them. A stack holds nothing but its region, so
+  the outgoing rendering paints nowhere outside the region, and no `visibility` scoping is
+  needed for the containment. The isolation is what keeps the sum of the two halves off the
+  ink under the region in chromium 151 and webkit 26.5, as measured. It is written as `isolation`
+  because it changes nothing at rest, where `opacity: 0.999` moves values and
+  `filter: opacity(1)` does nothing in webkit.
+  An earlier answer put the blend on whole-slide renderings, which were the outermost groups of
+  the slide's one frame, with `visibility` scoping the outgoing one down to the regions it
+  handed over. The stacks make the scoping unnecessary and the slide lighter: the page weight
+  and the node count follow the regions and not the slide.
 
 - **How does a crossfade read when the region's content really reflows?** It depends on the
   change, and the split is sharp enough to be an authoring rule rather than a caveat.
@@ -2099,8 +2123,8 @@ These were the open questions of the earlier drafts. They are settled; the evide
   and what was to follow it turned out to be two things rather than one. Hoisting the
   shared definitions into a document-level `<svg>` is sound in the browser and **unreachable
   from inside typst 0.15.0**, because a package never holds the markup a frame became; what is
-  reachable is one frame per slide holding a rendering per epoch, which makes typst's own
-  deduplicator share the definitions of a slide's epochs. *Findings* measures both, and the
+  reachable is one frame per slide holding every rendering of the slide, which makes typst's
+  own deduplicator share the definitions of a slide's epochs. *Findings* measures both, and the
   reachable half is specified under *Architecture*, since it changes what an epoch frame is
   rather than only how many bytes one weighs. The tour is 1.08 MB, which gzip takes to
   **222 KiB**, a factor of five, and every extra epoch on a slide adds 73 KiB raw or 14 KiB
@@ -2433,8 +2457,8 @@ These were the open questions of the earlier drafts. They are settled; the evide
   about a number travels in the plan.
 
   **An overlay is the cheapest place for it, not an impossible one.** A layer is one rendering
-  per slide where the body is one per epoch, so a stack costs once in a layer and once per epoch
-  in the body. Measured on the controlled deck at its realistic point, a slide number and a
+  per slide where a region is one per epoch, so a stack costs once in a layer and once per epoch
+  in a region. Measured on the controlled deck at its realistic point, a slide number and a
   subslide number in an overlay cost 3% of the raw page, 4% of the compressed page and 5% of the
   compile time, with the plan attributes byte-identical. The same stack built by hand out of
   tags and `reveal`/`hide`, which an author could already write, doubled both the plan and the
@@ -2474,11 +2498,11 @@ These were the open questions of the earlier drafts. They are settled; the evide
   Two invariants are cheap to test in the browser and worth testing directly, because the
   region design rests on them:
 
-  - the bounding box of every label *outside* a region is identical in all epoch renderings of
-    a slide, read per rendering with `getBBox` mapped through `getScreenCTM` and not with
+  - every label *outside* a region is laid out once, and every rendering of a region's stack
+    starts at the same corner, read with `getScreenCTM` and with `getBBox` rather than with
     `getBoundingClientRect`, which the engines disagree about on a group (see *Findings*).
-    The region's own group is not one of these: a group's box is its ink, and the ink inside
-    a region is exactly what an epoch changes, so what a region promises is its corner;
+    A rendering's box is not one of these: a group's box is its ink, and the ink inside a
+    region is exactly what an epoch changes, so what a region promises is its corner;
   - the rendering is pixel-identical outside the region between epochs, and stays so
     mid-crossfade, with every raster of the mid-crossfade comparison taken while the step is
     in flight (see *Findings*).

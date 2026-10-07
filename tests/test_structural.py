@@ -95,14 +95,30 @@ def test_a_tag_that_lays_nothing_out_on_a_page_still_reports_that_page(typst: Ty
     typst.ok(deck(f'slide(animation: {animation})[#tag("t")[a]]'))
 
 
-def test_a_wrap_none_tag_changes_its_content_too(typst: TypstRunner):
-    """Structural primitives reach a tag site that becomes no group."""
+def test_a_wrap_none_tag_changes_its_content_inside_a_region(typst: TypstRunner):
+    """Structural primitives reach a tag site that becomes no group, in a region around it."""
     animation = timeline(f'sub(replace("t")[{marker("new")}])', 'sub(remove("t"))')
-    source = deck(f'slide(animation: {animation})[#tag("t", wrap: none)[{marker("old")}]]') + check(
+    body = f'#region[#tag("t", wrap: none)[{marker("old")}]]'
+    source = deck(f"slide(animation: {animation})[{body}]") + check(
         "assert.eq(pages(<old>), (1,))",
         "assert.eq(pages(<new>), (2,))",
     )
     typst.ok(source, **PRESENTATION)
+    typst.ok(deck(f"slide(animation: {animation})[{body}]"), html=True)
+
+
+@pytest.mark.parametrize("html", [False, True])
+def test_a_wrap_none_tag_whose_content_changes_outside_a_region_is_refused(
+    typst: TypstRunner, html: bool
+):
+    """It has no box that a change could stay inside, and every output type refuses it.
+
+    The diagnosis names the ways out: a wrapper, or a region around the tag.
+    """
+    animation = timeline('sub(replace("t")[new])')
+    source = deck(f'slide(animation: {animation})[#tag("t", wrap: none)[old] after.]')
+    result = typst.fails(source, "its wrap is none and no region holds it", html=html)
+    assert "wrap: auto, box or block, or put a region around it" in result.stderr
 
 
 def test_a_tag_inside_a_replacement_is_a_tag_of_the_slide(typst: TypstRunner):
@@ -353,11 +369,11 @@ def test_a_nested_tag_that_changes_leaves_its_outer_tag_unmeasured_and_still(typ
     typst.ok(source, **PRESENTATION)
 
 
-# The HTML target, which renders one frame per epoch.
+# The HTML target, which renders the body once with an epoch stack in every region that changes.
 
 
 def test_a_deck_with_structural_steps_compiles_to_html(typst: TypstRunner):
-    """One frame per epoch, each laid out with every footprint and its own content state."""
+    """One rendering of the body, and the tag's stack lays every epoch out in one footprint."""
     animation = timeline(
         f'sub(replace("t")[{marker("new")}])', 'sub(apply("u", emph))', 'sub(remove("t"))'
     )
@@ -366,7 +382,7 @@ def test_a_deck_with_structural_steps_compiles_to_html(typst: TypstRunner):
         "// Four epochs: the body, the replacement, the restyling of u, and the removal.",
         "assert.eq(query(<old>).len(), 1)",
         "assert.eq(query(<new>).len(), 2)",
-        'assert.eq(footprints("t").len(), 4)',
+        'assert.eq(footprints("t").len(), 1)',
     )
     result = typst.ok(source, html=True)
     assert "converge" not in result.stderr, result.stderr
@@ -375,14 +391,14 @@ def test_a_deck_with_structural_steps_compiles_to_html(typst: TypstRunner):
 def test_an_inline_footprint_in_the_html_target_is_the_line_it_holds(typst: TypstRunner):
     """The same footprint is reserved in both targets, so both are asserted.
 
-    The browser shows the frames of a slide in one place, and a frame that reserves a line
-    too much moves the line there exactly as it does on paper.
+    The browser shows the renderings of a stack in one place, and a footprint that reserves
+    a line too much moves the line there exactly as it does on paper.
     """
     animation = timeline('sub(remove("t"))')
     body = 'Before #tag("t", box(width: 1cm, height: 5mm)) after.'
     source = deck(f"slide(animation: {animation})[{body}]") + check(
         'let found = footprints("t")',
-        "assert.eq(found.len(), 2)",
+        "assert.eq(found.len(), 1)",
         "assert(found.all(it => close(it.height, 5mm)), message: repr(found.first()))",
         "assert(found.all(it => close(it.width, 1cm)), message: repr(found.first()))",
     )

@@ -165,7 +165,8 @@ Which primitives reach which kind of tag site:
 | ordinary content                                             | yes        | yes        |
 | inside math                                                  | yes        | yes        |
 | a cetz `content()` element or fletcher node                  | yes        | yes        |
-| content tagged with `wrap: none`                             | yes        | refused    |
+| content tagged with `wrap: none`, inside a region            | yes        | refused    |
+| content tagged with `wrap: none`, in no region               | refused    | refused    |
 | a `grid.cell` or a `table.cell` that sets more than its body | refused    | refused    |
 | an item of a list, an enum or a terms list                   | refused    | refused    |
 | raw cetz draw commands                                       | refused    | refused    |
@@ -175,6 +176,8 @@ so they work wherever a tag can wrap something at all.
 The continuous primitives are resolved by the browser and need a group to address,
 which typst emits only for labelled boxes and blocks.
 A `pan(relto: ..)` reads a corner of that group, so it is refused on a `wrap: none` tag too.
+A `wrap: none` tag has no box that a change of its content could stay inside,
+so a structural primitive reaches it only inside a region.
 
 A `grid.cell`, a `table.cell` and an item of a list, an enum or a terms list
 are read by the container they sit in, which never sees them behind a tag site.
@@ -440,6 +443,8 @@ The other transitions move a whole slide and are refused here.
 A `duration` of zero is a hard cut of the region.
 Two operations that change one region at one boundary have to name the same transition,
 as they have to agree about their timing.
+A region inside another region crosses with it, so two operations that change two regions
+inside one region count as changing one region here.
 The `transition` argument is HTML only, because two pages have nothing between them.
 
 ### `anim.replace`

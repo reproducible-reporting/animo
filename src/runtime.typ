@@ -132,6 +132,37 @@
   if kept.len() != 0 and kept != (unstated: 0.0) { kept }
 }
 
+// What one boundary changes, as the runtime reads it: every tag whose content the boundary
+// changes, by name, with the timing of the operations that changed it and the name of the
+// transition they named for it, with its parameters when it has any, both left out for
+// `auto`.
+//
+// The runtime finds the stacks a boundary crosses by these names, because a stack holds the
+// groups of the tags laid out in it.
+// The operations on one name agree on both, and so do the operations on the names of one
+// stack, because `check-boundaries` refuses the boundary otherwise, so the first operation
+// speaks for all of them.
+//
+// A tag that becomes no group has nothing in a stack to be found by, so `regions` names, by
+// the label of the group of the region that holds its stack, the tag whose record that
+// stack takes, as `groupless-regions` in `member.typ` reads it from the membership reports.
+// It is left out when it is empty, which it is in a deck whose every changed tag has a group.
+#let boundary-of(epoch, regions) = {
+  let changed = (:)
+  for name in epoch.changed {
+    let transition = epoch.transitions.at(name).first()
+    let timing = entry("timing", pruned-timing(epoch.timings.at(name).first()))
+    changed.insert(name, if transition == auto { timing } else {
+      (
+        ..timing,
+        transition: transition.name,
+        ..entry("args", if transition.args.len() > 0 { transition.args }),
+      )
+    })
+  }
+  (changed: changed, ..entry("regions", if regions.len() > 0 { regions }))
+}
+
 // The whole plan of a slide, as the runtime reads it.
 //
 // A state holds the display state of its tags, the position of its viewport, the epoch it
@@ -139,16 +170,13 @@
 // resolver keeps them apart.
 // The handout flag is the one the paged outputs resolve, so that a view of the deck that
 // shows one state per slide can show the state the handout shows.
-// The epoch is which of the stacked frames shows the state, so a step that changes it is a
-// step that crosses a boundary.
+// The epoch is which rendering of every epoch stack shows the state, so a step that changes
+// it is a step that crosses a boundary.
 //
-// `epochs` holds, per epoch, the groups that the boundary starting it redraws, which is
-// what the transition carries from the outgoing frame to the incoming one, each with the
-// timing of the operations that changed it and the name of the transition they named for
-// it, with its parameters when it has any, both left out for `auto`.
-// A region that morphs also carries the names of the tags the boundary changes in it, because
-// a morph moves a tag as one only while its content stays the same.
-// The first epoch begins no boundary and its list is empty.
+// `epochs` holds, per epoch, what the boundary starting it changes, as `boundary-of` writes
+// it from the epoch and from `regions`, which holds the `groupless-regions` of each epoch, or is
+// `auto` for a plan that names none.
+// The first epoch begins no boundary and changes nothing.
 //
 // A state also carries the `wait` before it is entered, the `hold` before the state after
 // it is, the `timing` of the operations its own step performed and the `span` of that
@@ -162,7 +190,7 @@
 // runtime is the first place that sees both sides of it.
 //
 // Must be called in a context.
-#let browser-plan(plan, names, boundaries) = (
+#let browser-plan(plan, names, regions: auto) = (
   states: plan.states.map(state => (
     tags: tags-of(state.display, names),
     pan: position-of(state.slide.pan),
@@ -173,19 +201,11 @@
     ..entry("timing", timings-of(state.timing)),
     ..entry("span", span-for(state.span)),
   )),
-  epochs: boundaries.map(groups => (
-    regions: groups.map(region => (
-      group: region.group,
-      ..entry("timing", pruned-timing(region.timing)),
-      ..if region.transition != auto {
-        (
-          transition: region.transition.name,
-          ..entry("args", if region.transition.args.len() > 0 {
-            region.transition.args
-          }),
-          ..if region.transition.name == "morph" { (names: region.names) },
-        )
-      },
+  epochs: plan
+    .epochs
+    .enumerate()
+    .map(((epoch, it)) => boundary-of(
+      it,
+      if regions == auto { (:) } else { regions.at(epoch) },
     )),
-  )),
 )

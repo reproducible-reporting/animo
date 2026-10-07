@@ -1,6 +1,6 @@
 ---
 description: >-
-  How a slide becomes an HTML presentation: the epoch renderings, the five rules the
+  How a slide becomes an HTML presentation: the epoch stacks, the five rules the
   browser runtime obeys, the two transform slots of a tag site,
   where the transition of a boundary is selected, the two phases of a step,
   and how the runtime is divided into files, a controller and events.
@@ -27,50 +27,69 @@ The stage is as large as the window allows at the deck's aspect ratio, it clips,
 A slide is one container element in the stage, as large as the stage,
 carrying its plan as JSON in `data-animo-plan`,
 and inside it a `.animo-canvas` element holding **one `html.frame` for the whole slide**,
-in which **one rendering per epoch** is placed at one point, in epoch order.
+in which the body is laid out **once**.
+Every region whose content changes, explicit or the implicit one of a tag, holds
+**one rendering of its body per epoch**, placed at one point of its footprint in epoch order.
 Each rendering is a labelled block, so it becomes a `<g data-typst-label="animo-epoch-N">`
 the runtime can show, hide and blend.
-One frame and not one per epoch, because typst's deduplicator has the frame for its scope:
+Only a region that sits in no other region does this.
+A region inside the rendering of another is laid out once per rendering already,
+so it lays out the epoch of that rendering.
+One frame and not one per region, because typst's deduplicator has the frame for its scope:
 the renderings of a slide then define each glyph they share once between them instead of
-once each, which takes a deck of several epochs a slide down by about 40% on the wire.
+once each.
 The slide container clips the canvas.
 The container also carries `data-animo-transition`, which is how the boundary above the
 slide is crossed, as the slide's `init` says.
 It is one value per slide, so it is an attribute rather than an entry in the plan,
 for the reason the plan itself is an attribute.
 
-The epoch renderings are one kind of **stack**,
+The renderings of a region are one kind of **stack**,
 which is a set of renderings placed at one point of which the runtime shows one at a time.
 Every rendering of a stack is labelled `animo-<kind>-<index>`,
 and the renderings of one stack are the children of one group.
 The kind says what the index counts.
-The epoch renderings of a slide are its `epoch` stack,
+The renderings of a region are its `epoch` stack,
 and every `per-subslide` is a `subslide` stack with one rendering per state of the slide.
-`src/stack.typ` builds both kinds.
-Nothing about a stack travels in the plan.
+`src/stack.typ` builds both kinds, and `src/region.typ` and `src/tag.typ` place an epoch stack
+when the view they are handed asks for one, which only the HTML target does.
 `readStacks` in `src/js/stacks.js` finds every stack of a slide by its labels,
 and `stackKinds` plans each stack for a state by its kind.
-An epoch stack is planned by `planEpoch` and the transitions of its boundaries,
-and a subslide stack snaps to the rendering of the state and hides the others.
+An epoch stack is planned by `planBoundary` and `planEpoch` and the transitions of its
+boundaries, and a subslide stack snaps to the rendering of the state and hides the others.
 
 An epoch is a run of consecutive states in which no content changes,
-so a slide with no structural operation emits exactly one rendering
+so a slide with no structural operation holds no epoch stack
 and the machinery itself adds no cost.
-Every epoch is laid out with every region at its footprint,
-so the renderings are interchangeable outside the regions that change.
+A region reserves the same footprint in every epoch,
+so what is around it is laid out once for all of them.
+
+A region inside an epoch stack is laid out once per rendering,
+and it takes the number it takes on paper, where one rendering is laid out.
+It counts on a second counter that every rendering sets back to zero,
+and its number is that of the region holding the stack plus that count.
+Every update of either counter is a constant or a step,
+so the numbers settle in one pass of layout however many regions a slide has.
 
 The plan holds one entry per state, with the display state of every addressed tag,
 the pan, the epoch the state belongs to,
 and the `handout` flag as the paged outputs resolve it;
-and one entry per epoch, naming the region groups that the boundary into it redraws.
-A region record carries the name of the `transition` its operations named, and it is left out
+and one entry per epoch, naming in `changed` the tags that the boundary into it changes.
+Each name carries the name of the `transition` its operations named, which is left out
 for `auto`, so a deck that names none carries none.
 A record also carries `args` when the transition has parameters,
 which the runtime hands to the transition with the record.
+The runtime finds the stacks a boundary crosses by itself:
+a stack holds the group of every tag laid out in it,
+and its region's own label when the region is a tag.
+A `wrap: none` tag becomes no group, so an epoch entry also holds `regions`,
+which names such a tag by the label of the group of the region that holds its stack.
+Typst reads that from the membership reports every tag site and region writes,
+and leaves it out when no changed tag lacks a group.
 
 A state also carries the `wait:` before it is entered, the `hold:` before the state after
-it is, and the timing of the operations its own subslide performed, and an epoch's region
-carries the timing of what changed it, all in seconds.
+it is, and the timing of the operations its own subslide performed, and a name in an epoch's
+`changed` carries the timing of what changed it, all in seconds.
 None of them can be resolved anywhere but at the moment the step runs.
 Both gap numbers travel rather than one resolved number per gap, because the gap across a
 slide boundary is timed by two slides and the runtime is the first place that sees both
@@ -151,7 +170,7 @@ through itself at once.
 
 ## The Five Rules
 
-**1. Continuous state is applied to every epoch rendering at once.**
+**1. Continuous state is applied to every rendering of every stack at once.**
 Not only to the one being shown.
 Entering an epoch then needs no initialisation,
 and a step that both replaces and moves a tag moves it by the same amount in the rendering
@@ -159,28 +178,30 @@ it leaves and in the one it arrives at, so the composite stays registered.
 An operation on a tag that is absent from a rendering is a no-op there.
 
 **2. The crossfade is scoped to the regions whose content changed.**
-Two mechanisms work together, and which of them does what matters:
+Only the epoch stacks of those regions animate, and every other stack takes the rendering of
+the epoch being entered at once, which is the same picture.
+Two things make the containment exact:
 
-- `visibility` scopes every epoch rendering the boundary is not entering.
-  One rendering is visible at a time and the others are `visibility: hidden`;
-  a boundary gives their carried regions their visibility back and nothing else,
-  so such a rendering paints in those regions and nowhere else.
-  `visibility` rather than `opacity` or `display`, because a descendant can take it back,
-  and because the rendering stays laid out and its geometry readable.
-  Every rendering that is not the one being entered takes part and not only the one being
+- A stack holds nothing but its region.
+  Its renderings are the region's body laid out once per epoch,
+  so the outgoing rendering has no ink outside the region's footprint.
+  A rendering that is not being shown is `visibility: hidden` rather than `display: none`,
+  because it stays laid out and its geometry readable.
+  Every rendering of the stack that is still painting takes part and not only the one being
   left, because a boundary crossed while an earlier one is still running finds more than
   one of them painting the region; they then all fade out on the new boundary's clock, so
   the region's ink stays at one.
-- `mix-blend-mode: plus-lighter` on the *epoch renderings* makes the two halves of a region
-  add, inside the `isolation: isolate` on the canvas.
-  They are the outermost groups of the slide's one frame, so each adds to ink beside it,
-  which is what a blend needs and what is measured.
-  It sits there rather than on a region's own group so that one element carries both halves
-  of the mechanism, the blend and the `visibility` the boundary scopes with.
-  That was once forced rather than chosen: when the renderings were frames of their own, a
-  blend on a region's group did not reach the frame below at all.
-  How far a group's blend reaches *past* its own frame is not the same in every engine,
-  which is why the canvas isolates rather than leaving it to the root of the inline SVG.
+- `mix-blend-mode: plus-lighter` on the renderings makes the two halves add, and
+  `isolation: isolate` on the group that holds them keeps the sum inside the stack.
+  Without the isolation, chromium 151 and webkit 26.5 add the two halves to the ink under the
+  region as well, and black text takes the colour of what is behind it.
+  The frame isolates too, which keeps the blend off the page behind the slide.
+
+A stack crosses a boundary when the boundary changes a tag it holds,
+or a tag without a group that the plan places in its region.
+It also crosses when its renderings on the two sides of the boundary differ,
+which `differs` reads once by comparing their children,
+and then it takes the deck's own timing.
 
 **3. Only the individual transform properties, never the `transform` shorthand**,
 which would clobber the positioning typst wrote into the SVG.
@@ -196,29 +217,30 @@ it is measured in the frame's own coordinates
 and has to sit above the continuous transforms rather than inside them.
 
 **5. `pan` belongs to the canvas element, not to what is inside it.**
-The epoch renderings sit in the frame the canvas holds, so moving the canvas moves all of
+The body and its stacks sit in the frame the canvas holds, so moving the canvas moves all of
 them together and keeps them registered.
 
 ## Where the Transition of an Epoch Boundary Is Selected
 
 `transitions` in `src/js/boundaries.js` holds one entry per transition of an epoch boundary,
-and each region record of the plan names the entry that carries it.
+and the record of each stack a boundary crosses names the entry that carries it.
 A record that names none takes `crossfade`.
 The author names a transition with the `transition:` argument of a structural operation,
 so one boundary may carry one region with one transition and another region with another.
 Typst refuses a transition that is not in `region-transitions` in `src/transition.typ`,
-and it refuses two operations that change one region at one boundary and name two transitions.
+and it refuses two operations that change one region at one boundary and name two
+transitions, where a region is the outermost one, since that is the one holding the stack.
 
-`planEpoch` first plans the state at rest for every transition alike.
-The rendering of the state being shown is visible and opaque,
-every other rendering is hidden and transparent,
-and every region group is opaque in the rendering being shown and transparent in the others.
+`planBoundary` runs once per slide and step, before any stack is planned.
+It finds the stacks the step carries and gives each the record of the first tag the boundary
+changes in it, with `names`, the tags the step changes in it.
 It then settles what an earlier morph is still moving, as the next section says.
-It then groups the region records of the boundary by transition
-and hands each transition the records it carries,
-together with the epoch stack, the epoch the step leaves and the one it enters,
-and how the step moves.
-A step that crosses no boundary hands no records to any transition,
+`planEpoch` then plans every epoch stack for every transition alike.
+The rendering of the state being shown is visible and opaque,
+and every other rendering is hidden and transparent.
+A stack the step carries is handed to the transition its record names,
+together with the epoch the step leaves and the one it enters, and how the step moves.
+A step that crosses no boundary carries no stack,
 which is what a deep link, a step inside one epoch, and a reader who asked for less motion
 all produce.
 
@@ -233,15 +255,14 @@ so the geometry it reads is the geometry of the page before the step.
 
 ## The Morph
 
-`morph` in `transitions` plans the crossfade of its regions and then calls `morphRegions` in
-`src/js/morph.js`, which adds a `translate` animation to each **match** below the region
-groups.
+`morph` in `transitions` plans the crossfade of its stack and then calls `morphStack` in
+`src/js/morph.js`, which adds a `translate` animation to each **match** in the two renderings
+the step runs between.
 A match is a pair of elements, one in the outgoing region and one in the incoming one.
 Tags come first: two labelled groups of one name, paired by index in document order,
 and translated on their outer slot.
-A tag whose name the plan lists under `names` of the region record is one the boundary
-changes, and it is not matched as a whole.
-Typst writes `names` only on a record whose transition is the morph.
+A tag whose name is among the `names` of the stack's record is one the boundary changes,
+and it is not matched as a whole.
 Then the ink: the `<use>`, `<path>` and `<image>` elements outside every matched group,
 in document order and outside every `<defs>`, `<clipPath>` and glyph `<symbol>`,
 paired by `commonSubsequence`, a diff of the Myers kind over one key per element.
@@ -271,9 +292,9 @@ The opacity is the crossfade's own, which `plus-lighter` sums to one opaque elem
 route (see *Findings*).
 
 `slide.morphed` holds every element a morph is still moving, with the epoch of its rendering,
-the label of its region and where its route ends.
+the stack that holds it and where its route ends.
 `settleMorphs` reads it at every step, before any transition plans.
-A translation in a region the step carries again runs on to its end on the new boundary's
+A translation in a stack the step carries again runs on to its end on the new boundary's
 clock, unless it is in the rendering being entered, and every other one snaps to rest.
 The measurement of an incoming element subtracts the translations that are still running on
 it and above it, which `getScreenCTM()` includes.
@@ -283,8 +304,8 @@ it and above it, which `getScreenCTM()` includes.
 `slideTransitions` in `src/js/boundaries.js` is the same seam one container out,
 and a table of its own rather than an entry in the one above,
 because the two are handed different things.
-A transition of an epoch boundary gets the renderings of one slide
-and the regions a boundary carries across, which is what it holds still.
+A transition of an epoch boundary gets the renderings of one region,
+inside a slide that it holds still.
 A transition of a slide boundary gets two containers and has nothing to hold still,
 since two slides share nothing, so the whole container is the unit.
 
@@ -422,7 +443,7 @@ Only `boot.js` calls into the other files at load time, and it is the last one.
 | `stacks.js`     | the kinds of stack, `readStacks`, `planStacks` and the subslide stack        |
 | `effects.js`    | `timing`, `scheduled`, `span`, `showing`, `plan` and `apply`                 |
 | `display.js`    | positions and anchors, the CSS of a display state and a pan, `planState`     |
-| `boundaries.js` | the transitions of both boundaries and `planEpoch`                           |
+| `boundaries.js` | the transitions of both boundaries, `planBoundary` and `planEpoch`           |
 | `morph.js`      | the matches of a morph, their routes, and `settleMorphs`                     |
 | `controller.js` | the position, `show`, `step`, `jump`, and the clock with its pause           |
 | `input.js`      | key, pointer and hash events, turned into intents by the active mode         |
@@ -511,8 +532,8 @@ Typst defines a glyph once per frame that uses it, so a deck that wrote a frame 
 would define the glyphs of a slide once per epoch of that slide.
 One frame per slide lets typst's own deduplicator reach them.
 
-Measured on the controlled benchmark deck of twelve slides,
-against the same deck written as a frame per epoch:
+Measured on the controlled benchmark deck of twelve slides, laid out as one rendering of the
+whole slide per epoch, against the same deck written as a frame per epoch:
 
 | Epochs per slide | A frame each     | One frame per slide | Saved |
 | ---------------- | ---------------- | ------------------- | ----- |

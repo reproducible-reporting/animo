@@ -16,7 +16,7 @@ import math
 
 import pytest
 from decks import deck
-from harness import Box, Deck, TypstRunner, assert_identical_outside, screenshot
+from harness import UNDER, Box, Deck, TypstRunner, assert_identical_outside, screenshot
 
 # How long a step takes in these tests, in milliseconds, and the moment sampled in it.
 # Slowed down from animo's own 400 ms so that a paused animation cannot already have ended,
@@ -78,23 +78,26 @@ def reflowing(typst: TypstRunner):
     return animated(typst, REFLOWING, INSERT, SHORTEN)
 
 
-# Where every glyph of a region is displayed, per epoch rendering of the slide shown, as
+# Where every glyph below a label is displayed, per epoch rendering of the slide shown, as
 # `[href, x, y]` in CSS pixels. `getScreenCTM()` includes a running `translate`, so this is
 # what the page shows. See *Findings*.
-GLYPHS = """label => {
+GLYPHS = (
+    """label => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
-    return Array.from(
-        slide.querySelectorAll('.animo-canvas [data-typst-label^="animo-epoch-"]'),
-        (rendering) => Array.from(
-            rendering.querySelectorAll(`[data-typst-label="${label}"] use`),
+    return ("""
+    + UNDER
+    + """)(slide, label).map(
+        (groups) => groups.flatMap((group) => Array.from(
+            group.querySelectorAll('use'),
             (use) => {
                 const point = new DOMPoint(use.x.baseVal.value, use.y.baseVal.value)
                     .matrixTransform(use.getScreenCTM());
                 return [use.href.baseVal, point.x, point.y];
             },
-        ),
+        )),
     );
 }"""
+)
 
 
 def glyphs(presentation: Deck, label: str = "r") -> list[list[tuple[str, float, float]]]:
@@ -133,11 +136,12 @@ def partners(outgoing, incoming, moved):
     return found
 
 
-def test_a_region_that_morphs_names_the_tags_its_boundary_changes(deck_at, reflowing):
+def test_a_boundary_that_morphs_names_the_tags_it_changes(deck_at, reflowing):
     """The plan tells the morph which tags changed, which the next test rests on."""
     presentation: Deck = deck_at(reflowing)
-    regions = presentation.plan["epochs"][1]["regions"]
-    assert regions == [{"group": "r", "transition": "morph", "names": ["eq", "ins", "w"]}]
+    changed = presentation.plan["epochs"][1]["changed"]
+    morph = {"transition": "morph"}
+    assert changed == {"eq": morph, "ins": morph, "w": morph}
 
 
 def test_every_moving_glyph_has_a_partner_halfway_along_its_route(page, deck_at, reflowing):

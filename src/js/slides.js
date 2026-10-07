@@ -16,49 +16,50 @@
 /** One slide of the deck, as the runtime needs it, read from the DOM once. */
 function readSlide(element) {
   const plan = JSON.parse(element.dataset.animoPlan || '{"states":[]}');
-  // Every occurrence of a tag name, in every epoch rendering of this slide, because
+  // Every occurrence of a tag name, in every rendering of every stack of this slide, because
   // continuous state belongs to the slide and not to the rendering that is showing.
+  // The slot of a tag is the first group inside its labelled one, except for a tag that holds
+  // an epoch stack of its own, whose slot is inside each rendering of the stack.
   const slots = new Map();
   for (const group of element.querySelectorAll("[data-typst-label]")) {
-    const slot = group.querySelector(":scope > g");
-    if (slot === null) {
+    const name = group.dataset.typstLabel;
+    if (stackLabel(name) !== null) {
       continue;
     }
-    const name = group.dataset.typstLabel;
-    const found = slots.get(name);
-    if (found === undefined) {
-      slots.set(name, [slot]);
-    } else {
-      found.push(slot);
-    }
-  }
-  // What each boundary redraws, by epoch, where epoch i holds the groups that the step
-  // into it changes, each with the timing of the operations that changed it.
-  // The first epoch begins no boundary.
-  const epochs = (plan.epochs ?? [{}]).map((epoch) => epoch.regions ?? []);
-  const carried = new Set(epochs.flat().map((region) => region.group));
-  const stacks = readStacks(element);
-  // The region groups a boundary may carry, in every rendering of an epoch stack, by epoch.
-  // A group is looked up once here rather than per step, and by its own label, because a
-  // label is a tag name and a name is whatever the author wrote.
-  for (const stack of stacks) {
-    if (stack.kind === "epoch") {
-      stack.regions = stack.renderings.map((rendering) =>
-        Array.from(rendering.querySelectorAll("[data-typst-label]")).filter((group) =>
-          carried.has(group.dataset.typstLabel),
-        ),
-      );
+    const first = group.querySelector(":scope > g");
+    const holders =
+      stackLabel(first?.dataset.typstLabel)?.kind === "epoch"
+        ? group.querySelectorAll(':scope > [data-typst-label^="animo-epoch-"]')
+        : [group];
+    for (const holder of holders) {
+      const slot = holder.querySelector(":scope > g");
+      if (slot === null) {
+        continue;
+      }
+      const found = slots.get(name);
+      if (found === undefined) {
+        slots.set(name, [slot]);
+      } else {
+        found.push(slot);
+      }
     }
   }
   return {
     element,
     canvas: element.querySelector(":scope > .animo-canvas"),
     slots,
-    // Every stack of the slide: the stack of its epoch renderings, and a stack for every
-    // `per-subslide` in every epoch rendering and layer that lays it out.
+    // Every stack of the slide: an epoch stack in every region whose content changes, and a
+    // stack for every `per-subslide` in every rendering and layer that lays it out.
     // A stack is looked up once here rather than per step, as the tag slots above are.
-    stacks,
-    epochs,
+    stacks: readStacks(element),
+    // What each boundary changes, by epoch, where epoch i holds the tags that the step into
+    // it changes, by name, each with the timing and the transition of the operations that
+    // changed it, and the name of a changed tag that becomes no group by the label of the
+    // region that holds it. The first epoch begins no boundary.
+    epochs: (plan.epochs ?? [{}]).map((epoch) => ({
+      changed: epoch.changed ?? {},
+      regions: epoch.regions ?? {},
+    })),
     states: plan.states ?? [],
     count: Math.max(1, Number(element.dataset.animoStates ?? 1)),
     // How the boundary above this slide is crossed: the name of a transition, or `auto` for
@@ -72,8 +73,8 @@ function readSlide(element) {
     size: plan.canvas ?? null,
     // Where the tags the plan is relative to sit, measured when the slide is first shown.
     anchors: null,
-    // The elements a morph is still moving, each with the epoch of its rendering, the label of
-    // the region that holds it and where its route ends, which `morph.js` keeps.
+    // The elements a morph is still moving, each with the epoch of its rendering, the stack
+    // that holds it and where its route ends, which `morph.js` keeps.
     morphed: new Map(),
     // Which state this slide is showing, or `null` while it has never been rendered.
     // Its own rather than the deck's position, because a backward step that walks back

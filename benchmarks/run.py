@@ -175,13 +175,13 @@ def compile_once(source: Path, output: Path, kind: str, inputs: dict[str, str]):
 
 
 CANVAS = re.compile(r'<div class="animo-canvas".*?</div>', re.S)
-"""The frame of one slide, the element its epoch renderings are laid out in.
+"""The frame of one slide, the element its body and its epoch stacks are laid out in.
 
 The canvas element holds nothing but that frame, so the first `</div>` after it is its own.
 """
 
 EPOCH = re.compile(r'data-typst-label="animo-epoch-\d+"')
-"""One epoch rendering of a slide, which is a labelled group inside the slide's frame."""
+"""One rendering of an epoch stack, which is a labelled group inside the slide's frame."""
 
 
 def defs_share(markup: str) -> dict:
@@ -201,8 +201,8 @@ def defs_share(markup: str) -> dict:
     `hoisted_*` is every repeat in the document dropped, which no compile of one source
     file can reach: a package never holds the markup a frame became (see *Findings*).
     `merged_*` is the reachable scope, the repeats inside one slide's canvas. Animo lays
-    the epoch renderings of a slide out in one frame, so typst's own deduplicator has
-    already removed them and this reads back as the page itself; it is kept because a
+    the body of a slide and its epoch stacks out in one frame, so typst's own deduplicator
+    has already removed them and this reads back as the page itself; it is kept because a
     number that stops moving is what says the scope is exhausted.
 
     Returns
@@ -226,21 +226,22 @@ def defs_share(markup: str) -> dict:
 def structure(markup: str) -> dict:
     """The rendering counts of an HTML deck, read back out of the page it produced.
 
-    This is the cost model itself: one rendering per epoch, and the states the plan
-    carries. It depends on the deck and not on the machine, which is why the test suite
-    asserts it and this file only records it.
+    This is the cost model itself: one rendering of the body of a slide, one rendering per
+    epoch in every region whose content changes, and the states the plan carries. It depends
+    on the deck and not on the machine, which is why the test suite asserts it and this file
+    only records it. `renderings` counts the renderings of the epoch stacks.
 
-    An epoch rendering is a labelled group inside the slide's canvas element, and every
-    rendering of a slide sits in the one frame there. Counting the labels rather than the
-    frames is what keeps this a reading of the cost model rather than of the markup the
+    A rendering of an epoch stack is a labelled group inside the slide's canvas element, and
+    every rendering of a slide sits in the one frame there. Counting the labels rather than
+    the frames is what keeps this a reading of the cost model rather than of the markup the
     renderings happen to be written in.
     """
     slides = re.findall(r'data-animo-slide="(\d+)" data-animo-states="(\d+)"', markup)
-    epochs = [len(EPOCH.findall(block)) for block in CANVAS.findall(markup)]
+    renderings = [len(EPOCH.findall(block)) for block in CANVAS.findall(markup)]
     return {
         "slides": len(slides),
         "states": sum(int(states) for _, states in slides),
-        "epochs": sum(epochs),
+        "renderings": sum(renderings),
     }
 
 
@@ -648,7 +649,7 @@ def summary(result: dict) -> str:
     tour = result["tour"]
     lines.append(
         f"tour.typ: {tour['html']['slides']} slides, {tour['html']['states']} states, "
-        f"{tour['html']['epochs']} epochs"
+        f"{tour['html']['renderings']} renderings in epoch stacks"
     )
     for kind in OUTPUTS:
         entry = tour[kind]

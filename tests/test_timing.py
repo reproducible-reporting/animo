@@ -350,7 +350,7 @@ def test_a_hold_reaches_the_browser_plan(typst: TypstRunner):
         resolved(
             'sub(hold: 2, reveal("a"))',
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             "  assert.eq(states.at(1).hold, 2.0)",
             '  assert.eq(states.at(0).keys(), ("tags", "pan", "epoch", "handout"))',
             "}",
@@ -486,7 +486,7 @@ def test_a_timeline_that_times_nothing_carries_no_timing(typst: TypstRunner):
         resolved(
             'sub(reveal("a"), pan(dx: 1cm))',
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             '  assert.eq(states.at(1).keys(), ("tags", "pan", "epoch", "handout"))',
             "}",
         )
@@ -499,7 +499,7 @@ def test_a_timed_timeline_carries_both_numbers_in_seconds(typst: TypstRunner):
         resolved(
             'sub(wait: 2, reveal("a", delay: 0.2))',
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             "  assert.eq(states.at(1).wait, 2.0)",
             "  assert.eq(states.at(1).timing, (tags: (a: (opacity: (delay: 0.2)))))",
             '  assert.eq(states.at(0).keys(), ("tags", "pan", "epoch", "handout"))',
@@ -514,7 +514,7 @@ def test_a_stated_duration_travels_as_a_number_of_seconds(typst: TypstRunner):
         resolved(
             'sub(reveal("a", duration: 2))',
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             "  assert.eq(states.at(1).timing, (tags: (a: (opacity: (duration: 2.0)))))",
             "}",
         )
@@ -531,7 +531,7 @@ def test_an_auto_duration_reaches_the_browser_as_nothing_at_all(typst: TypstRunn
         resolved(
             'sub(reveal("a", delay: 0.2, duration: auto))',
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             "  assert.eq(states.at(1).timing, (tags: (a: (opacity: (delay: 0.2)))))",
             "}",
         )
@@ -590,6 +590,13 @@ def test_two_operations_on_one_tag_may_not_disagree_either(typst: TypstRunner):
 def test_a_region_inside_a_changed_region_shares_its_timing(typst: TypstRunner):
     """The outer region is what crossfades, so the inner one's operation is part of it."""
     body = '#region[#tag("a")[A] #region[#tag("b")[B]]]'
+    source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")
+    typst.fails(source, "disagree about their timing")
+
+
+def test_two_regions_inside_one_region_share_its_timing(typst: TypstRunner):
+    """The outer region holds the stack, so it crosses once for both regions inside it."""
+    body = '#region[#region[#tag("a")[A]] #region[#tag("b")[B]]]'
     source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")
     typst.fails(source, "disagree about their timing")
 

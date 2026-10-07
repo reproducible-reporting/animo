@@ -23,6 +23,8 @@ from harness.typst import ROOT
 # A deck whose three counts are all different, which is what makes the test say something:
 # one rendering per epoch in HTML, one per state in the presentation, and one per state
 # that asked for a page in the handout.
+# Each slide holds one tag, so in HTML a slide with more than one epoch holds one stack of
+# one rendering per epoch, and a slide with one epoch holds none.
 SLIDES = {
     # name: (slide source, states, epochs, handout pages)
     "static": ("slide[nothing happens]", 1, 1, 1),
@@ -35,7 +37,8 @@ SLIDES = {
         1,
     ),
     "structural": (
-        'slide(animation: {import anim: *\nsub(replace("b")[bb])\nsub(remove("b"))})[#tag("b")[b]]',
+        'slide(animation: {import anim: *\nsub(replace("b")[bb])\nsub(replace("b")[bbb])})'
+        '[#tag("b")[b]]',
         3,
         3,
         1,
@@ -65,8 +68,9 @@ HANDOUT = sum(pages for _, _, _, pages in SLIDES.values())
 def renderings_per_slide(markup: str) -> list[int]:
     """How many epoch renderings each slide of a compiled HTML deck holds, in slide order.
 
-    A rendering is a labelled group inside the slide's canvas element, and a slide has one
-    per epoch, all of them in one frame. Counting the labels rather than the frames is what
+    A rendering is a labelled group inside the slide's canvas element. The body of a slide
+    is laid out once, and every region whose content changes holds one rendering per epoch,
+    all of them in the slide's one frame. Counting the labels rather than the frames is what
     keeps this a reading of the cost model: the frames are what the merge changed, and the
     renderings are what the model is about.
     """
@@ -84,10 +88,14 @@ def frames_per_slide(markup: str) -> list[int]:
 
 
 def test_the_html_output_renders_one_rendering_per_epoch(typst: TypstRunner):
-    """Epochs and not states: a run of continuous steps shares one rendering."""
+    """Epochs and not states: a run of continuous steps shares one rendering.
+
+    A slide whose content never changes pays nothing for epochs, and its body is the one
+    rendering it has.
+    """
     markup = typst.html(DECK).read_text()
-    assert renderings_per_slide(markup) == [epochs for _, _, epochs, _ in SLIDES.values()]
-    assert sum(renderings_per_slide(markup)) == EPOCHS
+    expected = [epochs if epochs > 1 else 0 for _, _, epochs, _ in SLIDES.values()]
+    assert renderings_per_slide(markup) == expected
 
 
 def test_the_html_output_lays_every_epoch_of_a_slide_out_in_one_frame(typst: TypstRunner):
@@ -171,7 +179,8 @@ def test_the_controlled_deck_has_the_epochs_its_knobs_ask_for(typst: TypstRunner
         features=["html"],
         sysinp={"slides": "3", "epochs": "4", "regions": "2", "states": "2"},
     ).check()
-    assert renderings_per_slide(markup.output.read_text()) == [4, 4, 4]
+    # One rendering per epoch in each of the two regions.
+    assert renderings_per_slide(markup.output.read_text()) == [8, 8, 8]
     assert frames_per_slide(markup.output.read_text()) == [1, 1, 1]
     # Two continuous steps and three structural ones, on top of the initial state.
     assert markup.output.read_text().count('data-animo-states="6"') == 3
@@ -210,8 +219,9 @@ def test_the_placement_deck_compiles(variant: str, mode: str):
 def test_the_placement_deck_renders_one_rendering_whatever_its_states(typst: TypstRunner):
     """What makes the recorded seconds the cost of the canvas rather than of the epochs.
 
-    The slide holds continuous steps alone, so it has one epoch and one rendering however
-    many states it is given, and the difference between two variants is the placements.
+    The slide holds continuous steps alone, so it has one epoch, no epoch stack and one
+    rendering of its body however many states it is given, and the difference between two
+    variants is the placements.
     """
     markup = compile_typst(
         PLACEMENTS,
@@ -221,5 +231,6 @@ def test_the_placement_deck_renders_one_rendering_whatever_its_states(typst: Typ
         sysinp={**PLACEMENT_KNOBS, "pan": "on"},
     ).check()
     text = markup.output.read_text()
-    assert renderings_per_slide(text) == [1]
+    assert renderings_per_slide(text) == [0]
+    assert frames_per_slide(text) == [1]
     assert text.count('data-animo-states="3"') == 1

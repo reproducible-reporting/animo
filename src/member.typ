@@ -1,27 +1,29 @@
 // SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 // SPDX-License-Identifier: Apache-2.0
 
-// Which region each site of a slide sits in, and what a boundary therefore redraws.
+// Which region each site of a slide sits in, and which regions a boundary therefore crosses.
 //
 // Only layout knows which tags a region holds, because a region receives its body as opaque
 // content, so this is not something the resolver can answer.
 // Every tag site and every region reports itself where it is laid out, and the reports are
 // read back with `query` after the slide.
 //
-// What a boundary redraws follows from those reports and from the epoch it starts:
-// the regions that hold the tags the boundary changes, with a region inside another changed
-// region left out, because redrawing the outer one redraws it too.
-// The browser is handed the group of each, since a key is animo's own way of naming a region
-// and a group in the output is addressed by a label.
+// What a boundary crosses follows from those reports and from the epoch it starts:
+// the outermost regions that hold the tags the boundary changes.
+// The HTML target places an epoch stack in every outermost region and none in the regions
+// inside one, so such a region crosses a boundary as a whole, with everything inside it.
+// The reports serve the refusals that are made after the slide.
+// The browser finds the stacks a boundary crosses by itself, from the names of the tags laid
+// out in them, except for a tag that becomes no group: the plan names the region of such a
+// tag, from the reports, because nothing in the output does.
 
-#import "anim.typ": default-timing
 #import "transition.typ": written
 
 // The label of the report that says which region a site belongs to.
 #let member-label = label("animo-member")
 
 // Report which region a tag or a region belongs to,
-// as `(slide:, kind:, name:, key:, group:, parent:)`.
+// as `(slide:, kind:, name:, key:, group:, parent:, groupless:)`.
 //
 // `key` is the region the site belongs to, and `parent` the one around the site,
 // which differ for a region with a number and for a tag that is its own implicit region.
@@ -29,14 +31,16 @@
 // site that is not the region its key names.
 // It is how a key becomes something the browser can address, because only the site that owns
 // the key knows what it called itself.
+// `groupless` says whether the site is a tag that becomes no group at all.
 // A `metadata` element is layout-neutral wherever it sits.
-#let member(view, kind, name, key, group: none) = [#metadata((
+#let member(view, kind, name, key, group: none, groupless: false) = [#metadata((
     slide: view.slide,
     kind: kind,
     name: name,
     key: key,
     group: group,
     parent: view.region.key,
+    groupless: groupless,
   ))#member-label]
 
 // The membership reports of one slide, read back from its renderings.
@@ -63,70 +67,40 @@
   if found != none { found.last() }
 }
 
-// The region that crossfades for one of the keys a boundary changes: the outermost changed
-// region above it, or the key itself when nothing above it changed.
-//
-// One walk answers both questions a boundary asks of the region graph.
-// A key whose owner is itself is a region the boundary redraws, and a key whose owner is
-// another is redrawn inside that one, because redrawing the outer region redraws everything
-// it holds.
-//
-// `keys` may hold a region that is not maximal, and the answer is the same either way: the
-// walk keeps the last match it finds, and the outermost changed region above a key has no
-// changed region above it, so it is in `keys` whether or not the inner ones were filtered
-// out first.
-#let owner-of(parents, keys, key) = {
-  let owner = key
+// The outermost region above a key, which is the key itself for a region that sits in no
+// other.
+// That is the region that holds the epoch stack the key's content changes in.
+#let outermost-of(parents, key) = {
   let above = parent-of(parents, key)
   while above != none {
-    if above in keys { owner = above }
-    above = parent-of(parents, above)
+    key = above
+    above = parent-of(parents, key)
   }
-  owner
+  key
 }
 
-// Every region that holds a tag the first step of `epoch` addresses, as their keys, in the
-// order the membership reports name them.
+// The regions a boundary crosses, each with the changed tags that belong to it,
+// as `(key:, names:)` in the order the membership reports name the tags.
 //
-// The key `none` is among them for a tag that no region bounds, which is a `wrap: none` tag
-// outside an explicit region: it has no box of its own, so its change is confined to no area
-// and the whole rendering is what redraws.
+// Each is an outermost region, and every changed tag inside it belongs to it, however deep.
+// A region inside it is laid out once per rendering of its stack, so the two are one
+// crossfade and the timings of both have to agree.
+//
+// Every tag whose content changes sits in a region, because a tag that has no box and that
+// no region holds is refused where it is written.
 // The answer is only as complete as `members`: a tag reports from the renderings it is laid
 // out in, so a tag that only a later epoch lays out is known once that epoch is rendered.
-#let changed-keys(epochs, epoch, members) = {
-  let changed = epochs.at(epoch).changed
-  let keys = ()
-  for it in members {
-    if it.kind == "tag" and it.name in changed and it.key not in keys {
-      keys.push(it.key)
-    }
-  }
-  keys
-}
-
-// The regions a boundary redraws, each with the changed tags that belong to it,
-// as `(key:, names:)` in the order the membership reports name the keys.
-//
-// A changed region inside another changed region is not one of them, because redrawing the
-// outer one redraws it too, and the tags it holds belong to that outer one.
-// The boundary crossfades the outer group and the inner one is redrawn inside it, so the two
-// are one crossfade and the timings of both have to agree.
-//
-// The whole rendering, whose key is `none`, holds every region of the slide, so a boundary
-// that redraws it is the one holder and every tag the boundary changes belongs to it.
 #let changed-members(epochs, epoch, members) = {
   let parents = region-parents(members)
-  let keys = changed-keys(epochs, epoch, members)
-  let whole = none in keys
-  let owner(key) = if whole { none } else { owner-of(parents, keys, key) }
   let changed = epochs.at(epoch).changed
-  let holders = keys
-    .filter(key => owner(key) == key)
-    .map(key => (key: key, names: ()))
+  let holders = ()
   for it in members {
-    if it.kind != "tag" or it.name not in changed { continue }
-    let at = holders.position(holder => holder.key == owner(it.key))
-    if at != none and it.name not in holders.at(at).names {
+    if it.kind != "tag" or it.name not in changed or it.key == none { continue }
+    let key = outermost-of(parents, it.key)
+    let at = holders.position(holder => holder.key == key)
+    if at == none {
+      holders.push((key: key, names: (it.name,)))
+    } else if it.name not in holders.at(at).names {
       holders.at(at).names.push(it.name)
     }
   }
@@ -154,10 +128,10 @@
 // Refuse two operations that change one region at one boundary and disagree about when, or
 // about how the region crosses it.
 //
-// A region crosses a boundary once, so there is nothing for a precedence rule to pick
-// between.
-// Two bare tags are always two regions, each its own implicit one, so this refusal applies
-// inside an explicit region and between two operations on one tag.
+// A region crosses a boundary once, with every region inside it, so there is nothing for a
+// precedence rule to pick between.
+// Two bare tags side by side are two regions, each its own implicit one, so this refusal
+// applies inside a region and between two operations on one tag.
 // The comparison is over an operation's timing as a whole rather than over one field of it,
 // because a timing record may gain more fields.
 // A transition is compared as it was written, so `auto` and `crossfade()` are two answers,
@@ -199,10 +173,10 @@
               + shown(first.value)
               + " against "
               + shown(other.value)
-              + "; a region crosses a boundary once, so there is nothing to choose "
-              + "between them: "
+              + "; a region crosses a boundary once, with every region inside it, "
+              + "so there is nothing to choose between them: "
               + remedy
-              + ", or put them in two regions",
+              + ", or put them in two regions that no other region holds",
           )
         }
       }
@@ -210,40 +184,27 @@
   }
 }
 
-// The groups a boundary redraws, as the browser addresses them, each with its timing, its
-// transition and the names of the tags the boundary changes in it.
+// The regions a boundary crosses for the tags it changes that become no group, as a
+// dictionary from the label of the region's group to the name of the first such tag in it.
 //
-// A key is animo's own way of naming a region, and a group in the output is addressed by a
-// label, so the two are joined here from the reports of the sites that own their keys.
-// A key whose site no rendering reported yet has no group and is left out, which is the
-// same incompleteness `changed-members` has.
-//
-// The whole rendering is the holder with no key, and it has no group either: the runtime
-// knows it as the rendering it is showing, and `none` is how the plan says so.
-//
-// The timing and the transition are those of the first of the region's operations, which are
-// those of every one of them.
-// A boundary whose operations disagree is refused after the slide, and this runs inside it,
-// where a panic would be swallowed.
-#let changed-groups(epochs, epoch, members) = {
-  let groups = ()
-  for holder in changed-members(epochs, epoch, members) {
-    let found = if holder.key == none { none } else {
-      members.find(it => it.group != none and it.key == holder.key)
+// The browser finds every other changed tag by its group inside the stack that holds it.
+// A tag that becomes no group leaves nothing in the output to find, so the plan names the
+// region for it, and the region crosses with the timing and the transition of that tag's
+// operations, which are those of every operation that changes the region at the boundary.
+// A region whose site no rendering reported has no group and is left out, which is the same
+// incompleteness `changed-members` has, and the browser still finds that its renderings
+// differ.
+#let groupless-regions(epochs, epoch, members) = {
+  let parents = region-parents(members)
+  let changed = epochs.at(epoch).changed
+  let regions = (:)
+  for it in members {
+    if not it.groupless or it.name not in changed or it.key == none { continue }
+    let key = outermost-of(parents, it.key)
+    let owner = members.find(other => other.group != none and other.key == key)
+    if owner != none and owner.group not in regions {
+      regions.insert(owner.group, it.name)
     }
-    if holder.key != none and found == none { continue }
-    let group = if found == none { none } else { found.group }
-    if group in groups.map(it => it.group) { continue }
-    let first(field, default) = {
-      let values = boundary-values(epochs, epoch, holder, field)
-      if values.len() == 0 { default } else { values.first().value }
-    }
-    groups.push((
-      group: group,
-      timing: first("timings", default-timing),
-      transition: first("transitions", auto),
-      names: holder.names,
-    ))
   }
-  groups
+  regions
 }

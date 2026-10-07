@@ -3,12 +3,13 @@
 
 // How a step crosses a boundary, of an epoch inside a slide and of a slide inside the deck.
 //
-// A slide is one `html.frame` holding a stack of one rendering per content state, of which
-// one is shown at a time, and which `stacks.js` calls an `epoch` stack. A step that stays inside an epoch touches only
-// the display state of the rendering it is already showing. A step that crosses a boundary
-// hands over the regions whose content changed, which is what `transitions` below does,
-// and leaves everything else alone, because the two renderings are pixel-identical outside
-// those regions.
+// A slide is one `html.frame` holding one rendering of its body, and every region whose
+// content changes holds an epoch stack in its footprint: one rendering of the region per
+// content state, of which one is shown at a time. A step that stays inside an epoch touches
+// only the display state of the renderings already shown. A step that crosses a boundary
+// carries the stacks that hold what changed from the outgoing rendering to the incoming one,
+// which is what `transitions` below does, and every other stack shows the rendering of the
+// epoch being entered without animating, because its renderings are the same picture.
 //
 // A slide boundary is the same mechanism one container out, and it is the whole container
 // that crosses, because two slides share nothing to hold still. Two slides are laid out
@@ -17,26 +18,26 @@
 // preview. See *Findings*.
 
 /**
- * How a step carries a region from the outgoing epoch rendering to the incoming one.
+ * How a step carries an epoch stack from the outgoing rendering to the incoming one.
  *
- * One entry per transition, and the plan names the one each region takes: a region record of
- * a boundary has an optional `transition`, the name of an entry here, and an optional
- * `args`, which is handed to the transition as part of the record. A region with no
- * `transition` crossfades, so a plan that names none is the plan of a deck in which every
+ * One entry per transition, and the plan names the one each stack takes: the record of a
+ * stack that a boundary crosses has an optional `transition`, the name of an entry here, and
+ * an optional `args`, which is handed to the transition as part of the record. A stack with
+ * no `transition` crossfades, so a plan that names none is the plan of a deck in which every
  * boundary crossfades.
  *
- * `planEpoch` has already planned the state at rest of every rendering and of every region
- * group in it when a transition runs: the rendering being entered shown and opaque, every
- * other rendering hidden, and every region opaque in the rendering being entered and
- * transparent in the others. A transition plans effects for what it carries in place of
- * those, and an effect it plans replaces the one at rest for the same element and property.
+ * `planEpoch` has already planned the state at rest of every rendering of the stack when a
+ * transition runs: the rendering being entered shown and opaque, and every other rendering
+ * hidden and transparent. A transition plans effects for the renderings it carries in place
+ * of those, and an effect it plans replaces the one at rest for the same element and
+ * property.
  *
- * Each transition is handed the effects of the step being planned, the slide, its epoch stack,
- * the epoch a step leaves and the one it enters, the records of the regions it carries, how
- * the step moves and how long it lasts when it is running backwards, and takes what it needs
- * of that: the crossfade below needs no `from`, where the morph reads the outgoing
- * rendering's geometry. It runs in the phase that reads and writes nothing, so any geometry it reads is
- * the geometry of the page before the step.
+ * Each transition is handed the effects of the step being planned, the slide, the stack, the
+ * epoch a step leaves and the one it enters, the record of the stack, how the step moves and
+ * how long it lasts when it is running backwards, and takes what it needs of that: the
+ * crossfade below needs no `from`, where the morph reads the outgoing rendering's geometry.
+ * It runs in the phase that reads and writes nothing, so any geometry it reads is the
+ * geometry of the page before the step.
  *
  * A transition plans the state it is arriving at and animates from what the element was
  * showing into it, exactly as a display state is planned, so an interrupted boundary
@@ -44,94 +45,57 @@
  */
 const transitions = {
   /**
-   * Crossfade the regions the boundary redraws, and nothing else.
+   * Crossfade the renderings of the stack.
    *
-   * The incoming rendering is shown whole and at once, which is invisible because the
-   * renderings are pixel-identical everywhere but in those regions. Every other rendering
-   * is hidden, and only the regions it is handing over take their visibility back, so it
-   * paints nowhere else and the containment is exact rather than blended to within a
-   * rounding error. The halves of one region add to one through the `plus-lighter` the
-   * stylesheet puts on the renderings.
+   * The two halves add to one through the `plus-lighter` the stylesheet puts on the
+   * renderings, and the container of the stack isolates, so the sum stays inside the stack
+   * and the outgoing rendering paints nowhere outside the region.
    *
-   * Every rendering that is not the one being entered hands the region over, and not only
-   * the one the step is leaving. A boundary crossed while an earlier one is still running
-   * finds two of them painting the region, which is what a long `duration:` on a `replace`
-   * makes easy to reach and what a `wait:` shorter than a step or a presenter clicking
-   * twice reaches as well. Fading all of them out on the new boundary's clock is what
-   * keeps the sum at one: the outgoing renderings leave under one easing while the
-   * incoming one arrives under its complement, whatever they were showing when it began.
-   * A rendering no boundary is crossing is at zero already, so planning it changes nothing.
+   * Every rendering that is showing any ink takes part, and not only the one the step is
+   * leaving. A boundary crossed while an earlier one is still running finds two of them
+   * painting the region, which is what a long `duration:` on a `replace` makes easy to reach
+   * and what a `wait:` shorter than a step or a presenter clicking twice reaches as well.
+   * Fading all of them out on the new boundary's clock is what keeps the sum at one: the
+   * outgoing renderings leave under one easing while the incoming one arrives under its
+   * complement, whatever they were showing when it began. A rendering that is hidden has
+   * nothing to hand over and stays hidden where it is.
    *
-   * A boundary that bounds its change in no region hands the whole rendering over instead,
-   * and the two renderings crossfade as they are. Nothing outside the changed area is still
-   * in that case, so there is nothing to contain the blend to.
+   * A delayed crossfade starts late and a long one takes long, which is what holds the
+   * boundary open: an outgoing rendering stays visible for the whole of the delay and the
+   * whole of the duration.
    */
-  crossfade(effects, slide, { stack, to, regions, options, mirror }) {
-    // An entry with no group of its own names the rendering itself, which is what a change
-    // that no region bounds redraws: a `wrap: none` tag outside any region has no box to
-    // confine the change to. The rendering then hands its own ink over as a region hands
-    // its own, and every region in it stays opaque, because each rendering is a complete
-    // picture and the crossfade is between the two of them.
-    const whole = regions.find((region) => region.group === null);
+  crossfade(effects, slide, { stack, to, record, options, mirror }) {
+    const timing = scheduled(options, record.timing, mirror);
+    if (timing === null) {
+      return;
+    }
     stack.renderings.forEach((rendering, epoch) => {
       const active = epoch === to;
-      if (whole !== undefined) {
-        // A rendering hands its own ink over only if it is showing any: the one being left,
-        // and any that a boundary this one interrupted is still fading out. One that is
-        // showing none has nothing to hand over and stays hidden where it is.
-        const leaving = !active && getComputedStyle(rendering).visibility === "visible";
-        if (active || leaving) {
-          plan(
-            effects,
-            rendering,
-            { visibility: "visible", opacity: active ? "1" : "0" },
-            { opacity: scheduled(options, whole.timing, mirror) },
-          );
-        }
-        for (const group of stack.regions[epoch]) {
-          plan(effects, group, { opacity: "1" });
-        }
-        return;
-      }
-      for (const group of stack.regions[epoch]) {
-        const carried = regions.find((region) => region.group === group.dataset.typstLabel);
-        if (carried === undefined) {
-          continue;
-        }
-        // A rendering that hands a region over is opaque, and paints through the
-        // visibility that region takes back while the rest of it stays hidden.
-        if (!active) {
-          plan(effects, rendering, { opacity: "1" });
-          plan(effects, group, { visibility: "visible" });
-        }
-        // A delayed region crossfades late and a long one crossfades slowly, which is what
-        // holds the boundary open: an outgoing rendering keeps the visibility of the
-        // regions it is handing over, so it paints them for the whole of the delay and the
-        // whole of the duration.
+      if (active || getComputedStyle(rendering).visibility === "visible") {
         plan(
           effects,
-          group,
-          { opacity: active ? "1" : "0" },
-          { opacity: scheduled(options, carried.timing, mirror) },
+          rendering,
+          { visibility: "visible", opacity: active ? "1" : "0" },
+          { opacity: timing },
         );
       }
     });
   },
   /**
-   * Crossfade the regions the boundary redraws, and carry what the two versions of each
-   * share from its old place to its new one, which `morphRegions` plans.
+   * Crossfade the renderings of the stack, and carry what the two of them share from its old
+   * place to its new one, which `morphStack` plans.
    */
   morph(effects, slide, context) {
     transitions.crossfade(effects, slide, context);
-    morphRegions(effects, slide, context);
+    morphStack(effects, slide, context);
   },
 };
 
-/** The transition a region takes when its record names none, which is every ordinary one. */
+/** The transition a stack takes when its record names none, which is every ordinary one. */
 const defaultTransition = "crossfade";
 
 /**
- * The transition of an epoch boundary by the name a region record carries.
+ * The transition of an epoch boundary by the name the record of a stack carries.
  *
  * A name typst does not know is refused at compile time, so nothing unknown arrives, and a
  * record that names none takes the default.
@@ -145,10 +109,9 @@ function transitionOf(name) {
  *
  * A table of its own rather than an entry in the one above, because the two are handed
  * different things and neither could use the other's. An epoch transition is given the
- * renderings of one slide and the regions a boundary carries across, which it holds
- * still; a slide transition is given two containers and has nothing to hold still, since
- * the two slides share nothing. One table would take the union of both and every entry
- * would ignore half of it.
+ * renderings of one region, inside a slide that it holds still; a slide transition is given
+ * two containers and has nothing to hold still, since the two slides share nothing. One
+ * table would take the union of both and every entry would ignore half of it.
  *
  * A slide transition is a function of the boundary's owner, the slide with the higher
  * number, and of a progress `p` that is 0 where the owner is not there yet and 1 where it
@@ -360,31 +323,128 @@ function timed(state, options) {
 }
 
 /**
- * Plan the epoch rendering that a state belongs to, and the regions its boundaries carry,
- * which is how an epoch stack is planned for a state.
+ * What an epoch stack needs beside its renderings, read once with the slide.
  *
- * Which rendering is shown is decided here, for every transition alike: the one the state
- * belongs to is shown and opaque, every other one is hidden and transparent, and every
- * region group is opaque in the rendering being shown and transparent in the others.
- * That is the state at rest, and the regions a boundary carries are then planned by the
- * transition each names, in place of their state at rest. One boundary may therefore carry
- * one region with one transition and another region with another.
+ * `region` is the label of the group of the region that holds the stack, which for a tag
+ * whose content changes is the tag, and `names` is that label and every label laid out in
+ * the renderings. A boundary crosses the stack when it changes one of these names, or a tag
+ * that becomes no group in the region the plan names by `region`. `differs` holds, per
+ * epoch, whether the rendering of that epoch differs from the one before, which is read the
+ * first time a boundary asks.
+ */
+function readEpochStack(stack) {
+  stack.names = new Set();
+  stack.region = stack.element.closest("[data-typst-label]")?.dataset.typstLabel ?? null;
+  if (stack.region !== null) {
+    stack.names.add(stack.region);
+  }
+  stack.renderings.forEach((rendering) => {
+    for (const group of rendering.querySelectorAll("[data-typst-label]")) {
+      stack.names.add(group.dataset.typstLabel);
+    }
+  });
+  stack.differs = [];
+}
+
+/**
+ * Whether the rendering of an epoch differs from the one before it in a stack.
  *
- * A step that stays inside one epoch still plans this, because the rendering it is
- * showing is already the right one and writing the state it is in changes nothing.
- * A step that animates hands over every boundary between the two epochs, which is one for
- * an ordinary step and several for a backward step that walked over a join. A step that
- * snaps hands over none, which is what a deep link and a clamped fragment get.
+ * A rendering that laid nothing out is not in the page, and two such renderings are the same.
+ * The labelled groups of two renderings differ in their labels, so their children are
+ * compared. The runtime writes the same inline style on every occurrence of a tag, so the
+ * style it has written by then differs nowhere the content does not.
+ */
+function differs(stack, epoch) {
+  let found = stack.differs[epoch];
+  if (found === undefined) {
+    const before = stack.renderings[epoch - 1];
+    const after = stack.renderings[epoch];
+    if (before === undefined || after === undefined) {
+      found = before !== after;
+    } else {
+      const a = Array.from(before.childNodes);
+      const b = after.childNodes;
+      found = a.length !== b.length || a.some((node, i) => !node.isEqualNode(b[i]));
+    }
+    stack.differs[epoch] = found;
+  }
+  return found;
+}
+
+/**
+ * The epoch stacks a step carries across the boundaries it crosses, each with its record, as
+ * a map, and every morph an earlier step left running planned for this one.
+ *
+ * A stack is carried when a boundary changes a tag it holds, which is a tag whose group is
+ * in the stack or a tag without a group that the plan places in the stack's region. It is
+ * also carried when its renderings on the two sides of the boundary differ. Its record is
+ * the plan's record of the first tag the boundary changes in it, and `names` holds every tag
+ * the step changes in it, which a morph does not match. The operations of one stack agree
+ * about the timing and the transition, because typst refuses a boundary otherwise. A stack
+ * whose renderings differ while the plan names no tag of it, which is a region whose site
+ * typst had not reported when it wrote the plan, crossfades on the deck's own timing.
+ *
+ * A step that animates hands over every boundary between the two epochs, which is one for an
+ * ordinary step and several for a backward step that walked over a join. A step that snaps
+ * hands over none, which is what a deep link and a clamped fragment get.
  *
  * A step over more than one boundary drops the timings of the operations that opened them,
  * as it drops the schedules of the steps it walked over: those steps are ones the deck ran
- * through, and the one clock left is this step's own. A region that two of the boundaries
- * redraw is carried once, by the first record found for it.
- *
- * A record with no group stands for the whole rendering, which holds every region, so a
- * step that carries one carries nothing else.
+ * through, and the one clock left is this step's own. A stack that two of the boundaries
+ * change takes the record of the first.
  */
-function planEpoch(effects, slide, stack, { index, from, options, mirror }) {
+function planBoundary(effects, slide, { index, from, options, mirror }) {
+  const to = slide.states[index]?.epoch ?? 0;
+  const carried = new Map();
+  if (options !== null && from !== null && from !== to) {
+    const walked = Math.abs(to - from) > 1;
+    for (let epoch = Math.min(from, to) + 1; epoch <= Math.max(from, to); epoch += 1) {
+      const { changed, regions } = slide.epochs[epoch] ?? { changed: {}, regions: {} };
+      for (const stack of slide.stacks) {
+        if (stack.kind !== "epoch") {
+          continue;
+        }
+        const names = Object.keys(changed).filter((name) => stack.names.has(name));
+        if (Object.hasOwn(regions, stack.region) && !names.includes(regions[stack.region])) {
+          names.push(regions[stack.region]);
+        }
+        const found = carried.get(stack);
+        if (found !== undefined) {
+          found.names.push(...names.filter((name) => !found.names.includes(name)));
+          continue;
+        }
+        if (names.length === 0 && !differs(stack, epoch)) {
+          continue;
+        }
+        const { timing, ...untimed } = names.length === 0 ? {} : changed[names[0]];
+        const record = { ...untimed, names };
+        if (!walked && timing !== undefined) {
+          record.timing = timing;
+        }
+        carried.set(stack, record);
+      }
+    }
+  }
+  // Before the transitions, so that a morph of this step that matches an element again plans
+  // its route in place of where an earlier morph was taking it.
+  settleMorphs(effects, slide, to, carried, options, mirror);
+  return carried;
+}
+
+/**
+ * Plan the rendering of an epoch stack that a state belongs to, which is how an epoch stack
+ * is planned for a state.
+ *
+ * Which rendering is shown is decided here, for every transition alike: the one of the epoch
+ * the state belongs to is shown and opaque, and every other one is hidden and transparent.
+ * That is the state at rest, and a stack that the step carries across a boundary is then
+ * planned by the transition its record names, in place of its state at rest. One boundary
+ * may therefore carry one stack with one transition and another stack with another.
+ *
+ * A step that stays inside one epoch still plans this, because the rendering it is showing
+ * is already the right one and writing the state it is in changes nothing.
+ */
+function planEpoch(effects, slide, stack, { index, from, options, mirror }, carried) {
   const to = slide.states[index]?.epoch ?? 0;
   stack.renderings.forEach((rendering, epoch) => {
     const active = epoch === to;
@@ -392,35 +452,9 @@ function planEpoch(effects, slide, stack, { index, from, options, mirror }) {
       visibility: active ? "visible" : "hidden",
       opacity: active ? "1" : "0",
     });
-    for (const group of stack.regions[epoch]) {
-      plan(effects, group, { visibility: "", opacity: active ? "1" : "0" });
-    }
   });
-  const crossed = [];
-  if (options !== null && from !== null) {
-    for (let epoch = Math.min(from, to) + 1; epoch <= Math.max(from, to); epoch += 1) {
-      crossed.push(...(slide.epochs[epoch] ?? []));
-    }
-  }
-  const walked = Math.abs(to - from) > 1;
-  const records = [];
-  for (const record of crossed) {
-    if (!records.some((other) => other.group === record.group)) {
-      const { timing, ...untimed } = record;
-      records.push(walked ? untimed : record);
-    }
-  }
-  const whole = records.find((record) => record.group === null);
-  const carried = whole === undefined ? records : [whole];
-  // Before the transitions, so that a morph of this step that matches an element again plans
-  // its route in place of where an earlier morph was taking it.
-  settleMorphs(effects, slide, to, carried, options, mirror);
-  const named = new Map();
-  for (const record of carried) {
-    const name = record.transition ?? defaultTransition;
-    named.set(name, [...(named.get(name) ?? []), record]);
-  }
-  for (const [name, regions] of named) {
-    transitionOf(name)(effects, slide, { stack, from, to, regions, options, mirror });
+  const record = carried.get(stack);
+  if (record !== undefined) {
+    transitionOf(record.transition)(effects, slide, { stack, from, to, record, options, mirror });
   }
 }

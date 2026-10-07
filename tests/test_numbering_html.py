@@ -89,20 +89,21 @@ def test_a_step_the_clock_took_shows_the_rendering_it_arrived_at(timed_deck_at, 
 
 
 def test_a_stack_in_the_body_paints_only_the_rendering_of_the_state(deck_at, typst):
-    """A stack in an epoch frame nobody is watching may not paint through it.
+    """A stack in an epoch rendering nobody is watching may not paint through it.
 
-    A frame that is not the one being shown is hidden with `visibility`, which a descendant
-    may take back, so the renderings are chosen with `opacity` instead: one at opacity 1
-    inside a hidden frame stays hidden, where one that took its visibility back would paint
-    out of a frame the slide is not showing.
+    A rendering that is not the one being shown is hidden with `visibility`, which a
+    descendant may take back, so the renderings are chosen with `opacity` instead: one at
+    opacity 1 inside a hidden rendering stays hidden, where one that took its visibility back
+    would paint out of a rendering the slide is not showing.
+    The stack is in a region whose content changes, so each epoch rendering holds one.
     """
     source = deck(
         "slide(animation: { import anim: *\n"
         '  sub(replace("a")[second])\n'
         "  sub()\n"
         "})[\n"
-        f"  #place(top + left, {SWATCH})\n"
-        '  #tag("a", wrap: block)[first]\n'
+        f"  #region[#place(top + left, {SWATCH})\n"
+        '  #tag("a", wrap: block)[first]]\n'
         "]"
     )
     presentation: Deck = deck_at(typst.html(source, name="body.html"))

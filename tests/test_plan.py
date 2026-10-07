@@ -430,11 +430,11 @@ sub(handout: false, reveal("a"))
     )
 
 
-# The handout flag of the initial state, which is `#slide(handout: ..)`.
+# The handout flag of the initial state, which is `init(handout: ..)`.
 
 
-def test_the_slide_flag_asks_for_the_page_of_the_initial_state(typst: TypstRunner):
-    """The state the body declares has no `sub` of its own, so the slide speaks for it."""
+def test_the_init_flag_asks_for_the_page_of_the_initial_state(typst: TypstRunner):
+    """The state the body declares has no `sub` of its own, so `init` speaks for it."""
     typst.ok(
         resolved(
             """
@@ -446,9 +446,9 @@ sub(reveal("a"))
     )
 
 
-def test_a_slide_that_says_nothing_still_keeps_only_its_final_state(typst: TypstRunner):
-    """`auto` on the slide is `auto` on state 0, which is the behaviour of every deck
-    written before the argument existed."""
+def test_a_timeline_without_init_keeps_only_its_final_state(typst: TypstRunner):
+    """A timeline without `init` leaves the flag of state 0 at `auto`.
+    State 0 then has a page only when it is also the final state."""
     typst.ok(
         resolved(
             """
@@ -459,8 +459,8 @@ sub(reveal("a"))
     )
 
 
-def test_the_slide_flag_and_the_first_step_flag_resolve_independently(typst: TypstRunner):
-    """The argument names one state, and every other state keeps its own flag.
+def test_the_init_flag_and_the_first_step_flag_resolve_independently(typst: TypstRunner):
+    """The flag on `init` names one state, and every other state keeps its own flag.
 
     "Keep the first" and "drop the last" are the same slide's business, and a reader will
     expect one to imply something about the other, so the combination is asserted.
@@ -477,8 +477,7 @@ sub(handout: false, reveal("a"))
 
 
 def test_a_slide_without_a_timeline_can_be_left_out_of_the_handout(typst: TypstRunner):
-    """State 0 is the only state there, so `false` on the slide takes its only page away,
-    which was not expressible before the argument existed."""
+    """State 0 is the only state there, so `init(handout: false)` takes its only page away."""
     typst.ok(
         resolved(
             "",
@@ -1003,23 +1002,23 @@ def test_a_misspelled_transition_is_an_unknown_variable(typst: TypstRunner):
 # What the browser is handed.
 
 
-def test_a_region_that_morphs_carries_the_tags_the_boundary_changes(typst: TypstRunner):
-    """A morph moves a tag as one only while its content stays, so it is told which changed.
+def test_a_boundary_carries_every_tag_it_changes_by_name(typst: TypstRunner):
+    """The runtime finds the stacks a boundary crosses by the names of the tags they hold.
 
-    A region that crossfades carries no names, because nothing reads them there.
+    Each name carries the timing and the transition of the operations that changed it, and a
+    name whose operations state neither carries an empty record.
+    The first epoch begins no boundary and changes nothing.
     """
     typst.ok(
         resolved(
-            'sub(replace("a")[x])',
-            "#let timing = (delay: 0.0, duration: auto)",
+            'sub(replace("a", transition: morph())[x], replace("b", delay: 0.5)[y])\n'
+            'sub(remove("c"))',
             "#context {",
-            "  let boundaries = ((), (",
-            f'    (group: "r", timing: timing, transition: {MORPH}, names: ("a", "b")),',
-            f'    (group: "s", timing: timing, transition: {CROSSFADE}, names: ("c",)),',
-            "  ))",
-            "  let epochs = browser-plan(plan, names, boundaries).epochs",
-            '  assert.eq(epochs.at(1).regions, ((group: "r", transition: "morph",',
-            '    names: ("a", "b")), (group: "s", transition: "crossfade")))',
+            "  let epochs = browser-plan(plan, names).epochs",
+            "  assert.eq(epochs.at(0), (changed: (:)))",
+            '  assert.eq(epochs.at(1), (changed: (a: (transition: "morph"),',
+            "    b: (timing: (delay: 0.5)))))",
+            "  assert.eq(epochs.at(2), (changed: (c: (:))))",
             "}",
         )
     )
@@ -1036,7 +1035,7 @@ def test_every_state_of_the_browser_plan_holds_every_addressed_tag(typst: TypstR
             """sub(move("a", dx: 1cm))
 sub(scale("b", f: 2))""",
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             "  assert.eq(states.len(), 3)",
             '  assert(states.all(state => state.tags.keys().sorted() == ("a", "b")))',
             "  assert.eq(states.at(0).tags.a, (: hidden: false,",
@@ -1061,7 +1060,7 @@ def test_a_tag_the_timeline_reveals_reaches_the_browser_as_hidden_in_state_zero(
         resolved(
             """sub(reveal("h"))""",
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             "  assert.eq(states.at(0).tags.h.hidden, true)",
             "  assert.eq(states.at(1).tags.h.hidden, false)",
             "}",
@@ -1077,7 +1076,7 @@ def test_a_pan_reaches_the_browser_as_an_anchor_name_and_an_offset_in_points(
         resolved(
             """sub(pan(relto: "t", x: 1in))""",
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             "  assert.eq(states.at(0).pan.x, (relto: none, offset: 0.0))",
             '  assert.eq(states.at(1).pan.x, (relto: "t", offset: 72.0))',
             '  assert.eq(states.at(1).pan.y, (relto: "t", offset: 0.0))',
@@ -1096,7 +1095,7 @@ def test_a_length_reaches_the_browser_as_a_number_of_typst_points(typst: TypstRu
         resolved(
             'sub(move("a", x: 1in, dy: 3pt))',
             "#context {",
-            "  let tags = browser-plan(plan, names, ()).states.at(1).tags",
+            "  let tags = browser-plan(plan, names).states.at(1).tags",
             "  assert.eq(tags.a.x.offset, 72.0)",
             "  assert.eq(tags.a.y.offset, 3.0)",
             "}",
@@ -1113,7 +1112,7 @@ def test_every_state_of_the_browser_plan_carries_its_resolved_handout_flag(
             """sub(reveal("a"), handout: true)
 sub(hide("a"))""",
             "#context {",
-            "  let states = browser-plan(plan, names, ()).states",
+            "  let states = browser-plan(plan, names).states",
             "  assert.eq(states.map(state => state.handout), (false, true, true))",
             "}",
             handout="false",
@@ -1121,24 +1120,18 @@ sub(hide("a"))""",
     )
 
 
-def test_a_region_carries_the_transition_its_operations_named(typst: TypstRunner):
+def test_a_tag_carries_the_transition_its_operations_named(typst: TypstRunner):
     """A name travels, and `auto` travels as nothing, so a deck that names none is unchanged.
 
-    The runtime reads a region with no `transition` as one that crossfades.
+    The runtime reads a stack whose record has no `transition` as one that crossfades.
     A transition without parameters carries no `args`.
     """
     typst.ok(
         resolved(
-            'sub(replace("a")[x])',
-            "#let timing = (delay: 0.0, duration: auto)",
+            'sub(replace("a", transition: crossfade())[x], replace("b", transition: auto)[y])',
             "#context {",
-            "  let boundaries = ((), (",
-            f'    (group: "a", timing: timing, transition: {CROSSFADE}),',
-            '    (group: "b", timing: timing, transition: auto),',
-            "  ))",
-            "  let epochs = browser-plan(plan, names, boundaries).epochs",
-            '  assert.eq(epochs.at(1).regions, ((group: "a", transition: "crossfade"),',
-            '    (group: "b",)))',
+            "  let epochs = browser-plan(plan, names).epochs",
+            '  assert.eq(epochs.at(1).changed, (a: (transition: "crossfade"), b: (:)))',
             "}",
         )
     )

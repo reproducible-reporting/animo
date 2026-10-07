@@ -517,12 +517,25 @@
 // only the rendering knows: a position is an anchor and an offset, and the anchor is a tag's
 // corner. A tag site puts what it is handed on its content and resolves nothing itself.
 //
+// `numbering` is how a region numbers itself: `none` on `region-counter` of `region.typ`,
+// and inside the rendering of an epoch stack as `(base:, counts:)`, the number of the region
+// holding the stack and whether the rendering steps `region-counter`, as `region.typ`
+// describes.
+//
+// `stack` says whether a region places a stack of one rendering per epoch in its footprint,
+// rather than the rendering of `epoch` alone.
+// Only the HTML target asks for stacks, because a page lays out the epoch of its own state.
+// The renderings of a stack are handed a view without it, so stacks do not nest: a region
+// inside a stack is laid out once per rendering of the stack already.
+//
 // A rendering names one of `state` and `epoch`, and never both.
 // A paged rendering is one of the S+1 states, so it names its `state`, and lays out the
 // epoch that state belongs to under the display state the page resolved.
-// An HTML frame is not one of them, so it names its `epoch` instead: one frame covers the
-// whole run of states that share that epoch, `state` is `none` to say so, and the display
-// state stays empty because the browser puts a state's own on the groups.
+// An HTML frame is not one of them, so it names its `epoch` instead: one frame covers every
+// state of the slide, `state` is `none` to say so, and the display state stays empty because
+// the browser puts a state's own on the groups.
+// What lies outside every region is the same in every epoch, so the frame names epoch 0 and
+// the regions stack the others.
 #let view-of(
   plan,
   names,
@@ -530,6 +543,7 @@
   state: none,
   epoch: none,
   display: (:),
+  stack: false,
 ) = (
   slide: slide,
   state: state,
@@ -540,6 +554,8 @@
   continuous: names,
   region: outermost,
   within: (),
+  numbering: none,
+  stack: stack,
 )
 
 // The label of the marker a tag emits to ask for the view of its slide.

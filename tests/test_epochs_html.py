@@ -1,13 +1,14 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Tier 3: the epoch renderings of a slide, and the boundary between two of them.
+"""Tier 3: the epoch stacks of a slide, and the boundary between two of their renderings.
 
-A slide is one frame holding one rendering per content state, placed at one point, of
-which one is shown. This is where the two invariants that the whole region design rests on
-are either true or not, and both are comparisons within one page load, so neither needs a
-stored image:
+A slide is one frame holding one rendering of its body, and every region whose content
+changes holds an epoch stack in its footprint: one rendering of the region per content
+state, placed at one point, of which one is shown. This is where the two invariants that
+the whole region design rests on are either true or not, and both are comparisons within
+one page load, so neither needs a stored image:
 
-- every label outside a region has the same box in every epoch rendering;
+- every label outside a region is laid out once, and only the renderings of a region differ;
 - the slide is pixel-identical outside the changed region between two epochs,
   and stays so halfway through the crossfade.
 
@@ -21,6 +22,8 @@ import numpy as np
 import pytest
 from decks import deck
 from harness import (
+    EPOCH_GROUPS,
+    MEASURE,
     Box,
     Deck,
     TypstRunner,
@@ -143,26 +146,54 @@ def band(presentation: Deck) -> Box:
 
 # How many renderings a slide has, and how many frames they sit in.
 
+# What every epoch stack of the slide being shown is: the label of the region or the tag that
+# holds it, the labels of its renderings, and whether its container isolates.
+STACKS = """() => {
+    const slide = document.querySelector('.animo-slide[data-animo-current]');
+    const renderings = Array.from(slide.querySelectorAll('[data-typst-label^="animo-epoch-"]'));
+    const containers = Array.from(new Set(renderings.map((rendering) => rendering.parentNode)));
+    return containers.map((container) => ({
+        region: container.closest('[data-typst-label]')?.dataset.typstLabel ?? null,
+        isolation: getComputedStyle(container).isolation,
+        renderings: renderings
+            .filter((rendering) => rendering.parentNode === container)
+            .map((rendering) => rendering.dataset.typstLabel),
+    }));
+}"""
 
-def test_a_slide_has_one_rendering_per_epoch_in_one_frame(deck_at, reflowing):
-    """Three epochs, three groups, placed at one point of a single frame in epoch order.
 
-    One frame and not three is what shares their glyph definitions, because typst's
-    deduplicator has the frame for its scope. See *Findings*.
+def stacks(presentation: Deck) -> list[dict]:
+    """The epoch stacks of the slide being shown, in document order, as `STACKS` reads them."""
+    return presentation.page.evaluate(STACKS)
+
+
+def test_a_slide_has_one_rendering_per_epoch_in_its_region(deck_at, reflowing):
+    """Three epochs, three renderings of the region, placed at one point in epoch order.
+
+    The body around the region is laid out once, and the renderings share the slide's single
+    frame, which is what shares their glyph definitions, because typst's deduplicator has the
+    frame for its scope. See *Findings*.
     """
     presentation: Deck = deck_at(reflowing)
-    assert presentation.frames.count() == 3
+    assert stacks(presentation) == [
+        {
+            "region": "r",
+            "isolation": "isolate",
+            "renderings": ["animo-epoch-0", "animo-epoch-1", "animo-epoch-2"],
+        }
+    ]
     assert presentation.canvas_frames == 1
     assert len(presentation.plan["epochs"]) == 3
 
 
-def test_a_slide_without_structural_steps_has_exactly_one_rendering(deck_at, typst: TypstRunner):
+def test_a_slide_without_structural_steps_has_no_epoch_stack(deck_at, typst: TypstRunner):
     """The cost claim: a deck that changes no content pays nothing for epochs existing."""
     presentation: Deck = deck_at(
         animated(typst, REFLOWING, 'sub(move("claim", x: 1cm))', 'sub(hide("foot"))')
     )
-    assert presentation.frames.count() == 1
-    assert presentation.painting == [True]
+    assert presentation.frames.count() == 0
+    assert presentation.canvas_frames == 1
+    assert len(presentation.rects("claim")) == 1
 
 
 def test_only_the_current_epochs_rendering_paints(deck_at, reflowing):
@@ -173,55 +204,64 @@ def test_only_the_current_epochs_rendering_paints(deck_at, reflowing):
     assert presentation.goto(1, 2).painting == [False, False, True]
 
 
-def test_the_plan_names_the_region_each_boundary_redraws(deck_at, reflowing):
-    """Both boundaries change the claim, which the region around it is what redraws.
+def test_the_plan_names_the_tags_each_boundary_changes(deck_at, reflowing):
+    """Both boundaries change the claim, and the runtime finds the stack that holds it.
 
-    A region carries its own timing beside its group, which a boundary that says nothing
-    about when it happens leaves out entirely.
+    A tag carries its own timing in the record of its name, which a boundary that says
+    nothing about when it happens leaves out entirely.
     """
     presentation: Deck = deck_at(reflowing)
     epochs = presentation.plan["epochs"]
-    assert [epoch["regions"] for epoch in epochs] == [
-        [],
-        [{"group": "r"}],
-        [{"group": "r"}],
-    ]
+    assert [epoch["changed"] for epoch in epochs] == [{}, {"claim": {}}, {"claim": {}}]
     assert [state["epoch"] for state in presentation.plan["states"]] == [0, 1, 2]
 
 
 # The first invariant: what the renderings agree about.
 
 
-def test_every_label_outside_a_region_has_the_same_box_in_every_rendering(deck_at, reflowing):
-    """Nothing outside a region moves between epochs, measured rather than looked at.
+def test_every_label_outside_a_region_is_laid_out_once(deck_at, reflowing):
+    """Nothing outside a region is in a stack, so nothing outside it can move between epochs.
 
-    The control is the tag inside the region, which does move, because that is the reflow
-    the region exists to contain.
+    The control is the tag inside the region, which is in every rendering and does move,
+    because that is the reflow the region exists to contain.
     """
     presentation: Deck = deck_at(reflowing)
     for name in ("head", "foot"):
-        boxes = [presentation.rects(name, frame=frame)[0] for frame in range(3)]
-        assert boxes[0].approx(boxes[1]), f"{name} moved between the first two renderings"
-        assert boxes[0].approx(boxes[2]), f"{name} moved between the outer two renderings"
+        assert len(presentation.rects(name)) == 1, f"{name} is laid out more than once"
     inside = [presentation.rects("inside", frame=frame)[0] for frame in range(3)]
     assert not inside[0].approx(inside[1]), "the region did not relay its interior out"
     assert inside[0].approx(inside[2]), "the reset did not return the earlier layout"
 
 
-def test_a_region_starts_at_the_same_corner_in_every_rendering(deck_at, reflowing):
-    """The region itself is asserted on its corner and not on its box.
+# Where each epoch rendering puts its origin on the page, and how tall its ink is, in CSS
+# pixels.
+RENDERINGS = f"""() => Array.from(
+    document.querySelectorAll('.animo-slide[data-animo-current] {EPOCH_GROUPS}'),
+    (rendering) => {{
+        const matrix = rendering.getScreenCTM();
+        const box = ({MEASURE})(rendering);
+        return {{x: matrix.e, y: matrix.f, height: box.height}};
+    }},
+)"""
+
+
+def test_every_rendering_of_a_region_starts_at_the_same_corner(deck_at, reflowing):
+    """The renderings are asserted on their corner and not on their box.
 
     `MEASURE` reads the ink of a group, and the ink inside a region is exactly what an
-    epoch changes, so the region's own box grows with its content while its footprint does
+    epoch changes, so a rendering's box grows with its content while the footprint does
     not. What the fixed footprint promises is the corner the next thing is laid out from,
     which is why the tag below the region is where the promise is really tested.
     """
     presentation: Deck = deck_at(reflowing)
-    corners = [presentation.rects("r", frame=frame)[0] for frame in range(3)]
+    corners = presentation.page.evaluate(RENDERINGS)
+    assert len(corners) == 3
     for frame, box in enumerate(corners[1:], start=1):
-        assert abs(box.x - corners[0].x) <= 0.01, f"the region moved sideways in epoch {frame}"
-        assert abs(box.y - corners[0].y) <= 0.01, f"the region moved down in epoch {frame}"
-    assert corners[1].height > corners[0].height, "the replacement did not fill more of the region"
+        assert abs(box["x"] - corners[0]["x"]) <= 0.01, f"epoch {frame} moved sideways"
+        assert abs(box["y"] - corners[0]["y"]) <= 0.01, f"epoch {frame} moved down"
+    assert corners[1]["height"] > corners[0]["height"], (
+        "the replacement did not fill more of the region"
+    )
 
 
 # The second invariant: what the pixels agree about, at rest and mid-crossfade.
@@ -318,10 +358,10 @@ def test_a_region_that_names_the_crossfade_crosses_as_one_that_names_nothing(
             name="named.html",
         )
     )
-    assert [epoch["regions"] for epoch in named.plan["epochs"]] == [
-        [],
-        [{"group": "r", "transition": "crossfade"}],
-        [{"group": "r"}],
+    assert [epoch["changed"] for epoch in named.plan["epochs"]] == [
+        {},
+        {"claim": {"transition": "crossfade"}},
+        {"claim": {}},
     ]
     page.add_style_tag(content=SLOW)
     named.press("ArrowRight")
@@ -366,7 +406,17 @@ def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
     assert int((difference > ROUNDING).any(axis=2).sum()) <= pixels
 
 
-def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRunner):
+# How far a rendering of an epoch stack at rest may sit from the same content outside any
+# stack, per engine, as a deviation out of 255 and a number of pixels allowed to exceed one.
+#
+# Chromium 151 and firefox 153 draw the two the same. Playwright's webkit 26.5 draws the
+# glyphs of a group that blends or isolates through a layer of its own, and the antialiased
+# edges of a few of them land differently from the same glyphs drawn without one: 5 pixels by
+# up to 20/255 on this slide, with either the blend or the isolation alone.
+REST = {"chromium": (1, 0), "firefox": (1, 0), "webkit": (24, 16)}
+
+
+def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRunner, browser_name):
     """Two renderings of identical content look like one, which is two claims at once.
 
     Stacking them puts every label of the slide in the DOM twice, and a browser resolves a
@@ -374,7 +424,7 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
     content hashes, so equal ids mean equal content. And the `plus-lighter` the stylesheet
     puts on the renderings has to be the identity while one of them is showing on its own.
     Both are asserted against a control deck of one epoch with the same body, which is the
-    deck that carries no blend at all, since a lone rendering is exempted.
+    deck that carries no blend at all, since it has no epoch stack.
     """
     body = '#tag("claim", wrap: block)[A claim.]\n\n  A paragraph after the claim.'
     stacked: Deck = deck_at(
@@ -384,13 +434,17 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
     first = screenshot(stacked.current)
     second = screenshot(stacked.goto(1, 1).current)
     single: Deck = deck_at(animated(typst, body, "sub()", name="single.html"))
-    assert single.frames.count() == 1
+    assert single.frames.count() == 0
     control = screenshot(single.current)
     # One rendering added to a transparent backdrop is that rendering, to within the
     # rounding the finding on *Crossfading epoch frames* allows `plus-lighter`: firefox 153
     # lands a single pixel of an antialiased glyph edge one step off.
-    assert_identical(first, control, tol=1, what="the first of two renderings and a lone one")
-    assert_identical(second, control, tol=1, what="the second of two renderings and a lone one")
+    deviation, pixels = REST[browser_name]
+    for which, shot in (("first", first), ("second", second)):
+        difference = abs(shot.astype(int) - control.astype(int)).max(axis=2)
+        report = f"the {which} of two renderings is {difference.max()}/255 from a lone one"
+        assert difference.max() <= deviation, report
+        assert int((difference > 1).sum()) <= pixels, report
 
 
 # A mark of an exact colour on the canvas, at the top left of the body, which is one deck
@@ -405,6 +459,8 @@ def test_the_blend_does_not_reach_the_ground_the_slide_is_painted_on(deck_at, ty
     `plus-lighter` on the epoch renderings adds them to their backdrop, and the opaque
     white of the slide container must not be in it: an opaque mark on the canvas would
     then be summed with white and come out white, which is what this reads.
+    The ink around the region must not be in it either, which the containment tests of the
+    region read.
     How far a group's blend reaches without the isolation differs between the engines,
     which is why animo states the containment rather than inheriting it. See *Findings*.
     """
@@ -465,64 +521,8 @@ def test_stepping_back_across_a_boundary_returns_to_the_earlier_rendering(deck_a
     assert_identical(before, screenshot(presentation.current), what="the state and its return")
 
 
-# A tag that becomes no group and sits in no explicit region. Its content change is bounded
-# by nothing, so the whole rendering is what the boundary hands over.
-UNBOUNDED = '#tag("claim", wrap: none)[A short claim.] Text after the tag.'
-
-
-@pytest.fixture
-def unbounded(typst: TypstRunner):
-    """A slide of two epochs whose change no region bounds."""
-    return animated(
-        typst,
-        UNBOUNDED,
-        f'sub(replace("claim")[{LONGER}])',
-        name="unbounded.html",
-    )
-
-
-def test_a_change_no_region_bounds_redraws_the_whole_rendering(deck_at, unbounded):
-    """A `wrap: none` tag outside a region has no box, so nothing smaller can be handed over.
-
-    The plan names no group for it, which is how it says the rendering itself.
-    """
-    presentation: Deck = deck_at(unbounded)
-    assert [epoch["regions"] for epoch in presentation.plan["epochs"]] == [
-        [],
-        [{"group": None}],
-    ]
-
-
-def test_the_whole_rendering_crossfades_rather_than_cutting(page, deck_at, unbounded, browser_name):
-    """Both renderings paint while the boundary runs, and the midpoint is their sum.
-
-    This is the arithmetic the region crossfade is measured by, over the whole slide
-    rather than over a band, because a change no region bounds leaves nothing still to
-    compare outside.
-    """
-    presentation: Deck = deck_at(unbounded)
-    page.add_style_tag(content=SLOW)
-    assert presentation.painting == [True, False]
-    presentation.press("ArrowRight")
-    presentation.scrub(MIDPOINT)
-    assert presentation.painting == [True, True], (
-        "the outgoing rendering stopped painting, so the boundary cut"
-    )
-    shots = crossing(presentation, 1, MIDPOINT, DURATION - 1)
-    before, halfway, after = (shot.astype(int) for shot in shots)
-    assert (before != after).any(), "the slide showed the same thing at both ends of the step"
-    difference = abs((before + after) / 2 - halfway)
-    deviation, pixels = BLEND[browser_name]
-    assert difference.max() <= deviation, (
-        f"the midpoint of the crossfade is {difference.max()}/255 from the exact sum"
-    )
-    assert int((difference > ROUNDING).any(axis=2).sum()) <= pixels, (
-        "more of the slide dipped than this engine was measured to"
-    )
-
-
 def test_a_region_of_its_own_is_crossfaded_by_the_tags_own_name(deck_at, typst: TypstRunner):
-    """A tag with no explicit region around it is its own region, so its own group fades."""
+    """A tag with no explicit region around it is its own region, so it holds the stack."""
     presentation: Deck = deck_at(
         animated(
             typst,
@@ -530,7 +530,90 @@ def test_a_region_of_its_own_is_crossfaded_by_the_tags_own_name(deck_at, typst: 
             f'sub(replace("claim")[{LONGER}])',
         )
     )
-    assert [epoch["regions"] for epoch in presentation.plan["epochs"]] == [
-        [],
-        [{"group": "claim"}],
-    ]
+    assert [epoch["changed"] for epoch in presentation.plan["epochs"]] == [{}, {"claim": {}}]
+    assert [stack["region"] for stack in stacks(presentation)] == ["claim"]
+
+
+def test_continuous_state_reaches_a_tag_in_every_rendering_of_its_own_stack(
+    page, deck_at, typst: TypstRunner
+):
+    """Rule 1 for a tag that is its own region, whose slot is inside each rendering."""
+    presentation: Deck = deck_at(
+        animated(
+            typst,
+            '#tag("claim", wrap: block)[A short claim.]\n\n  Text after the tag.',
+            f'sub(replace("claim")[{LONGER}], move("claim", x: 2cm))',
+        )
+    )
+    page.add_style_tag(content=SLOW)
+    presentation.press("ArrowRight").scrub(MIDPOINT)
+    halfway = presentation.styles("claim")
+    assert len(halfway) == 2, "the tag is not in both renderings of its stack"
+    assert halfway[0] == halfway[1], f"the two renderings moved apart: {halfway}"
+    presentation.scrub(DURATION)
+    landed = presentation.styles("claim")
+    assert landed[0] == landed[1]
+    assert landed[0]["translate"] != "0px 0px", landed
+
+
+# Three regions, of which a boundary changes the content of one. The third holds a tag that
+# becomes no group, whose region only the plan can name.
+THREE_REGIONS = """
+  #region(name: "a")[#tag("x", wrap: block)[The first region.]]
+
+  #region(name: "b")[The second region, which no boundary changes.]
+
+  #region(name: "c")[#tag("loose", wrap: none)[A loose tag] inside the third region.]
+"""
+
+# Which stacks of the slide being shown run an animation on a rendering, by the name of the
+# region that holds each.
+ANIMATING = """() => Array.from(
+    document.querySelectorAll('.animo-slide[data-animo-current] [data-typst-label]'),
+).filter((group) => ['a', 'b', 'c'].includes(group.dataset.typstLabel)).map(
+    (group) => Array.from(
+        group.querySelectorAll('[data-typst-label^="animo-epoch-"]'),
+    ).some((rendering) => rendering.getAnimations().length > 0),
+)"""
+
+
+def test_a_stack_that_the_boundary_does_not_change_snaps(page, deck_at, typst: TypstRunner):
+    """Only the stack that holds what changed crosses, and every other one shows the epoch.
+
+    The second region has a stack of its own, because every region that sits in no other one
+    is laid out once per epoch, and its renderings are the same picture, so it takes the
+    rendering of the epoch being entered at once.
+    """
+    presentation: Deck = deck_at(
+        animated(typst, THREE_REGIONS, 'sub(replace("x")[Another first region.])')
+    )
+    assert [stack["region"] for stack in stacks(presentation)] == ["a", "b", "c"]
+    page.add_style_tag(content=SLOW)
+    presentation.press("ArrowRight").scrub(MIDPOINT)
+    assert presentation.page.evaluate(ANIMATING) == [True, False, False]
+    assert presentation.painting == [True, True, False, True, False, True]
+
+
+def test_a_tag_without_a_group_crosses_the_region_the_plan_names(page, deck_at, typst: TypstRunner):
+    """The stack holds no name of the change, so the runtime compares its renderings.
+
+    A tag with `wrap: none` becomes no group, so the plan names the region around it, by the
+    label of the region's group, and the region crosses with that tag's timing.
+    """
+    presentation: Deck = deck_at(
+        animated(
+            typst,
+            THREE_REGIONS,
+            f'sub(replace("loose", duration: {2 * DURATION / 1000})[Another loose tag])',
+        )
+    )
+    boundary = presentation.plan["epochs"][1]
+    assert boundary["regions"] == {"c": "loose"}
+    page.add_style_tag(content=SLOW)
+    presentation.press("ArrowRight").scrub(MIDPOINT)
+    assert presentation.page.evaluate(ANIMATING) == [False, False, True]
+    assert presentation.painting == [False, True, False, True, True, True]
+    durations = presentation.page.evaluate(
+        "() => document.getAnimations().map((a) => a.effect.getTiming().duration)"
+    )
+    assert durations == [2 * DURATION, 2 * DURATION], "the region took the deck's own timing"

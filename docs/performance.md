@@ -28,11 +28,11 @@ The most expensive construct is a
 
 ## What Is Rendered, and How Often
 
-| Output type         | Renderings per slide                                  |
-| ------------------- | ----------------------------------------------------- |
-| HTML presentation   | one per [epoch](structural.md#epochs)                 |
-| Static presentation | one per state                                         |
-| Static handouts     | one per state whose `handout` flag resolved to `true` |
+| Output type         | Renderings per slide                                                |
+| ------------------- | ------------------------------------------------------------------- |
+| HTML presentation   | one, plus one per [epoch](structural.md#epochs) per changing region |
+| Static presentation | one per state                                                       |
+| Static handouts     | one per state whose `handout` flag resolved to `true`               |
 
 A `background:` or an `overlay:` that is content is rendered **once** beside these,
 whatever the output type and however many epochs the slide has.
@@ -122,15 +122,16 @@ typst watch --format html --features html --open talk.typ talk.html
 
 ## What Costs, and What to Do About It
 
-**A structural operation costs a whole rendering, a continuous one costs none.**
+**A structural operation costs a rendering of every region, a continuous one costs none.**
 `replace`, `remove`, `apply` and `reset` each start a new epoch, which is a fresh layout of
-the slide and a fresh rendering in the page.
+every region whose content changes on the slide and a fresh rendering of it in the page.
+What lies outside the regions is laid out once, whatever the epochs.
 `reveal`, `hide`, `move` and `scale` are applied by the browser to a rendering that already
 exists. So where either would do, prefer the continuous one:
 
 ```typst
 sub(hide("caveat"))    // no extra rendering
-sub(remove("caveat"))  // a whole rendering, and a crossfade
+sub(remove("caveat"))  // a rendering of the tag's region, and a crossfade
 ```
 
 Outside a region the two even look the same, because the
@@ -254,8 +255,8 @@ over three epochs, with a slide number and a subslide number in the overlay:
 | compile time | 0.38 s           | 0.40 s        | 7%     |
 
 Put it in the **overlay** and not in the body.
-An overlay is one rendering per slide where the body is one rendering per epoch,
-so the same stack in the body is its epoch count times the numbers above.
+An overlay is one rendering per slide where a region is one rendering per epoch,
+so the same stack in a region is its epoch count times the numbers above.
 
 ## What a Morph Costs
 
@@ -290,7 +291,9 @@ and about 60 ms at 1600.
 ## Page Weight
 
 The HTML deck is one self-contained file: a stylesheet, a runtime, and one inline SVG per
-slide, holding one rendering per epoch. It grows with epochs and not with states.
+slide, holding the body once and one rendering per epoch of every region whose content
+changes. It grows with epochs and with the size of the regions that change, and not with
+states.
 
 The tour is 1.37 MB, which gzip takes to **262 KiB**, a factor of five.
 Every extra epoch on a slide adds about 35 KiB, or 3 KiB once compressed,
@@ -301,7 +304,7 @@ Every static host and every HTTP server does this by default,
 and it is the difference between 262 KiB and a megabyte.
 The uncompressed figure matters only for memory in the browser.
 
-Most of the page is glyph definitions, and Animo lays every epoch of a slide out in one
+Most of the page is glyph definitions, and Animo lays every rendering of a slide out in one
 frame so that the renderings of a slide share one set of them.
 The saving grows with the epochs a slide has: none at one epoch, 36% of the
 compressed page at two, and 66% at eight.

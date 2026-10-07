@@ -32,7 +32,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   `init` names none, `anim.crossfade()` by default.
 - Add a `transition:` argument to `replace`, `remove`, `apply` and `reset`,
   which names the transition that carries the changed region across the boundary.
-  It takes `auto` or `crossfade()`, and the plan carries the name per region.
+  It takes `auto` or `crossfade()`, and the plan carries the name per changed tag.
 - Add the `morph()` transition for a region, written as the `transition:` of a structural
   primitive. It moves the content that both versions of the region share to its new place
   and fades the rest. A tag moves as one unless the primitive changes it, and letters are
@@ -56,6 +56,12 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 - **Breaking:** write a hard cut as a duration of zero, as in `init(duration: 0)`,
   rather than as `transition: none`.
   A duration of zero on a structural primitive is a hard cut of its region.
+- **Breaking:** refuse a structural primitive on a `wrap: none` tag that no region holds,
+  in every output type. The HTML presentation used to crossfade the whole slide for it.
+  Give the tag a wrapper, as in `wrap: auto`, `box` or `block`, or put a region around it.
+- **Breaking:** cross an epoch boundary with the outermost region around what changed.
+  Two operations of one step that change two regions inside one region now have to agree
+  about their timing and their transition, as two operations inside one region do.
 - **Breaking:** make `primitive-duration:` and `transition-duration:` of the show rule defaults.
   A primitive or an `init` that states a `duration:` of its own now moves when the deck's
   duration is zero.
@@ -72,7 +78,12 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 - Build the epoch renderings of a slide and the renderings of a `per-subslide` as stacks of one
   kind each, labelled `animo-<kind>-<index>`, with one implementation in typst and one in the
   runtime, which chooses the rendering of every stack by its kind.
-  The emitted pages are unchanged.
+- Lay the body of a slide out once in the HTML presentation, and place an epoch stack of one
+  rendering per epoch in every region whose content changes, instead of one rendering of the
+  whole slide per epoch.
+  A slide with several epochs is smaller, compiles faster and loads faster in the browser,
+  most of all when little of it changes.
+  The paged outputs are unchanged.
 
 ### Fixes
 

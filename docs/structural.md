@@ -148,7 +148,11 @@ keeps the room either way, and `remove` frees no space that `hide` would not.
 which is inside a [region](regions.md).
 
 A `wrap: none` tag has no box to reserve room with,
-so its content changes and the layout around it follows.
+so its content may only change inside a [region](regions.md),
+where it changes and the layout around it inside the region follows.
+A structural primitive on a `wrap: none` tag that no region holds is refused,
+in every output type, with a message that names the two ways out:
+a wrapper, as in `wrap: auto`, `box` or `block`, or a region around the tag.
 
 ## What a Structural Step Looks Like
 

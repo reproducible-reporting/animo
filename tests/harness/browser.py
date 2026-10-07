@@ -25,11 +25,44 @@ __all__ = ("MEASURE", "Deck", "Rect", "open_local", "screenshot", "state_hash")
 
 
 EPOCH_GROUPS = '.animo-canvas [data-typst-label^="animo-epoch-"]'
-"""The epoch renderings of a slide, which are groups inside the slide's single frame.
+"""The renderings of the epoch stacks of a slide, which are groups inside its single frame.
 
-Animo lays the epochs of a slide out in one `html.frame`, so that typst's deduplicator,
-whose scope is the frame, defines each glyph they share once between them. A rendering is
-therefore a labelled group and not an `<svg>` of its own.
+Animo lays the body of a slide out once, in one `html.frame`, and every region whose content
+changes holds an epoch stack in its footprint, one rendering per epoch. The renderings share
+the frame, so that typst's deduplicator, whose scope is the frame, defines each glyph they
+share once between them. A rendering is therefore a labelled group and not an `<svg>` of its
+own.
+"""
+
+SLOTS = """(group) => {
+    const first = group.querySelector(':scope > g');
+    const stacked = first?.dataset.typstLabel?.startsWith('animo-epoch-');
+    const holders = stacked
+        ? Array.from(group.querySelectorAll(':scope > [data-typst-label^="animo-epoch-"]'))
+        : [group];
+    return holders.map((holder) => holder.querySelector(':scope > g')).filter(Boolean);
+}"""
+"""The continuous slots of one labelled group, as a function expression of `page.evaluate`.
+
+The slot of a tag is the first group inside its labelled one, except for a tag that holds an
+epoch stack of its own, whose slot is inside each rendering of the stack.
+"""
+
+UNDER = """(slide, label) => Array.from(
+    slide.querySelectorAll('.animo-canvas [data-typst-label^="animo-epoch-"]'),
+).flatMap((rendering) => {
+    if (rendering.parentElement.closest(`[data-typst-label="${label}"]`) !== null) {
+        return [[rendering]];
+    }
+    const inside = Array.from(rendering.querySelectorAll(`[data-typst-label="${label}"]`));
+    return inside.length > 0 ? [inside] : [];
+})"""
+"""What lies below a label in each epoch rendering of a slide, as a function expression.
+
+It takes the slide container and a label, and returns one list of groups per rendering that
+involves the label, in document order: the rendering itself when the label holds the stack,
+which a region and a tag whose content changes do, and otherwise the groups of that label
+inside the rendering. A rendering that involves the label in neither way is left out.
 """
 
 # How the geometry of an SVG group is read, as a `playwright` argument expression.
@@ -187,9 +220,10 @@ class Deck:
 
         The search is scoped to the slide the runtime is currently showing,
         because a tag name means nothing outside its own slide.
-        One tag may sit at several places in that slide and appears in every epoch
-        rendering, so this returns a list and never a single rectangle.
-        `frame` restricts the search to the n-th epoch rendering of the slide.
+        One tag may sit at several places in that slide, and a tag inside a region appears in
+        every rendering of its stack, so this returns a list and never a single rectangle.
+        `frame` restricts the search to the n-th epoch rendering of the slide, in document
+        order, which is the n-th epoch of a slide with one stack.
         """
         slide, _ = self.position
         scope = f"document.querySelector('[data-animo-slide=\"{slide}\"]')"
@@ -215,10 +249,11 @@ class Deck:
 
     @property
     def frames(self) -> Locator:
-        """The epoch renderings of the slide being shown, in epoch order.
+        """The epoch renderings of the slide being shown, in document order.
 
-        One rendering per content state of the slide, placed at one point in the slide's
-        single frame, which is what a structural step steps between.
+        One rendering per content state of the slide in the stack of every region whose
+        content changes, which is what a structural step steps between. A slide with one such
+        region has its renderings here in epoch order.
         """
         slide, _ = self.position
         return self.page.locator(f'[data-animo-slide="{slide}"] {EPOCH_GROUPS}')
@@ -227,7 +262,7 @@ class Deck:
     def canvas_frames(self) -> int:
         """How many `html.frame` renderings the canvas of the slide being shown holds.
 
-        One, whatever the epochs: the renderings are groups inside it. This is the count
+        One, whatever the epochs: the epoch stacks are groups inside it. This is the count
         the page weight follows, since typst defines a glyph once per frame that uses it.
         """
         slide, _ = self.position
@@ -235,12 +270,12 @@ class Deck:
 
     @property
     def painting(self) -> list[bool]:
-        """Which epoch renderings of the slide being shown contribute ink, in epoch order.
+        """Which epoch renderings of the slide being shown contribute ink, as `frames` orders them.
 
         A rendering that is not the current epoch's is hidden rather than taken away, so
         that it stays laid out and its geometry readable while contributing nothing.
-        A boundary that hands the whole rendering over fades it instead, and leaves it
-        visible at zero until the next boundary, so the opacity is read as well.
+        A crossfade leaves the rendering it fades out visible at zero until the next step, so
+        the opacity is read as well.
         """
         slide, _ = self.position
         return self.page.evaluate(
@@ -256,16 +291,17 @@ class Deck:
     def styles(self, label: str) -> list[dict[str, str]]:
         """The three properties the runtime writes, per occurrence of a tag.
 
-        They are read from the inner group, which is the continuous slot,
-        and computed rather than inline, so a value an animation is currently
-        driving is the one that comes back.
+        They are read from the inner group, which is the continuous slot, as `SLOTS` finds
+        it, and computed rather than inline, so a value an animation is currently driving is
+        the one that comes back.
         """
         slide, _ = self.position
         return self.page.evaluate(
             f"""() => Array.from(
                 document.querySelectorAll(
-                    '[data-animo-slide="{slide}"] [data-typst-label="{label}"] > g'
+                    '[data-animo-slide="{slide}"] [data-typst-label="{label}"]'
                 ),
+            ).flatMap({SLOTS}).map(
                 node => {{
                     const computed = getComputedStyle(node);
                     return {{

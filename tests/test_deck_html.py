@@ -4,7 +4,7 @@
 
 Two things are being checked, and they age differently.
 The structure is the one *Architecture* prescribes, and it has to be right because the
-epoch frames of a slide are stacked in the grid cell it creates.
+body of a slide and its epoch stacks are laid out in the one frame it creates.
 The navigation is what makes `typst watch` a live preview and what every later tier-3
 test deep-links through, so it is asserted through the same `Deck` contract the runtime
 promises rather than through the DOM it happens to have today.
@@ -30,10 +30,11 @@ def three_slides(typst: TypstRunner):
 
 
 def test_a_slide_is_a_viewport_holding_a_canvas_holding_one_frame(open_page, three_slides):
-    """The shape every epoch rendering of a slide is placed in, whatever the epochs.
+    """The shape the body of a slide is laid out in, whatever the epochs.
 
-    One frame per slide, always: the epochs are groups inside it, which is what shares
-    their glyph definitions.
+    One frame per slide, always: an epoch stack is a group inside it, which is what shares
+    the glyph definitions of its renderings. These slides change no content, so they hold no
+    stack at all.
     """
     page = open_page(three_slides)
     assert page.locator(".animo-slide").count() == 3
@@ -43,7 +44,7 @@ def test_a_slide_is_a_viewport_holding_a_canvas_holding_one_frame(open_page, thr
         canvas = slide.locator(":scope > .animo-canvas")
         assert canvas.count() == 1
         assert canvas.locator(":scope > svg").count() == 1
-        assert slide.locator(EPOCH_GROUPS).count() == 1
+        assert slide.locator(EPOCH_GROUPS).count() == 0
 
 
 def test_the_viewport_clips_and_fills_the_window_at_the_deck_aspect_ratio(

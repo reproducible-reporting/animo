@@ -222,13 +222,13 @@ def test_the_anchor_is_read_from_the_first_epoch_that_lays_the_tag_out(deck_at, 
     """Which site is the first one, when a tag is not laid out in every epoch.
 
     The rule both targets read: the first site in document order, in the first rendering
-    that lays the tag out. In the browser that is the first epoch frame holding a group of
-    the name, because the frames are stacked in epoch order; on paper it is the first page,
-    which is state 0 in the presentation and so the same epoch.
+    that lays the tag out. In the browser that is the first in document order among the sites
+    of the lowest epoch, where a site outside every epoch stack counts as epoch 0; on paper it
+    is the first page, which is state 0 in the presentation and so the same epoch.
 
     The tag here is inside an explicit region and absent from epoch 0, so the two
-    definitions have somewhere to diverge: a frame that does not lay it out holds no group
-    of its name at all.
+    definitions have somewhere to diverge: a rendering that does not lay it out holds no
+    group of its name at all.
     """
     body = (
         '#region[#tag("a", wrap: box)'
@@ -243,6 +243,41 @@ def test_the_anchor_is_read_from_the_first_epoch_that_lays_the_tag_out(deck_at, 
     landed = presentation.goto(1, 2).rects("m")[0]
     assert landed.x == pytest.approx(target.x, abs=TOLERANCE)
     assert landed.y == pytest.approx(target.y, abs=TOLERANCE)
+
+
+# How far down the page each group of a name puts its corner, which is what an anchor is read
+# from, and its slot, whose corner the translation the runtime writes on the slot moves, as
+# `[group, slot]` in CSS pixels, in document order.
+CORNERS = """(name) => Array.from(
+    document.querySelectorAll(`.animo-slide[data-animo-current] [data-typst-label="${name}"]`),
+    (group) => [group.getScreenCTM().f, group.querySelector(':scope > g').getScreenCTM().f],
+)"""
+
+
+def test_the_first_site_is_the_first_of_the_lowest_epoch(deck_at, typst: TypstRunner):
+    """A site that only a later epoch lays out is not the first, wherever it comes in the body.
+
+    `x` has a site that every epoch lays out, and one inside the replacement of `outer`,
+    which comes first in document order and exists in epoch 1 alone. A paged output reads the
+    anchor on the first page, where the replacement is not laid out yet, so the browser reads
+    the site that every epoch lays out as well, rather than the first in document order.
+    """
+    body = (
+        '#tag("outer", wrap: block)[Original.]\n\n  #v(1cm)\n  '
+        '#tag("x", wrap: block)[The site every epoch lays out.]\n\n  #v(1cm)\n  '
+        '#tag("c", wrap: block)[C moves to x.]'
+    )
+    replacement = 'replace("outer")[Replacement: #tag("x", wrap: block)[A later site.]]'
+    presentation: Deck = deck_at(
+        animated(typst, body, f'sub({replacement}, move("c", relto: "x"))')
+    )
+    presentation.goto(1, 1)
+    sites = presentation.page.evaluate(CORNERS, "x")
+    assert len(sites) == 2, "the replacement did not lay a second site out"
+    (later, _), (everywhere, _) = sites
+    ((_, landed),) = presentation.page.evaluate(CORNERS, "c")
+    assert landed == pytest.approx(everywhere, abs=TOLERANCE)
+    assert abs(later - everywhere) > 10 * TOLERANCE
 
 
 # A paragraph that wraps, so the frame holds several glyph runs at several heights.
@@ -474,8 +509,8 @@ def test_a_subslide_step_leaves_no_history_behind(page, deck_at, moving):
 def test_one_tag_at_two_sites_moves_as_one_element(deck_at, typst: TypstRunner):
     """The same name in one slide addresses every site, which is the scoping rule.
 
-    It is also what applies a display state to every epoch frame of a slide at once,
-    since a frame holds one more occurrence of the same name.
+    It is also what applies a display state to every rendering of an epoch stack at once,
+    since a rendering holds one more occurrence of the same name.
     """
     body = mark("m") + "\n  " + mark("m", dx="6cm")
     presentation: Deck = deck_at(animated(typst, body, 'sub(move("m", dx: 2cm))'))

@@ -12,7 +12,7 @@ halfway between the places the two are laid out at. The place of a path is the o
 import math
 
 import pytest
-from harness import Deck, TypstRunner
+from harness import UNDER, Deck, TypstRunner
 from PIL import Image
 from test_morph_html import CLOSE, MIDPOINT, SLOW, STILL, animated, resting
 
@@ -66,16 +66,18 @@ def shapes(typst: TypstRunner):
 
 # Where every path and image of a region is displayed, per epoch rendering of the slide shown,
 # as `[kind, key, x, y]` in CSS pixels. The key is what a morph compares, without the colour.
-INK = """label => {
+INK = (
+    """label => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
     const key = (element) => element.localName === "image"
         ? `${element.href.baseVal} ${element.getAttribute("width")}`
         : `${element.getAttribute("d")} ${element.getAttribute("stroke-width")}`;
-    return Array.from(
-        slide.querySelectorAll('.animo-canvas [data-typst-label^="animo-epoch-"]'),
-        (rendering) => Array.from(
-            rendering.querySelectorAll(`[data-typst-label="${label}"] :is(path, image)`),
-        ).filter((element) => element.closest("defs, clipPath, symbol") === null).map(
+    return ("""
+    + UNDER
+    + """)(slide, label).map(
+        (groups) => groups.flatMap((group) => Array.from(
+            group.querySelectorAll(':is(path, image)'),
+        )).filter((element) => element.closest("defs, clipPath, symbol") === null).map(
             (element) => {
                 const point = new DOMPoint(0, 0).matrixTransform(element.getScreenCTM());
                 return [element.localName, key(element), point.x, point.y];
@@ -83,6 +85,7 @@ INK = """label => {
         ),
     );
 }"""
+)
 
 
 def ink(presentation: Deck, label: str) -> list[list[tuple[str, str, float, float]]]:
@@ -136,7 +139,8 @@ def test_every_moving_shape_has_a_partner_halfway_along_its_route(page, deck_at,
 
 # Which paths, images and glyphs below a group of a label are moving, per epoch rendering, as
 # the selector `what` picks them.
-MOVING = """([label, what]) => {
+MOVING = (
+    """([label, what]) => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
     const moving = (element) => {
         for (let node = element; node !== null; node = node.parentElement) {
@@ -147,12 +151,13 @@ MOVING = """([label, what]) => {
         }
         return false;
     };
-    return Array.from(
-        slide.querySelectorAll('.animo-canvas [data-typst-label^="animo-epoch-"]'),
-        (rendering) => Array.from(
-            rendering.querySelectorAll(`[data-typst-label="${label}"] ${what}`), moving),
+    return ("""
+    + UNDER
+    + """)(slide, label).map(
+        (groups) => groups.flatMap((group) => Array.from(group.querySelectorAll(what), moving)),
     );
 }"""
+)
 
 
 def moving(presentation: Deck, label: str, what: str) -> list[list[bool]]:

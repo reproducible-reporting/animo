@@ -92,6 +92,9 @@ since a measured footprint fits every state anyway.
 A region inside a region is itself a fixed footprint,
 so a change inside the inner one reflows only the inner one.
 Each region measures each epoch once, however deeply they nest.
+In the browser the outer region crosses a step as a whole, with the regions inside it,
+so two operations of one step that change two regions inside one region
+have to agree about their timing and their transition, as two inside one region do.
 
 `region(name: "box")` makes the footprint a site the timeline can address,
 like a tag of that name: `move`, `scale`, `reveal`, `hide` and `pan(relto: "box")` act on

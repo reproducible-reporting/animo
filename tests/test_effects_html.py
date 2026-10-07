@@ -127,74 +127,77 @@ def test_a_later_effect_on_an_element_and_property_replaces_the_earlier(engine):
     assert found == ["0.5", 1]
 
 
-# A slide with an epoch stack of two renderings, each holding the groups of two regions, as
+# A slide with two regions, `a` and `b`, each holding an epoch stack of two renderings, as
 # `readSlide` would build it from a deck, for the epoch boundary below.
 SLIDE = """
 const svg = document.querySelector('svg');
-const stack = { kind: 'epoch', element: svg, renderings: [], regions: [] };
-for (const epoch of [0, 1]) {
-    const rendering = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    stack.renderings.push(rendering);
-    stack.regions.push(['a', 'b'].map((name) => {
-        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        group.dataset.typstLabel = name;
-        rendering.append(group);
-        return group;
-    }));
-    svg.append(rendering);
-}
+const stacks = ['a', 'b'].map((name) => {
+    const container = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    container.dataset.typstLabel = name;
+    svg.append(container);
+    const renderings = [0, 1].map((epoch) => {
+        const rendering = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        rendering.dataset.typstLabel = `animo-epoch-${epoch}`;
+        container.append(rendering);
+        return rendering;
+    });
+    return {
+        kind: 'epoch', element: container, region: name, renderings,
+        names: new Set([name]), differs: [],
+    };
+});
 const slide = {
-    stacks: [stack],
+    stacks,
     states: [{ epoch: 0 }, { epoch: 1 }],
-    epochs: [[], [
-        { group: 'a', transition: 'probe', args: { side: 'left' } },
-        { group: 'b' },
-    ]],
+    epochs: [
+        { changed: {}, regions: {} },
+        { changed: { a: { transition: 'probe', args: { side: 'left' } }, b: {} }, regions: {} },
+    ],
     morphed: new Map(),
 };
 """
 
 
-def test_each_region_of_a_boundary_is_carried_by_the_transition_it_names(engine):
+def test_each_stack_of_a_boundary_is_carried_by_the_transition_it_names(engine):
     """One boundary may carry one region with one transition and another with another.
 
     The transition named `probe` exists only on this page.
-    It is handed the record of its own region, `args` included, and plans nothing, so that
-    region keeps its state at rest.
-    The region that names no transition is crossfaded.
+    It is handed the record of its own stack, `args` included, and plans nothing, so that
+    stack keeps its state at rest.
+    The stack that names no transition is crossfaded.
     """
     found = engine.evaluate(
         f"""() => {{
             {SLIDE}
             const seen = [];
-            transitions.probe = (effects, slide, {{ regions }}) => seen.push(regions);
+            transitions.probe = (effects, slide, {{ record }}) => seen.push(record);
             const effects = new Map();
             const step = {{ index: 1, from: 0, options: {TIMING}, mirror: null }};
-            planEpoch(effects, slide, stack, step);
-            const timed = (epoch, region) =>
-                effects.get(stack.regions[epoch][region]).get('opacity').timing !== null;
+            planStacks(effects, slide, step);
+            const timed = (stack, epoch) =>
+                effects.get(stacks[stack].renderings[epoch]).get('opacity').timing !== null;
             return {{
                 seen,
-                a: [timed(0, 0), timed(1, 0)],
-                b: [timed(0, 1), timed(1, 1)],
+                a: [timed(0, 0), timed(0, 1)],
+                b: [timed(1, 0), timed(1, 1)],
             }};
         }}"""
     )
-    assert found["seen"] == [[{"group": "a", "transition": "probe", "args": {"side": "left"}}]]
+    assert found["seen"] == [{"transition": "probe", "args": {"side": "left"}, "names": ["a"]}]
     assert found["a"] == [False, False]
     assert found["b"] == [True, True]
 
 
-def test_a_region_that_names_a_transition_the_runtime_lacks_is_crossfaded(engine):
+def test_a_stack_that_names_a_transition_the_runtime_lacks_is_crossfaded(engine):
     """Typst refuses an unknown name, so this is a page edited by hand, and it still works."""
     found = engine.evaluate(
         f"""() => {{
             {SLIDE}
-            slide.epochs[1][0].transition = 'nothing-by-this-name';
+            slide.epochs[1].changed.a.transition = 'nothing-by-this-name';
             const effects = new Map();
             const step = {{ index: 1, from: 0, options: {TIMING}, mirror: null }};
-            planEpoch(effects, slide, stack, step);
-            return effects.get(stack.regions[1][0]).get('opacity').timing !== null;
+            planStacks(effects, slide, step);
+            return effects.get(stacks[0].renderings[1]).get('opacity').timing !== null;
         }}"""
     )
     assert found is True

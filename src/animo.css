@@ -137,9 +137,10 @@ body {
   window size.
   Sizing rather than scaling leaves both `translate` and `scale` free on this element.
   The runtime writes a pan as its `translate`, and nothing writes its `scale`.
-  It holds one frame, and that frame holds the epoch renderings of the slide.
-  The blend that crossfades two of those renderings is confined by the frame rather than
-  by this element. See the rule on the frame below.
+  It holds one frame, and that frame holds the body of the slide with an epoch stack in every
+  region whose content changes.
+  The blend that crossfades two renderings of a stack is confined inside the frame rather
+  than by this element. See the rules on the frame and on the stacks below.
 */
 .animo-canvas {
   position: absolute;
@@ -184,14 +185,16 @@ body {
   it and the frame comes out a few percent too large. Overriding an inline style that
   animo does not control is what `!important` is for.
 
-  The frame isolates, because the blend that crossfades two epoch renderings sits on groups
-  inside it, and how far such a blend reaches differs between engines.
+  The frame isolates, because the blend that crossfades two renderings of a stack sits on
+  groups inside it, and how far such a blend reaches differs between engines.
   Firefox 153 stops it at the root of the inline SVG. Chromium 151 sums the ground under the
   SVG into it and stops at an ancestor that isolates. Playwright's webkit 26.5 stops at
   neither, and a blend on a group reaches the page behind an isolating ancestor, which makes
   black ink vanish under `plus-lighter` because black adds nothing.
   An isolating ancestor written in HTML therefore does not state the containment in every
   engine, while the inline SVG that holds the groups does. See *Findings*.
+  The container of each stack isolates as well, which keeps the blend off the rest of the
+  slide inside the frame. See the rule on the stacks below.
 */
 .animo-canvas > svg {
   display: block;
@@ -205,17 +208,13 @@ body {
   which is the first one, and how the others are hidden.
   `stack.typ` labels the renderings, and `stacks.js` chooses between them.
 
-  An epoch stack shows one epoch rendering at a time, so a deck whose script never ran still
-  shows a slide.
-  The renderings are groups placed at one point in the slide's single frame, so that
-  typst's deduplicator, whose scope is the frame, defines each glyph they share once
-  between them. See *Findings*.
-  Visibility rather than opacity or display, because it hides the ink without making the
-  group a stacking context, which the blend below needs, and without taking the layout away,
-  so a group in a rendering that is not shown still reports its geometry.
-  A descendant may take its visibility back.
-  The crossfade below uses that to scope the outgoing rendering down to the regions it is
-  handing over.
+  An epoch stack shows one rendering of its region at a time, so a deck whose script never ran
+  still shows a slide.
+  The renderings are groups placed at one point of the region's footprint in the slide's
+  single frame, so that typst's deduplicator, whose scope is the frame, defines each glyph
+  they share once between them. See *Findings*.
+  Visibility rather than display, because it hides the ink without taking the layout away,
+  so a group in a rendering that is not shown still reports the geometry a morph reads.
 */
 .animo-canvas [data-typst-label^="animo-epoch-"] {
   visibility: hidden;
@@ -227,28 +226,33 @@ body {
 
 /*
   What makes the crossfade add rather than cover.
-  Two renderings whose regions are mid-transition paint into the frame's isolated group,
-  and `plus-lighter` sums them there, so the outgoing region at `1 - t` and the incoming
-  one at `t` come to exactly one opaque region and nothing dips.
-  The epoch renderings are the outermost groups their frame has, so each adds to the ink
-  beside it, which a blend needs.
-  The declaration sits on the rendering rather than on the region's own group, so that one
-  element carries both this blend and the `visibility` above that a boundary scopes with.
-  Measured in chromium 151, firefox 153 and webkit 26.5; see *Findings*.
-  A single visible rendering added to a transparent backdrop is that rendering, so this
-  changes nothing outside a transition, and a slide with one epoch is exempted anyway.
+  The renderings of a stack are siblings in one container, which isolates, and
+  `plus-lighter` sums them there, so the outgoing rendering at `1 - t` and the incoming one
+  at `t` come to exactly one opaque region and nothing dips.
+  Without the isolation, chromium 151 and webkit 26.5 add the two halves to the ink under the
+  region as well, and black text takes the colour of what is behind it. Firefox 153 needs
+  none. `isolation` is the property that forces the group in all three engines, because
+  `opacity: 0.999` moves values and `filter: opacity(1)` does nothing in webkit.
+  Measured with the stack a few groups deep in the frame.
+  A single visible rendering added to a transparent backdrop is that rendering, so the blend
+  changes nothing outside a transition either, and a stack of one rendering is exempted
+  anyway.
 */
 .animo-canvas [data-typst-label^="animo-epoch-"]:not(:only-child) {
   mix-blend-mode: plus-lighter;
 }
 
+.animo-canvas g:has(> [data-typst-label^="animo-epoch-"]) {
+  isolation: isolate;
+}
+
 /*
   A subslide stack holds one rendering of a `per-subslide` per state of the slide, of which
   the runtime shows the one belonging to the state the deck is on.
-  A number finer than a slide number is made of these renderings, because one epoch rendering
-  covers a run of states, so the value cannot be ink chosen when the frame is rendered and
+  A number finer than a slide number is made of these renderings, because one frame covers
+  every state of a slide, so the value cannot be ink chosen when the frame is rendered and
   every value is rendered instead.
-  Opacity rather than visibility, because a stack in the body sits inside an epoch rendering,
+  Opacity rather than visibility, because a stack in a region sits inside an epoch rendering,
   and a rendering that is not being shown is hidden with `visibility`, which a descendant may
   take back.
   A rendering that took its visibility back would then paint out of an epoch rendering nobody

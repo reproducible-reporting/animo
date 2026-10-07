@@ -69,48 +69,28 @@ const PATH_SHAPE = [
 ];
 
 /**
- * Plan the translations of the matches in the regions a morph carries.
+ * Plan the translations of the matches in an epoch stack a morph carries.
  *
- * The crossfade of the same regions is planned beside this, and nothing here touches an
- * opacity. Every region group a record names is paired with the group of the same label and
- * the same index in the other rendering, because a tag of several sites is a region per site.
+ * The crossfade of the same stack is planned beside this, and nothing here touches an
+ * opacity. The two renderings of the stack are the outgoing and the incoming region.
  */
-function morphRegions(effects, slide, { stack, from, to, regions, options, mirror }) {
-  if (stack.renderings[from] === undefined || stack.renderings[to] === undefined) {
+function morphStack(effects, slide, { stack, from, to, record, options, mirror }) {
+  const outgoing = stack.renderings[from];
+  const incoming = stack.renderings[to];
+  const timing = scheduled(options, record.timing, mirror);
+  if (outgoing === undefined || incoming === undefined || timing === null) {
     return;
   }
-  for (const record of regions) {
-    const timing = scheduled(options, record.timing, mirror);
-    if (timing === null) {
-      continue;
-    }
-    const outgoing = regionGroups(stack, from, record.group);
-    const incoming = regionGroups(stack, to, record.group);
-    const changed = new Set(record.names ?? []);
-    // The screen matrix of every parent read so far, because the glyphs of a run share one.
-    const screen = new Map();
-    outgoing.forEach((group, index) => {
-      if (incoming[index] === undefined) {
-        return;
-      }
-      const pairs = matches(slide, group, incoming[index], changed, screen);
-      const routes = rigid(
-        pairs.map((pair) => measured(slide, pair, screen)),
-        slide.morphed,
-      );
-      for (const match of routes) {
-        carry(effects, slide, match, timing, { group: record.group, from, to, screen });
-      }
-    });
+  // The screen matrix of every parent read so far, because the glyphs of a run share one.
+  const screen = new Map();
+  const pairs = matches(slide, outgoing, incoming, new Set(record.names), screen);
+  const routes = rigid(
+    pairs.map((pair) => measured(slide, pair, screen)),
+    slide.morphed,
+  );
+  for (const match of routes) {
+    carry(effects, slide, match, timing, { stack, from, to, screen });
   }
-}
-
-/** The groups of a region in one epoch rendering, or the rendering itself for the whole one. */
-function regionGroups(stack, epoch, label) {
-  if (label === null) {
-    return [stack.renderings[epoch]];
-  }
-  return stack.regions[epoch].filter((group) => group.dataset.typstLabel === label);
 }
 
 /**
@@ -125,7 +105,7 @@ function movesAsOne(label) {
 }
 
 /**
- * The matches of two region groups, as pairs of an outgoing and an incoming element.
+ * The matches of two renderings of a region, as pairs of an outgoing and an incoming element.
  *
  * First the tag matches: two labelled groups of one name, paired by their index among the
  * groups of that name in document order. A tag the boundary changes is not one, because its
@@ -554,7 +534,7 @@ function isSlot(group) {
  * A match that has not moved and that no morph is moving needs no animation.
  */
 function carry(effects, slide, { outgoing, incoming, delta }, timing, where) {
-  const { group, from, to, screen } = where;
+  const { stack, from, to, screen } = where;
   const { morphed } = slide;
   if (
     Math.hypot(delta.x, delta.y) < MORPH_STILL &&
@@ -589,8 +569,8 @@ function carry(effects, slide, { outgoing, incoming, delta }, timing, where) {
     { translate: timing },
     { start: { translate: px(back) }, end: { translate: AT_REST } },
   );
-  morphed.set(outgoing, { epoch: from, group, end, heading: end });
-  morphed.set(incoming, { epoch: to, group, end: null, heading: null });
+  morphed.set(outgoing, { epoch: from, stack, end, heading: end });
+  morphed.set(incoming, { epoch: to, stack, end: null, heading: null });
 }
 
 /** A `translate` as `px` writes it, back as a distance. */
@@ -602,27 +582,25 @@ function parsed(value) {
 /**
  * Plan every translation an earlier morph left running on a slide, before a step.
  *
- * A translation in a region the step carries again runs on to where it was going, on the
- * clock of the new boundary, so it ends as the region's new crossfade ends rather than in the
+ * A translation in a stack the step carries again runs on to where it was going, on the
+ * clock of the new boundary, so it ends as the stack's new crossfade ends rather than in the
  * middle of it. The exception is an element of the rendering being entered, which this step
  * shows as it is laid out: its translation snaps to rest, and a morph of this step that
  * matches it again gives it a route of its own. Every other translation snaps to rest, as the
- * crossfade of a region the step does not carry does.
+ * crossfade of a stack the step does not carry does.
  *
+ * `carried` is the record of every stack the step carries, by stack.
  * `heading` records where each element is going in this step, which `carry` reads for the
  * ancestors of what it matches.
  */
-function settleMorphs(effects, slide, to, records, options, mirror) {
+function settleMorphs(effects, slide, to, carried, options, mirror) {
   for (const [element, record] of slide.morphed) {
     if (!element.getAnimations().some(ours)) {
       slide.morphed.delete(element);
       continue;
     }
-    const carried =
-      record.epoch === to
-        ? undefined
-        : records.find((other) => other.group === null || other.group === record.group);
-    const timing = carried === undefined ? null : scheduled(options, carried.timing, mirror);
+    const own = record.epoch === to ? undefined : carried.get(record.stack);
+    const timing = own === undefined ? null : scheduled(options, own.timing, mirror);
     if (timing === null) {
       plan(effects, element, { translate: "" });
       record.heading = null;

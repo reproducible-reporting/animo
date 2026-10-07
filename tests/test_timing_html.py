@@ -909,20 +909,21 @@ LONGER = (
 
 
 def region_paint(presentation: Deck, label: str) -> list[dict]:
-    """What one region's group paints in every epoch rendering, in epoch order.
+    """What the renderings of one region's epoch stack paint, in epoch order.
 
-    The boundary crossfades the *labelled* group of the region, which is the outer slot,
-    where a display state goes on the unlabelled one inside it. Visibility is read beside
-    the opacity because the outgoing rendering is hidden as a whole and the regions it
-    hands over are what take their visibility back.
+    The boundary crossfades the renderings of the stack inside the region's labelled group,
+    and leaves the display state on the slots inside them alone. Visibility is read beside the
+    opacity because a rendering that is not being shown is hidden, and a crossfade gives the
+    renderings it fades their visibility back.
     """
     slide, _ = presentation.position
     return presentation.page.evaluate(
         f"""() => Array.from(
-            document.querySelectorAll('[data-animo-slide="{slide}"] {EPOCH_GROUPS}'),
-            (frame) => {{
-                const group = frame.querySelector('[data-typst-label="{label}"]');
-                const style = getComputedStyle(group);
+            document.querySelector(
+                '[data-animo-slide="{slide}"] [data-typst-label="{label}"]'
+            ).querySelectorAll({EPOCH_GROUPS!r}),
+            (rendering) => {{
+                const style = getComputedStyle(rendering);
                 return {{visibility: style.visibility, opacity: Number(style.opacity)}};
             }},
         )"""
@@ -932,11 +933,7 @@ def region_paint(presentation: Deck, label: str) -> list[dict]:
 def test_a_delayed_structural_operation_holds_back_its_regions_crossfade(
     page, deck_at, typst: TypstRunner
 ):
-    """The outgoing frame goes on painting the region it is handing over for the whole delay.
-
-    The frames themselves have already swapped, which is invisible: they are
-    pixel-identical everywhere but in the region the boundary redraws.
-    """
+    """The outgoing rendering of the region goes on painting it for the whole delay."""
     presentation: Deck = deck_at(
         animated(
             typst,
@@ -960,10 +957,10 @@ def test_a_delayed_structural_operation_holds_back_its_regions_crossfade(
 
 
 def test_a_structural_duration_holds_its_regions_crossfade_open(page, deck_at, typst: TypstRunner):
-    """A long `replace` keeps two frames laid out, and both paint the region while it runs.
+    """A long `replace` keeps two renderings painting the region while it runs.
 
     The moment sampled is past the end of the deck's own step, so a crossfade that had not
-    taken the operation's duration would be over by then and the outgoing frame dark.
+    taken the operation's duration would be over by then and the outgoing rendering dark.
     """
     presentation: Deck = deck_at(
         animated(
@@ -975,12 +972,12 @@ def test_a_structural_duration_holds_its_regions_crossfade_open(page, deck_at, t
     )
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
-    # One effect per frame: the region fades out in the outgoing one and in in the
-    # incoming one, and both take the duration the operation stated.
+    # One effect per rendering: the outgoing one fades out and the incoming one fades in,
+    # and both take the duration the operation stated.
     assert timings(page, "duration") == [OWN, OWN]
     presentation.scrub(DURATION + MIDPOINT)
     outgoing, incoming = region_paint(presentation, "claim")
-    assert outgoing["visibility"] == "visible", "the outgoing frame stopped painting early"
+    assert outgoing["visibility"] == "visible", "the outgoing rendering stopped painting early"
     assert 0.4 < outgoing["opacity"] < 0.6, outgoing
     assert 0.4 < incoming["opacity"] < 0.6, incoming
     presentation.scrub(OWN)
@@ -996,8 +993,8 @@ def test_a_boundary_overtaken_mid_crossfade_keeps_its_region_opaque(
     """The answer to whether a duration may outlive its step: it may, and it is overtaken.
 
     A long `replace` that is still running when the next boundary is crossed leaves two
-    frames painting the region at once, which is a state the epoch model has never had to
-    represent. Every frame that is not the one being entered hands the region over on the
+    renderings painting the region at once, which is a state the epoch model has never had to
+    represent. Every rendering that is not the one being entered hands the region over on the
     new boundary's clock, so all of them fade out under one easing while the incoming one
     fades in and the region's ink stays at exactly one throughout.
     The overlap is not particular to a duration: a `wait:` shorter than a step, or a
@@ -1017,7 +1014,7 @@ def test_a_boundary_overtaken_mid_crossfade_keeps_its_region_opaque(
     presentation.scrub(MIDPOINT)
 
     def ink():
-        return sum(frame["opacity"] for frame in region_paint(presentation, "claim"))
+        return sum(rendering["opacity"] for rendering in region_paint(presentation, "claim"))
 
     assert ink() == pytest.approx(1, abs=0.01), "the first crossfade did not add to one"
     presentation.press("ArrowRight")
@@ -1037,8 +1034,8 @@ def test_a_step_that_walks_back_over_a_join_hands_over_every_boundary_it_crosses
 ):
     """A backward step that walked over a join runs between epochs that are not neighbours.
 
-    Each of the boundaries it crosses is a region to hand over, so the step takes the union
-    of them and the rendering being entered fades in against all of them at once, which is
+    Each of the boundaries it crosses changes the region, so the step hands it over once
+    and the rendering being entered fades in against all the others at once, which is
     what the crossfade already does for a boundary crossed while an earlier one is running.
     Handing over only the nearest one would cut the rest, and the region would jump.
     """

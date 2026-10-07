@@ -246,9 +246,9 @@ would not otherwise have.
 
 Two invariants are cheap to check here and worth checking directly,
 because the region design rests on them:
-the bounding box of every label *outside* a region is identical in all epoch renderings of a
-slide, and the rendering is pixel-identical outside the region between epochs,
-including mid-crossfade.
+every label *outside* a region is laid out once while every rendering of a region's epoch
+stack starts at the same corner, and the slide is pixel-identical outside the region between
+epochs, including mid-crossfade.
 Both are comparisons *within* one page load, so they need no stored reference images.
 
 ## Stored Reference Images

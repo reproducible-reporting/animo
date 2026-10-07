@@ -15,8 +15,8 @@
 // on it, and the result is provided to the body rather than published to a state.
 // A slide with S `sub` calls has S+1 states:
 // the presentation renders one page each, the handout renders the states that asked for a
-// page, and the HTML target renders one per epoch, each covering the whole run of states
-// that share its content and all of them in one frame.
+// page, and the HTML target renders the body once, in one frame that covers every state,
+// with an epoch stack in every region whose content changes.
 
 #import "canvas.typ": (
   anchors-of, auto-extent, body-box, body-extent, canvas-label, explicit-extent,
@@ -26,14 +26,13 @@
 #import "deck.typ": (
   css-color, deck-shape, handout-tally, paged-mode, unit-length,
 )
-#import "member.typ": changed-groups, check-boundaries, members-of
+#import "member.typ": check-boundaries, groupless-regions, members-of
 #import "plan.typ": (
   inside, provide, refuse, resolve, stack-view-for, timeline-asks, unpanned,
   view-of,
 )
 #import "number.typ": numbered-flag, slide-counter, step-counter
 #import "site.typ": describe
-#import "stack.typ": block-stack
 #import "region.typ": region-counter
 #import "runtime.typ": browser-plan, pt-of
 
@@ -330,7 +329,8 @@
     // The canvas is a property of the slide and not of a state, so it is measured once,
     // and with a view that exists whatever the outputs ask for.
     // Any view gives the same answer, because a display state is layout-neutral and a
-    // region keeps the same footprint in every epoch.
+    // region keeps the same footprint in every epoch, whether it holds one rendering or a
+    // stack of them.
     let measuring = if target() == "html" {
       view-of(plan, names, index, epoch: 0)
     } else {
@@ -357,13 +357,15 @@
 
     // One rendering of the canvas, for one view of its plan.
     // Regions are numbered within one rendering, so that a region has the same number in all
-    // of them and a rendering can say which regions changed in terms another one understands.
+    // of them, in every output type.
     //
     // `recorded` says whether this is the rendering that records the placements of its
     // epoch. The states of one epoch share their content, and a display state puts a
     // `move`, a `scale` and a `hide` around a tag rather than a `place`, so every
     // rendering of an epoch records the same placements at the same offsets and at the
     // same size, and one of them is the whole recording.
+    // The one rendering of the HTML target records every epoch, because its regions lay
+    // every epoch out.
     let laid-out(view, recorded: false) = {
       region-counter.update(0)
       place(
@@ -444,18 +446,20 @@
           // is a length that follows the window without being measured.
           data-animo-plan: json.encode(
             (
-              ..browser-plan(
-                plan,
-                names,
-                // Which groups each boundary redraws, read back from the frames below.
-                // Only layout knows which tags a region holds, so this is an
+              ..browser-plan(plan, names, regions: {
+                // The regions of the tags that become no group, read back from the
+                // frame below. Only layout knows which tags a region holds, so this is an
                 // introspection pass away, and it changes no layout of its own.
-                range(plan.epochs.len()).map(epoch => changed-groups(
-                  plan.epochs,
-                  epoch,
-                  members-of(index),
-                )),
-              ),
+                // A slide that changes no content has nothing to read.
+                if plan.epochs.len() > 1 {
+                  let members = members-of(index)
+                  range(plan.epochs.len()).map(epoch => groupless-regions(
+                    plan.epochs,
+                    epoch,
+                    members,
+                  ))
+                } else { ((:),) }
+              }),
               margin: pt-of(shape.margin),
               canvas: (width: pt-of(size.width), height: pt-of(size.height)),
             ),
@@ -482,26 +486,24 @@
                 + "; height: "
                 + unit-length(size.height),
             ),
-            // One frame for the whole slide, holding a stack of one rendering per epoch.
-            // Each covers every state that shares its content, so stepping inside an epoch
-            // needs no rendering at all, and the runtime shows one rendering at a time and
-            // crossfades the changed regions at a boundary.
+            // One frame for the whole slide, holding one rendering of the body.
+            // Everything outside the regions is the same in every epoch, so it is laid out
+            // once, and every region that changes holds an epoch stack in its footprint,
+            // one rendering per epoch. Stepping inside an epoch needs no rendering at all,
+            // and at a boundary the runtime crossfades the stacks that hold what changed.
             //
-            // One frame rather than one per epoch, because the scope of typst's
+            // One frame rather than one per stack, because the scope of typst's
             // deduplicator is the frame, so the renderings define each glyph they share once
             // between them instead of once each. See *Findings*.
-            // The stack is the size of the canvas, and the frame's own extent is that block
-            // and not the union of what the renderings hold, which is what keeps the canvas
-            // element the box animo computed.
-            html.frame(block-stack(
-              "epoch",
-              // One rendering per epoch, so every rendering records its own.
-              range(plan.epochs.len()).map(epoch => laid-out(
-                view-of(plan, names, index, epoch: epoch),
+            // The frame's own extent is the block below and not the extent of what the
+            // body holds, which is what keeps the canvas element the box animo computed.
+            html.frame(block(
+              width: size.width,
+              height: size.height,
+              laid-out(
+                view-of(plan, names, index, epoch: 0, stack: true),
                 recorded: records,
-              )),
-              none,
-              size: size,
+              ),
             )),
           )
           // Last, so that it paints last: the three layers are positioned siblings with no

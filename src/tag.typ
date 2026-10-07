@@ -20,6 +20,7 @@
 // region.
 // Its outer slot is fixed at the largest extent over the epochs, so that the change stays
 // inside the tag's own box and nothing around it moves.
+// A tag with no box has no extent to fix, so its content may only change inside a region.
 
 #import "canvas.typ": anchor-marker, site-marker
 #import "member.typ": member
@@ -71,10 +72,21 @@
       )
     }
     // Such a tag has no box and no footprint of its own,
-    // so the region that bounds it is one around it.
+    // so the region that bounds it is one around it, and a change of its content needs one.
+    // Without it the change would be confined to no area, and the HTML target, which lays
+    // out what lies outside every region once, would have no rendering to show it in.
+    if changing and view.region.key == none {
+      panic(
+        "the timeline changes the content of the tag "
+          + name
+          + " with a structural primitive, but its wrap is none and no region holds it; "
+          + "a tag whose content changes needs a box that the change stays inside, "
+          + "so give it wrap: auto, box or block, or put a region around it",
+      )
+    }
     let payload = content-of(name, body, view.epochs.at(view.epoch))
     return {
-      member(view, "tag", name, view.region.key)
+      member(view, "tag", name, view.region.key, groupless: true)
       if changing and payload != none {
         provide(changeable(view, view.region), payload)
       } else { payload }
@@ -117,8 +129,12 @@
   } else {
     // The implicit region. Every epoch is laid out with a view of its own, so that the tags
     // nested in it resolve their content for that epoch as well.
+    // In the HTML target it places an epoch stack, as an explicit region does.
     let key = (kind: "tag", name: name)
-    let nested = changeable(inside, (key: key, explicit: false))
+    let nested = (
+      ..changeable(inside, (key: key, explicit: false)),
+      stack: false,
+    )
     let rendering(epoch) = {
       let payload = content-of(name, body, view.epochs.at(epoch))
       if payload != none {
@@ -142,10 +158,15 @@
           inner
         })#label(name)]
     }
+    let stacked = view.stack and renderings.len() > 1
     if outer-of(name, wrapper) == box {
-      inline-stack(none, renderings, view.epoch, container: container)
+      if stacked {
+        inline-stack("epoch", renderings, none, container: container)
+      } else {
+        inline-stack(none, renderings, view.epoch, container: container)
+      }
     } else {
-      block-region(renderings, view.epoch, container)
+      block-region(renderings, view.epoch, container, stacked: stacked)
     }
   }
 }

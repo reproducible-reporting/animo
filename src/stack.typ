@@ -15,21 +15,22 @@
 // A stack in the HTML target places every rendering the browser chooses between.
 // A paged output knows the state of its page, so a stack there places the one rendering of
 // that state in a footprint of the same size, and all three outputs agree to the pixel.
-// A page lays out the epoch of its state on its own, so a slide's epoch stack exists only in
-// the HTML target.
+// A page lays out the epoch of its state on its own, so an epoch stack exists only in the
+// HTML target.
 //
 // Each rendering of a stack carries the label `animo-<kind>-<index>`, so that the runtime
 // finds it and knows what selects it.
 // The kind says what the index counts.
-// An `epoch` stack holds one rendering of the slide per content state, and a `subslide` stack
-// holds one rendering of a `per-subslide` per state of the slide.
+// An `epoch` stack holds one rendering of a region per content state of the slide, and a
+// `subslide` stack holds one rendering of a `per-subslide` per state of the slide.
 // The runtime reads the renderings of a stack from the children of one group, so the
 // renderings of one stack are siblings and every stack has a container of its own.
 // A rendering of `none` is not placed, exactly as a tag site whose content an epoch removed
 // lays out nothing.
 //
-// An explicit region reserves its footprint with the measurements below as well, and lays
-// the rendering of its epoch out in it rather than placing it.
+// An explicit region reserves its footprint with the measurements below as well.
+// It places its epoch stack with `placed-blocks` in the HTML target, and on paper it lays the
+// rendering of its epoch out in the footprint rather than placing it.
 // Every function here must be called in a context, because it measures.
 
 #import "canvas.typ": unrecorded
@@ -112,8 +113,8 @@
 //
 // A `kind` of `none` places the rendering as it is, unlabelled, for a stack that places one
 // rendering in every output type.
-// That is the implicit region of a tag, because the HTML target holds one rendering of it in
-// every epoch rendering of the slide.
+// That is the implicit region of a tag on paper, and one inside the rendering of an epoch
+// stack, which is laid out once per epoch already.
 #let labelled(kind, wrapper, index, rendering) = {
   if kind == none { rendering } else {
     [#wrapper(rendering)#stack-label(kind, index)]
@@ -157,24 +158,27 @@
   )
 }
 
-// A stack between paragraphs, which fills the width of its container.
+// The renderings of a stack between paragraphs, each placed at the top left corner of the
+// block that holds them.
 //
-// `size` is the footprint as `(width:, height:)`, or `auto` for a block as wide as its
-// container and as tall as the tallest rendering laid out at that width.
-// The width then has to come from `layout`, exactly as a region's does, because a rendering
-// that states a ratio, which is what a progress bar is, has nothing else to be a ratio of.
-#let block-stack(kind, renderings, shown, size: auto) = {
-  let sized(width, height) = block(width: width, height: height, {
-    for (index, rendering) in placed(renderings, shown) {
-      place(top + left, labelled(kind, filling, index, rendering))
-    }
-  })
-  if size != auto { return sized(size.width, size.height) }
-  layout(size => {
-    let width = if finite(size.width) { size.width } else { auto }
-    sized(
-      if width == auto { auto } else { 100% },
-      calc.max(..measured-at(renderings, width).map(it => it.height)),
-    )
-  })
+// `wrapper` is the labelled container of a rendering, which fills the width of the block.
+// A region that aligns its renderings needs one as tall as the block as well.
+#let placed-blocks(kind, renderings, shown, wrapper: filling) = {
+  for (index, rendering) in placed(renderings, shown) {
+    place(top + left, labelled(kind, wrapper, index, rendering))
+  }
 }
+
+// A stack between paragraphs: a block as wide as its container and as tall as the tallest
+// rendering laid out at that width.
+//
+// The width has to come from `layout`, exactly as a region's does, because a rendering that
+// states a ratio, which is what a progress bar is, has nothing else to be a ratio of.
+#let block-stack(kind, renderings, shown) = layout(size => {
+  let width = if finite(size.width) { size.width } else { auto }
+  block(
+    width: if width == auto { auto } else { 100% },
+    height: calc.max(..measured-at(renderings, width).map(it => it.height)),
+    placed-blocks(kind, renderings, shown),
+  )
+})

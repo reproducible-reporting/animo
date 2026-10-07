@@ -15,7 +15,16 @@ so that a probe and a feature test share every fixture.
 - `harness.fixtures` is the pytest plugin that ties them to fixture names.
 """
 
-from .browser import EPOCH_GROUPS, MEASURE, Deck, Rect, open_local, screenshot, state_hash
+from .browser import (
+    EPOCH_GROUPS,
+    MEASURE,
+    UNDER,
+    Deck,
+    Rect,
+    open_local,
+    screenshot,
+    state_hash,
+)
 from .markup import drop_repeated_defs
 from .packages import CETZ, FLETCHER, require
 from .raster import (
@@ -39,6 +48,7 @@ __all__ = (
     "FLETCHER",
     "MEASURE",
     "ROOT",
+    "UNDER",
     "Box",
     "Deck",
     "PagedRunner",
