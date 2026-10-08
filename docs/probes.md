@@ -163,6 +163,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Cross-frame geometry, and the two nested transform slots                     | `test_slots.py`                                |
 | A morph keeps the `plus-lighter` sum                                         | `test_morph_sum.py`, `test_morph_shape_sum.py` |
 | Typst writes a shape from its own origin                                     | `test_shape_output.py`                         |
+| The `d` of a path interpolates between paths of one structure                | `test_path_interpolation.py`                   |
 | A `translate` carries an element's clip and gradient, not an ancestor's clip | `test_translated_paint.py`                     |
 | `hide()` cannot be undone in the browser                                     | `test_hide.py`                                 |
 | A panic that depends on `query` can be swallowed                             | `test_convergence.py`                          |

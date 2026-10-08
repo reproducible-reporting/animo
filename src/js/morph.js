@@ -10,10 +10,13 @@
 // position at every moment. The crossfade puts them at `1 - t` and `t`, and the
 // `plus-lighter` on the renderings adds the two to one opaque element on the path, so the
 // morph needs no opacity of its own and clones nothing. See *Findings*.
+// A resize is a match of two paths of one structure whose geometry differs, and both paths
+// also animate their `d` and stroke width from the outgoing geometry to the incoming one, so
+// the two have one geometry at every moment as well.
 //
-// The translations are routes and never states. They are animations over a `translate` whose
-// inline style stays at rest, so a slide at rest carries none, and the geometry a later step
-// reads is the layout's own once they are over. Until then, `slide.morphed` holds every
+// The translations and resizes are routes and never states. They are animations over a
+// `translate`, a `d` and a `stroke-width` whose inline style stays unset, so a slide at rest
+// carries none, and the geometry a later step reads is the layout's own once they are over. Until then, `slide.morphed` holds every
 // element a morph is still moving, which is what a later step needs to know to read the
 // layout under them and to settle them.
 
@@ -69,6 +72,26 @@ const PATH_SHAPE = [
 ];
 
 /**
+ * Whether the engine animates the `d` of a path, which a resize needs.
+ *
+ * Chromium 151 and firefox 153 do, and webkit 26.5 does not, so webkit crossfades the shapes a
+ * resize would carry. See *Findings*.
+ */
+const RESIZES = CSS.supports("d", 'path("M 0 0")');
+
+/** The CSS properties a resize animates, besides the `translate` of its route. */
+const RESHAPED = ["d", "stroke-width"];
+
+/** The command letters of SVG path data, which a number never contains. */
+const COMMANDS = /[MmZzLlHhVvCcSsQqTtAa]/g;
+
+/** A number in SVG path data. */
+const NUMBER = /[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g;
+
+/** How far apart the linear parts of two matrices may be and still count as one. */
+const SAME_FRAME = 1e-6;
+
+/**
  * Plan the translations of the matches in an epoch stack a morph carries.
  *
  * The crossfade of the same stack is planned beside this, and nothing here touches an
@@ -105,14 +128,17 @@ function movesAsOne(label) {
 }
 
 /**
- * The matches of two renderings of a region, as pairs of an outgoing and an incoming element.
+ * The matches of two renderings of a region, as pairs of an outgoing and an incoming element,
+ * with whether the pair is a resize.
  *
  * First the tag matches: two labelled groups of one name, paired by their index among the
- * groups of that name in document order. A tag the boundary changes is not one, because its
- * content differs, and what it holds is matched in its place. Then the ink matches: the
- * glyphs, paths and images outside every matched group, paired by a longest common
- * subsequence of their keys in document order, so a box beside a word keeps its place among
- * the letters. Every match has the same clips above it in both regions.
+ * groups of that name in document order. A tag the boundary changes is not one, and neither is
+ * a group that holds such a tag, because the content of both differs, and what they hold is
+ * matched in its place. Then the ink matches: the glyphs, paths and images outside every
+ * matched group, paired by a longest common subsequence of their keys in document order, so a
+ * box beside a word keeps its place among the letters. Last the resizes, which pair the paths
+ * left over between the same two ink matches by their structure (see `resizes`). Every match
+ * has the same clips above it in both regions.
  */
 function matches(slide, outgoing, incoming, changed, screen) {
   const pairs = [];
@@ -120,10 +146,23 @@ function matches(slide, outgoing, incoming, changed, screen) {
   const clips = new Map();
   const above = (element, region) =>
     clipsAbove(slide, element, { region, laidOut: region === incoming }, clips, screen);
-  const candidates = (region) =>
-    Array.from(region.querySelectorAll("[data-typst-label]")).filter(
-      (group) => movesAsOne(group.dataset.typstLabel) && !changed.has(group.dataset.typstLabel),
+  const candidates = (region) => {
+    const groups = Array.from(region.querySelectorAll("[data-typst-label]"));
+    const holding = new Set();
+    for (const group of groups) {
+      if (changed.has(group.dataset.typstLabel)) {
+        for (let node = group.parentElement; node !== region; node = node.parentElement) {
+          holding.add(node);
+        }
+      }
+    }
+    return groups.filter(
+      (group) =>
+        movesAsOne(group.dataset.typstLabel) &&
+        !changed.has(group.dataset.typstLabel) &&
+        !holding.has(group),
     );
+  };
   const partners = new Map();
   for (const group of candidates(incoming)) {
     const name = group.dataset.typstLabel;
@@ -150,7 +189,7 @@ function matches(slide, outgoing, incoming, changed, screen) {
     }
     claimed.add(group);
     claimed.add(partner);
-    pairs.push([group, partner]);
+    pairs.push([group, partner, false]);
   }
   const before = ink(outgoing, claimed);
   const after = ink(incoming, claimed);
@@ -170,10 +209,122 @@ function matches(slide, outgoing, incoming, changed, screen) {
     after.map((element) => numbered(element, incoming)),
     MORPH_DIFFERENCES,
   );
-  for (const [i, j] of common ?? []) {
-    pairs.push([before[i], after[j]]);
+  if (common === null) {
+    return pairs;
+  }
+  for (const [i, j] of common) {
+    pairs.push([before[i], after[j], false]);
+  }
+  if (RESIZES) {
+    const labels = new Map();
+    const structure = (region) => (element) =>
+      `${pathStructure(element)}|${above(element, region)}|${labelsAbove(element, region, labels)}`;
+    const found = resizes(before, after, common, structure(outgoing), structure(incoming));
+    for (const [from, to] of found) {
+      if (sameFrame(from, to, screen)) {
+        pairs.push([from, to, true]);
+      }
+    }
   }
   return pairs;
+}
+
+/**
+ * The resizes among the ink an ink match left over, as pairs of an outgoing and an incoming
+ * path.
+ *
+ * The leftovers between two consecutive ink matches, or before the first or after the last,
+ * are a hunk, and the paths of one hunk are paired by a longest common subsequence of their
+ * structure, which `beforeKey` and `afterKey` give. A path is therefore paired only with one
+ * between the same two matched neighbours, so a fraction bar that widens between its numerator
+ * and its denominator is paired, and a box removed in one place is not paired with one added
+ * in another.
+ */
+function resizes(before, after, common, beforeKey, afterKey) {
+  const pairs = [];
+  let i = 0;
+  let j = 0;
+  for (const [end, otherEnd] of [...common, [before.length, after.length]]) {
+    const outgoing = before.slice(i, end).filter((element) => element.localName === "path");
+    const incoming = after.slice(j, otherEnd).filter((element) => element.localName === "path");
+    if (outgoing.length > 0 && incoming.length > 0) {
+      const found = commonSubsequence(
+        outgoing.map(beforeKey),
+        incoming.map(afterKey),
+        MORPH_DIFFERENCES,
+      );
+      for (const [a, b] of found ?? []) {
+        pairs.push([outgoing[a], incoming[b]]);
+      }
+    }
+    i = end + 1;
+    j = otherEnd + 1;
+  }
+  return pairs;
+}
+
+/**
+ * What a path is made of apart from its numbers, as a string that two paths share when the
+ * engine can interpolate one into the other.
+ *
+ * Chromium 151 and firefox 153 interpolate `d` between two paths with the same commands in the
+ * same order, number by number, and flip from one to the other halfway through otherwise (see
+ * *Findings*). The stroke attributes other than the width are part of it, because the width
+ * is animated beside the `d` and the others are not.
+ */
+function pathStructure(path) {
+  const d = path.getAttribute("d") ?? "";
+  const commands = (d.match(COMMANDS) ?? []).join("");
+  const numbers = (d.match(NUMBER) ?? []).length;
+  const shape = PATH_SHAPE.filter((name) => name !== "stroke-width").map(
+    (name) => path.getAttribute(name) ?? "",
+  );
+  return `${commands} ${numbers} ${shape.join(" ")}`;
+}
+
+/**
+ * The labels of the groups above an element inside its region, as a string.
+ *
+ * Two paths are a resize only under the same labels, so a shape in a tag is not resized into
+ * one outside it, which is how an author keeps two shapes apart.
+ */
+function labelsAbove(element, region, labels) {
+  const parent = element.parentElement;
+  if (parent === null || parent === region) {
+    return "";
+  }
+  let found = labels.get(parent);
+  if (found === undefined) {
+    found = labelsAbove(parent, region, labels);
+    const label = parent.dataset.typstLabel;
+    if (label !== undefined) {
+      found = `${found}${label};`;
+    }
+    labels.set(parent, found);
+  }
+  return found;
+}
+
+/**
+ * Whether two elements draw in user spaces that differ by a translation only.
+ *
+ * A resize animates the `d` of each path towards the other's, which is the right geometry only
+ * when the two user spaces have one scale and one orientation, and the route's `translate`
+ * carries what is left. Everything typst lays out differs by a translation, unless a `scale`
+ * or a `rotate` sits above one of the two and not above the other.
+ */
+function sameFrame(outgoing, incoming, screen) {
+  const frame = (element) => {
+    const own = element.transform.baseVal.consolidate();
+    const parent = matrixOf(element.parentNode, screen);
+    return own === null ? parent : parent.multiply(own.matrix);
+  };
+  const a = frame(outgoing);
+  const b = frame(incoming);
+  const size = Math.max(Math.abs(a.a), Math.abs(a.b), Math.abs(a.c), Math.abs(a.d));
+  return ["a", "b", "c", "d"].every(
+    (name) => Math.abs(a[name] - b[name]) <= SAME_FRAME * size,
+  );
 }
 
 /** Whether an element is a matched group or sits inside one. */
@@ -366,7 +517,7 @@ function walkBack(trace, offset, n, m) {
  * less the morph translations still running on it and above it, which the step is about to
  * end.
  */
-function measured(slide, [outgoing, incoming], screen) {
+function measured(slide, [outgoing, incoming, resize], screen) {
   const start = origin(slide, outgoing, screen);
   const end = origin(slide, incoming, screen);
   const shift = running(slide, incoming, screen);
@@ -374,6 +525,42 @@ function measured(slide, [outgoing, incoming], screen) {
     outgoing,
     incoming,
     delta: { x: end.x - shift.x - start.x, y: end.y - shift.y - start.y },
+    shape: reshaped(slide, outgoing, incoming, resize),
+  };
+}
+
+/**
+ * How a match changes its geometry on the way, as the `start` and `end` of the properties a
+ * resize animates, or `null` for a match that keeps its geometry.
+ *
+ * Both paths start at what the outgoing one shows and end at the `d` of the incoming one.
+ * Each path states its `d` in its own user space from its own origin, and `sameFrame` holds,
+ * so the two have one geometry at every moment, and the route's `translate` puts them at one
+ * place. An exact match whose outgoing path an earlier resize is still changing goes on from
+ * what that path shows as well.
+ *
+ * A property is animated only where it changes, because chromium 151 stops drawing the other
+ * properties of an effect beside a keyframe property that is equal at both ends (see
+ * *Findings*), and `d` is equal at both ends in another spelling when only the stroke width
+ * changes.
+ */
+function reshaped(slide, outgoing, incoming, resize) {
+  const changing = slide.morphed.get(outgoing)?.shape !== undefined;
+  if (!resize && !changing) {
+    return null;
+  }
+  const names = RESHAPED.filter((name) => {
+    const before = outgoing.getAttribute(name);
+    const after = incoming.getAttribute(name);
+    return before !== null && after !== null && (changing || before !== after);
+  });
+  const value = (name) => {
+    const after = incoming.getAttribute(name).trim();
+    return name === "d" ? `path("${after}")` : `${after}px`;
+  };
+  return {
+    start: showing(outgoing, names),
+    end: Object.fromEntries(names.map((name) => [name, value(name)])),
   };
 }
 
@@ -524,20 +711,25 @@ function isSlot(group) {
 }
 
 /**
- * Plan the two translations of one match, and remember the elements as moving.
+ * Plan the two translations of one match, and the geometry of a resize, and remember the
+ * elements as moving.
  *
  * The outgoing element goes from what it shows to the place of the incoming one. A morph still
  * moving one of its ancestors goes on moving it in this step, to where `settleMorphs` sends it,
  * so the route of the outgoing element leaves out what that ancestor still travels, and the
  * two arrive together. The incoming element comes from the place of the outgoing one.
+ * The `d` and the stroke width of a resize take both paths from the outgoing geometry to the
+ * incoming one, and neither is written as inline style, so a path at rest shows its attribute.
  *
- * A match that has not moved and that no morph is moving needs no animation.
+ * A match that has not moved, does not change its geometry and that no morph is moving needs
+ * no animation.
  */
-function carry(effects, slide, { outgoing, incoming, delta }, timing, where) {
+function carry(effects, slide, { outgoing, incoming, delta, shape = null }, timing, where) {
   const { stack, from, to, screen } = where;
   const { morphed } = slide;
   if (
     Math.hypot(delta.x, delta.y) < MORPH_STILL &&
+    shape === null &&
     !morphed.has(outgoing) &&
     !morphed.has(incoming)
   ) {
@@ -554,23 +746,23 @@ function carry(effects, slide, { outgoing, incoming, delta }, timing, where) {
   const own = morphed.has(outgoing) ? translation(outgoing) : { x: 0, y: 0 };
   const step = inParent(outgoing, travel, screen);
   const end = px({ x: own.x + step.x, y: own.y + step.y });
-  plan(
-    effects,
-    outgoing,
-    { translate: "" },
-    { translate: timing },
-    { start: { translate: px(own) }, end: { translate: end } },
-  );
+  const names = ["translate", ...Object.keys(shape?.end ?? {})];
+  const unset = Object.fromEntries(names.map((name) => [name, ""]));
+  const timed = Object.fromEntries(names.map((name) => [name, timing]));
+  plan(effects, outgoing, unset, timed, {
+    start: { translate: px(own), ...shape?.start },
+    end: { translate: end, ...shape?.end },
+  });
   const back = inParent(incoming, { x: -delta.x, y: -delta.y }, screen);
-  plan(
-    effects,
-    incoming,
-    { translate: "" },
-    { translate: timing },
-    { start: { translate: px(back) }, end: { translate: AT_REST } },
-  );
-  morphed.set(outgoing, { epoch: from, stack, end, heading: end });
-  morphed.set(incoming, { epoch: to, stack, end: null, heading: null });
+  plan(effects, incoming, unset, timed, {
+    start: { translate: px(back), ...shape?.start },
+    end: { translate: AT_REST, ...shape?.end },
+  });
+  // The incoming path ends at its own attributes, which is its geometry at rest.
+  const rest =
+    shape === null ? undefined : Object.fromEntries(names.slice(1).map((name) => [name, null]));
+  morphed.set(outgoing, { epoch: from, stack, end, heading: end, shape: shape?.end });
+  morphed.set(incoming, { epoch: to, stack, end: null, heading: null, shape: rest });
 }
 
 /** A `translate` as `px` writes it, back as a distance. */
@@ -580,14 +772,15 @@ function parsed(value) {
 }
 
 /**
- * Plan every translation an earlier morph left running on a slide, before a step.
+ * Plan every translation and resize an earlier morph left running on a slide, before a step.
  *
  * A translation in a stack the step carries again runs on to where it was going, on the
  * clock of the new boundary, so it ends as the stack's new crossfade ends rather than in the
  * middle of it. The exception is an element of the rendering being entered, which this step
  * shows as it is laid out: its translation snaps to rest, and a morph of this step that
  * matches it again gives it a route of its own. Every other translation snaps to rest, as the
- * crossfade of a stack the step does not carry does.
+ * crossfade of a stack the step does not carry does. The `d` and the stroke width of a resize
+ * run on or snap with the translation of their path.
  *
  * `carried` is the record of every stack the step carries, by stack.
  * `heading` records where each element is going in this step, which `carry` reads for the
@@ -601,18 +794,16 @@ function settleMorphs(effects, slide, to, carried, options, mirror) {
     }
     const own = record.epoch === to ? undefined : carried.get(record.stack);
     const timing = own === undefined ? null : scheduled(options, own.timing, mirror);
+    const names = ["translate", ...Object.keys(record.shape ?? {})];
+    const unset = Object.fromEntries(names.map((name) => [name, ""]));
     if (timing === null) {
-      plan(effects, element, { translate: "" });
+      plan(effects, element, unset);
       record.heading = null;
       continue;
     }
-    plan(
-      effects,
-      element,
-      { translate: "" },
-      { translate: timing },
-      { end: record.end === null ? null : { translate: record.end } },
-    );
+    plan(effects, element, unset, Object.fromEntries(names.map((name) => [name, timing])), {
+      end: { translate: record.end, ...record.shape },
+    });
     record.heading = record.end;
   }
 }

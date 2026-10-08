@@ -211,7 +211,8 @@ The example deck for this section is
 [PDF presentation](https://reproducible-reporting.github.io/animo/examples/morph-presentation.pdf),
 [PDF handouts](https://reproducible-reporting.github.io/animo/examples/morph-handouts.pdf)).
 It shows a paragraph that reflows, a paragraph whose shapes move with its words,
-a crossfade and a morph of the same change side by side, and an equation that grows.
+a crossfade and a morph of the same change side by side, an equation that grows,
+and a box that grows around its words.
 
 The `morph()` transition moves the content that the outgoing and the incoming version of a
 region share from its old place to its new one, and fades only what differs:
@@ -240,13 +241,26 @@ What the morph moves is decided by what the two versions show.
   outline and its stroke width are the same in both versions, and an image when it is the
   same image at the same size.
   A shape that changes colour moves and changes colour on the way.
+- **A shape that changes size** is resized on the way when it keeps its outline's kind:
+  the bar of a fraction whose numerator grows widens, a box grows around its words,
+  and a circle becomes an ellipse.
+  The two shapes are paired when typst draws them with the same commands, which is the case
+  for two rectangles, two rectangles with rounded corners, two ellipses or two lines,
+  and when they have the same stroke apart from its width, which changes on the way.
+  The corners of a rounded rectangle keep their shape, and their radius changes to the new
+  one with the size.
+  A shape is resized only into one that sits between the same two matched neighbours,
+  such as the letters on either side of it, and inside the same tags.
+  So a box removed in one place is not resized into a box added in another,
+  and a tag around one of two shapes keeps them apart.
 - **A tag** moves as one, which is how to carry a figure or a drawing as a whole.
   Two sites of one name are paired in the order they appear.
   A tag that the primitive itself changes is not carried as one,
-  because its content differs between the versions, and what it holds is matched instead.
+  and neither is a tag around it,
+  because their content differs between the versions, and what they hold is matched instead.
 - **Everything else** fades out and in where it is, as in a crossfade.
-  That includes a shape that changes size or stroke width, such as the bar of a fraction
-  whose numerator grows, and an image that changes size.
+  That includes an image that changes size, and a shape whose outline changes its kind,
+  such as a rectangle that gets rounded corners or a rectangle that becomes a circle.
 
 A box with `clip: true` hides what lies outside its edges,
 and the morph does not move those edges along with what it moves inside the box.
@@ -273,6 +287,10 @@ sub(
 ```
 
 The morph moves content and never scales it.
+A resize changes the outline of a shape and keeps the width of its stroke,
+which is how it differs from scaling.
+Webkit does not animate the outline of a shape, so it fades a shape that changes size,
+as a crossfade does, while it moves everything else.
 A region whose letters differ in more than 400 places matches none of them and crossfades
 them, because the matching would take too long.
 A morph of a few hundred letters costs a step a few tens of milliseconds;

@@ -74,7 +74,8 @@ function readSlide(element) {
     // Where the tags the plan is relative to sit, measured when the slide is first shown.
     anchors: null,
     // The elements a morph is still moving, each with the epoch of its rendering, the stack
-    // that holds it and where its route ends, which `morph.js` keeps.
+    // that holds it, where its route ends and where the geometry of a resize ends, which
+    // `morph.js` keeps.
     morphed: new Map(),
     // Which state this slide is showing, or `null` while it has never been rendered.
     // Its own rather than the deck's position, because a backward step that walks back

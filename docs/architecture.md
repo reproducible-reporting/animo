@@ -262,7 +262,7 @@ A match is a pair of elements, one in the outgoing region and one in the incomin
 Tags come first: two labelled groups of one name, paired by index in document order,
 and translated on their outer slot.
 A tag whose name is among the `names` of the stack's record is one the boundary changes,
-and it is not matched as a whole.
+and neither it nor a group that holds it is matched as a whole.
 Then the ink: the `<use>`, `<path>` and `<image>` elements outside every matched group,
 in document order and outside every `<defs>`, `<clipPath>` and glyph `<symbol>`,
 paired by `commonSubsequence`, a diff of the Myers kind over one key per element.
@@ -280,6 +280,14 @@ Above `MORPH_DIFFERENCES` differences the diff gives up and the ink is crossfade
 The glyphs of one text run that all travel the same distance are carried by one animation
 on the run instead of one each.
 
+Then the resizes, in an engine for which `CSS.supports` accepts `d` (`RESIZES`).
+`resizes` takes the paths the ink diff left over between two consecutive ink matches, which
+form a hunk, and pairs them by a second `commonSubsequence` per hunk over a structure key.
+`pathStructure` writes that key from the command letters of the `d`, the count of its
+numbers and the stroke attributes other than the width, and `matches` appends the clips
+and `labelsAbove`, the labels of the groups between the path and its region.
+`sameFrame` drops a pair whose two user spaces differ in more than a translation.
+
 The distance of a match is measured on the screen, from where the outgoing element is
 displayed to where the incoming one is laid out, and mapped into the user space of each
 element's parent through the inverse of the parent's `getScreenCTM()`.
@@ -288,14 +296,23 @@ readable at all.
 The outgoing element animates from what it shows to the incoming place, with an `end` of its
 own in the effect, and the incoming element from the outgoing place to rest.
 Neither is written as inline style, so the slide at rest carries no morph translation.
+A resize adds `d` and `stroke-width` to the same two effects:
+both paths go from the geometry the outgoing path shows to the `d` and stroke width of the
+incoming one, which `reshaped` writes as their common `end`.
+Typst writes every path from its own origin, so the two `d` are in comparable user spaces,
+the two paths have one geometry at every moment, and the `translate` keeps them at one place.
+Neither property is written as inline style either.
 The opacity is the crossfade's own, which `plus-lighter` sums to one opaque element on the
 route (see *Findings*).
 
 `slide.morphed` holds every element a morph is still moving, with the epoch of its rendering,
-the stack that holds it and where its route ends.
+the stack that holds it, where its route ends and, for a resize, where its `d` and stroke
+width end.
 `settleMorphs` reads it at every step, before any transition plans.
 A translation in a stack the step carries again runs on to its end on the new boundary's
 clock, unless it is in the rendering being entered, and every other one snaps to rest.
+A resize runs on or snaps with its translation, and a later match of a path that is still
+being resized starts from the geometry it shows.
 The measurement of an incoming element subtracts the translations that are still running on
 it and above it, which `getScreenCTM()` includes.
 

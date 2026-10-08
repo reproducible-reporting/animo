@@ -1346,6 +1346,9 @@ Five rules make this work:
    positioned they move its content (see *Findings*). Both are therefore written by the
    runtime, on the slot it is about to transform, and never as a rule in the stylesheet,
    which cannot tell a slot from a region's content.
+   A resize animates `d` and `stroke-width` on the two paths it pairs as well. Neither is a
+   transform, and neither is ever written as inline style, so a path at rest shows its own
+   attributes.
 
 1. Continuous state and boundary state get **separate nested slots**. `tag` wraps its body
    twice, in two wrappers of the same kind, so every tag site emits a labelled outer group with
@@ -2283,7 +2286,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
   transition follows the same rule and the same refusal. It takes the transition functions a
   slide takes, because one concept has one spelling, and refuses the ones a region cannot take.
 
-- **What does a morph match?** A morph matches two kinds of pair inside the pair of region
+- **What does a morph match?** A morph matches three kinds of pair inside the pair of region
   groups the boundary carries, in this order of precedence,
   and an element inside a matched pair is not matched again.
 
@@ -2291,6 +2294,10 @@ These were the open questions of the earlier drafts. They are settled; the evide
      of that name in the region, in document order, and translates the outer slots.
      A tag the boundary itself changes is not matched as a whole, because its content differs
      between the renderings, and what it holds is matched in its place.
+     The same holds for a tag or a `per-subslide` rendering that holds a tag the boundary
+     changes, whose content differs for the same reason.
+     Without that, a tag around an equation whose numerator is a tag of its own would be
+     carried as one block, and none of the terms or the fraction bar inside it would move.
      Without that exception, `replace("eq", transition: morph())` on a tag inside an explicit
      region would move the old equation as one block onto the new one and match none of its
      terms. Unequal multiplicity leaves the extra groups unmatched.
@@ -2321,10 +2328,48 @@ These were the open questions of the earlier drafts. They are settled; the evide
      Each distinct key is numbered before the diff, so the diff compares numbers rather than
      the long strings of a path's `d` or an image's data.
 
+  1. A **resize** pairs two paths that the ink match left over, whose geometry differs and
+     whose structure is the same, and animates the `d` and the stroke width of both from the
+     outgoing geometry to the incoming one beside the translation of the route.
+     The structure is the sequence of command letters of the `d`, the count of its numbers,
+     the stroke attributes other than the width, the clips above the path and the labels of
+     the groups between the path and its region.
+     Chromium and firefox interpolate `d` number by number between two paths of the same
+     commands and flip from one to the other halfway otherwise (see *Findings*),
+     so the structure is what the engine needs, and no path is rewritten.
+     For the rounded rectangles typst writes, every control point is linear in the width, the
+     height and the radius, so the corners keep their shape and their radius goes over to the
+     incoming one with the size.
+
+     A resize pairs only paths of one **hunk**, which is what the ink match leaves over
+     between two consecutive ink matches, or before the first or after the last, by a second
+     longest common subsequence per hunk over the structure.
+     So the bar of a fraction whose numerator grows is paired with the wider bar, because it
+     sits between the numerator and the denominator in both renderings, while a box removed
+     before a word and another added after it are not.
+     Pairing any two paths of one structure in the region in document order would be simpler
+     to compute, and would turn a box that disappears into an unrelated one that appears
+     elsewhere. Pairing only inside a tag would be the most explicit, and would make the
+     author tag every fraction bar of an equation.
+     The labels in the structure are how an author steers the pairing:
+     a tag around one of two shapes keeps them apart, and a tag the boundary changes around
+     each holds them in one hunk.
+     A resize needs the two user spaces to differ by a translation only, which holds for
+     everything typst lays out unless a `scale` or a `rotate` sits above one path and not
+     above the other, and a pair that does not is crossfaded.
+
+     A resize is a refinement that an engine without the CSS `d` property skips:
+     webkit 26.5 does not animate it, so the runtime tests `CSS.supports` once and webkit
+     crossfades the shapes the other engines resize, while every other match moves.
+     Paths whose structures differ, such as a rectangle against one with rounded corners,
+     against a circle, or a rounded rectangle against one whose straight sides typst leaves
+     out because they have no length, are crossfaded. Carrying them needs the paths aligned
+     to one structure first.
+
   A tag is how an author makes content move as one, and a paragraph that reflows is carried by
   its glyphs and shapes without any tag.
   A shape that changes size, such as the bar of a fraction whose numerator grows, has another
-  `d` and is crossfaded.
+  `d` and is no ink match, and the resize carries it when its structure stays.
   Elements of one key are paired in document order, which for a plot is the order it draws its
   marks in. When one point is added at the start of the data, every mark therefore moves to
   the place of the next point, and the routes cross the plot although a pairing exists in which
@@ -2354,9 +2399,12 @@ These were the open questions of the earlier drafts. They are settled; the evide
   A morph interrupted by the next boundary continues from what the page shows:
   an outgoing element is measured where it is displayed and an incoming one where it is laid
   out, which is its displayed place less the running morph translations on it and above it.
+  A path that a resize is still changing starts its next route from the `d` and the stroke
+  width it shows, which `getComputedStyle` returns while the animation runs.
   A morph translation that the next step leaves behind in a region that step carries again
   runs on to its end on the new boundary's clock, and every other one snaps to rest, as the
-  crossfade of a region the step does not carry does.
+  crossfade of a region the step does not carry does. The `d` and the stroke width of a
+  resize do the same as the translation of their path.
 
 - **Where do the title and the language of the HTML page come from?** From `set document(..)`
   and `set text(lang: ..)`, as for any typst document, so nothing is stated twice. Typst writes
@@ -2603,7 +2651,9 @@ These need the prototype to answer.
 - Whether a morph should ever scale. It translates only, and a glyph that changes size is not
   matched, so its size change is carried by the crossfade. Scaling would let a heading that
   changes size morph, and non-uniform `scale` distorts glyph strokes, which suggests leaving
-  scaling for figures. This has to be seen in motion before it is decided; the extra nested box
+  scaling for figures. For a shape the resize answers it without scaling the stroke, and the
+  question stays open for glyphs and images, which a resize cannot reach because a glyph of
+  another size is another outline. This has to be seen in motion before it is decided; the extra nested box
   under *Findings* is needed either way, since the two slots are separated by coordinate space
   and not merely by how many properties each one uses.
 

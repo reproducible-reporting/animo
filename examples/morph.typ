@@ -42,7 +42,7 @@
   = Shapes in a Paragraph
 
   // A shape is matched by its geometry, as a letter is by its shape, so a box and a small
-  // figure keep their place among the words. A shape that changes size fades instead.
+  // figure keep their place among the words.
   #region[
     A #tag("size", wrap: none)[small] box #box(width: 0.8cm, height: 0.35cm, fill: blue)
     and a figure #box(baseline: 20%, stack(
@@ -82,11 +82,30 @@
 
 #slide(animation: {
   import anim: *
-  sub(replace("square", transition: morph())[$ (a + b)^2 = a^2 + 2 a b + b^2 $])
+  sub(replace("square", transition: morph())[$ (a^2 + 2 a b + b^2) / 2 $])
 })[
   = An Equation That Grows
 
   // A letter that changes size gets another glyph, so the morph matches the ones that keep
-  // their size and fades the others.
-  #tag("square")[$ (a + b)^2 $]
+  // their size and fades the others. The bar of the fraction keeps its commands and changes
+  // its length, so it is resized and widens under the longer numerator.
+  #tag("square")[$ (a + b)^2 / 2 $]
+]
+
+#slide(animation: {
+  import anim: *
+  sub(replace(
+    "words",
+    transition: morph(),
+  )[a few more words, which it grows around])
+})[
+  = A Box That Grows
+
+  // The box keeps its commands when its size changes, so it is resized rather than faded.
+  // Its corners keep their radius on the way, and the words it holds move as letters do.
+  #region[
+    #box(fill: aqua, stroke: 1pt + blue, radius: 6pt, inset: 8pt)[
+      A box with #tag("words", wrap: none)[a few words]
+    ]
+  ]
 ]

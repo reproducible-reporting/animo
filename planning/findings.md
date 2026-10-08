@@ -1054,6 +1054,43 @@ for an `html.frame`.
 - A gradient fill is `fill="url(#r..)"`, a `linearGradient` in `userSpaceOnUse` whose
   `gradientTransform` scales it to the size of the shape.
 
+## The `d` of a path interpolates between paths of one structure
+
+Measured by animating the CSS `d` property of one path from its own data to that of another
+with the Web Animations API, on the paths typst 0.15.0 writes, paused at fixed moments.
+
+- **Support.** `CSS.supports('d', 'path("M 0 0")')` is true in chromium 151 and firefox 153
+  and false in webkit 26.5. Webkit ignores a `d` keyframe without an error,
+  `getComputedStyle(path).d` is `undefined` there, and a `stroke-width` beside it still
+  animates.
+- **Same commands.** Two paths with the same command letters in the same order interpolate
+  number by number, with the relative commands typst writes as they are, and a relative path
+  against an absolute one of the same commands as well. Mid-flight both engines compute an
+  absolute path, and at rest chromium computes the absolute form while firefox keeps the
+  letters of the attribute.
+  The rounded rectangle typst writes starts with `m 0 r`, and at a quarter of the step from
+  a radius of 2 to one of 8 that pair is `0 3.5`.
+- **Different commands.** A rectangle against a rectangle with rounded corners shows the
+  first path until the middle of the step and the second after it.
+- **Structure in typst's output.** Typst leaves out a segment of zero length, so a rounded
+  rectangle whose straight sides have no length, a pill or a rounded square of half its size
+  as radius, has fewer commands than one whose sides have a length, and a rectangle of zero
+  width has no `h`. A rectangle without rounded corners runs `v h v Z` from its corner, and
+  one with rounded corners starts on its left side with `m 0 r` and runs the other way round.
+  A filled shape with a stroke on only some sides writes its fill as another sequence.
+  A shape with a fill and a stroke and rounded corners is written as two paths,
+  a fill whose radius is inset by half the stroke width and an open stroke path that starts
+  on its top side.
+- **Geometry.** `getBBox()` follows the animated `d`: the box of a rectangle halfway from
+  20 × 10 to 40 × 30 is 30 × 20.
+- **The sum.** Two copies of a rounded rectangle that resize together from one geometry to
+  another, while one travels from its place to the other's and the other comes the opposite
+  way, under `plus-lighter` and a crossfade, differ from one opaque copy with the geometry
+  and the place they show by at most 2/255 at the midpoint, in chromium and firefox.
+
+So a resize is possible exactly for the paths whose commands agree, and it needs no
+rewriting of a path in the two engines that animate `d`.
+
 ## A `translate` carries an element's clip and gradient, not an ancestor's clip
 
 Measured by moving one element of a frame by a whole number of CSS pixels with a CSS

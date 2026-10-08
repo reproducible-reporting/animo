@@ -178,19 +178,29 @@ def test_a_recoloured_rectangle_is_a_match(midway):
     assert moving(midway, "c", "path")[:2] == [[True], [True]]
 
 
-def test_a_rectangle_whose_stroke_changes_width_is_not_a_match(midway):
-    """A route does not scale a stroke, so the two rectangles fade where they are."""
-    assert moving(midway, "s", "path")[:2] == [[False], [False]]
+def resizing(presentation: Deck) -> bool:
+    """Whether the engine animates `d`, which a resize needs and webkit 26.5 lacks."""
+    return presentation.page.evaluate("""() => CSS.supports("d", 'path("M 0 0")')""")
 
 
-def test_a_fraction_whose_numerator_grows_fades_its_bar(midway):
-    """The bar is longer in the incoming fraction, so its `d` differs and it is not a match.
+def test_a_rectangle_whose_stroke_changes_width_is_a_resize(midway):
+    """A route does not scale a stroke, so the pair is no exact match but a resize.
+
+    In an engine without `d` there is no resize, and the two rectangles fade where they are.
+    `test_morph_resize_html.py` asserts what a resize shows.
+    """
+    expected = resizing(midway)
+    assert moving(midway, "s", "path")[:2] == [[expected], [expected]]
+
+
+def test_a_fraction_whose_numerator_grows_resizes_its_bar(midway):
+    """The bar is longer in the incoming fraction, so its `d` differs and it is a resize.
 
     The denominator is matched and moves to the middle of the longer bar.
-    Carrying the bar from one length to the other is a resize of its path, which the morph
-    does not do yet, and when it does, the first assertion flips.
+    In an engine without `d` the bar fades instead.
     """
-    assert moving(midway, "f", "path")[:2] == [[False], [False]]
+    expected = resizing(midway)
+    assert moving(midway, "f", "path")[:2] == [[expected], [expected]]
     assert any(moving(midway, "f", "use")[0])
 
 

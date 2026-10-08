@@ -43,6 +43,11 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   A shape is matched when its outline and its stroke width are the same in both versions,
   whatever its colour, and an image when it is the same image at the same size.
   What sits inside a clipped box is matched only when the box stays where it is.
+- Resize a shape in a morph when its size changes and its kind stays, such as the bar of a
+  fraction that widens, a box that grows around its words or a circle that becomes an ellipse.
+  Its outline and the width of its stroke change on the way, and rounded corners keep their
+  shape. A shape is resized only into one between the same two matched neighbours and inside
+  the same tags. Webkit, which does not animate the outline of a shape, fades it instead.
 - Write the `<title>`, the `lang` and the `<meta>` elements of the HTML presentation
   from `set document(..)` and `set text(lang: ..)`.
 - Carry the resolved `handout` flag of every state in the plan of the HTML presentation,
@@ -71,6 +76,8 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   the two durations of the deck, so that it still stops every duration written in a deck.
 - Place the slides of the HTML presentation in a `.animo-stage` element inside `.animo-deck`.
   The stage is the visible rectangle, and it clips and isolates the crossfade between slides.
+- Match the content of a tag in its place in a morph when the tag holds a tag that the
+  boundary changes, as for the changed tag itself, rather than carrying it as one.
 - Split the runtime of the HTML presentation into files under `src/js`,
   which are joined into the one script of the page.
 - Plan every effect of a step before writing any of them, and accept any CSS property in an
