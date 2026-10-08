@@ -174,6 +174,7 @@
   "effects",
   "display",
   "boundaries",
+  "paths",
   "morph",
   "controller",
   "input",

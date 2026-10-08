@@ -83,7 +83,7 @@ def test_two_copies_of_a_shape_at_two_places_have_one_d(frame):
 
 
 def test_the_paint_of_a_path_is_in_attributes_beside_its_d(frame):
-    """Fill, stroke and the stroke's shape are attributes, and `fill-rule` is `nonzero`."""
+    """Fill, stroke and the stroke's shape are attributes, and typst's shapes are `nonzero`."""
     paths = drawn(frame, "path")
     stroked = [path for path in paths if path.get("stroke") not in (None, "none")]
     assert stroked
@@ -124,3 +124,36 @@ def test_a_gradient_is_in_the_user_space_of_the_shape(frame):
     gradients = list(frame.iter(f"{SVG}linearGradient"))
     assert any(gradient.get("gradientUnits") == "userSpaceOnUse" for gradient in gradients)
     assert any(gradient.get("gradientTransform") == "scale(40 20)" for gradient in gradients)
+
+
+def test_a_circle_ends_at_its_start_without_closing(frame):
+    """A circle is four relative cubic Béziers after an `m`, without a `Z`, back to its start.
+
+    Whether a subpath is closed is therefore read from where it ends as well as from `Z`.
+    """
+    circles = [path.get("d") for path in drawn(frame, "path") if path.get("d").count("c") == 4]
+    assert circles
+    for d in circles:
+        assert "Z" not in d
+        assert "z" not in d
+        numbers = [float(value) for value in re.findall(r"-?[\d.]+", d.split("c", 1)[1])]
+        ends = [numbers[k : k + 6][4:] for k in range(0, len(numbers), 6)]
+        assert sum(end[0] for end in ends) == pytest.approx(0, abs=1e-6)
+        assert sum(end[1] for end in ends) == pytest.approx(0, abs=1e-6)
+
+
+def test_a_curve_writes_the_fill_rule_it_asks_for(typst: TypstRunner):
+    """The even-odd rule of a `curve` is `fill-rule="evenodd"` on its path."""
+    body = """\
+#html.frame(block(width: 40pt, height: 40pt, curve(
+  fill: blue,
+  fill-rule: "even-odd",
+  curve.move((0pt, 0pt)),
+  curve.line((20pt, 0pt)),
+  curve.line((10pt, 20pt)),
+  curve.close(),
+)))
+"""
+    markup = typst.html(body, name="rule.html").read_text()
+    svg = ET.fromstring(re.search(r"<svg\b.*</svg>", markup, re.S).group(0))
+    assert [path.get("fill-rule") for path in drawn(svg, "path")] == ["evenodd"]

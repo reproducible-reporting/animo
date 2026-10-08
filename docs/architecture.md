@@ -288,6 +288,13 @@ numbers and the stroke attributes other than the width, and `matches` appends th
 and `labelsAbove`, the labels of the groups between the path and its region.
 `sameFrame` drops a pair whose two user spaces differ in more than a translation.
 
+Last the shape morphs, in the same engines.
+`shapeMorphs` takes the paths left over after the resizes and assigns each to the tag it
+belongs to, which is the nearest labelled group above it that is not Animo's own,
+or the tag around the region when the region is a tag's implicit one.
+A tag whose name is among the `names` of the record and that holds exactly one such path in
+each region pairs the two, whatever their structure, under the same clips and `sameFrame`.
+
 The distance of a match is measured on the screen, from where the outgoing element is
 displayed to where the incoming one is laid out, and mapped into the user space of each
 element's parent through the inverse of the parent's `getScreenCTM()`.
@@ -302,12 +309,21 @@ incoming one, which `reshaped` writes as their common `end`.
 Typst writes every path from its own origin, so the two `d` are in comparable user spaces,
 the two paths have one geometry at every moment, and the `translate` keeps them at one place.
 Neither property is written as inline style either.
+When the two `d` have different commands, as for a shape morph, `alignPaths` in
+`src/js/paths.js` rewrites both into one structure of absolute cubic Béziers first.
+It pairs the subpaths by length and gives a subpath without a partner a point to grow from.
+It closes an open subpath against a closed one, with a line when the path is filled and by
+running back along itself when it is not.
+It runs two closed subpaths the same way round and starts the second where the squared
+distance its points travel is least.
+Then it cuts both at the vertices of both, by their fraction of the length.
+`paths.js` reads no DOM, so its tests run on numbers.
 The opacity is the crossfade's own, which `plus-lighter` sums to one opaque element on the
 route (see *Findings*).
 
 `slide.morphed` holds every element a morph is still moving, with the epoch of its rendering,
-the stack that holds it, where its route ends and, for a resize, where its `d` and stroke
-width end.
+the stack that holds it, where its route ends and, for a resize or a shape morph, where its
+`d` and stroke width end.
 `settleMorphs` reads it at every step, before any transition plans.
 A translation in a stack the step carries again runs on to its end on the new boundary's
 clock, unless it is in the rendering being entered, and every other one snaps to rest.
@@ -461,6 +477,7 @@ Only `boot.js` calls into the other files at load time, and it is the last one.
 | `effects.js`    | `timing`, `scheduled`, `span`, `showing`, `plan` and `apply`                 |
 | `display.js`    | positions and anchors, the CSS of a display state and a pan, `planState`     |
 | `boundaries.js` | the transitions of both boundaries, `planBoundary` and `planEpoch`           |
+| `paths.js`      | `alignPaths`, which rewrites two paths into one structure                    |
 | `morph.js`      | the matches of a morph, their routes, and `settleMorphs`                     |
 | `controller.js` | the position, `show`, `step`, `jump`, and the clock with its pause           |
 | `input.js`      | key, pointer and hash events, turned into intents by the active mode         |

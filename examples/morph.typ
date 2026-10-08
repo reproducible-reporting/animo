@@ -109,3 +109,75 @@
     ]
   ]
 ]
+
+// A star of five points, as a polygon of ten corners around the middle of its box.
+#let star(size, fill) = polygon(
+  fill: fill,
+  ..range(10).map(i => {
+    let angle = -90deg + i * 36deg
+    let radius = if calc.even(i) { size / 2 } else { size / 5 }
+    (size / 2 + radius * calc.cos(angle), size / 2 + radius * calc.sin(angle))
+  }),
+)
+
+// An arrow pointing right, as a polygon in a box of the given size.
+#let arrow(size, fill) = polygon(
+  fill: fill,
+  (0pt, 0.4 * size),
+  (0.65 * size, 0.4 * size),
+  (0.65 * size, 0.2 * size),
+  (size, 0.5 * size),
+  (0.65 * size, 0.8 * size),
+  (0.65 * size, 0.6 * size),
+  (0pt, 0.6 * size),
+)
+
+#slide(animation: {
+  import anim: *
+  sub(
+    replace("square", transition: morph())[#circle(radius: 1cm, fill: blue)],
+    replace("star", transition: morph())[#polygon.regular(
+      size: 2cm,
+      vertices: 5,
+      fill: orange,
+    )],
+    replace("arrow", transition: morph())[#line(
+      start: (0cm, 1cm),
+      end: (2cm, 1cm),
+      stroke: 3pt + red,
+    )],
+    replace("filled", transition: morph())[#circle(
+      radius: 1cm,
+      stroke: 3pt + green,
+    )],
+    replace("corners", transition: morph())[#rect(
+      width: 2cm,
+      height: 1.2cm,
+      radius: 0.3cm,
+      fill: gray,
+    )],
+  )
+  sub(
+    ..("square", "star", "arrow", "filled", "corners").map(name => reset(
+      name,
+      transition: morph(),
+    )),
+  )
+})[
+  = Shapes That Change Their Outline
+
+  // A tag that holds one shape before the step and one after it turns the one into the
+  // other, whatever their outlines, and the colours, the fill and the stroke change on the way.
+  #region[
+    #grid(
+      columns: 5,
+      column-gutter: 0.8cm,
+      align: horizon,
+      tag("square")[#square(size: 2cm, fill: blue)],
+      tag("star")[#star(2cm, orange)],
+      tag("arrow")[#arrow(2cm, red)],
+      tag("filled")[#square(size: 2cm, fill: green)],
+      tag("corners")[#rect(width: 2cm, height: 1.2cm, fill: gray)],
+    )
+  ]
+]

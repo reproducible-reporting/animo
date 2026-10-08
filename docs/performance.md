@@ -288,6 +288,12 @@ The diff of two lists of 3000 letters takes about 10 ms at 400 differences,
 which is the bound above which a region's letters are crossfaded instead,
 and about 60 ms at 1600.
 
+A shape morph adds the alignment of its two outlines to the key press,
+which `benchmarks/morph.py` measures on two closed outlines that share no vertex.
+It takes 3 ms in chromium and 4 ms in firefox for 100 segments each,
+and 8 ms and 11 ms for 1000 segments each.
+A tag holds one shape morph, so a step pays this once per tag that changes its shape.
+
 ## Page Weight
 
 The HTML deck is one self-contained file: a stylesheet, a runtime, and one inline SVG per

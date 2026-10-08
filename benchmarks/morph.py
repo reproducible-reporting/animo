@@ -12,6 +12,8 @@ whether the browser keeps up with the animations it was given.
 The diff: `commonSubsequence` from `src/js/morph.js` on two lists of 3000 glyph names that
 differ in a growing number of places, which is what the bound `MORPH_DIFFERENCES` is read
 from.
+The alignment: `alignPaths` from `src/js/paths.js` on two closed paths of 100 and of 1000
+segments each, which is what a shape morph adds to the step for each pair it carries.
 
 The result is printed, and written as JSON when `--output` names a file.
 """
@@ -120,6 +122,41 @@ DIFF = """([source, n, changes, repeat]) => {
 
 CHANGES = (25, 50, 100, 200, 400, 800)
 
+# The alignment alone, on a polygon of `n` corners on a wavy circle and a circle of `n` cubic
+# Béziers turned against it, so that the two share no vertex and every segment is cut.
+ALIGN = """([source, n, repeat]) => {
+    const alignPaths = new Function(`${source}; return alignPaths;`)();
+    const pair = (x, y) => `${x.toFixed(3)} ${y.toFixed(3)}`;
+    const point = (angle, radius) =>
+        pair(100 + radius * Math.cos(angle), 100 + radius * Math.sin(angle));
+    const corners = Array.from({length: n}, (_, i) => {
+        const angle = (2 * Math.PI * i) / n;
+        return point(angle, 80 + 8 * Math.sin(7 * angle));
+    });
+    const lines = corners.slice(1).map((corner) => `L ${corner}`);
+    const polygon = `M ${corners[0]} ${lines.join(" ")} Z`;
+    const arcs = Array.from({length: n}, (_, i) => {
+        const [from, to] = [i, i + 1].map((k) => (2 * Math.PI * (k + 0.37)) / n);
+        const handle = (4 / 3) * Math.tan((to - from) / 4) * 60;
+        const control = (angle, sign) => {
+            const [x, y] = [100 + 60 * Math.cos(angle), 100 + 60 * Math.sin(angle)];
+            return pair(x - sign * handle * Math.sin(angle), y + sign * handle * Math.cos(angle));
+        };
+        return `C ${control(from, 1)} ${control(to, -1)} ${point(to, 60)}`;
+    });
+    const circle = `M ${point((2 * Math.PI * 0.37) / n, 60)} ${arcs.join(" ")} Z`;
+    const times = [];
+    let found = null;
+    for (let r = 0; r < repeat; r++) {
+        const start = performance.now();
+        found = alignPaths(polygon, circle);
+        times.push(performance.now() - start);
+    }
+    return {times, segments: found[0].split("C").length - 1};
+}"""
+
+SEGMENTS = (100, 1000)
+
 
 def main() -> None:
     """Measure, print, and write the result."""
@@ -143,6 +180,7 @@ def main() -> None:
         assert outcome.ok, outcome
         decks[name] = target
     script = (ROOT / "src" / "js" / "morph.js").read_text()
+    paths = (ROOT / "src" / "js" / "paths.js").read_text()
     result = {"environment": environment(), "engines": {}}
     with sync_playwright() as playwright:
         for engine in args.engine or ("chromium", "firefox", "webkit"):
@@ -151,7 +189,7 @@ def main() -> None:
             except Exception as exc:  # noqa: BLE001
                 print(f"{engine}: cannot be launched here ({type(exc).__name__})")
                 continue
-            own = {"version": browser.version, "steps": {}, "diff": {}}
+            own = {"version": browser.version, "steps": {}, "diff": {}, "align": {}}
             for name, deck in decks.items():
                 runs = []
                 for _ in range(args.repeat):
@@ -176,6 +214,12 @@ def main() -> None:
                 own["diff"][changes] = statistics.median(found["times"])
                 took = own["diff"][changes]
                 print(engine, f"diff of 3000 names, {2 * changes} differences: {took:.1f} ms")
+            for segments in SEGMENTS:
+                found = page.evaluate(ALIGN, [paths, segments, args.repeat])
+                own["align"][segments] = statistics.median(found["times"])
+                took = own["align"][segments]
+                pieces = found["segments"]
+                print(engine, f"alignment of {segments} segments into {pieces}: {took:.1f} ms")
             browser.close()
             result["engines"][engine] = own
     if args.output is not None:

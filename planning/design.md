@@ -1346,9 +1346,9 @@ Five rules make this work:
    positioned they move its content (see *Findings*). Both are therefore written by the
    runtime, on the slot it is about to transform, and never as a rule in the stylesheet,
    which cannot tell a slot from a region's content.
-   A resize animates `d` and `stroke-width` on the two paths it pairs as well. Neither is a
-   transform, and neither is ever written as inline style, so a path at rest shows its own
-   attributes.
+   A resize and a shape morph animate `d` and `stroke-width` on the two paths they pair as
+   well. Neither is a transform, and neither is ever written as inline style, so a path at
+   rest shows its own attributes.
 
 1. Continuous state and boundary state get **separate nested slots**. `tag` wraps its body
    twice, in two wrappers of the same kind, so every tag site emits a labelled outer group with
@@ -2286,7 +2286,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
   transition follows the same rule and the same refusal. It takes the transition functions a
   slide takes, because one concept has one spelling, and refuses the ones a region cannot take.
 
-- **What does a morph match?** A morph matches three kinds of pair inside the pair of region
+- **What does a morph match?** A morph matches four kinds of pair inside the pair of region
   groups the boundary carries, in this order of precedence,
   and an element inside a matched pair is not matched again.
 
@@ -2317,7 +2317,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
        limit and dash. Typst starts the `d` of every shape at the shape's own origin and puts
        its place in a transform, so two copies of one shape at two places have one `d`
        (see *Findings*). The stroke width is in the key because a route does not scale a
-       stroke. The `fill-rule` is not, because typst writes `nonzero` on every path.
+       stroke, and so is the `fill-rule`, because two copies under two rules cover two areas.
      - An image is an `<image>`, and its key is the `href`, which holds the image's data,
        with the `width` and the `height`.
 
@@ -2363,13 +2363,54 @@ These were the open questions of the earlier drafts. They are settled; the evide
      crossfades the shapes the other engines resize, while every other match moves.
      Paths whose structures differ, such as a rectangle against one with rounded corners,
      against a circle, or a rounded rectangle against one whose straight sides typst leaves
-     out because they have no length, are crossfaded. Carrying them needs the paths aligned
-     to one structure first.
+     out because they have no length, are left to the shape morph.
+
+  1. A **shape morph** pairs two paths of any structure that the resize left over, when a tag
+     the boundary changes holds exactly one of them in each rendering, and animates `d` and
+     the stroke width as a resize does.
+     A path belongs to the nearest tag above it, which is the tag around the region when the
+     region is a tag's implicit one, and two tags inside a region are paired by name and
+     index as in a tag match. The two paths need the same clips and user spaces that differ
+     by a translation only, as for a resize.
+     A tag that holds one shape before and one after is a clear statement that the one
+     becomes the other, and no other clue pairs two shapes of different structures.
+     Guessing from the structure or the place would turn a box that disappears into a circle
+     that appears beside it. An argument of `morph()` that turns shape morphs on or names the
+     tags they apply to was the alternative, and it would state a second time what the tag
+     says already. The tag takes precedence over the hunks of the resize, so a box that a
+     changed tag moves from before its words to after them morphs on the way.
+     A tag that holds two leftover shapes on either side crossfades them.
+
+     The engine interpolates only between paths of the same commands, so both paths are
+     rewritten into one structure first, which manim calls aligning points.
+     Every segment becomes an absolute cubic Bézier. The subpaths are paired by length, and
+     a subpath without a partner is paired with a point at its place in the other path's box,
+     so a hole grows out of nothing or closes. An open subpath against a closed one is closed
+     the way its fill closes it, by a line when the path has a fill and by running back
+     along itself when it has none, which strokes the same apart from its two ends. Two
+     closed subpaths run the same way round, which is the sign of their area, or the shape
+     turns inside out on the way, and the second starts where the squared distance its
+     points travel is least, which keeps a square from twisting into a circle. Last, both are
+     cut at the vertices of both by their fraction of the length, so every piece lies within
+     one segment of each side, a square's sides are cut at their middles against a circle,
+     and a sharp corner against a rounded one becomes two short pieces that bend into the
+     arc. The alignment reads no DOM and is linear in the number of segments apart from a
+     search over the starting point.
+
+     The fill rule of each path stays as it is, so a shape under the even-odd rule against
+     one under the non-zero rule shows both rules crossfaded while the outline moves, and a
+     filled shape against a stroked one crossfades the fill against the stroke.
+     Webkit crossfades shape morphs as it crossfades resizes.
 
   A tag is how an author makes content move as one, and a paragraph that reflows is carried by
   its glyphs and shapes without any tag.
   A shape that changes size, such as the bar of a fraction whose numerator grows, has another
   `d` and is no ink match, and the resize carries it when its structure stays.
+  A letter is a `<use>` of an outline in the definitions and not a path, so a shape morph does
+  not turn a letter into another letter. Glyph outlines have many subpaths, and manim's own
+  `TransformMatchingTex` fades the letters it cannot match rather than morphing them.
+  An author who wants a letter to change its outline draws it as a shape, with typst's
+  `curve` or with cetz.
   Elements of one key are paired in document order, which for a plot is the order it draws its
   marks in. When one point is added at the start of the data, every mark therefore moves to
   the place of the next point, and the routes cross the plot although a pairing exists in which

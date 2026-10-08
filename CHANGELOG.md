@@ -48,6 +48,11 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   Its outline and the width of its stroke change on the way, and rounded corners keep their
   shape. A shape is resized only into one between the same two matched neighbours and inside
   the same tags. Webkit, which does not animate the outline of a shape, fades it instead.
+- Turn a shape into another of a different outline in a morph, such as a square into a circle,
+  a star into a pentagon or an arrow into a line, when a tag that the primitive changes holds
+  exactly one shape that is not matched otherwise before and after the step.
+  The outline, the colours and the width of the stroke change on the way.
+  Webkit fades the two shapes instead.
 - Write the `<title>`, the `lang` and the `<meta>` elements of the HTML presentation
   from `set document(..)` and `set text(lang: ..)`.
 - Carry the resolved `handout` flag of every state in the plan of the HTML presentation,

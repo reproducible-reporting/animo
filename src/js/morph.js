@@ -12,7 +12,9 @@
 // morph needs no opacity of its own and clones nothing. See *Findings*.
 // A resize is a match of two paths of one structure whose geometry differs, and both paths
 // also animate their `d` and stroke width from the outgoing geometry to the incoming one, so
-// the two have one geometry at every moment as well.
+// the two have one geometry at every moment as well. A shape morph is a match of two paths of
+// different structures, which `alignPaths` rewrites into one structure before they are
+// animated in the same way.
 //
 // The translations and resizes are routes and never states. They are animations over a
 // `translate`, a `d` and a `stroke-width` whose inline style stays unset, so a slide at rest
@@ -58,11 +60,12 @@ const NOT_INK = new Set([
 /**
  * The attributes of a `<path>` that shape its ink, apart from its `d`.
  *
- * The stroke width is among them because a route does not scale a stroke. The colours are not,
- * because two copies of different colours sum to their interpolation (see *Findings*). Neither
- * is `fill-rule`, which typst writes as `nonzero` on every path.
+ * The stroke width is among them because a route does not scale a stroke, and the fill rule
+ * because two copies under two rules cover two areas. The colours are not, because two copies
+ * of different colours sum to their interpolation (see *Findings*).
  */
 const PATH_SHAPE = [
+  "fill-rule",
   "stroke-width",
   "stroke-linecap",
   "stroke-linejoin",
@@ -136,9 +139,10 @@ function movesAsOne(label) {
  * a group that holds such a tag, because the content of both differs, and what they hold is
  * matched in its place. Then the ink matches: the glyphs, paths and images outside every
  * matched group, paired by a longest common subsequence of their keys in document order, so a
- * box beside a word keeps its place among the letters. Last the resizes, which pair the paths
- * left over between the same two ink matches by their structure (see `resizes`). Every match
- * has the same clips above it in both regions.
+ * box beside a word keeps its place among the letters. Then the resizes, which pair the paths
+ * left over between the same two ink matches by their structure (see `resizes`), and last the
+ * shape morphs, which pair the one path a changed tag holds on each side (see `shapeMorphs`).
+ * Every match has the same clips above it in both regions.
  */
 function matches(slide, outgoing, incoming, changed, screen) {
   const pairs = [];
@@ -220,13 +224,82 @@ function matches(slide, outgoing, incoming, changed, screen) {
     const structure = (region) => (element) =>
       `${pathStructure(element)}|${above(element, region)}|${labelsAbove(element, region, labels)}`;
     const found = resizes(before, after, common, structure(outgoing), structure(incoming));
+    const taken = new Set(common.flatMap(([i, j]) => [before[i], after[j]]));
     for (const [from, to] of found) {
+      taken.add(from);
+      taken.add(to);
       if (sameFrame(from, to, screen)) {
+        pairs.push([from, to, true]);
+      }
+    }
+    const left = (list) => list.filter((element) => !taken.has(element));
+    for (const [from, to] of shapeMorphs(left(before), left(after), changed, outgoing, incoming)) {
+      if (above(from, outgoing) === above(to, incoming) && sameFrame(from, to, screen)) {
         pairs.push([from, to, true]);
       }
     }
   }
   return pairs;
+}
+
+/**
+ * The shape morphs among the ink the other matches left over, as pairs of an outgoing and an
+ * incoming path.
+ *
+ * A tag the boundary changes that holds exactly one path left over in each region pairs the
+ * two, whatever their structure, because a tag that holds one shape before and one after is
+ * a clear statement that the one becomes the other. Any other path left over is crossfaded,
+ * because two paths of different structures give no other clue that they belong together.
+ * A path belongs to the nearest tag above it, which is the tag around its region when there
+ * is none inside the region, and the tags inside one region are paired by name and by index,
+ * as the tag matches are.
+ */
+function shapeMorphs(before, after, changed, outgoing, incoming) {
+  const held = (leftovers, region) => {
+    const index = new Map();
+    const seen = new Map();
+    for (const group of region.querySelectorAll("[data-typst-label]")) {
+      const name = group.dataset.typstLabel;
+      seen.set(name, (seen.get(name) ?? 0) + 1);
+      index.set(group, `${name} ${seen.get(name)}`);
+    }
+    const found = new Map();
+    for (const path of leftovers) {
+      const tag = holder(path, region);
+      if (path.localName === "path" && tag !== null && changed.has(tag.dataset.typstLabel)) {
+        const key = index.get(tag) ?? tag.dataset.typstLabel;
+        found.set(key, [...(found.get(key) ?? []), path]);
+      }
+    }
+    return found;
+  };
+  const partners = held(after, incoming);
+  const pairs = [];
+  for (const [key, paths] of held(before, outgoing)) {
+    const other = partners.get(key);
+    if (paths.length === 1 && other?.length === 1) {
+      pairs.push([paths[0], other[0]]);
+    }
+  }
+  return pairs;
+}
+
+/**
+ * The tag an element belongs to: the nearest labelled group above it that is no part of
+ * Animo's own, inside its region or, failing that, the nearest labelled group above the
+ * region when that is a tag, or `null`.
+ */
+function holder(element, region) {
+  let node = element.parentElement;
+  while (node !== null && node !== region) {
+    const label = node.dataset.typstLabel;
+    if (label !== undefined && !label.startsWith("animo-")) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  node = region.parentElement?.closest("[data-typst-label]") ?? null;
+  return node !== null && !node.dataset.typstLabel.startsWith("animo-") ? node : null;
 }
 
 /**
@@ -538,6 +611,10 @@ function measured(slide, [outgoing, incoming, resize], screen) {
  * so the two have one geometry at every moment, and the route's `translate` puts them at one
  * place. An exact match whose outgoing path an earlier resize is still changing goes on from
  * what that path shows as well.
+ * When the two `d` have different commands, which is the case for a shape morph and for a path
+ * that a shape morph is still changing, both are rewritten into one structure first, because
+ * the engine interpolates only between paths of the same commands. An open subpath is closed
+ * as its fill closes it (see `alignPaths`).
  *
  * A property is animated only where it changes, because chromium 151 stops drawing the other
  * properties of an effect beside a keyframe property that is equal at both ends (see
@@ -558,10 +635,20 @@ function reshaped(slide, outgoing, incoming, resize) {
     const after = incoming.getAttribute(name).trim();
     return name === "d" ? `path("${after}")` : `${after}px`;
   };
-  return {
-    start: showing(outgoing, names),
-    end: Object.fromEntries(names.map((name) => [name, value(name)])),
-  };
+  const start = showing(outgoing, names);
+  const end = Object.fromEntries(names.map((name) => [name, value(name)]));
+  if (names.includes("d") && pathCommands(start.d) !== pathCommands(end.d)) {
+    const filled = (path) => path.getAttribute("fill") !== "none";
+    const aligned = alignPaths(start.d, end.d, [filled(outgoing), filled(incoming)]);
+    if (aligned === null) {
+      delete start.d;
+      delete end.d;
+    } else {
+      start.d = `path("${aligned[0]}")`;
+      end.d = `path("${aligned[1]}")`;
+    }
+  }
+  return Object.keys(end).length === 0 ? null : { start, end };
 }
 
 /** The morph translations still running on an element and above it, on the screen. */
@@ -758,11 +845,10 @@ function carry(effects, slide, { outgoing, incoming, delta, shape = null }, timi
     start: { translate: px(back), ...shape?.start },
     end: { translate: AT_REST, ...shape?.end },
   });
-  // The incoming path ends at its own attributes, which is its geometry at rest.
-  const rest =
-    shape === null ? undefined : Object.fromEntries(names.slice(1).map((name) => [name, null]));
+  // Both paths end at the incoming geometry, which is the incoming path's own at rest, in the
+  // commands the two share while they move.
   morphed.set(outgoing, { epoch: from, stack, end, heading: end, shape: shape?.end });
-  morphed.set(incoming, { epoch: to, stack, end: null, heading: null, shape: rest });
+  morphed.set(incoming, { epoch: to, stack, end: null, heading: null, shape: shape?.end });
 }
 
 /** A `translate` as `px` writes it, back as a distance. */

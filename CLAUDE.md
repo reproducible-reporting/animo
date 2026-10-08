@@ -58,7 +58,7 @@ When a finding contradicts one of them, say so and ask.
 - Content that falls outside the viewport is clipped, never carried over to a next slide.
 - Animo emits only the individual `translate` and `scale` CSS properties as transforms,
   never the `transform` shorthand, which would clobber typst's own positioning.
-  A morph also animates `d` and `stroke-width` on a path it resizes,
+  A morph also animates `d` and `stroke-width` on a path it resizes or turns into another shape,
   and never writes either as inline style.
 - Animo has no templating or styling features, and no header or footer machinery.
   A recurring element is `#place` inside a wrapper around `#slide`.

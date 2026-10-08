@@ -215,6 +215,8 @@ def test_two_quick_steps_resize_nothing_abruptly(page, deck_at, shapes):
 
 # Two rectangles of one structure in two places of a region whose words are matched: one is
 # removed before the words and the other added after them, so they are in two hunks.
+# A circle is added beside the second, so that the tag holds two shapes after the step and
+# does not pair the two rectangles as a shape morph.
 HUNKS = """
   #region(name: "q")[
     #tag("h")[#box(rect(width: 0.5cm, height: 0.3cm, fill: blue)) Some words]
@@ -230,7 +232,7 @@ def test_a_shape_removed_in_one_place_is_not_resized_into_one_added_in_another(
         typst,
         HUNKS,
         'sub(replace("h", transition: morph())[Some words '
-        "#box(rect(width: 0.8cm, height: 0.3cm, fill: blue))])",
+        "#box(rect(width: 0.8cm, height: 0.3cm, fill: blue)) #box(circle(radius: 2pt))])",
         name="hunks.html",
     )
     presentation: Deck = deck_at(html)

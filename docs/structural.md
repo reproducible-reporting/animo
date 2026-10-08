@@ -212,7 +212,7 @@ The example deck for this section is
 [PDF handouts](https://reproducible-reporting.github.io/animo/examples/morph-handouts.pdf)).
 It shows a paragraph that reflows, a paragraph whose shapes move with its words,
 a crossfade and a morph of the same change side by side, an equation that grows,
-and a box that grows around its words.
+a box that grows around its words, and shapes that change their outline.
 
 The `morph()` transition moves the content that the outgoing and the incoming version of a
 region share from its old place to its new one, and fades only what differs:
@@ -253,14 +253,26 @@ What the morph moves is decided by what the two versions show.
   such as the letters on either side of it, and inside the same tags.
   So a box removed in one place is not resized into a box added in another,
   and a tag around one of two shapes keeps them apart.
+- **A shape that changes its outline** turns into the other shape on the way when a tag holds
+  it, the tag is the one the primitive changes, and the tag holds exactly one shape that is
+  not matched otherwise in each version.
+  On `#tag("s")[#square(size: 2cm)]`, the primitive
+  `replace("s", transition: morph())[#circle(radius: 1cm)]` turns the square into the circle.
+  A star becomes a pentagon, a rectangle gets rounded corners,
+  an arrow folds onto a line, and the hole of a ring closes.
+  A filled shape and a stroked one change their outline while the fill fades out and the
+  stroke fades in.
+  A tag that holds two such shapes in either version gives no clue which becomes which,
+  so its shapes fade.
 - **A tag** moves as one, which is how to carry a figure or a drawing as a whole.
   Two sites of one name are paired in the order they appear.
   A tag that the primitive itself changes is not carried as one,
   and neither is a tag around it,
   because their content differs between the versions, and what they hold is matched instead.
 - **Everything else** fades out and in where it is, as in a crossfade.
-  That includes an image that changes size, and a shape whose outline changes its kind,
-  such as a rectangle that gets rounded corners or a rectangle that becomes a circle.
+  That includes an image that changes size, and a shape whose outline changes its kind
+  outside a tag that holds it alone, such as the rectangles of a paragraph that get rounded
+  corners.
 
 A box with `clip: true` hides what lies outside its edges,
 and the morph does not move those edges along with what it moves inside the box.
@@ -289,8 +301,11 @@ sub(
 The morph moves content and never scales it.
 A resize changes the outline of a shape and keeps the width of its stroke,
 which is how it differs from scaling.
-Webkit does not animate the outline of a shape, so it fades a shape that changes size,
-as a crossfade does, while it moves everything else.
+Webkit does not animate the outline of a shape, so it fades a shape that changes size or
+outline, as a crossfade does, while it moves everything else.
+A letter is not a shape in this sense, so a letter does not turn into another letter.
+A letter drawn as a shape, with typst's `curve` or with cetz, turns into another shape
+like any other.
 A region whose letters differ in more than 400 places matches none of them and crossfades
 them, because the matching would take too long.
 A morph of a few hundred letters costs a step a few tens of milliseconds;

@@ -1041,13 +1041,15 @@ for an `html.frame`.
   Two copies of a shape at two places therefore have one `d`, as two copies of a letter have
   one `href`.
   A rectangle is `M 0 0v 28.35h 28.35v -28.35Z`, a circle four relative cubic Béziers after an
-  `m`, a line `M 0 0h 28.35`, and a regular polygon an `m` followed by `l` and `h` segments.
+  `m` that end at its start without a `Z`, a line `M 0 0h 28.35`, and a regular polygon an `m`
+  followed by `l` and `h` segments.
 - The bar of a fraction is a stroked path `M 0 0h 5.819` beside the glyphs of the fraction,
   so a numerator that grows gives the bar another `d`.
 - The paint is in attributes beside the `d`: `fill`, `fill-rule`, `stroke`, `stroke-width`,
   `stroke-linecap`, `stroke-linejoin` and `stroke-miterlimit`.
   Recolouring a shape changes `fill` or `stroke` and leaves the `d` alone.
-  Every `fill-rule` seen was `nonzero`.
+  The `fill-rule` of typst's own shapes is `nonzero`, and a `curve` with
+  `fill-rule: "even-odd"` writes `evenodd`.
 - An image is an `<image xlink:href="data:image/png;base64,.." width=".." height=".." preserveAspectRatio="none"/>` without `x` and `y`, so its place is the transform above it.
 - A clipped box is a `<g transform="translate(..)" clip-path="url(#c..)">` that holds what it
   clips, and the clip path's own `<path>` is in that group's user space.
