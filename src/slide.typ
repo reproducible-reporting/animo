@@ -24,7 +24,7 @@
   sites-of,
 )
 #import "deck.typ": (
-  css-color, deck-shape, handout-tally, paged-mode, unit-length,
+  css-color, deck-shape, handout-tally, html-output, paged-mode, unit-length,
 )
 #import "member.typ": check-boundaries, groupless-regions, members-of
 #import "plan.typ": (
@@ -268,6 +268,9 @@
   // in the body or in a layer, and the deck-wide step of a state is read from inside a
   // stack of renderings.
   numbered-flag.update(numbered)
+  // Outside every frame, where `target()` still says what is being compiled, because the
+  // body and the layers are laid out inside frames where it does not.
+  context html-output.update(target() == "html")
   step-counter.update(it => it + plan.states.len())
   context check-boundary-gap(position.get().first(), plan.states.first())
   // Unconditional, so that a slide that holds nothing clears whatever the slide before it
@@ -317,7 +320,10 @@
     // out the rendering of that state. It is one call in the HTML target, whose one frame
     // per layer carries every state's rendering, and one call per page on paper, which is
     // where the layer is placed anyway.
-    let view-at(state) = stack-view-for(plan.states.len(), state)
+    let view-at(state) = stack-view-for(
+      plan.states.map(resolved => resolved.handout),
+      state,
+    )
     let under-at(state) = if back-ink != none {
       layer-of("background", index, viewport, view-at(state), back-ink)
     }

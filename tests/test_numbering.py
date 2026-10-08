@@ -3,9 +3,9 @@
 """Tiers 1 and 2: what a slide is called, and what one of its subslides is called.
 
 A slide number is a counter and is asserted as one.
-The subslide numbers a `per-subslide` callback is handed are asserted inside the callback,
-which is the only place they exist: the stack is built while the slide is laid out,
-and the numbers it is built from never leave it.
+The subslide info a `per-subslide` callback is handed is asserted inside the callback,
+which is the only place it exists: the stack is built while the slide is laid out,
+and the info it is built from never leaves it.
 
 Both are asserted in both targets, because one number serving all three output types is
 what the whole construct is for. The HTML target is the one where the value cannot be
@@ -21,8 +21,8 @@ import pytest
 from decks import deck
 from harness import PagedRunner, TypstRunner, assert_differs
 
-# What every assertion here is wrapped in: a callback that checks the numbers it is handed
-# and lays out nothing, so that the deck compiles whatever the numbers turn out to be.
+# What every assertion here is wrapped in: a callback that checks the info it is handed
+# and lays out nothing, so that the deck compiles whatever the info turns out to be.
 CHECKS = """
 #let expect(wanted) = per-subslide(it => {
   assert.eq(it, wanted.at(it.number - 1), message: "subslide " + repr(it))
@@ -36,11 +36,18 @@ def numbered(*slides: str) -> str:
     return deck(*slides, preamble=CHECKS)
 
 
-def numbers(*states: tuple[int, int, int, int]) -> str:
-    """The subslide numbers a stack expects, as a typst array of one dictionary per state."""
+def numbers(*states: tuple[int, int, int, int], handouts: tuple[bool, ...] | None = None) -> str:
+    """The subslide info a stack expects, as a typst array of one dictionary per state.
+
+    The handout flags default to what `handout: auto` resolves to, which is a page for the
+    last state of the slide and for no other.
+    """
+    if handouts is None:
+        handouts = tuple(number == count for number, count, _, _ in states)
     entries = ", ".join(
-        f"(number: {number}, count: {count}, step: {step}, steps: {steps})"
-        for number, count, step, steps in states
+        f"(number: {number}, count: {count}, step: {step}, steps: {steps}, "
+        f"handout: {str(handout).lower()})"
+        for (number, count, step, steps), handout in zip(states, handouts, strict=True)
     )
     return f"#expect(({entries},))"
 
@@ -89,7 +96,7 @@ def test_a_slide_number_reads_the_same_in_a_layer_as_in_the_body(typst: TypstRun
     typst.ok(source, html=html)
 
 
-# The subslide numbers of a subslide.
+# The subslide info of a subslide.
 
 
 @pytest.mark.parametrize("html", [False, True])
@@ -135,6 +142,55 @@ def test_the_numbers_of_a_layer_are_the_numbers_of_the_body(typst: TypstRunner, 
     expected = numbers((1, 2, 1, 2), (2, 2, 2, 2))
     source = numbered(f"slide(overlay: [{expected}], {timeline(1)})[{expected}]")
     typst.ok(source, html=html)
+
+
+# Every output type a test of the subslide info and the output type is compiled to.
+OUTPUTS = pytest.mark.parametrize(
+    "kwargs",
+    [{"sysinp": {"animo": "handout"}}, {"sysinp": {"animo": "presentation"}}, {"html": True}],
+    ids=["handout", "presentation", "html"],
+)
+
+
+@OUTPUTS
+def test_the_handout_flag_of_a_subslide_is_its_resolved_flag(typst: TypstRunner, kwargs):
+    """The flag `init` and `sub` resolve to, read the same in every output type.
+
+    The presentation shows every subslide and the HTML target shows all of them in one
+    frame, so a deck can mark there which subslides the handout keeps.
+    The handout lays out the renderings of the states it leaves out as well, because the
+    renderings of a stack are decided before the page that shows one of them.
+    """
+    animation = "animation: { import anim: *\ninit(handout: true)\nsub()\nsub(handout: false)\n}"
+    expected = numbers((1, 3, 1, 4), (2, 3, 2, 4), (3, 3, 3, 4), handouts=(True, False, False))
+    # The handout refuses a deck without pages, so a second slide keeps its final state.
+    source = numbered(
+        f"slide(overlay: [{expected}], {animation})[{expected}]",
+        f"slide[{numbers((1, 1, 4, 4))}]",
+    )
+    typst.ok(source, **kwargs)
+
+
+# The output type.
+
+
+@OUTPUTS
+def test_the_output_type_names_what_is_compiled(typst: TypstRunner, kwargs):
+    """The three strings are the ones a command line already uses to select the output.
+
+    `html` is what `target()` returns, and the two paged ones are the values of
+    `--input animo=`.
+    It is read the same in the body, in a layer and outside every slide.
+    """
+    wanted = kwargs.get("sysinp", {"animo": "html"})["animo"]
+    read = f'#context assert.eq(output-type(), "{wanted}")'
+    source = deck(f"slide(background: [{read}], overlay: [{read}])[{read}]") + f"\n{read}\n"
+    typst.ok(source, **kwargs)
+
+
+def test_the_output_type_of_a_paged_compile_without_a_mode_is_the_handout(typst: TypstRunner):
+    """The handout is the default paged mode, so the output type says so as well."""
+    typst.ok(deck('slide[#context assert.eq(output-type(), "handout")]'))
 
 
 # What is refused.

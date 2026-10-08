@@ -9,7 +9,7 @@
 // `hide`, `move` and `scale` in the slide body.
 
 #import "anim.typ"
-#import "deck.typ": animo
+#import "deck.typ": animo, output-type
 #import "number.typ": per-subslide, slide-count, slide-number
 #import "slide.typ": slide
 #import "region.typ": region

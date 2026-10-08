@@ -57,6 +57,10 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   from `set document(..)` and `set text(lang: ..)`.
 - Carry the resolved `handout` flag of every state in the plan of the HTML presentation,
   and the settings of the deck in a `data-animo-config` attribute on `.animo-deck`.
+- Add a `handout` key to the dictionary a `per-subslide` callback receives,
+  which says whether the handout keeps that subslide, in every output type.
+- Add `output-type()`, which returns `"html"`, `"presentation"` or `"handout"`
+  and gives the same answer inside a slide as outside one.
 
 ### Changes
 

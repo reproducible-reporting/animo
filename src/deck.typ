@@ -40,6 +40,25 @@
   mode
 }
 
+// Whether the document is compiled to HTML, as `target()` says it outside every frame.
+//
+// Inside an `html.frame`, `target()` is `"paged"`, and a slide lays its body and both layers
+// out inside frames, so content there cannot ask `target()` (measured on typst 0.15.0; see
+// *Findings*).
+// A state set outside the frames reads the same inside them, so each slide publishes the
+// answer before it lays anything out.
+// Before the first slide nothing has published it, and `target()` itself answers there.
+#let html-output = state("animo-html", false)
+
+/// The output type being compiled: `"html"` for the HTML presentation, `"presentation"`
+/// for the static presentation and `"handout"` for the static handouts.
+/// Called in a context.
+///
+/// -> str
+#let output-type() = {
+  if target() == "html" or html-output.get() { "html" } else { paged-mode() }
+}
+
 // What the handout holds, as `slides` and the `pages` they asked for.
 //
 // A slide knows its own states, so it knows what it contributes, but a handout with no

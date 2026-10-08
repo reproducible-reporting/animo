@@ -548,6 +548,7 @@
   slide: slide,
   state: state,
   states: plan.states.len(),
+  handouts: plan.states.map(resolved => resolved.handout),
   epoch: if state == none { epoch } else { plan.states.at(state).epoch },
   epochs: plan.epochs,
   display: display,
@@ -573,14 +574,17 @@
 
 // A stack view: what a stack of one rendering per state is built from.
 //
-// `states` is how many states the slide has, and `state` is which of them is being laid
-// out, `none` in the HTML target, where one frame covers every state of an epoch.
+// `handouts` holds the resolved `handout` flag of every state of the slide, so its length is
+// how many states the slide has, and `state` is which of them is being laid out, `none` in
+// the HTML target, where one frame covers every state of an epoch.
+// The flags travel in every output type rather than only in the handout, so that a stack
+// lays out the same renderings in all three.
 // This is the part of a view that content outside the body may have, which is why a stack
 // view is a record of its own rather than the view a tag site is handed.
-#let stack-view-for(states, state) = (states: states, state: state)
+#let stack-view-for(handouts, state) = (handouts: handouts, state: state)
 
 // The stack view of the rendering a view describes.
-#let stack-view-of(view) = stack-view-for(view.states, view.state)
+#let stack-view-of(view) = stack-view-for(view.handouts, view.state)
 
 // Hand `stack-view` to every `per-subslide` in `body`.
 #let provide-stack-view(stack-view, body) = {

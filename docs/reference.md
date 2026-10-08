@@ -31,6 +31,7 @@ where shadowing typst's own `hide`, `move` and `scale` is harmless.
 | [`per-subslide`](#per-subslide)    | element            | a body or a layer     |
 | [`slide-number`](#slide-number)    | context function   | anywhere              |
 | [`slide-count`](#slide-count)      | context function   | anywhere              |
+| [`output-type`](#output-type)      | context function   | anywhere              |
 | [`anim.init`](#animinit)           | initial state      | an `animation` block  |
 | [`anim.sub`](#animsub)             | subslide           | an `animation` block  |
 | [`anim.reveal`](#animreveal)       | continuous         | a `sub` call          |
@@ -228,14 +229,18 @@ is shown.
 | `f`      | function                 |         | called with one dictionary, returns content |
 | `wrap`   | `auto`, `box` or `block` | `auto`  | the container the stack becomes             |
 
-The **subslide numbers** the callback receives:
+The **subslide info** the callback receives:
 
-| Key      | Type  | What it is                                                     |
-| -------- | ----- | -------------------------------------------------------------- |
-| `number` | `int` | the subslide's number within its slide, counting from one      |
-| `count`  | `int` | how many subslides that slide has                              |
-| `step`   | `int` | the subslide's number within the whole deck, counting from one |
-| `steps`  | `int` | how many subslides the whole deck has                          |
+| Key       | Type   | What it is                                                         |
+| --------- | ------ | ------------------------------------------------------------------ |
+| `number`  | `int`  | the subslide's number within its slide, counting from one          |
+| `count`   | `int`  | how many subslides that slide has                                  |
+| `step`    | `int`  | the subslide's number within the whole deck, counting from one     |
+| `steps`   | `int`  | how many subslides the whole deck has                              |
+| `handout` | `bool` | whether the handout keeps the subslide, as `init` and `sub` decide |
+
+The `handout` key is the same in every output type,
+so the HTML presentation and the static presentation can mark the subslides the handout keeps.
 
 `step` and `steps` are named for the presenter's steps, which is how a progress indicator reads
 them.
@@ -579,6 +584,25 @@ wipe(direction: ltr)
 The incoming slide is uncovered behind an edge that travels across the outgoing slide.
 
 Taught in [Slides](slides.md#slide-transitions).
+
+## Output Types
+
+### `output-type`
+
+```typst
+output-type()
+```
+
+The output type being compiled: `"html"` for the HTML presentation,
+`"presentation"` for the static presentation and `"handout"` for the static handouts.
+A context function.
+The paged strings are the values that `--input animo=` takes.
+
+```typst
+#context if output-type() == "html" [Use the arrow keys to step through the talk.]
+```
+
+Taught in [Output Types](outputs.md#content-per-output-type).
 
 ## Command Lines
 

@@ -1557,6 +1557,10 @@ Measured on typst 0.15.0.
 - `target()` returns `"html"` or `"paged"`, which is the clean way to branch. The
   `dictionary(std).at("html", default: none)` idiom in `slipst` is a compatibility hack for
   older typst versions and is not needed here.
+- Inside an `html.frame`, `target()` returns `"paged"` in a document compiled to HTML, nested
+  containers included. A slide lays its body and both layers out inside frames, so content
+  written there cannot learn from `target()` that the document is compiled to HTML. A state
+  updated outside the frame reads the same inside it, which is how `output-type()` answers there.
 - `set page(...)` is **ignored** in HTML export at document level (typst warns) and is an
   error inside `html.frame`. Slide size, background colour and background image must be
   emitted as CSS for the HTML target, and the slide itself is a sized `block`.

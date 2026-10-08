@@ -223,9 +223,12 @@ addresses a slide in the URL, which counts every slide the presenter walks throu
 `per-subslide` is a callback rather than a counter, and *States and epochs* says why: an HTML
 frame covers a whole run of subslides, so a value chosen when the frame is rendered would be one
 value for all of them. The callback is laid out **once per subslide** and receives the
-**subslide numbers**, `(number, count, step, steps)`: the subslide's number within its slide and
-how many that slide has, then the same pair over the whole deck, so a progress indicator may
-span either. Both numbers count from one, where the URL fragment addresses state 0, because the
+**subslide info**, `(number, count, step, steps, handout)`: the subslide's number within its
+slide and how many that slide has, then the same pair over the whole deck, so a progress
+indicator may span either, and the subslide's resolved `handout:` flag.
+The flag is the same in every output type, so a presentation can mark the subslides that the
+handout keeps, and a handout lays out the renderings of the subslides it leaves out as well.
+Both numbers count from one, where the URL fragment addresses state 0, because the
 fragment is an address and the number is what the audience reads on the slide. *Resolved Design
 Decisions* records why the deck-wide pair is named for the presenter's steps.
 A callback may return `none`, which lays nothing out for that subslide,
@@ -1667,6 +1670,14 @@ typst compile talk.typ talk-handout.pdf
 typst watch --format html --features html --open talk.typ talk.html
 ```
 
+A deck reads which output type it is compiled to with `output-type()`, a context function that
+returns `"html"`, `"presentation"` or `"handout"`.
+These are the strings the command lines above already use: `target()` returns `"html"`, and the
+two paged modes are the values of `--input animo=`.
+`target()` alone cannot answer inside a slide, because it returns `"paged"` inside an
+`html.frame` (see *Findings*), so every slide publishes whether the document is compiled to
+HTML before it lays anything out.
+
 The mode and the file format are independent, so either static type exports to SVG or PNG as
 well. Multi-page export to those formats needs a page-number template in the output path:
 
@@ -1711,7 +1722,7 @@ These were the open questions of the earlier drafts. They are settled; the evide
   measuring each epoch of a region and forcing the maximum footprint keeps everything outside
   the region pixel-identical between epochs, in the browser as well as on paper.
 
-- **Why are two of the subslide numbers called `step` and `steps`?** Because a progress
+- **Why are two of the keys of the subslide info called `step` and `steps`?** Because a progress
   indicator is read as how far through the talk the presenter is, and that is what those two
   numbers are written for. Everywhere else in Animo a **step** is the transition from one
   subslide to the next, so the *n*-th subslide of a deck is reached by *n-1* steps, and `steps`
@@ -1719,6 +1730,19 @@ These were the open questions of the earlier drafts. They are settled; the evide
   the presenter's action names what the presenter arrives at. The alternative was `subslide` and
   `subslides`, which says the same thing and reads worse in the expression a progress bar is
   written as.
+
+- **Why is a subslide's `handout:` flag a key of the subslide info rather than a function
+  like `slide-number()`?** Because it differs between the subslides of one slide, so it has
+  the problem that *Slides* solves with `per-subslide`: an HTML frame covers a run of
+  subslides, and a value read when the frame is rendered would be one value for all of them.
+  The dictionary is called the *subslide info* rather than the *subslide numbers*, because it
+  holds the flag beside the numbers.
+
+- **What does `output-type()` return?** One of `"html"`, `"presentation"` and `"handout"`.
+  These are the strings a deck is already compiled with: `target()` returns `"html"`, and the
+  two paged modes are the values of `--input animo=`. The function is named after the *output
+  types* that this document and the guide already describe. It is a context function, as
+  `slide-number()` is, because it reads `target()` and a state.
 
 - **What does a boundary crossfade when no region bounds the change?** Nothing, because such a
   change is refused. A `wrap: none` tag outside an explicit region has no box, so there is no

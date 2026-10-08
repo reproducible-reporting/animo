@@ -21,6 +21,22 @@ def test_target_names_the_two_targets(typst: TypstRunner):
     typst.ok('#context { assert.eq(target(), "html") }\n', html=True)
 
 
+def test_target_is_paged_inside_an_html_frame(typst: TypstRunner):
+    """A slide's body and layers cannot ask `target()` whether the document is HTML.
+
+    A state set outside the frame reads the same inside it, so a slide publishes the answer.
+    Measured on typst 0.15.0.
+    """
+    source = """
+#let flag = state("flag", false)
+#context flag.update(target() == "html")
+#html.frame(context assert.eq(target(), "paged"))
+#html.frame(box(block(context assert.eq(target(), "paged"))))
+#html.frame(context assert.eq(flag.get(), true))
+"""
+    typst.ok(source, html=True)
+
+
 def test_html_elem_takes_attributes_and_html_div_does_not(typst: TypstRunner):
     """Anything carrying a data attribute has to be built with `html.elem`."""
     path = typst.html('#html.elem("div", attrs: (class: "x", "data-animo": "1"))[hi]\n')

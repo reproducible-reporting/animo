@@ -53,6 +53,24 @@ say nothing there, and neither does a [transition](slides.md#slide-transitions).
 A deck that plays itself in a browser is the same pages on paper as a deck that waits for a
 presenter, to the pixel.
 
+## Content per Output Type
+
+`output-type()` returns the output type being compiled:
+`"html"` for the HTML presentation, `"presentation"` for the static presentation
+and `"handout"` for the static handouts.
+The paged strings are the values of `--input animo=`.
+It is a context function, and it gives the same answer in a slide's body, in its layers and
+outside every slide, so a deck can show content in some output types only:
+
+```typst
+#let hint = context if output-type() == "html" {
+  place(bottom + left, text(size: 0.6em)[Use the arrow keys to step through the talk.])
+}
+```
+
+Typst's own `target()` cannot make this distinction inside a slide.
+The HTML output lays a slide out inside an `html.frame`, where `target()` returns `"paged"`.
+
 ## The File Format Is Not an Output Type
 
 A static output type is a paged *mode*, and it says which pages exist.

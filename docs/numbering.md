@@ -76,7 +76,7 @@ Despite these different mechanisms, all three output types agree.
 #per-subslide(it => [#it.number of #it.count])
 ```
 
-The callback receives the **subslide numbers**, one dictionary of four, listed in the
+The callback receives the **subslide info**, one dictionary listed in the
 [Reference](reference.md#per-subslide).
 `number` counts from **one**, where the URL fragment addresses state 0 of a slide:
 the fragment is an address, while the number is what the audience reads on the slide.
@@ -132,6 +132,22 @@ A slide whose third subslide is the one the handout keeps shows "3 of 3" on a pa
 be the seventh of the handout.
 Someone who noted a number during the talk looks for that number,
 rather than for the position of the page within the handout.
+
+## Marking the Subslides a Handout Keeps
+
+The `handout` key of the subslide info says whether the handout keeps that subslide,
+as [`init(handout: ..)` and `sub(handout: ..)`](continuous.md#selecting-states-for-handouts)
+decide it.
+It has the same value in all three output types, so a presentation can show which of its
+subslides the audience will find in the handout.
+Combined with [`output-type()`](outputs.md#content-per-output-type),
+the mark is left out of the handout itself, where every page would carry it:
+
+```typst
+#let handout-mark = place(top + right, per-subslide(it => context {
+  if it.handout and output-type() != "handout" { circle(radius: 3pt, fill: gray) }
+}))
+```
 
 ## What This Costs
 

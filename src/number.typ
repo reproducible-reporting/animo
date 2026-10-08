@@ -57,28 +57,33 @@
 /// -> int
 #let slide-count() = slide-counter.final().first()
 
-// The subslide numbers one rendering of a `per-subslide` callback is handed.
+// The subslide info one rendering of a `per-subslide` callback is handed.
 //
 // `number` and `count` are the state's number within its slide, counted from one, and how
 // many states that slide has. `step` and `steps` are the same pair over the whole deck,
 // which is what a progress bar that spans the talk needs.
-#let subslide-numbers(state, states, base, total) = (
+// `handout` is the state's resolved `handout` flag, which is the same in every output type,
+// so a rendering can mark a subslide that the handout keeps or leaves out.
+#let subslide-info(state, handouts, base, total) = (
   number: state + 1,
-  count: states,
+  count: handouts.len(),
   step: base + state + 1,
   steps: total,
+  handout: handouts.at(state),
 )
 
-// The renderings of one `per-subslide` call, one per state of the slide.
+// The renderings of one `per-subslide` call, one per state of the slide, for the resolved
+// `handout` flags of those states.
 //
 // Must be called in a context, because it reads the deck-wide step counter.
-#let renderings-of(f, states) = {
+#let renderings-of(f, handouts) = {
+  let states = handouts.len()
   // The counter is stepped by the slide before its body is laid out, so what it holds
   // here is the deck up to and including this slide.
   let base = step-counter.get().first() - states
   let total = step-counter.final().first()
   range(states).map(state => {
-    let value = f(subslide-numbers(state, states, base, total))
+    let value = f(subslide-info(state, handouts, base, total))
     // `none` is a rendering that lays nothing out, which is what an `if` with no `else`
     // returns: a number worth showing on one subslide is often not worth showing on
     // another, and writing that should not need an empty content block.
@@ -119,7 +124,7 @@
 // `stack-view.state` is the state to lay out and is `none` in the HTML target, where one
 // frame covers a run of states and the browser is what chooses between the renderings.
 #let render(f, wrap, stack-view) = context {
-  let renderings = renderings-of(f, stack-view.states)
+  let renderings = renderings-of(f, stack-view.handouts)
   // The wrapper is decided from the renderings and never from the state being shown, so
   // that the three output types and all of a slide's states lay out the same, and the
   // widest and tallest rendering is what the stack reserves.
@@ -135,8 +140,9 @@
 /// Content laid out once per subslide, of which the one belonging to the subslide on screen
 /// is shown.
 ///
-/// - f (function): Called with `(number:, count:, step:, steps:)`, the number of the
-///   subslide in its slide and in the deck and how many there are, and returns content.
+/// - f (function): Called with `(number:, count:, step:, steps:, handout:)`, the number of
+///   the subslide in its slide and in the deck, how many there are, and whether the handout
+///   keeps the subslide, and returns content.
 /// - wrap (auto, function): The container the stack becomes: `auto`, `box` or `block`.
 /// -> content
 #let per-subslide(f, wrap: auto) = {
