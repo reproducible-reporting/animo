@@ -48,7 +48,29 @@ permissions:
 
 jobs:
   pytest:
+    name: pytest (${{ matrix.part }})
     runs-on: ubuntu-latest
+    # The suite is split into parts that run in parallel.
+    # The tiers that only need typst form one part, which installs no browser,
+    # and the browser tier runs in each engine as a part of its own.
+    # The markers partition the suite, so every test runs in exactly one part.
+    strategy:
+      # A failure in one engine does not cancel the others,
+      # so that one run shows every engine that a change breaks.
+      fail-fast: false
+      matrix:
+        include:
+          - part: plan and paged
+            marker: not browser
+          - part: chromium
+            marker: browser
+            engine: chromium
+          - part: firefox
+            marker: browser
+            engine: firefox
+          - part: webkit
+            marker: browser
+            engine: webkit
     env:
       # The same place `setup.sh` and `.envrc` put it,
       # so that one rule locates the browser on a contributor's machine and here.
@@ -70,8 +92,12 @@ jobs:
       # The test suite needs `pytest` and nothing else,
       # so it does not build `pre-commit`, StepUp or Zensical.
       - run: uv sync --no-default-groups --group tests
-      # Every engine: this runner is ubuntu, which is the one platform all three run on.
-      - run: uv run playwright install --with-deps chromium firefox webkit
-      # Naming the engines makes each one required: an engine that failed to install
+      # This runner is ubuntu, which is the one platform all three engines run on.
+      - if: matrix.engine
+        run: uv run playwright install --with-deps ${{ matrix.engine }}
+      # Naming the engine makes it required: an engine that failed to install
       # then fails the job rather than skipping quietly and leaving it green.
-      - run: uv run pytest --browser chromium --browser firefox --browser webkit
+      - if: matrix.engine
+        run: uv run pytest -m "${{ matrix.marker }}" --browser ${{ matrix.engine }}
+      - if: ${{ !matrix.engine }}
+        run: uv run pytest -m "${{ matrix.marker }}"
