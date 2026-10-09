@@ -130,7 +130,7 @@ pytest -n0 tests/test_tags.py
 [Testing](testing.md) describes the three tiers, how to run one of them,
 and the policy on stored reference images.
 
-Previewing a deck is typst's own job.
+Previewing a deck is left to typst.
 Typst serves the HTML and reloads the browser itself, so Animo ships nothing for live preview:
 
 ```bash

@@ -7,7 +7,7 @@ be tagged. This module is where that claim is either true or not in the three pl
 hardest, and where the places it does not reach are pinned down rather than left for a
 reader to discover. A cetz draw command is not content and is refused at the tag site. A
 `grid.cell` and an item of a list are content, and are refused because the container reads
-them from its own children and never sees one behind a tag site.
+them from its direct children and never sees one behind a tag site.
 
 Two third-party packages are compiled here, so these tests skip when Universe cannot be
 reached with a cold package cache, which is the only network dependency in the suite.
@@ -83,7 +83,7 @@ def test_a_tag_inside_math_lays_out_the_content_of_its_epoch(typst: TypstRunner)
 
 
 def test_the_implicit_region_inside_math_is_the_widest_epoch(typst: TypstRunner):
-    """A tag inside math is its own region, and an inline one, as it is in a paragraph.
+    """A tag inside math forms an implicit region, and an inline one, as it is in a paragraph.
 
     Math is not a flow, so nothing around the tag could absorb a change. The footprint is
     what keeps the equation the same size in every epoch, and the price is the gap the
@@ -230,7 +230,7 @@ def test_the_documented_ways_around_a_tagged_cell_compile(typst: TypstRunner):
     """Both forms the refusal names, checked so that the message cannot go stale.
 
     The second is the one a timeline that moves the filled box needs, since a grid paints
-    the fill in its own frame and no tag ever covers it.
+    the fill in a separate frame and no tag ever covers it.
     """
     body = (
         "#grid(\n"

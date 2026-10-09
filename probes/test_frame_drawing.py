@@ -11,7 +11,7 @@ and only the drawing is missing.
 That is also why these probes record a video instead of taking screenshots. A screenshot
 repaints the page, which is exactly what the failure needs to disappear, so it reports a
 flawless fade in both the affected and the unaffected case. A recorded video is the frames
-the browser drew of its own accord.
+the browser drew unprompted.
 """
 
 import subprocess

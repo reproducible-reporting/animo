@@ -57,7 +57,7 @@ AFTER_IT_FINISHES = """fill => {
 
 @pytest.fixture
 def target(page):
-    """A page holding one element with an opacity of its own."""
+    """A page holding one element with an opacity set on it."""
     page.set_content(PAGE)
     return page
 
@@ -69,7 +69,7 @@ def target(page):
 def test_the_fill_mode_alone_decides_what_a_delay_shows(target, fill, shown, browser_name):
     """The finding itself, over the three fill modes that can be written.
 
-    The comparison is not vacuous, because the element's own style says `1` and the first
+    The comparison is not vacuous, because the style of the element says `1` and the first
     keyframe says `0`, so the two answers are the two ends of the animation and neither can
     be reached by accident.
     """

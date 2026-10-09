@@ -37,7 +37,7 @@ This attribute is what the whole design rests on.
   A label on a bare `rect`, or on a text span, emits nothing.
 - It works **inside `html.frame`**, which is what makes browser animation possible.
 - It works for content inside **math** and inside **cetz** canvases.
-- **Duplicate labels are permitted** and each occurrence gets its own group, which is what
+- **Duplicate labels are permitted** and each occurrence gets a separate group, which is what
   makes "one tag, several elements" work
   and what makes one CSS rule reach the same tag in every epoch frame of a slide.
 
@@ -68,8 +68,8 @@ This is what forces typst to render every content state of a region ahead of tim
 and therefore the whole epoch model.
 
 - `html.elem` **inside** `html.frame` is dropped, with the warning "elem may not occur inside
-  of a paragraph and was ignored". There is no way to give a sub-area of a frame its own DOM
-  node, so a region cannot be its own HTML element inside a slide frame.
+  of a paragraph and was ignored". There is no way to give a sub-area of a frame a separate DOM
+  node, so a region cannot be a separate HTML element inside a slide frame.
 - `html.frame` inside `html.frame` compiles without error but contributes no second `<svg>`,
   so nesting frames is not a route to independently swappable sub-frames either.
 - `set page(..)` inside `html.frame` is an error ("page configuration is not allowed inside of
@@ -126,18 +126,20 @@ word, a word at 2em, nothing, two lines, and an equation with a subscript.
   when `c` is a word, a word at 2em or nothing,
   since a box with no baseline in its content sits on its bottom edge.
   A fixed inline footprint therefore does not hold its line still.
-- **A box whose content is placed has no baseline of its own**, so its `baseline` argument
-  alone decides where it sits. Placing each epoch at `dy: A - a`, with `A` the tallest ascent and
-  `a` the epoch's own, and lowering the box by `baseline: D`, the deepest descent, puts the rest
-  of the line and the next paragraph at the same height in every epoch (24.48 and 52.06 pt), the
-  empty one included. The epoch with the tallest ascent lays out exactly as its untagged control.
+- **A box whose content is placed has no baseline**, so its `baseline` argument
+  alone decides where it sits.
+  Placing each epoch at `dy: A - a`, with `A` the tallest ascent and `a` the ascent of the epoch,
+  and lowering the box by `baseline: D`, the deepest descent,
+  puts the rest of the line and the next paragraph at the same height in every epoch
+  (24.48 and 52.06 pt), the empty one included.
+  The epoch with the tallest ascent lays out exactly as its untagged control.
 - **`measure` reports no baseline, but the descent is readable.**
   The height of `[#body#box(width: 0pt, height: 10000pt)]` minus the 10000 pt pole
   is how far the body reaches below its first baseline.
   Text reaches nothing below the baseline at the default `bottom-edge`
   (a word and a word at 2em measure 0 pt), while a second line and a subscript do.
 - In the SVG of an `html.frame`, the labelled group's first child is still the inner slot, which
-  now carries typst's own `transform="translate(0 dy)"`; the CSS `translate` and `scale`
+  now carries the `transform="translate(0 dy)"` that typst writes; the CSS `translate` and `scale`
   properties compose with that attribute (see *CSS animation of typst SVG groups*).
 
 ## Regions: what a region learns from its container
@@ -198,7 +200,7 @@ with two stacked frames of identical content and the region's labelled group at
 
 The first row is the control.
 It shows that `plus-lighter` on a `<g>` has an effect,
-and that a group does add to the ink beside it in its own frame.
+and that a group does add to the ink beside it in the same frame.
 The second row shows that the group did not add to the frame below,
 so a blend on a region's group degraded to exactly the plain opacity crossfade of the table
 above.
@@ -233,13 +235,13 @@ The isolation is essential, because `plus-lighter` sums inside the isolated grou
 against a transparent backdrop rather than against the page.
 The entry below says which element has to carry that isolation.
 
-**How far a group's blend reaches past its own frame is not the same in every engine.**
+**How far a group's blend reaches past the frame that holds it is not the same in every engine.**
 Measured on 2026-09-15 for chromium and firefox and on 2026-09-17 for webkit, on a
 handwritten stack rather than on typst's output: one inline SVG on an opaque ground, a dark
 red mark inside it and a dark green ground, so that a blend reaching the ground comes back
 with green in it.
 
-| What is under the mark's own frame         | chromium 151 | firefox 153  | webkit 26.5 |
+| What is under the frame of the mark        | chromium 151 | firefox 153  | webkit 26.5 |
 | ------------------------------------------ | ------------ | ------------ | ----------- |
 | the element the SVG is painted on          | summed in    | out of reach | summed in   |
 | an inline SVG stacked below that frame     | summed in    | out of reach | summed in   |
@@ -253,7 +255,7 @@ rule, and gave it as the reason that a region-scoped blend cannot work.
 The firefox behaviour is not the rule,
 but the two engines agreed on that row, so the design decided on it still stands.
 What makes chromium contain the
-blend in typst's own output and not in the handwritten stack was not pinned down, and the
+blend in the output of typst and not in the handwritten stack was not pinned down, and the
 difference is recorded here rather than explained.
 
 **An isolating HTML ancestor does not confine a group's blend in webkit.**
@@ -273,14 +275,14 @@ showing the ground instead of the text.
 **The element that confines it in every engine is the inline SVG that holds the group.**
 Measured on 2026-09-17. With `isolation: isolate` on the epoch frame, the blend stops there
 in chromium 151, firefox 153 and webkit 26.5 alike. Animo therefore writes the rule on the
-frame rather than on the canvas, and the canvas carries no isolation of its own.
+frame rather than on the canvas, and the canvas carries no isolation.
 Moving the isolation to the frame also took webkit's whole-frame midpoint
 from ten pixels at 42/255 to rounding only.
 The engine-dependent exactness in the first entry above was therefore caused
 by the failing isolation of the ancestor rather than by webkit's arithmetic.
 
-`probes/test_crossfade.py` holds each engine to its own answer, so one that changes its mind
-says so by failing rather than by rendering differently.
+`probes/test_crossfade.py` holds each engine to the answer measured for it,
+so one that changes its mind says so by failing rather than by rendering differently.
 
 ## Choosing between stacked renderings: `opacity`, not `visibility`
 
@@ -311,7 +313,7 @@ position is on, and neither can undo the other.
 ## Crossfading two slide containers
 
 Measured on chromium 151 and firefox 153, for the slide boundary under *Architecture*.
-The case above concerns two inline SVGs inside the canvas, which carries no ground of its own.
+The case above concerns two inline SVGs inside the canvas, which carries no ground.
 A slide boundary is two HTML elements that each carry an opaque background,
 stacked inside an element that isolates and that is centred on a surround.
 The probe stacks them in one grid cell of that element.
@@ -420,10 +422,10 @@ This has consequences for the measurement of a transition, and for the obvious r
   over the whole ground rather than on glyph edges, and firefox 153 rasterises it exactly.
   The end that stands for the container being faded in is exact in both engines.
   Half of that offset reaches the average of the two ends,
-  and the midpoint raster adds the half unit of its own quantisation.
+  and the midpoint raster adds half a unit from its quantisation.
   The midpoint of a mid-flight comparison is therefore the sum of its two ends to within
   1.5/255, where a comparison of stated opacities is exact to 1/255.
-  Measured on 2026-09-17, on the mechanism by hand and in a deck of animo's own.
+  Measured on 2026-09-17, on the mechanism by hand and in an Animo deck.
   The deck came to 1.0/255 on a workstation and to 1.5/255 on a continuous integration runner,
   which takes an end 2/255 from the slide at rest.
   Which way an end rounds differs between machines,
@@ -497,7 +499,7 @@ Measured on typst 0.15.0, for the canvas rule under *Canvas and viewport*.
   because the rule measures it without a container.
   `measure(rect(width: 100%, height: 100%))` is `0pt x 0pt`,
   while the same rectangle at an absolute size measures what it says.
-  The union is therefore exact only for top-level placements whose body has a size of its own.
+  The union is therefore exact only for top-level placements whose body has an intrinsic size.
 
 - **No mechanism can drop the placements that cannot be attributed to the body.**
   `layout(size => ..)` is ruled out above, because it breaks the paragraph.
@@ -522,7 +524,7 @@ Measured on typst 0.15.0 while building the automatic canvas, which needs the pl
   is taken from `query`. This works **inside `html.frame`** as well: `query` sees into a
   frame even though positions do not exist there, which is what lets one canvas rule serve
   both targets.
-- **A block sized from its own `query` converges.** The canvas depends on the layout of
+- **A block sized from a `query` of its layout converges.** The canvas depends on the layout of
   the very block it sizes.
   The first pass records nothing, so the block comes out at its minimum size,
   and typst's introspection loop then runs the document again with the placements known.
@@ -534,7 +536,7 @@ Measured on typst 0.15.0 while building the automatic canvas, which needs the pl
   block-level and breaks the paragraph the placement sits in.
   The same body measures `76.89pt` tall without it and `103.29pt` with it.
 - **That last point closes the one route to telling a nested placement apart.**
-  `layout(size => ..)` inside the rule does report the placement's own containing block
+  `layout(size => ..)` inside the rule does report the containing block of the placement
   (`400 x 300pt` at top level, `113.39 x 56.69pt` inside a 4 cm box, `200 x 300pt` in a
   grid column), which would make the automatic union exact. It cannot be used, because
   the price is a body that lays out differently from the one the author wrote.
@@ -594,7 +596,7 @@ This has two consequences for the HTML shell.
 An inline style outranks a stylesheet rule, so a deck
 that sizes its frames from CSS renders them at the ratio between the page's font size and
 typst's text size, which is 16/11 by default and looks like an 8% scaling bug.
-The frame's own size is also not a reliable unit for anything, since it moves with a `set text` the
+The size of the frame is also not a reliable unit for anything, since it moves with a `set text` the
 author is free to write. Animo therefore sizes the canvas element itself and overrides the
 frame with `width: 100% !important`.
 
@@ -758,7 +760,7 @@ which is the scope of typst's deduplicator.
   and its value is content.
   The SVG is produced when the document is encoded, by
   `write_frame` in `crates/typst-html/src/encode.rs`, which calls `typst_svg::svg_in_html`
-  once per frame, each call with a `Deduplicator` of its own. The `html` module holds `elem`,
+  once per frame, each call with a separate `Deduplicator`. The `html` module holds `elem`,
   `frame` and the tag helpers, and nothing that writes markup, while a text node is escaped,
   so markup cannot be handed in as a string either. The raw-text exceptions are `<style>`
   and `<script>`, which is how Animo's stylesheet and runtime reach the page and is no help
@@ -808,12 +810,12 @@ which is the scope of typst's deduplicator.
   and goes from 345 to 220 KiB at two, 673 to 297 at four, and 1328 to 445 at eight.
   `merged_*` therefore now equals the page itself,
   and `merging_saves_gzipped` is zero on every variant.
-  A reading that is not zero means that the epochs of a slide ended up in frames of their own
+  A reading that is not zero means that the epochs of a slide ended up in separate frames
   again.
 
 ## CSS animation of typst SVG groups
 
-Measured in chromium on real typst output, on a labelled group that carries typst's own
+Measured in chromium on real typst output, on a labelled group that carries this typst
 `transform="translate(0 28.346456693)"`:
 
 | Applied CSS                                                         | Result                                                                          |
@@ -822,12 +824,12 @@ Measured in chromium on real typst output, on a labelled group that carries typs
 | `translate: 50px 0`                                                 | composes, so the element moves and typst's `transform` attribute stays intact   |
 | `transform: translate(50px,0)`                                      | **clobbers** typst's translate (y jumped 49.2 → 8.0, losing the offset)         |
 | `scale: 2` (default `transform-box: view-box`)                      | scales about the SVG viewBox origin, displacing the element (y 49.2 → 90.5)     |
-| `scale: 2` + `transform-box: fill-box` + `transform-origin: center` | scales about the element's own centre, in place                                 |
+| `scale: 2` + `transform-box: fill-box` + `transform-origin: center` | scales about the centre of the element, in place                                |
 | all three together                                                  | compose correctly                                                               |
-| `transform-box: fill-box` + `transform-origin: center`, alone       | **displaces** a group that carries a `matrix(1 0 0 -1 ..)` of typst's own       |
+| `transform-box: fill-box` + `transform-origin: center`, alone       | **displaces** a group that carries a `matrix(1 0 0 -1 ..)` written by typst     |
 
 Mid-flight interpolation, sampled deterministically through the Web Animations API,
-confirms genuine smoothness and that typst's own transform survives the animation:
+confirms genuine smoothness and that the transform typst writes survives the animation:
 
 ```
 t=0.00  x=8.0   w=82.5   opacity=0
@@ -848,7 +850,7 @@ and typst writes `matrix(1 0 0 -1 x y)` on every glyph run it emits.
 Wherever the two declarations land on a group that typst positioned,
 that group's content therefore moves by twice the distance from the group's origin to the
 centre of its fill box. Nothing errors, no transform property is set at all,
-and the displacement differs per run, because each run's fill box is its own.
+and the displacement differs per run, because each run has a different fill box.
 
 Consequently, Animo uses the individual `translate`/`scale` properties
 and never the `transform` shorthand.
@@ -880,7 +882,7 @@ like rather than where it lands:
   which is the signature of a glyph outline rasterised at the size it ends up at.
   A picture of the glyph, stretched, would keep the ratio constant.
   Both engines agree to a hundredth.
-  Text under a `scale` therefore stays as sharp as text at its own size,
+  Text under a `scale` therefore stays as sharp as text at its unscaled size,
   and strokes scale geometrically with it.
 - **A value under a running animation rasterises as the same value in a style declaration**,
   bit for bit, over a whole 1280 by 720 window.
@@ -938,11 +940,11 @@ since it says the time is updated once per frame.
 Firefox therefore follows the specification, and the other two engines are the exception.
 
 Giving that time to an animation as its `startTime` therefore starts the animation as far
-into its own duration as the page stood still. With a step of 400 ms, anything longer than
+into its duration as the page stood still. With a step of 400 ms, anything longer than
 that is over before it is first drawn. What a presenter sees is a deck that animates while it
 is being clicked through and jumps whenever a slide has been talked over first.
 
-None of this is visible until a frame is drawn, because an animation measures its own current
+None of this is visible until a frame is drawn, because an animation measures its current
 time against the same timeline.
 Immediately after being given a start time, it reports zero,
 and only the next frame shows where it really is.
@@ -992,7 +994,7 @@ while making a deck that plays itself testable.
 A `wait:` is a `setTimeout` in the runtime, and a `setTimeout` is exactly what the browser
 harness cannot scrub.
 An animation can be paused and told where it is, while a timer can only fire.
-Playwright's own clock drives a timer instead, and leaves the motion alone.
+The clock that Playwright installs drives a timer instead, and leaves the motion alone.
 
 - **Installed and then paused, the clock stops.**
   `clock.install()` alone leaves timers firing in real time.
@@ -1019,9 +1021,9 @@ Playwright's own clock drives a timer instead, and leaves the motion alone.
   416 ms (firefox) after 400 ms of real time have passed.
   The motion of a timed step is therefore real motion, and is still read by scrubbing it.
 - **`requestAnimationFrame` is faked along with the timers**, and stops firing while the
-  clock is paused, so a frame cannot be waited for on such a page. Playwright's own
-  `wait_for_function` and `wait_for_timeout` are unaffected, because neither runs on the
-  page's clock.
+  clock is paused, so a frame cannot be waited for on such a page.
+  The Playwright methods `wait_for_function` and `wait_for_timeout` are unaffected,
+  because neither runs on the clock of the page.
 
 ## Styling from CSS: what is and is not reachable
 
@@ -1032,7 +1034,7 @@ attributes:
   `[data-typst-label="x"] use { fill: rgb(0,128,0) }` gives a computed fill of
   `rgb(0, 128, 0)`. Any CSS declaration outranks a presentation attribute.
 - A rule on the **group itself** does not reach the glyphs: the computed fill stays
-  `rgb(0, 0, 0)`, because the glyphs' own presentation attribute beats an inherited value.
+  `rgb(0, 0, 0)`, because the presentation attribute on the glyphs beats an inherited value.
 - `fill` interpolates smoothly: driving it with a paused Web Animations API animation gives
   `rgb(128, 0, 0)` at the midpoint of a black-to-red transition.
 
@@ -1052,7 +1054,7 @@ is therefore implementable without any help from typst.
 Two transform slots are therefore needed, since CSS gives each element only one `translate` and
 one `scale`, and nesting supplies the second. `#box(box[Hello world])#label("outer")` emits
 `<g transform="translate(..)" data-typst-label="outer"><g>`: the inner group carries **no**
-transform of its own. A single `#box[..]` instead emits `<g label><g transform="matrix(..)">`,
+transform. A single `#box[..]` instead emits `<g label><g transform="matrix(..)">`,
 whose child is content-dependent and therefore not a slot to rely on.
 `tag` therefore wraps its body in a nested box,
 which makes `[data-typst-label="x"] > g` a reliable second slot.
@@ -1063,7 +1065,7 @@ frame in firefox 153, which paints its ink outside the viewBox because typst wri
 `overflow: visible` on the `<svg>`. On the same group chromium reported `19.57 x 13.86`
 and firefox `358 x 13.90`.
 What both engines agree on exactly is `getBBox()`,
-in the group's own user units, which are typst points.
+in the user units of the group, which are typst points.
 Mapping its corners through `getScreenCTM()` puts it back in CSS pixels,
 and the two engines then agree to **0.02 CSS pixels** on an untransformed group,
 and to **0.7** on one under a CSS scale.
@@ -1084,8 +1086,8 @@ which is state the stacked-frame design otherwise never has to keep.
 
 Measured on two renderings of one frame summed under `plus-lighter`, as a crossfade sums them:
 `Hello world` and `Oh, Hello world` at 30 pt, whose ten shared letters are 51.3 pt apart.
-The outgoing copy of each shared letter is translated from its own place to the place of the
-incoming copy, and the incoming copy from the outgoing place to its own, while the outgoing
+The outgoing copy of each shared letter is translated from its place to the place of the
+incoming copy, and the incoming copy from the outgoing place to its place, while the outgoing
 rendering fades out and the incoming one in, all with one linear timing.
 The reference is one opaque copy of each letter at the same point of the route.
 
@@ -1105,12 +1107,12 @@ A plain opacity crossfade of the same pair, without `plus-lighter`, differs by m
 It is present at the start of the step, where only the outgoing copy is visible,
 and also with no animation at all.
 One letter at one position on the screen rasterises differently in firefox 153
-when it reaches that position through a CSS `translate` than through its own `x` attribute,
+when it reaches that position through a CSS `translate` than through its `x` attribute,
 by 10/255 on 184 of 1909 ink pixels.
 The same comparison on a deck scaled to a 1280 pixel window gave 22/255.
 A morph shows the outgoing copy reached one way and the incoming copy the other,
 and the difference is gone at the end of the step, where only the incoming copy is left at
-its own place.
+its place.
 `will-change: transform` and `will-change: translate` on the letters leave the difference
 unchanged.
 Webkit 26.5 draws the two placements alike. Chromium 151 does on some loads of the page and
@@ -1120,7 +1122,7 @@ differs by 50/255 on a dozen pixels on others.
 letter's box, on no more than a dozen pixels, while the two copies are moving. It was not
 traced further.
 
-**`getScreenCTM()` includes the element's own `translate`.**
+**`getScreenCTM()` includes the `translate` of the element itself.**
 This holds in all three engines, on a `<use>` and on a `<g>`,
 for an inline `translate` and for an animated one,
 and in a rendering that is `visibility: hidden`.
@@ -1141,7 +1143,7 @@ resampled on the way, at the midpoint of the step:
 The antialiasing along both edges of a stroke and the smoothing of a resampled image do not
 show in the sum, so a morph of a shape or an image needs nothing a morph of a letter does not.
 
-## Typst writes a shape from its own origin
+## Typst writes a shape from a local origin
 
 This entry records what a morph compares when it pairs two shapes or two images,
 in the SVG that typst 0.15.0 writes for an `html.frame`.
@@ -1158,17 +1160,17 @@ in the SVG that typst 0.15.0 writes for an `html.frame`.
 - The paint is in attributes beside the `d`: `fill`, `fill-rule`, `stroke`, `stroke-width`,
   `stroke-linecap`, `stroke-linejoin` and `stroke-miterlimit`.
   Recolouring a shape changes `fill` or `stroke` and leaves the `d` alone.
-  The `fill-rule` of typst's own shapes is `nonzero`, and a `curve` with
+  The `fill-rule` of the shapes that typst writes is `nonzero`, and a `curve` with
   `fill-rule: "even-odd"` writes `evenodd`.
 - An image is an `<image xlink:href="data:image/png;base64,.." width=".." height=".." preserveAspectRatio="none"/>` without `x` and `y`, so its place is the transform above it.
 - A clipped box is a `<g transform="translate(..)" clip-path="url(#c..)">` that holds what it
-  clips, and the clip path's own `<path>` is in that group's user space.
+  clips, and the `<path>` of the clip path is in the user space of that group.
 - A gradient fill is `fill="url(#r..)"`, a `linearGradient` in `userSpaceOnUse` whose
   `gradientTransform` scales it to the size of the shape.
 
 ## The `d` of a path interpolates between paths of one structure
 
-Measured by animating the CSS `d` property of one path from its own data to that of another
+Measured by animating the CSS `d` property of one path from its data to that of another
 with the Web Animations API, on the paths typst 0.15.0 writes, paused at fixed moments.
 
 - **Support.** `CSS.supports('d', 'path("M 0 0")')` is true in chromium 151 and firefox 153
@@ -1210,7 +1212,7 @@ Measured by moving one element of a frame by a whole number of CSS pixels with a
 with the paint servers and clip paths moved into another `<svg>`, as the runtime hoists them.
 The results are the same in chromium 151, firefox 153 and webkit 26.5.
 
-- **A group carries its own clip.** A clipped box translated on the group that holds its
+- **A group carries the clip of its content.** A clipped box translated on the group that holds its
   `clip-path` arrives with the same edges, to within 2/255. The clip path is in the group's
   user space, and the `translate` changes that space.
 - **A clip above the moved element stays where it is.** Translating what a clipped box holds,
@@ -1248,7 +1250,7 @@ A counter read with `get()` gives the same value inside an `html.frame` as outsi
 because a frame is a container and not a document,
 so nothing about a counter is reset at its edge. `final()`
 resolves in the HTML target as well, inside a frame included, and it resolves before the counter
-reaches its own last value, which is the position a slide reads it from.
+reaches its last value, which is the position a slide reads it from.
 
 A slide number can therefore be a plain counter.
 Its value is the same in every rendering of its slide,
@@ -1281,7 +1283,7 @@ which applies to every check on content that Animo itself emits.
 
 **A check placed apart from what it checks is reported.**
 The next pass succeeds because the panic empties the block it is raised in.
-A check in a context block of its own, emitting nothing
+A check in a separate context block, emitting nothing
 that it reads, changes nothing by failing, and typst keeps only the errors of the pass it ends
 on (`crates/typst/src/lib.rs`, where a pass's diagnostics are kept only when it is the last).
 A value that is missing in an early pass is therefore forgotten,
@@ -1291,7 +1293,7 @@ with no convergence warning.
 A guard that merely waits for a marker from a separate block is not enough
 when the check sits in the block that holds what it checks.
 Such a guard was tried first.
-A tag nested inside another tag is reported a pass after the slide's own marker,
+A tag nested inside another tag is reported a pass after the marker of the slide,
 so the check failed in that pass, the panic emptied the slide,
 and the site could never appear again, so a valid deck was refused.
 Measured on Animo's refusal of a `pan(relto:)` to a tag the slide does not have, in the HTML
@@ -1319,7 +1321,7 @@ or a refusal raised in a block that emits nothing it reads.
 - `measure()` **does** work in HTML output and returns real sizes, in paged layout (above).
 
 The HTML output therefore cannot rely on typst coordinates at all.
-It relies on the browser's own layout of the frame SVG,
+It relies on the layout that the browser makes of the frame SVG,
 which is why per-element animation is done with CSS rather than with typst-computed offsets,
 and why regions are sized by `measure` rather than placed by coordinates.
 
@@ -1336,7 +1338,7 @@ top-left corner of a tag's wrapper in both targets.
   7.51 pt for `$y^2$`. It holds in the middle of a line, at the start of a paragraph and at the
   start of the page flow alike. The same box as the only content of a `place` is located at its
   corner.
-  An element's own position therefore does not say where the element starts.
+  The position of an element therefore does not say where the element starts.
   No correction by its height recovers the corner either,
   since whether a correction applies depends on what the box sits in.
 - **A marker placed at `top + left` inside the box is located at the box's corner**, wherever the
@@ -1402,7 +1404,7 @@ Because the reload is a plain `location.reload()`, the URL survives it, fragment
 whose subslide state lives in `location.hash` therefore comes back on the same subslide after
 every recompile.
 The built-in server is therefore sufficient for authoring,
-which is why Animo ships no reload machinery of its own.
+which is why Animo ships no reload machinery.
 
 ## Wrapping a tag site: what it changes and what it does not
 
@@ -1423,7 +1425,8 @@ rather than whether it is inline or block.
 A wrapper at `width: auto` hugs, which left-aligns anything the container was centring,
 and `block(width: 100%)` reproduces the original.
 
-A `heading` shifts under *every* wrapper, by about 5 pt. A heading carries its own block spacing
+A `heading` shifts under *every* wrapper, by about 5 pt.
+A heading carries block spacing above and below it
 (1.8em above and 0.75em below at level 1, `typst-library/src/model/heading.rs`).
 With a wrapper, that spacing sits at the wrapper's edge and is trimmed there,
 and the wrapper contributes the generic 1.2em instead.
@@ -1445,7 +1448,7 @@ let nothing = box(width: 0pt, height: 0pt)
 let is-block = measure([#nothing#body#nothing]).height > measure(body).height
 ```
 
-Block-level content pushes the two neighbours onto lines of their own,
+Block-level content pushes the two neighbours onto separate lines,
 while inline content does not.
 Over 31 constructs the separation was **exactly 0.0 pt** for every inline case and **at least
 12 pt** for every block-level one, so the comparison needs no tolerance.
@@ -1458,7 +1461,7 @@ A `context` block reports the block-ness of whatever it produces.
 The one blind spot of the measurement is content that is itself several paragraphs,
 which measures as inline because the neighbours merge into the first and the last paragraph
 instead of being pushed off.
-A scan for a `parbreak` in the body's own sequence covers that case.
+A scan for a `parbreak` in the sequence of the body covers that case.
 
 Inspection was recorded as well, because it is what a reader expects to reach for first:
 
@@ -1494,15 +1497,16 @@ A marker plus a show rule does work:
 As measured, two `measure` calls in one context block, with different values provided,
 give different results. Providers nest and the innermost wins. The rule fires on a marker produced
 inside a `context` block, and on a marker inside the content that another marker produced, so
-tags may be nested. The marker's own label does not leak: a tag built this way emits exactly one
-`data-typst-label`, its own.
+tags may be nested.
+The label of the marker does not leak,
+so a tag built this way emits exactly one `data-typst-label`, which is the label of the tag.
 
 The mechanism also works where a region needs it.
 A region that receives its body as opaque content and
 measures it inside `layout(size => ..)` once per epoch, providing a copy of the view with only the
 epoch changed, gets a different height per epoch (27.68, 56.45 and 27.68 pt for a short line, a
 wrapping replacement and a short line again) and one footprint in all three renderings.
-The tags in the body resolve their own content behind nested `context` reads,
+The tags in the body resolve their content behind nested `context` reads,
 including a tag inside a tag, a tag removed in one epoch and a region inside a region,
 in the paged and the HTML target alike, with no convergence warning in either.
 
@@ -1512,7 +1516,7 @@ rule, with no wrapper around it, rasterises identically to the bare body at 144 
 with zero pixels differing.
 This was measured with a heading between two paragraphs,
 which is the case where a wrapper would show,
-since a wrapper trims the heading's own block spacing at its edge.
+since a wrapper trims the block spacing of the heading at its edge.
 
 One thing does not work.
 A marker that no provider replaced is **not** distinguishable afterwards,
@@ -1545,9 +1549,9 @@ Varying the array per epoch would mean re-evaluating the block that built it,
 which only a body that is a function of the subslide can do. `sanor` has exactly that
 body, which is how `test/draw.typ` reaches a tagged `draw.grid(..)`.
 
-## What a container resolves from its own children
+## What a container resolves from its direct children
 
-A grid, a table, a list, an enum and a terms list read their own children and keep the ones that
+A grid, a table, a list, an enum and a terms list read their direct children and keep the ones that
 are `cell` or `item` elements. Every other child becomes the body of a cell or an item with
 default settings, so the element the author wrote is never consulted. Measured on typst 0.15.0,
 with a `grid.cell(fill: yellow)` as the child:
@@ -1578,8 +1582,9 @@ The loss differs per container, and `colspan` goes the way `fill` does:
 
 An explicit number survives into the nested enum rather than being dropped.
 `enum(enum.item(7)[a], context enum.item(9)[b])` renders `7. a` and then `8.` holding a nested
-`9. b`, where the direct form renders `7. a` and `9. b`. The enclosing enum numbers the item that
-holds the nested one from its own count, so the loss is the item's place and not its number.
+`9. b`, where the direct form renders `7. a` and `9. b`.
+The enclosing enum gives the item that holds the nested one the next number in its count,
+so the loss is the item's place and not its number.
 
 **A cell's fill is painted by the container, not by the cell.** In the SVG of a one-cell grid
 holding a labelled box, the fill path is a sibling emitted *before* the labelled group, and the
@@ -1633,10 +1638,10 @@ The filling block that
 opened.
 
 **A rendering that carries a display state is layout-neutral only inside a slot.** The outer slot
-holds a `move`, which is block-level and therefore a block of its own, so the size that slot takes
+holds a `move`, which is block-level and therefore a separate block, so the size that slot takes
 is the same either way. The extent of a rendering measured on its own differs. `measure` reports a
 height and no baseline, so a descent is read off a line that holds the content beside a zero-width
-pole taller than it, and a block-level body pushes that pole onto a line of its own.
+pole taller than it, and a block-level body pushes that pole onto a separate line.
 Measured on typst 0.15.0, over the word `hidden` at 11 pt:
 
 | Measured                   | Ascent   | Descent  |
@@ -1682,7 +1687,7 @@ and `move`'s `dx`, `scale`'s `x` and the presence of a `hide` say what that stat
 
 Measured on typst 0.15.0.
 
-- A document that builds no `html` element of its own gets a head from typst. It has `lang` from
+- A document that builds no `html` element gets a head from typst. It has `lang` from
   `set text(lang: .., region: ..)`, written as `nl-BE`, a `<title>` holding the plain text of
   `document(title:)`, and `<meta>` elements for the description and the authors. Typst 0.15.0
   names the latter `authors`, where HTML defines `author`.
@@ -1719,7 +1724,7 @@ Measured on typst 0.15.0.
 - Multi-page SVG export fails without a page-number template (`{p}`/`{0p}`) in the output
   path.
 - A document that lays nothing out is **not refused**: typst 0.15.0 compiles it to one blank
-  page at its own default size, A4.
+  page at the default page size, A4.
   A handout whose every state gave up its page would therefore produce a blank page
   at a size the deck never mentioned, rather than an error.
   Animo counts the pages its slides contribute and refuses that deck itself.

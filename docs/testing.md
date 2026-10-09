@@ -46,7 +46,7 @@ A handful of tests in each directory compile a document that imports cetz or fle
 because the tag sites of those two packages are part of what Animo claims.
 That is the only thing in the suite that reaches the network.
 The releases are pinned in `tests/harness/packages.py`,
-and a test whose package does not resolve skips with the compiler's own explanation,
+and a test whose package does not resolve skips with the explanation that the compiler gives,
 since a cold package cache is an accident of the machine rather than a failure of Animo.
 
 ## Tier 1: Plan Resolution
@@ -62,7 +62,7 @@ def test_an_empty_step_changes_nothing(typst):
     typst.ok('#import "/src/lib.typ": *\n#assert.eq(..)\n')
 ```
 
-A failure quotes the compiler's own diagnostics with the numbered document underneath,
+A failure quotes the diagnostics of the compiler with the numbered document underneath,
 because reading the message without the line it points at is guesswork.
 
 The inverse case matters as much.
@@ -165,8 +165,8 @@ The script ends by printing which engines run on your machine, and webkit reads 
 `no build for this platform` there rather than as an installed browser that will not start.
 
 **Naming an engine makes it required.**
-`pytest --browser webkit` turns the skip into an error carrying playwright's own
-diagnosis, and it is how the workflows ask for all three at once:
+`pytest --browser webkit` turns the skip into an error carrying the diagnosis of
+playwright, and it is how the workflows ask for all three at once:
 
 ```bash
 pytest --browser chromium --browser firefox --browser webkit
@@ -218,7 +218,7 @@ That geometry is read with `getBBox()` and `getScreenCTM()`, never with
 On a labelled group chromium reports the tight box,
 and firefox reports a box inflated to roughly the width of the whole frame.
 `harness.MEASURE` is the one expression that reads the geometry, and both `Deck.rects`
-and the probes' own `measuring.rects` go through it.
+and `measuring.rects` in the probes go through it.
 
 Tests deep-link to a state instead of clicking their way to it.
 Deep-linking relies on a contract with the runtime, spelled out in `harness.browser.Deck`:
@@ -232,7 +232,7 @@ Deep-linking relies on a contract with the runtime, spelled out in `harness.brow
   which is what scopes a tag name to one slide.
 
 `tests/documents/stand_in_deck.html` implements exactly those three lines and nothing else.
-The harness's own tests run against it, so that the fixtures and the contract
+The tests of the harness run against it, so that the fixtures and the contract
 are both exercised without a compiled deck.
 
 A deck that plays itself is driven rather than raced.
@@ -242,7 +242,7 @@ so the `timed_deck_at` fixture stops the page's clock before the deck is loaded
 and `Deck.run_for` states how much time passes.
 Stopping the page's clock leaves the document timeline untouched,
 so the motion that a timed step starts still runs in real time and is read by scrubbing it.
-The runtime therefore needs no test seam of its own.
+The runtime therefore needs no test seam.
 
 Two invariants are cheap to check here and worth checking directly,
 because the region design rests on them:
@@ -273,7 +273,7 @@ def test_something_only_a_picture_can_state(references, paged):
 
 The image is captured as PNG, converted with `Pillow` to **lossless** WebP,
 and compared on decoded arrays, so the storage format never enters an assertion.
-WebP defaults to lossy, in `Pillow` as in `playwright`'s own `type="webp"`,
+WebP defaults to lossy, in `Pillow` as in the `type="webp"` of `playwright`,
 which is why the conversion is explicit.
 
 Regenerating the stored references is one command:
@@ -314,7 +314,7 @@ because a failed compilation is worth looking at.
 Typst is installed with `typst-community/setup-typst`, pinned to the `compiler` field
 of `typst.toml` by Snipwise, except in the `probes` workflow, which tests the newest
 release.
-The package checker runs as a container rather than through its own GitHub Action,
+The package checker runs as a container rather than through the GitHub Action of the checker,
 because that action expects credentials for a GitHub App that a personal repository does not have.
 It reads the subtree that is submitted to `typst/packages`, which is the tracked files minus
 the `exclude` list of the manifest, so `tools/build_package.py` writes that subtree first and

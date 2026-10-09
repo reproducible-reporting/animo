@@ -136,9 +136,9 @@ sub(hide("caveat"))    // no extra rendering
 sub(remove("caveat"))  // a rendering of the tag's region, and a crossfade
 ```
 
-Outside a region the two even look the same, because the
-[tag's own box](structural.md#a-changing-tag-keeps-its-own-box) reserves its largest state
-either way. There, `remove` costs a rendering without any benefit.
+Outside a region the two even look the same,
+because the [box reserved by a changing tag](structural.md#box-reserved-by-a-changing-tag)
+holds its largest state either way. There, `remove` costs a rendering without any benefit.
 
 **A region measures every epoch, so regions and epochs multiply.**
 Two regions over four epochs is eight measurements per rendering of the slide, not two.

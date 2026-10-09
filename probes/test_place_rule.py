@@ -61,7 +61,7 @@ def test_a_context_block_holding_metadata_does_not_disturb_the_layout(typst: Typ
 
 
 def test_a_layout_block_inside_the_rule_does_disturb_the_layout(typst: TypstRunner):
-    """`layout(size => ..)` would reveal the placement's own container, and cannot be used.
+    """`layout(size => ..)` would reveal the container of the placement, and cannot be used.
 
     It is the one way to tell a top-level placement from one nested in a box, which is
     the known limit of the automatic canvas.
@@ -165,7 +165,7 @@ def test_a_block_sized_from_its_own_query_converges(typst: TypstRunner):
 
 
 def test_a_frame_is_sized_in_em_against_the_document_text_size(typst: TypstRunner):
-    """Why animo's stylesheet overrides the frame's own size with `!important`.
+    """Why animo's stylesheet overrides the size of the frame with `!important`.
 
     `html.frame` writes `width` and `height` on the `<svg>` as an inline style in `em`,
     dividing the frame's size in points by the text size in effect.

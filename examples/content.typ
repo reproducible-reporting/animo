@@ -36,10 +36,10 @@
 #slide(animation: {
   import anim: *
   // Inside a region a `remove` really frees space, and everything after it moves up.
-  // Outside one it would free nothing, because the tag reserves its own box.
+  // Outside one it would free nothing, because the tag reserves a box.
   sub(handout: true, remove("caveat"))
   sub(replace("claim")[
-    A line looooooooooooooooooooooooooooooooooooooooooooong enough to take a second line of its own.
+    A line looooooooooooooooooooooooooooooooooooooooooooong enough to wrap onto a second line.
   ])
 })[
   = Reflow Inside a Region
@@ -59,7 +59,7 @@
   import anim: *
   init(handout: true)
   // `reset` is what makes the word start out removed: it is not laid out at all until
-  // this step, and the tag's own box keeps the room for it meanwhile.
+  // this step, and the box that the tag reserves keeps the room for it meanwhile.
   sub(reset("word"))
 })[
   = Space That Is Reserved

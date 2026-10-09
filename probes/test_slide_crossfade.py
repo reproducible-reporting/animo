@@ -3,11 +3,11 @@
 """Probes for *Crossfading two slide containers*
 and for *Chromium rasterises a frame differently while an opacity animation runs in it*.
 
-The epoch crossfade blends two inline SVGs inside the canvas, which is a container with no
-ground of its own. A slide boundary blends two *HTML* elements that each carry an opaque
+The epoch crossfade blends two inline SVGs inside the canvas, which is a container without a
+ground. A slide boundary blends two *HTML* elements that each carry an opaque
 background, inside an element that isolates and is centred on a surround.
 Two things are different there and both are measured here: whether `plus-lighter` still
-sums two opaque grounds to their average, and where the surround's own colour has to sit
+sums two opaque grounds to their average, and where the colour of the surround has to sit
 so that it does not join that sum.
 
 The second is the one that cost the time. The ground of the element that isolates a blend
@@ -222,7 +222,7 @@ FADING = ONLY_FIRST + ".slide { mix-blend-mode: plus-lighter; }\n"
 # It promotes the container it is fading and rasterises the ground of that container a unit
 # below the ground at rest, over the whole slide rather than on glyph edges.
 # Measured at 1/255 on 2026-09-17.
-# The allowance is a step above the 2/255 that a deck of animo's own implies, whose midpoint
+# The allowance is a step above the 2/255 that an animo deck implies, whose midpoint
 # comparison came to 1.5/255 on a continuous integration runner.
 # Firefox 153 shows none of it.
 # Playwright ships no webkit build for the distribution this was measured on, so webkit has no

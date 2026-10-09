@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     # The suite is split into parts that run in parallel.
     # The tiers that only need typst form one part, which installs no browser,
-    # and the browser tier runs in each engine as a part of its own.
+    # and the browser tier runs as a separate part in each engine.
     # The markers partition the suite, so every test runs in exactly one part.
     strategy:
       # A failure in one engine does not cancel the others,

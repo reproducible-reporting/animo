@@ -27,7 +27,7 @@ around.
 #slide(
   animation: {
     import anim: *
-    sub(replace("claim")[A claim long enough to take a second line of its own.])
+    sub(replace("claim")[A claim long enough to wrap onto a second line.])
     sub(remove("caveat"))
   },
 )[
@@ -52,7 +52,7 @@ Inside it, typst lays each epoch out as if nothing else existed:
 line breaks change, a removed tag frees its space, and the paragraphs after it move.
 Outside it, nothing moves, down to the pixel.
 
-A tag inside a region reserves no box of its own, so the region can reflow around the tag.
+A tag inside a region reserves no separate box, so the region can reflow around the tag.
 So inside a region `remove` and `reset` can really free space (or restore it).
 In contrast, `hide` and `reveal` primitives preserve the space that was initially reserved.
 
@@ -76,7 +76,7 @@ That is the cost of the three properties above, and three remedies are available
   `align: bottom` puts a short first state against whatever follows the region,
   which moves the gap above it, where it usually reads as spacing.
 - **Split the region** into several smaller ones,
-  so that each reserves only the room its own content needs.
+  so that each reserves only the room its content needs.
 - **Give a size.** `height: 3cm` reserves exactly that, and a state that needs more is
   clipped, so check every subslide. A region with a given height also measures nothing at all,
   which is the cheapest form of a region.
@@ -108,7 +108,7 @@ because Animo labels what it emits for itself that way.
 ## Where a Region Cannot Go
 
 A region is a block, and it takes its width from its container.
-That makes it work where the container has a width of its own,
+That makes it work where the width of the container does not depend on its content,
 and go wrong where the container takes the width of its content.
 
 | Container                                               | A region there                                     |

@@ -128,7 +128,7 @@ def test_an_inline_tag_is_anchored_at_its_corner_and_not_at_its_baseline(typst: 
 def test_a_tag_is_anchored_where_the_body_put_it_and_not_where_it_was_moved(
     typst: TypstRunner,
 ):
-    """A tag's own display state sits inside its wrapper, so the anchor ignores it.
+    """The display state of a tag sits inside the wrapper of that tag, so the anchor ignores it.
 
     That makes `relto` mean the same in every state, and the browser agrees, because it
     reads the anchor before the timeline has written anything on the slide.
@@ -167,7 +167,7 @@ def test_a_relto_the_slide_does_not_tag_is_refused(typst: TypstRunner, target):
 
 
 def test_a_tag_of_that_name_on_another_slide_does_not_count(typst: TypstRunner):
-    """A tag name means nothing outside its own slide, and that includes a `relto`."""
+    """A tag name means nothing outside the slide it is on, and that includes a `relto`."""
     source = deck(
         f"slide[\n  {far('nowhere', dx='5cm')}\n]",
         f"slide(animation: {timeline('sub(pan(relto: "nowhere"))')})[\n  {far()}\n]",
@@ -176,7 +176,7 @@ def test_a_tag_of_that_name_on_another_slide_does_not_count(typst: TypstRunner):
 
 
 def test_the_same_name_on_another_slide_is_no_anchor(typst: TypstRunner):
-    """Each slide pans to its own site of a name, and a deck that does so converges."""
+    """Each slide pans to the site of a name on that slide, and a deck that does so converges."""
     source = deck(
         f"slide[\n  {far('t', dx='5cm')}\n]",
         f"slide(animation: {timeline('sub(pan(relto: "t"))')})[\n  {far('t', dx='10cm')}\n]",
@@ -189,7 +189,7 @@ def test_a_slide_without_a_handout_page_is_not_refused_for_its_relto(typst: Typs
     """With no page there is no tag site to read back, which is not a missing tag.
 
     The plain second slide is what keeps the handout from holding no page at all, which
-    the deck refuses for its own reasons.
+    the deck refuses for unrelated reasons.
     """
     source = deck(
         f"slide(animation: {timeline('sub(handout: false, pan(relto: "far"))')})[\n  {far()}\n]",
@@ -316,7 +316,7 @@ def test_a_pan_translates_the_canvas_and_leaves_the_frame_alone(deck_at, beyond)
             return [computed.translate, computed.transform, svg.getAttribute('style')];
         }"""
     )
-    assert frame[:2] == ["none", "none"], f"a frame carries a transform of its own: {frame}"
+    assert frame[:2] == ["none", "none"], f"a frame carries a transform: {frame}"
 
 
 def test_the_viewport_clips_the_canvas(page, deck_at, beyond):

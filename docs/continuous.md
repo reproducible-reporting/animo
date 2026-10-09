@@ -90,7 +90,7 @@ so they are smooth in the browser and add no renderings in the paged outputs.
 | `reveal(name)`                         | make the element visible                      |
 | `hide(name)`                           | make the element invisible, keeping its space |
 | `move(name, x:, y:, dx:, dy:, relto:)` | translate the element                         |
-| `scale(name, f:, fx:, fy:)`            | scale the element about its own centre        |
+| `scale(name, f:, fx:, fy:)`            | scale the element about its centre            |
 
 The element keeps the space it had in every case:
 a display state never reflows the slide.
@@ -123,7 +123,7 @@ Do not use a hidden element for contents that should be kept secret without any 
 | `relto`    | names the tag that is the anchor for `x` and `y` |
 
 The **anchor** is the canvas origin, or the tag that `relto` names.
-The moved element is placed with its own anchor on that anchor.
+The anchor of the moved element is placed on that anchor.
 The anchor of an element is the **top-left corner of its wrapper**, as the body laid it out.
 
 ```typst
@@ -142,7 +142,7 @@ Idem for `y` and `dy`.
 
 Three consequences follow from the anchor being the corner the *body* gave the tag.
 
-- **The anchor ignores the tag's own display state**, so it means the same in every state.
+- **The anchor ignores the display state of the anchored tag**, so it means the same in every state.
   An absolute move is idempotent, and `move("b", relto: "a")` is unaffected by whatever
   moved `a`.
 - **A name with several sites moves as one.**
@@ -167,7 +167,7 @@ An axis the call does not mention keeps the factor it had.
 ## Timing
 
 Four arguments decide *when* and *how long* rather than *what*.
-All of them are plain numbers of **seconds**, because typst has no time literal of its own,
+All of them are plain numbers of **seconds**, because typst has no time literal,
 e.g. `2s` does not parse.
 
 | Argument    | Says                                        | Written on            |
@@ -225,7 +225,7 @@ for how a presenter can control animations that start automatically.
 
 Every primitive takes both.
 `delay:` defaults to zero and when set to a positive value, it delays that one operation within its subslide.
-`duration:` defaults to `auto`, which is the deck's own `primitive-duration`.
+`duration:` defaults to `auto`, which is the `primitive-duration` of the deck.
 A duration of zero makes the operation jump to its new state.
 
 ```typst
@@ -240,20 +240,20 @@ animation: {
 ```
 
 The subslide still has exactly **one clock**.
-A delay becomes the browser animation's own delay rather than a timer of its own,
+A delay becomes the delay of the browser animation rather than a separate timer,
 so every operation of the subslide is measured from the same instant,
 and a subslide ends when the last of its operations does.
 
 A backward step plays that schedule **mirrored**:
 the three lines above leave in the order `third`, `second`, `first`,
 which is the order the audience saw them arrive, backwards.
-Every operation keeps its own duration; only the moment it starts at is turned around.
+Every operation keeps its duration; only the moment it starts at is turned around.
 
 Because `auto` stands for the deck's [`primitive-duration`](presenting.md#motion),
 setting `primitive-duration` on the deck changes every primitive that uses the default,
-and leaves alone the primitives that state a duration of their own.
+and leaves alone the primitives that state a duration.
 This holds for a `primitive-duration` of zero as well,
-in which case only the primitives that state a duration of their own move.
+in which case only the primitives that state a duration move.
 
 A duration **may run past the subslide it is in**.
 An operation still running when the next subslide is triggered is overtaken rather than cut
@@ -268,7 +268,7 @@ The handout shows one page per slide, and `handout:` says which state that is.
 - `handout: false` takes one away, including the final state.
 
 Every state carries the flag.
-The initial state has no `sub` of its own, so its flag is written on `init`:
+The initial state has no `sub`, so its flag is written on `init`:
 
 ```typst
 #slide(animation: {
@@ -284,4 +284,4 @@ These flags matter because a structural primitive can destroy content.
 See [Structural Animations](structural.md#selecting-states-for-handouts) for that case.
 
 A deck in which every state declines its page would leave the handout with no page at all.
-Animo refuses that deck rather than letting typst emit a blank page of its own.
+Animo refuses that deck rather than letting typst emit a blank page.

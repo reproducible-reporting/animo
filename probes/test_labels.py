@@ -51,7 +51,7 @@ def test_it_works_inside_an_html_frame(typst: TypstRunner):
 
 
 def test_duplicate_labels_each_get_their_own_group(typst: TypstRunner):
-    """Typst permits duplicate labels, and every occurrence becomes a group of its own.
+    """Typst permits duplicate labels, and every occurrence becomes a separate group.
 
     This is what makes "one tag, several elements" work,
     and what lets one CSS rule reach the same tag in every epoch frame of a slide.

@@ -58,7 +58,7 @@ def test_a_document_without_pages_becomes_one_blank_default_page(typst: TypstRun
     """Typst does not refuse a document that lays nothing out.
 
     This is what makes animo refuse a handout whose every state gave up its page:
-    left to typst, such a deck compiles to one blank page at typst's own default size,
+    left to typst, such a deck compiles to one blank page at the default page size of typst,
     which reads as a rendering failure rather than as the flag doing what it was told.
     Measured on typst 0.15.0.
     """
@@ -138,7 +138,7 @@ def test_the_block_scoped_import_does_not_leak(typst: TypstRunner):
 def test_an_unknown_primitive_silently_falls_through_to_the_standard_library(
     typst: TypstRunner,
 ):
-    """The footgun that forces `sub` to validate its own arguments.
+    """The footgun that forces `sub` to validate its arguments.
 
     A star import falls through to the standard library for every name the module does not
     define, so a mistyped or unsupported primitive does not error.

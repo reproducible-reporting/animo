@@ -19,7 +19,7 @@ from decks import deck
 from harness import UNDER, Box, Deck, TypstRunner, assert_identical_outside, screenshot
 
 # How long a step takes in these tests, in milliseconds, and the moment sampled in it.
-# Slowed down from animo's own 400 ms so that a paused animation cannot already have ended,
+# Slowed down from the default 400 ms of animo so that a paused animation cannot already have ended,
 # and linear so that the moment sampled is the fraction of the route it looks like.
 DURATION = 4000
 MIDPOINT = DURATION / 2
@@ -47,7 +47,7 @@ def animated(typst: TypstRunner, body: str, *steps: str, name: str = "deck.html"
 
 
 # A paragraph in a region that reflows when a clause is inserted into it, with a recoloured
-# word, a tag with a box of its own that the reflow carries along, and a tag whose content is
+# word, a tag with a separate box that the reflow carries along, and a tag whose content is
 # replaced. The lines outside the region are what the containment is asserted on.
 REFLOWING = """
   #tag("head", wrap: block)[A line above the region.]

@@ -397,8 +397,8 @@ function middle(subpaths) {
  *
  * The subpaths are paired by their length, the longest with the longest, which pairs the
  * outline of a shape with the outline and a hole with a hole. A subpath without a partner is
- * paired with a point, at the place in the other path's box that its own middle has in its
- * own path's box, so that it grows out of nothing or shrinks into nothing there.
+ * paired with a point, at the place in the box of the other path that the middle of the subpath
+ * has in the box of its path, so that it grows out of nothing or shrinks into nothing there.
  */
 function pairSubpaths(a, b) {
   const longest = (list) => [...list].sort((one, other) => other.total - one.total);
@@ -474,7 +474,7 @@ function reversedSubpath({ segments, closed }) {
  *
  * The distance is squared so that a translation of one subpath against the other adds the
  * same amount at every start and in either direction, which leaves the best of them where
- * the two sit in their own user spaces.
+ * the two sit in their user spaces.
  */
 function travelOf(a, b, start) {
   let sum = 0;

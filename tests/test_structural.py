@@ -273,7 +273,7 @@ def test_an_epoch_that_lays_nothing_out_adds_nothing_to_an_inline_footprint(typs
     An extent is read around the baseline of a rendering, and a rendering carries the
     display state of its epoch, which is a `move`.
     A `move` is block-level, so one that is measured without a box around it lays its
-    payload out in a paragraph of its own and reports the baseline of the line below it.
+    payload out in a separate paragraph and reports the baseline of the line below it.
     The descent then covers a whole line and the ascent turns negative.
     An epoch that lays nothing out has an extent of zeroes, so the shared box becomes a
     line taller than the content it holds.
@@ -333,7 +333,7 @@ def test_a_block_footprint_fills_its_container_and_is_the_tallest_epoch(typst: T
 
 
 def test_hiding_and_removing_reserve_the_same_footprint(typst: TypstRunner):
-    """Inside a tag's own box the two cannot be told apart, which the manual says.
+    """Inside the box that a tag reserves the two cannot be told apart, which the manual says.
 
     `h` starts hidden, because `reveal` is the first thing said about it, and is removed
     later.
@@ -526,8 +526,9 @@ def test_two_operations_in_one_region_may_not_disagree_about_their_transition(
 ):
     """A region crosses a boundary once, so it is carried by one transition.
 
-    `auto` and `crossfade()` are two answers, as a duration of `auto` and the deck's own
-    number are, so a step that writes both is refused rather than read as one.
+    `auto` and `crossfade()` are two answers,
+    as are a duration of `auto` and a number equal to the `primitive-duration:` of the deck,
+    so a step that writes both is refused rather than read as one.
     """
     body = '#region[#tag("a")[A] #tag("b")[B]]'
     source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")
@@ -535,7 +536,7 @@ def test_two_operations_in_one_region_may_not_disagree_about_their_transition(
 
 
 def test_two_regions_may_cross_one_boundary_with_two_transitions(typst: TypstRunner):
-    """Two bare tags are two regions, so each names its own transition."""
+    """Two bare tags are two regions, so each names a separate transition."""
     body = '#tag("a")[A]\n#tag("b")[B]'
     source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")
     typst.ok(source)

@@ -118,7 +118,7 @@ joins a claim to its elaboration in the way a dash would,
 and so can an apposition such as "`pan.typ`, a canvas two screens wide".
 Such an elaboration usually reads better as a relative clause,
 as in "`pan.typ`, which is a canvas two screens wide",
-or as a sentence of its own that names its subject again.
+or as a separate sentence that names its subject again.
 A colon is for introducing a list, a table, a code block or a quoted term.
 
 ### One Term per Concept
@@ -199,6 +199,19 @@ Habits to watch for:
   In "A colour fills the viewport. As a background it is the page fill on paper.",
   the word "it" first reads as "the background".
   The preferred form is "A colour used as a background is the page fill on paper."
+  A repeated noun replaces "its own X" with "the X of the noun", not with "the noun's own X".
+- **A possessive with "own" where nothing is contrasted,**
+  as in "the deck's own transition" or "the deck's own `primitive-duration`".
+  The word "own" is needed only when the sentence sets two owners against each other,
+  as in "typst's own `hide`" beside the `hide` primitive of Animo.
+  Otherwise name the relation, as in "the default transition of the deck",
+  or drop the word, as in "the `primitive-duration` of the deck".
+  The same holds for "of its own" and "of their own".
+  "A layer of its own" is "a separate layer",
+  and "an operation that states a `duration:` of its own" is
+  "an operation that states a `duration:`".
+  "Its own X" is usually "its X", as in "about its centre",
+  and "a separate X" where a second one is meant.
 - **A count used as a name,** as in "The Four Primitives"
   or "`pan` is the fifth continuous primitive".
   Name the category instead, because a count goes stale when the set changes
@@ -246,6 +259,10 @@ Each example below pairs a sentence written for effect with the preferred phrasi
   "They do not clip the body and the body does not clip them."
   Preferred:
   "The viewport clips all three layers alike."
+- Written for effect:
+  "A slide whose `init` names no transition takes the deck's own."
+  Preferred:
+  "A slide whose `init` names no transition takes the default transition of the deck."
 
 ### Markdown
 

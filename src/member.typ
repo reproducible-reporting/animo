@@ -27,8 +27,8 @@
 // as `(slide:, kind:, name:, key:, group:, parent:, groupless:)`.
 //
 // `key` is the region the site belongs to, and `parent` the one around the site,
-// which differ for a region with a number and for a tag that is its own implicit region.
-// `group` is the label that the site's own group carries in the output, and is `none` for a
+// which differ for a region with a number and for a tag that forms an implicit region.
+// `group` is the label that the group of the site carries in the output, and is `none` for a
 // site that is not the region its key names.
 // It is how a key becomes something the browser can address, because only the site that owns
 // the key knows what it called itself.
@@ -132,15 +132,15 @@
 //
 // A region crosses a boundary once, with every region inside it, so there is nothing for a
 // precedence rule to pick between.
-// Two bare tags side by side are two regions, each its own implicit one, so this refusal
+// Two bare tags side by side are two regions, each an implicit one, so this refusal
 // applies inside a region and between two operations on one tag.
 // The comparison is over an operation's timing as a whole rather than over one field of it,
 // because a timing record may gain more fields.
 // A transition is compared as it was written, so `auto` and `crossfade()` are two answers,
-// as a duration of `auto` and the deck's own number are.
+// as are a duration of `auto` and a number equal to the `primitive-duration:` of the deck.
 //
 // Which region a tag belongs to is a layout-time fact, so this reads the membership reports
-// and runs where the other layout-informed refusals run, in a context block of its own after
+// and runs where the other layout-informed refusals run, in a separate context block after
 // the slide.
 // A panic that depends on `query` is only reported when it is raised there.
 //

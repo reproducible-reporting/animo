@@ -23,7 +23,7 @@ from decks import deck
 from harness import Deck, TypstRunner, assert_identical, screenshot
 
 # How long a boundary takes in these tests, in milliseconds, and the moment sampled in it.
-# Slowed down from animo's own 400 ms so that a paused animation cannot already have
+# Slowed down from the default 400 ms of animo so that a paused animation cannot already have
 # ended, and linear so that the moment sampled is the fraction of the step it looks like.
 DURATION = 4000
 MIDPOINT = DURATION / 2
@@ -233,7 +233,7 @@ def test_the_midpoint_of_a_boundary_is_the_sum_of_the_two_slides(
     """Nothing dips halfway through, which is what `plus-lighter` is there for.
 
     The two slides carry opaque grounds of different colours, so a plain opacity
-    crossfade would put the deck's own black surround through the half-transparent pair
+    crossfade would put the black surround of the deck through the half-transparent pair
     and land the midpoint far below the average of the two. The assertion is on the whole
     slide rather than on a band of it, because a slide boundary scopes nothing.
     The whole container is the unit.
@@ -308,7 +308,7 @@ def test_the_slide_being_entered_is_shown_in_the_state_it_comes_up_on(
 # Each boundary of the deck below takes another transition, so a step that looked up the
 # transition of the wrong slide would show it as the wrong motion and not only as the wrong
 # length. Slide 3 pushes, slide 4 cuts, slide 5 wipes and slide 6 covers, and slides 1 and 2
-# take the deck's own crossfade.
+# take the default crossfade of the deck.
 # The grounds are opaque and differ, because two of them that overlapped under the
 # `plus-lighter` of a crossfade would add to a third colour where a push, a cover or a wipe
 # has to show one of the two.
@@ -565,7 +565,7 @@ def test_an_interrupted_push_turns_round_where_it_is(page, deck_at, mixed):
 
 
 def test_a_slide_states_the_duration_of_its_boundary(page, deck_at, mixed):
-    """Slide 6 takes two seconds in both directions, and the deck's own easing."""
+    """Slide 6 takes two seconds in both directions, and the easing of the deck."""
     presentation: Deck = deck_at(mixed).goto(5)
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
@@ -583,7 +583,7 @@ def test_a_slide_states_the_duration_of_its_boundary(page, deck_at, mixed):
 @pytest.mark.parametrize("how", ["property", "reduced"])
 def test_a_reader_without_motion_cuts_every_transition(page, deck_at, how, mixed):
     """A reader who asked for less motion gets a cut at every boundary, the ones that state
-    a duration of their own included.
+    a duration included.
 
     The two ways in are the media query and the property it sets.
     """
@@ -611,7 +611,7 @@ def test_a_zero_deck_duration_cuts_the_boundaries_that_state_none(page, deck_at,
     assert flight(presentation) == [2000]
 
 
-# The deck's own transition, which a slide that says `auto` takes.
+# The default transition of the deck, which a slide that says `auto` takes.
 
 
 def test_the_deck_states_the_transition_auto_takes(page, deck_at, typst: TypstRunner):
@@ -653,7 +653,9 @@ def test_a_deck_of_cuts_pushes_the_slide_that_states_a_duration(page, deck_at, t
     assert presentation.animating == []
 
 
-def test_a_duration_without_a_transition_times_the_decks_own(page, deck_at, typst: TypstRunner):
+def test_a_duration_without_a_transition_times_the_default_transition(
+    page, deck_at, typst: TypstRunner
+):
     """`init(duration: ..)` alone keeps the deck's transition and gives it a length."""
     source = deck(
         "slide[= One]",

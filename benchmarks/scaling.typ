@@ -91,7 +91,7 @@
 //
 // A deck gives every slide the same overlay, which is what makes its cost a per-slide term
 // rather than a one-off.
-// In the HTML target each overlay is a frame of its own, with glyph definitions of its own,
+// In the HTML target each overlay is a separate frame, with separate glyph definitions,
 // beside the frame of the slide.
 // The overlay is one line of text and one rule, which is what a running header or a talk
 // title is.
@@ -127,7 +127,7 @@
   ]
 
   // The display equation is here rather than behind a knob, because math is what a deck of
-  // this kind is full of, and a tag inside one is a tag site of its own kind.
+  // this kind is full of, and a tag inside one is a separate kind of tag site.
   $
     integral_(-oo)^oo e^(-x^2) dif x = #tag(term)[$sqrt(pi)$]
   $

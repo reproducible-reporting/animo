@@ -83,7 +83,7 @@ def test_a_paragraph_runs_past_the_bottom_edge_instead(typst: TypstRunner):
     """The contrast that makes the stacking easy to miss.
 
     The same container, filled with running text rather than with blocks, lays every line out
-    where it belongs and simply paints past its own bottom edge.
+    where it belongs and simply paints past its bottom edge.
     Measured on typst 0.15.0, the end of a paragraph that is 100 pt of container tall sits at
     333.58 pt.
     """

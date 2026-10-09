@@ -83,14 +83,14 @@ A record also carries `args` when the transition has parameters,
 which the runtime hands to the transition with the record.
 The runtime finds the stacks a boundary crosses by itself:
 a stack holds the group of every tag laid out in it,
-and its region's own label when the region is a tag.
+and the label of its region when the region is a tag.
 A `wrap: none` tag becomes no group, so an epoch entry also holds `regions`,
 which names such a tag by the label of the group of the region that holds its stack.
 Typst derives `regions` from the membership reports that every tag site and region writes,
 and leaves `regions` out when every changed tag has a group.
 
 A state also carries the `wait:` before it is entered, the `hold:` before the next state is
-entered, and the timing of the operations its own subslide performed.
+entered, and the timing of the operations that its `sub` performed.
 A name in an epoch's `changed` carries the timing of the operation that changed the tag.
 All of these are in seconds.
 None of them can be resolved anywhere but at the moment the step runs.
@@ -124,8 +124,9 @@ which is an anchor and an offset per axis rather than a displacement:
 ```
 
 The runtime resolves it as `anchor(relto) + offset - anchor(self)`, where the anchor of
-`null` is the canvas origin, so a pair naming the tag's own name is the identity and needs
-no anchor at all. The pan travels the same way, with the canvas origin for its own anchor.
+`null` is the canvas origin,
+so a pair whose `relto` names the moved tag is the identity and needs no anchor at all.
+The pan travels the same way, with the canvas origin as `anchor(self)`.
 The offsets are in typst points, which are the user units of a frame's SVG.
 
 The anchors themselves cannot travel, because a tag's position does not exist in the HTML
@@ -143,12 +144,12 @@ The two measurements agree to within a thousandth of a point.
 Stepping to the next subslide animates every tag the step changed,
 from what it was showing to what the new state says, and stepping back animates it back.
 
-| Primitive        | What the browser animates                                |
-| ---------------- | -------------------------------------------------------- |
-| `reveal`, `hide` | `opacity` between 0 and 1                                |
-| `move`           | the CSS `translate` property                             |
-| `scale`          | the CSS `scale` property, about the element's own centre |
-| `pan`            | the CSS `translate` property of the canvas               |
+| Primitive        | What the browser animates                                 |
+| ---------------- | --------------------------------------------------------- |
+| `reveal`, `hide` | `opacity` between 0 and 1                                 |
+| `move`           | the CSS `translate` property                              |
+| `scale`          | the CSS `scale` property, about the centre of the element |
+| `pan`            | the CSS `translate` property of the canvas                |
 
 A step across a slide boundary animates too, but it moves nothing:
 it crossfades the two containers.
@@ -162,9 +163,9 @@ The first paint is a deep link to wherever the fragment points.
 
 The deck's `primitive-duration:` and `transition-duration:` are defaults,
 which a `duration:` written in the timeline overrides, also when the default is zero.
-A reader who has asked their system for reduced motion therefore needs a signal of their own,
+A reader who has asked their system for reduced motion therefore needs a separate signal,
 because a media query cannot reach a number written in a typst source.
-Animo's own stylesheet sets `--animo-motion: none` under `prefers-reduced-motion: reduce`,
+The stylesheet of Animo sets `--animo-motion: none` under `prefers-reduced-motion: reduce`,
 and the runtime snaps every step while it is set.
 The declaration is `!important`, because a stylesheet added to the page comes after Animo's
 own stylesheet and would otherwise outrank the declaration.
@@ -206,7 +207,7 @@ A stack crosses a boundary when the boundary changes a tag it holds,
 or a tag without a group that the plan places in its region.
 A stack also crosses a boundary when its renderings on the two sides of the boundary differ.
 The function `differs` detects that once, by comparing their children,
-and such a stack takes the deck's own timing.
+and such a stack takes the default timing of the deck.
 
 **3. Only the individual transform properties, never the `transform` shorthand**,
 which would clobber the positioning typst wrote into the SVG.
@@ -218,7 +219,7 @@ anything belonging to an epoch boundary addresses the labelled outer group.
 CSS gives an element one `translate` and one `scale`, so the split is what keeps the two
 classes of effect from overwriting each other.
 The order follows from how a boundary effect is measured:
-it is measured in the frame's own coordinates
+it is measured in the coordinates of the frame
 and has to sit above the continuous transforms rather than inside them.
 
 **5. `pan` belongs to the canvas element, not to what is inside it.**
@@ -277,7 +278,7 @@ The ink is paired by `commonSubsequence`, a diff of the Myers kind over one key 
 `inkKey` writes the key from what the element draws apart from its place and its colour.
 For a glyph that is the `href`.
 For a path it is the `d` and the stroke attributes other than the colour,
-because typst writes every shape from its own origin and puts its place in a `transform`.
+because typst writes every shape from a local origin and puts its place in a `transform`.
 For an image it is the `href`, the `width` and the `height`.
 `clipsAbove` appends the clips between the element and its region, each with its place on
 the screen, so that a match never moves under a clip that is in another place in the other
@@ -299,7 +300,7 @@ and `labelsAbove`, the labels of the groups between the path and its region.
 
 Last come the shape morphs, in the same engines.
 `shapeMorphs` takes the paths left over after the resizes and assigns each to the tag it
-belongs to, which is the nearest labelled group above it that is not Animo's own,
+belongs to, which is the nearest labelled group above it that Animo did not create,
 or the tag around the region when the region is a tag's implicit one.
 A tag whose name is among the `names` of the record and that holds exactly one such path in
 each region pairs the two, whatever their structure, under the same clips and `sameFrame`.
@@ -314,7 +315,7 @@ Neither is written as inline style, so the slide at rest carries no morph transl
 A resize adds `d` and `stroke-width` to the same two effects:
 both paths go from the geometry the outgoing path shows to the `d` and stroke width of the
 incoming one, which `reshaped` writes as their common `end`.
-Typst writes every path from its own origin, so the two `d` are in comparable user spaces,
+Typst writes every path from a local origin, so the two `d` are in comparable user spaces,
 the two paths have one geometry at every moment, and the `translate` keeps them at one place.
 Neither property is written as inline style either.
 When the two `d` have different commands, as for a shape morph, `alignPaths` in
@@ -326,8 +327,8 @@ It runs two closed subpaths the same way round and starts the second where the s
 distance its points travel is least.
 Then it cuts both at the vertices of both, by their fraction of the length.
 `paths.js` reads no DOM, so its tests run on numbers.
-The opacity is the crossfade's own, which `plus-lighter` sums to one opaque element on the
-route (see *Findings*).
+The only opacity is the one the crossfade animates,
+which `plus-lighter` sums to one opaque element on the route (see *Findings*).
 
 `slide.morphed` holds every element a morph is still moving, with the epoch of its rendering,
 the stack that holds it, where its route ends and, for a resize or a shape morph, where its
@@ -344,7 +345,7 @@ it and above it, which `getScreenCTM()` includes.
 ## Where the Slide Boundary Is Selected
 
 `slideTransitions` in `src/js/boundaries.js` plays the same role for slide containers.
-It is a table of its own rather than an entry in `transitions`,
+It is a separate table rather than an entry in `transitions`,
 because the two tables are handed different things.
 A transition of an epoch boundary gets the renderings of one region,
 inside a slide that it holds still.
@@ -436,7 +437,7 @@ An effect animates only the properties whose value the step changes,
 because a `translate` or `scale` that is equal at both ends stops chromium from drawing an
 `opacity` animated beside it. See *Findings*.
 
-An operation's `delay:` becomes that animation's own delay rather than a timer of its own,
+An operation's `delay:` becomes the delay of that animation rather than a separate timer,
 so the step keeps a single clock when its operations arrive one after another.
 A delayed effect fills **backwards**, because the state it is arriving at is already the
 element's inline style.
@@ -580,7 +581,7 @@ to diagnose a step that does not do what the timeline says.
 - The root element carries `data-animo` with the position the runtime has reached,
   which is the same value as the fragment,
   `data-animo-mode` with the name of the active mode,
-  and `data-animo-paused` while the deck's own clock is stopped.
+  and `data-animo-paused` while the clock of the deck is stopped.
 - The slide that is shown carries `data-animo-current`,
   and the slide a boundary is crossing from carries `data-animo-leaving` and `inert`.
 
@@ -589,7 +590,7 @@ to diagnose a step that does not do what the timeline says.
 The HTML deck is one self-contained file, and most of it is glyph definitions.
 Typst defines a glyph once per frame that uses it, so a deck that wrote a frame per epoch
 would define the glyphs of a slide once per epoch of that slide.
-One frame per slide lets typst's own deduplicator reach them.
+One frame per slide lets the deduplicator of typst reach them.
 
 Measured on the controlled benchmark deck of twelve slides, laid out as one rendering of the
 whole slide per epoch, against the same deck written as a frame per epoch:

@@ -10,7 +10,7 @@ much time passes.
 `timed_deck_at` installs the fake clock and `Deck.run_for` fires the timers that are due.
 Nothing in the runtime knows it is being tested.
 
-`delay:` and `duration:` are the Web Animations API effect's own delay and duration, so
+`delay:` and `duration:` are the delay and the duration of the Web Animations API effect, so
 they run on the document timeline, which the fake clock leaves alone. An operation that
 starts late or runs long is therefore asserted by scrubbing, as every other piece of motion
 is, and never by racing it.
@@ -21,7 +21,7 @@ from decks import deck
 from harness import EPOCH_GROUPS, Deck, TypstRunner
 
 # How long a step takes in these tests, in milliseconds, and the moment sampled in it.
-# Slowed down from animo's own 400 ms so that a paused animation cannot already have ended,
+# Slowed down from the default 400 ms of animo so that a paused animation cannot already have ended,
 # and linear so that the moment sampled is the fraction of the step it looks like.
 # Shorter than the 4 s the other browser modules use, because a delayed step is the one
 # kind a test may also have to wait out, because it runs for its delay and its duration
@@ -35,11 +35,11 @@ SLOW = f":root {{ --animo-primitive-duration: {DURATION}ms; --animo-easing: line
 # Half the step, so that the moment before it and the moment after it are both well inside.
 DELAY = DURATION / 2
 
-# How long an operation that states a duration of its own takes here, in milliseconds.
-# Three times the deck's own step, so that a moment past the end of the step is still well
-# inside it.
-# An operation that never got its own duration would have finished by then.
-OWN = 3 * DURATION
+# How long an operation that states a duration takes here, in milliseconds.
+# Three times `--animo-primitive-duration`, so that a moment past the end of that duration
+# is still well inside it.
+# An operation that never got its stated duration would have finished by then.
+STATED = 3 * DURATION
 
 
 def timeline(*steps: str) -> str:
@@ -588,13 +588,13 @@ def test_a_delayed_operation_holds_its_first_keyframe_until_it_starts(page, deck
     assert [style["opacity"] for style in presentation.styles("a")] == ["0"]
     presentation.scrub(DELAY + DURATION / 2)
     halfway = float(presentation.styles("a")[0]["opacity"])
-    assert 0.4 < halfway < 0.6, f"the delayed reveal was {halfway} halfway through its own step"
+    assert 0.4 < halfway < 0.6, f"the delayed reveal was {halfway} halfway through its step"
 
 
 def test_a_delayed_operation_ends_where_an_undelayed_one_does(deck_at, delayed):
     """A delay says when, and nothing about what: the state it lands on is the same one.
 
-    At animo's own step duration rather than the slowed one, because this is the one
+    At the default `--animo-primitive-duration` rather than the slowed one, because this is the one
     assertion here that waits the whole step out instead of stating a moment in it.
     """
     presentation: Deck = deck_at(delayed)
@@ -607,7 +607,7 @@ def test_two_operations_of_one_step_keep_their_own_moments(page, deck_at, typst:
     """One effect has one delay, so a step with two moments in it is two effects.
 
     They are still created in one task and still start on the same frame, so the step keeps
-    one clock, because the delay is the effect's own and never a timer.
+    one clock, because the delay belongs to the effect and is never a timer.
     """
     presentation: Deck = deck_at(
         animated(
@@ -641,7 +641,7 @@ def test_a_step_that_times_nothing_is_still_one_effect(page, deck_at, typst: Typ
     assert presentation.animating == [{"opacity", "translate"}]
 
 
-# An operation with a duration of its own.
+# An operation with a stated duration.
 
 
 def timings(page, field: str) -> list:
@@ -657,31 +657,31 @@ def timings(page, field: str) -> list:
 
 @pytest.fixture
 def slow_reveal(typst: TypstRunner):
-    """A compiled deck whose one step reveals a line over three times the deck's own step."""
+    """A compiled deck whose one step reveals a line over three times the default duration."""
     return animated(
         typst,
         LINE,
-        f'sub(reveal("a", duration: {OWN / 1000}))',
+        f'sub(reveal("a", duration: {STATED / 1000}))',
         name="duration.html",
     )
 
 
 def test_an_operation_takes_the_duration_it_states(page, deck_at, slow_reveal):
-    """The whole point: one step at a tempo of its own, in a deck that keeps its own.
+    """The whole point: one step at a separate tempo, in a deck that keeps its default tempo.
 
-    This is asserted by scrubbing to a moment the deck's own step would already have ended at,
+    This is asserted by scrubbing to a moment the default duration would already have ended at,
     rather than by racing the operation to it.
     """
     presentation: Deck = deck_at(slow_reveal)
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
-    assert timings(page, "duration") == [OWN]
+    assert timings(page, "duration") == [STATED]
     presentation.scrub(DURATION + MIDPOINT)
     halfway = float(presentation.styles("a")[0]["opacity"])
-    assert 0.4 < halfway < 0.6, f"the reveal was {halfway} halfway through its own duration"
+    assert 0.4 < halfway < 0.6, f"the reveal was {halfway} halfway through its duration"
 
 
-def test_an_operation_that_states_nothing_takes_the_decks_own_step(
+def test_an_operation_that_states_nothing_takes_the_primitive_duration(
     page, deck_at, typst: TypstRunner
 ):
     """`auto` is the default, and the number it stands for lives in the stylesheet.
@@ -706,14 +706,14 @@ def test_a_stated_duration_still_follows_a_delay_of_its_own(page, deck_at, typst
         animated(
             typst,
             LINE,
-            f'sub(reveal("a", delay: {DELAY / 1000}, duration: {OWN / 1000}))',
+            f'sub(reveal("a", delay: {DELAY / 1000}, duration: {STATED / 1000}))',
             name="both.html",
         )
     )
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
     assert timings(page, "delay") == [DELAY]
-    assert timings(page, "duration") == [OWN]
+    assert timings(page, "duration") == [STATED]
 
 
 def test_a_step_ends_when_the_last_of_its_operations_does(page, deck_at, typst: TypstRunner):
@@ -727,13 +727,14 @@ def test_a_step_ends_when_the_last_of_its_operations_does(page, deck_at, typst: 
         animated(
             typst,
             LINE + '\n  #tag("b", wrap: block)[And a second line.]',
-            f'sub(reveal("a", duration: {MIDPOINT / 1000}), reveal("b", duration: {OWN / 1000}))',
+            f'sub(reveal("a", duration: {MIDPOINT / 1000}),'
+            f' reveal("b", duration: {STATED / 1000}))',
             name="two-durations.html",
         )
     )
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
-    assert timings(page, "duration") == [MIDPOINT, OWN]
+    assert timings(page, "duration") == [MIDPOINT, STATED]
     presentation.scrub(DURATION)
     assert presentation.styles("a")[0]["opacity"] == "1", "the short operation had not ended"
     ongoing = float(presentation.styles("b")[0]["opacity"])
@@ -764,19 +765,19 @@ def schedule(page) -> dict[str, float]:
 LINES = "\n  ".join(f'#tag("{name}", wrap: block)[Line {name}.]' for name in "abc")
 
 # Three operations of one step, arriving one after another, the last of them slower than
-# the deck's own step.
+# `--animo-primitive-duration`.
 # The delays alone would not say which order they leave in.
 # Where each of them ends says that, and that is what mirroring the step is about.
 STAGGERED = (
     'sub(reveal("a"),'
     f' reveal("b", delay: {DELAY / 1000}),'
-    f' reveal("c", delay: {DURATION / 1000}, duration: {OWN / 1000}))'
+    f' reveal("c", delay: {DURATION / 1000}, duration: {STATED / 1000}))'
 )
 
 # How long that step lasts.
 # The last operation of it starts after one step of the deck and then runs for three,
 # and nothing else is still going by then.
-STEP = DURATION + OWN
+STEP = DURATION + STATED
 
 
 @pytest.fixture
@@ -805,7 +806,7 @@ def test_a_backward_step_mirrors_the_schedule(page, deck_at, delayed):
 def test_a_backward_step_reverses_the_order_its_operations_arrived_in(page, deck_at, staggered):
     """The last thing the audience saw arrive is the first thing they see leave.
 
-    Each operation keeps its own duration and is mirrored about the length of the step, so
+    Each operation keeps its duration and is mirrored about the length of the step, so
     an operation that ran from `delay` to `delay + duration` runs from the other side of
     the step to the other side of where it started.
     """
@@ -827,9 +828,9 @@ def test_a_backward_step_keeps_the_duration_of_every_operation(page, deck_at, st
     presentation: Deck = deck_at(staggered)
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
-    assert timings(page, "duration") == [DURATION, DURATION, OWN]
+    assert timings(page, "duration") == [DURATION, DURATION, STATED]
     presentation.settle().press("ArrowLeft")
-    assert timings(page, "duration") == [DURATION, DURATION, OWN]
+    assert timings(page, "duration") == [DURATION, DURATION, STATED]
 
 
 def test_the_last_line_to_arrive_is_the_first_to_go(page, deck_at, staggered):
@@ -842,7 +843,7 @@ def test_the_last_line_to_arrive_is_the_first_to_go(page, deck_at, staggered):
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
     presentation.settle().press("ArrowLeft")
-    presentation.scrub(OWN / 2)
+    presentation.scrub(STATED / 2)
     leaving = float(presentation.styles("c")[0]["opacity"])
     assert 0.4 < leaving < 0.6, f"the last line to arrive was {leaving} halfway out"
     assert [presentation.styles(name)[0]["opacity"] for name in "ab"] == ["1", "1"], (
@@ -901,7 +902,7 @@ def test_reduced_motion_snaps_a_stated_duration(page, deck_at, typst: TypstRunne
         animated(
             typst,
             LINE,
-            f'sub(reveal("a", duration: {OWN / 1000}))',
+            f'sub(reveal("a", duration: {STATED / 1000}))',
             name="reduced-duration.html",
         )
     )
@@ -970,14 +971,14 @@ def test_a_delayed_structural_operation_holds_back_its_regions_crossfade(
 def test_a_structural_duration_holds_its_regions_crossfade_open(page, deck_at, typst: TypstRunner):
     """A long `replace` keeps two renderings painting the region while it runs.
 
-    The moment sampled is past the end of the deck's own step, so a crossfade that had not
+    The moment sampled is past the end of the default duration, so a crossfade that had not
     taken the operation's duration would be over by then and the outgoing rendering dark.
     """
     presentation: Deck = deck_at(
         animated(
             typst,
             CLAIM,
-            f'sub(replace("claim", duration: {OWN / 1000})[{LONGER}])',
+            f'sub(replace("claim", duration: {STATED / 1000})[{LONGER}])',
             name="structural-duration.html",
         )
     )
@@ -985,13 +986,13 @@ def test_a_structural_duration_holds_its_regions_crossfade_open(page, deck_at, t
     presentation.press("ArrowRight")
     # One effect per rendering: the outgoing one fades out and the incoming one fades in,
     # and both take the duration the operation stated.
-    assert timings(page, "duration") == [OWN, OWN]
+    assert timings(page, "duration") == [STATED, STATED]
     presentation.scrub(DURATION + MIDPOINT)
     outgoing, incoming = region_paint(presentation, "claim")
     assert outgoing["visibility"] == "visible", "the outgoing rendering stopped painting early"
     assert 0.4 < outgoing["opacity"] < 0.6, outgoing
     assert 0.4 < incoming["opacity"] < 0.6, incoming
-    presentation.scrub(OWN)
+    presentation.scrub(STATED)
     assert region_paint(presentation, "claim") == [
         {"visibility": "visible", "opacity": 0},
         {"visibility": "visible", "opacity": 1},
@@ -1015,7 +1016,7 @@ def test_a_boundary_overtaken_mid_crossfade_keeps_its_region_opaque(
         animated(
             typst,
             CLAIM,
-            f'sub(replace("claim", duration: {OWN / 1000})[{LONGER}])',
+            f'sub(replace("claim", duration: {STATED / 1000})[{LONGER}])',
             'sub(replace("claim")[A third claim.])',
             name="overtaken.html",
         )
@@ -1076,14 +1077,14 @@ def test_a_step_that_walks_back_over_a_join_hands_over_every_boundary_it_crosses
 # A join that runs out of a slide, which is the one backward step that moves two things.
 
 # How long a slide boundary takes in these tests, in milliseconds.
-# Stated rather than left at animo's own, and different from the step above it, because a
+# Stated rather than left at the default of animo, and different from the step above it, because a
 # join walked back over runs both at once and the two clocks are what tell them apart.
 BOUNDARY = 2 * DURATION
 
 JOINING = f"{SLOW}\n:root {{ --animo-transition-duration: {BOUNDARY}ms }}"
 
 # A build that spills into the next slide.
-# One press starts the step's own motion and the boundary, which is what `hold: 0` is written
+# One press starts the motion of the step and the boundary, which is what `hold: 0` is written
 # on a step for.
 SPILLING = deck(
     f'slide(animation: {{ import anim: *\n  sub(hold: 0, reveal("a"))\n}})[\n  {LINE}\n]',
@@ -1102,7 +1103,7 @@ SPILLING_REGION = deck(
 
 @pytest.fixture
 def spilling(typst: TypstRunner):
-    """Two slides, the first of which runs into the second while its own step is moving."""
+    """Two slides, the first of which runs into the second while its step is moving."""
     return typst.html(SPILLING, name="spilling.html")
 
 
@@ -1113,7 +1114,7 @@ def spilling_region(typst: TypstRunner):
 
 
 def test_a_backward_step_over_a_join_rewinds_the_slide_it_lands_on(page, deck_at, spilling):
-    """The slide being entered is below its own last state, and the way back says so.
+    """The slide being entered is below its last state, and the way back says so.
 
     Going forward the audience saw one motion, which was the step running inside the slide
     while the boundary carried it away. A backward step that snapped that slide into place would
@@ -1128,7 +1129,7 @@ def test_a_backward_step_over_a_join_rewinds_the_slide_it_lands_on(page, deck_at
     presentation.press("ArrowLeft")
     assert presentation.position == (1, 0), "the step did not walk back over the join"
     assert timings(page, "duration") == [DURATION, BOUNDARY, BOUNDARY], (
-        "the slide being rewound and the boundary did not take their own clocks"
+        "the slide being rewound and the boundary did not take separate clocks"
     )
     presentation.scrub(MIDPOINT)
     halfway = float(presentation.styles("a")[0]["opacity"])
@@ -1188,7 +1189,7 @@ def test_a_snapping_step_drops_a_delay_with_the_duration(page, deck_at, delayed)
     """A step with no motion in it has no moment for an operation to be late for.
 
     `--animo-motion: none` is the one line a reader who asked for less motion reaches
-    through the media query in animo's own stylesheet, and it is where the runtime reads
+    through the media query in the stylesheet of animo, and it is where the runtime reads
     the question.
     A step that snaps snaps whole, delays and all.
     """
@@ -1250,8 +1251,8 @@ def test_a_step_interrupted_by_a_shorter_wait_continues_from_where_it_is(
 ):
     """A wait is measured from its predecessor's trigger, not from the end of its motion.
 
-    A wait shorter than a step's own duration therefore interrupts it, and that needs no
-    rule of its own.
+    A wait shorter than the duration of a step therefore interrupts it, and that needs no
+    separate rule.
     An interrupted step continues from where it is, because the display state is the state
     and the animation is only the route to it.
     """

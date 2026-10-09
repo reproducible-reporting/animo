@@ -13,7 +13,7 @@ chosen when the frame is rendered, so it is the one that has to agree by constru
 
 The paged tier asserts which rendering a page shows, and does so in colour rather than in
 glyphs.
-What is being checked is that a page carries the rendering of its own state,
+What is being checked is that a page carries the rendering of the state it shows,
 and a filled square says that where a rasterised numeral would need to be read.
 """
 
@@ -118,7 +118,7 @@ def test_a_step_counts_every_state_of_every_slide_before_it(typst: TypstRunner, 
     """The deck-wide pair, which is what a progress bar spanning the talk is measured on.
 
     It counts the states a presenter walks through and not the slides that carry a number,
-    so a slide left out of the numbering still takes its own share of the talk.
+    so a slide left out of the numbering still takes its share of the talk.
     """
     source = numbered(
         f"slide(numbered: false, {timeline(1)})[{numbers((1, 2, 1, 5), (2, 2, 2, 5))}]",
@@ -223,7 +223,7 @@ def test_a_callback_that_returns_something_other_than_content_is_refused(typst: 
 
 @pytest.mark.parametrize("html", [False, True])
 def test_a_wrap_that_is_neither_auto_nor_a_container_is_refused(typst: TypstRunner, html):
-    """A stack is animo's own container, so it takes neither a function nor `none`.
+    """A stack is a container that animo creates, so it takes neither a function nor `none`.
 
     Every rendering in it has to become a group the runtime can address, which is what a
     tag site may decline and a stack may not.

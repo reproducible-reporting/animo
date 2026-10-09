@@ -56,8 +56,8 @@
 #let ink = rgb("#0074d9")
 
 // Where the marks sit, as fractions of the spread.
-// The positions come from a linear congruential generator rather than from typst's own
-// randomness, so that every variant and every machine draws the same scatter.
+// The positions come from a linear congruential generator rather than from a random
+// number generator in typst, so that every variant and every machine draws the same scatter.
 #let coords = {
   let seed = 12345
   let out = ()

@@ -28,9 +28,9 @@ const ANIMATION_ID = "animo";
 /**
  * Whether the runtime created an animation.
  *
- * The document may hold animations of the author's own, from a stylesheet or a script,
+ * The document may hold animations that the author added, from a stylesheet or a script,
  * and what the runtime does to the animations of the page, such as pausing them, is done
- * to its own only.
+ * only to the animations the runtime started.
  */
 function ours(animation) {
   return animation.id === ANIMATION_ID;
@@ -55,7 +55,7 @@ function milliseconds(value) {
  * so a deck of hard cuts between slides keeps the motion inside them.
  *
  * The duration is a default, so a deck duration of zero is still a step that moves when an
- * operation states a duration of its own, and an effect snaps only when it ends up with no
+ * operation states a duration, and an effect snaps only when it ends up with no
  * time at all (see `scheduled`).
  * The one thing that snaps a whole step is `--animo-motion: none`, which the stylesheet's
  * media query sets for a reader who asked for less motion, because a media query cannot
@@ -73,13 +73,14 @@ function timing(property = "--animo-primitive-duration") {
 }
 
 /**
- * The options of one effect: the deck's own, held back and stretched by its operation's.
+ * The options of one effect, which are the defaults of the deck with the delay and the
+ * duration of its operation applied.
  *
  * A delay becomes the effect's delay and a duration the effect's duration, rather than a
- * timer of its own.
+ * separate timer.
  * The step therefore keeps one clock, because every animation of a step is still created in
  * one task and measured from the same instant.
- * A duration the operation does not state is the deck's own, `--animo-primitive-duration`,
+ * A duration the operation does not state is the `--animo-primitive-duration` of the deck,
  * so that a change of the deck's tempo reaches every operation that said nothing
  * and leaves the ones that did alone.
  *
@@ -124,14 +125,15 @@ function scheduled(options, timing, mirror = null) {
  * stated a duration, because the one an operation does not state lives in the stylesheet,
  * so it hands over the two halves and they are added here.
  * `stated` is the largest end it could compute, and `unstated` the largest delay of the
- * operations whose duration is the deck's own.
+ * operations whose duration is the `--animo-primitive-duration` of the deck.
  *
- * A step that states no timing at all carries no span, and lasts exactly one step of the
- * deck, which is what every operation of it takes.
+ * A step that states no timing at all carries no span, and lasts exactly the
+ * `--animo-primitive-duration` of the deck, which is what every operation of it takes.
  */
 function span(record, options) {
   // A step that carries no record is one whose every operation starts with it and takes the
-  // deck's own step, which is an unstated delay of zero, so that is what stands in for it.
+  // `--animo-primitive-duration` of the deck, which is an unstated delay of zero,
+  // so that is what stands in for it.
   // An absent `unstated` beside a `stated` is the other case and adds nothing, because the
   // step holds no operation whose duration the stylesheet owns.
   const { stated, unstated } = record ?? { unstated: 0 };
@@ -154,7 +156,7 @@ const PROPERTIES = {
   opacity: { rest: "1" },
   translate: { rest: "0px 0px", none: "none" },
   scale: { rest: "1", none: "none" },
-  // No clip and a clip at the element's own box paint the same on a slide, which clips at
+  // No clip and a clip at the box of the element paint the same on a slide, which clips at
   // its box already, and only the second interpolates with the clip of a wipe.
   "clip-path": { rest: "inset(0px)", none: "none" },
 };
@@ -256,7 +258,7 @@ function apply(effects) {
     // just written, because an engine normalises what it computes.
     // Chromium 151 gives back `0px` for the `0px 0px` of a tag at rest,
     // so comparing the two spellings finds a difference where there is none.
-    // An effect with an `end` of its own ends there instead, and is not read at all, which
+    // An effect that states an `end` ends there instead, and is not read at all, which
     // is what keeps a morph of a few thousand glyphs from reading as many styles.
     const unstated = names.filter((name) => own.get(name).end === null);
     const shown = unstated.length === 0 ? {} : showing(element, unstated);

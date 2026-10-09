@@ -8,7 +8,7 @@
 // The runtime is the files of `src/js`, joined in the order `deck.typ` names into the one
 // script of the page, so they share one module scope and none of them imports another.
 // A function declaration is hoisted and may be called from any file at any time.
-// A top level `const` is initialised when its own file is reached, so a value is only
+// A top level `const` is initialised when the file that defines it is reached, so a value is only
 // usable while the script loads by a file that comes after the one that defines it.
 // Only `boot.js` calls into the other files while the script loads, and `input.js` registers
 // its listeners then.
@@ -19,7 +19,7 @@ function readSlide(element) {
   // Every occurrence of a tag name, in every rendering of every stack of this slide, because
   // continuous state belongs to the slide and not to the rendering that is showing.
   // The slot of a tag is the first group inside its labelled one, except for a tag that holds
-  // an epoch stack of its own, whose slot is inside each rendering of the stack.
+  // an epoch stack, whose slot is inside each rendering of the stack.
   const slots = new Map();
   for (const group of element.querySelectorAll("[data-typst-label]")) {
     const name = group.dataset.typstLabel;
@@ -62,8 +62,9 @@ function readSlide(element) {
     })),
     states: plan.states ?? [],
     count: Math.max(1, Number(element.dataset.animoStates ?? 1)),
-    // How the boundary above this slide is crossed: the name of a transition, or `auto` for
-    // the deck's own, and its parameters with the duration the slide's `init` stated.
+    // How the boundary above this slide is crossed: the name of a transition,
+    // or `auto` for the default transition of the deck,
+    // and its parameters with the duration the slide's `init` stated.
     // It is the setting of the slide a forward step enters and is used in both directions.
     transition: {
       name: element.dataset.animoTransition ?? "auto",
@@ -78,7 +79,7 @@ function readSlide(element) {
     // `morph.js` keeps.
     morphed: new Map(),
     // Which state this slide is showing, or `null` while it has never been rendered.
-    // This is the slide's own state rather than the deck's position, because a backward step
+    // This is the state of the slide rather than the position of the deck, because a backward step
     // that walks back over a join leaves one slide and rewinds another, and the state it
     // rewinds from is the one this slide was left at.
     shown: null,

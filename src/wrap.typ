@@ -20,7 +20,7 @@
 // The wrapper that fills its container, which is what keeps centred content centred.
 #let filling = block.with(width: 100%)
 
-// A neighbour with no size of its own, which `breaks-the-line` puts beside a body.
+// A neighbour without a size, which `breaks-the-line` puts beside a body.
 #let nothing = box(width: 0pt, height: 0pt)
 
 // Look through the `styled` elements a `set` rule or a `text(..)` call wraps content in.
@@ -31,7 +31,7 @@
   value
 }
 
-// Whether content pushes a neighbour onto a line of its own.
+// Whether content pushes a neighbour onto a separate line.
 //
 // This is the decision procedure for `wrap: auto`.
 // It measures rather than inspecting element kinds, because a `context` block reports
@@ -62,7 +62,7 @@
 }
 
 // The wrapper `auto` chooses for content: the filling block for content that pushes a
-// neighbour onto a line of its own, and a box for content that does not.
+// neighbour onto a separate line, and a box for content that does not.
 //
 // Must be called in a context, because it measures.
 #let wrapper-for(body) = {
@@ -72,7 +72,7 @@
 // The three values a `wrap` argument may state outright.
 //
 // A tag site takes more than these and a stack of one rendering per subslide takes exactly
-// these, so each caller refuses what is left in its own words.
+// these, so each caller refuses what is left with a separate message.
 #let wrapper-literals = (auto, box, block)
 
 // The wrapper one of those three asks for.
@@ -117,7 +117,7 @@
 // a block.
 //
 // The kind of the outer slot follows the inner one, which is how a `wrap` function that
-// carries ink of its own keeps the outer wrapper from changing the layout it chose.
+// draws ink keeps the outer wrapper from changing the layout it chose.
 // The kind is a property of the wrapper rather than of what it holds,
 // so it is read from the wrapper with nothing inside.
 #let outer-of(name, wrapper) = {
@@ -140,10 +140,10 @@
 
 // The two nested slots of a tag site, with the label on the outer one.
 //
-// Continuous state and boundary state each get a slot of their own, because CSS gives an
+// Continuous state and boundary state each get a separate slot, because CSS gives an
 // element one `translate` and one `scale` and the two classes would clobber each other.
 // The labelled outer group is the boundary slot, since a boundary effect is measured in
-// the frame's own coordinates and has to sit above the continuous transforms.
+// the coordinates of the frame and has to sit above the continuous transforms.
 //
 // `display` is the display state of the rendering, and it goes around the wrapper rather
 // than inside it.
@@ -154,7 +154,7 @@
 // See *Findings*.
 //
 // `anchor` is content that takes no room, put first inside the outer slot, so that it
-// shares the slot's top-left corner without being moved by the tag's own display state.
+// shares the slot's top-left corner without being moved by the display state of the tag.
 #let slots(name, wrapper, payload, anchor: none, display: at-rest) = {
   [#outer-of(name, wrapper)({
       anchor

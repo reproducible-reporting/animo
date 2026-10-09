@@ -79,8 +79,8 @@ def test_a_show_rule_outside_a_canvas_reaches_a_content_element_inside_it(
     A `content()` element holds real content, laid out with the show rules in force where
     the canvas sits, so the mechanism that hands a tag its slide's view reaches into a
     canvas as it reaches anywhere else.
-    The replacement carries a label of its own, which is what says the rule really fired.
-    The marker's own label reaches no group, and the replacement's does.
+    The replacement carries a separate label, which is what says the rule really fired.
+    The label of the marker reaches no group, and the label of the replacement does.
     """
     package = require(typst, CETZ)
     markup = typst.svg(

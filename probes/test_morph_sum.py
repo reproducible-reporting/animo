@@ -5,8 +5,8 @@
 Two renderings of one frame stand for two epochs of a region: `Hello world`, and
 `Oh, Hello world`, which shifts the ten letters the two share. They are summed under
 `plus-lighter`, as a crossfade sums them. A morph translates the outgoing copy of each shared
-letter from its own place to the place of the incoming copy, and the incoming copy from the
-outgoing place to its own, while the outgoing rendering fades out and the incoming one in.
+letter from its place to the place of the incoming copy, and the incoming copy from the
+outgoing place to its place, while the outgoing rendering fades out and the incoming one in.
 The claim is that the two copies then sum to one opaque letter on the route.
 
 The letters are paired here by a longest common subsequence of the glyphs they show, which is
@@ -160,7 +160,7 @@ MIDPOINT = {"chromium": (2, 0), "firefox": (16, 600), "webkit": (96, 24)}
 
 
 def test_the_two_copies_of_a_morph_sum_to_one(typst: TypstRunner, open_page, browser_name):
-    """The claim: no change of the blend, no clone and no opacity of the morph's own."""
+    """The claim: no change of the blend, no clone and no opacity that the morph adds."""
     page = opened(typst, open_page, "midpoint.html")
     largest, pixels, ink = morphed(page, 0.5)
     allowed_largest, allowed_pixels = MIDPOINT[browser_name]
@@ -172,14 +172,14 @@ def test_the_two_copies_of_a_morph_sum_to_one(typst: TypstRunner, open_page, bro
 def test_a_plain_opacity_crossfade_of_the_two_copies_dips(typst: TypstRunner, open_page):
     """Why the comparison above is not vacuous: without `plus-lighter` the pair washes out."""
     page = opened(typst, open_page, "plain.html")
-    # Important, because the page's own rule comes later in the document than one added here.
+    # Important, because the rule of the page comes later in the document than one added here.
     page.add_style_tag(content='[data-typst-label^="r"] { mix-blend-mode: normal !important; }')
     largest, _, _ = morphed(page, 0.5)
     assert largest > 32, f"the plain crossfade of the pair did not dip: {largest}/255"
 
 
 # Firefox's difference, with no animation and no blend at all: one letter at one place on the
-# screen, reached through its own `x` attribute or through a `translate`.
+# screen, reached through its `x` attribute or through a `translate`.
 STATIC = """(which) => {
     const {r0, r1, u0, u1, moves} = window.probe;
     for (const rendering of [r0, r1]) {

@@ -45,7 +45,7 @@ SLOTS = """(group) => {
 """The continuous slots of one labelled group, as a function expression of `page.evaluate`.
 
 The slot of a tag is the first group inside its labelled one, except for a tag that holds an
-epoch stack of its own, whose slot is inside each rendering of the stack.
+epoch stack, whose slot is inside each rendering of the stack.
 """
 
 UNDER = """(slide, label) => Array.from(
@@ -67,7 +67,7 @@ inside the rendering. A rendering that involves the label in neither way is left
 
 # How the geometry of an SVG group is read, as a `playwright` argument expression.
 #
-# `getBBox()` gives the box in the group's own user units, which are typst points, and
+# `getBBox()` gives the box in the user units of the group, which are typst points, and
 # `getScreenCTM()` maps that onto the page, so the result is in CSS pixels either way.
 # `getBoundingClientRect()` cannot be used on a group, because firefox 153 inflates it to
 # roughly the width of the whole frame where chromium returns the tight box. See *Findings*.
@@ -129,7 +129,7 @@ def screenshot(target: Page | Locator, **kwargs) -> np.ndarray:
 
     Animations are disabled, so a screenshot is taken at a defined moment
     rather than at whatever point a transition happened to have reached.
-    The format is PNG rather than WebP, because `playwright`'s own `type="webp"` is lossy.
+    The format is PNG rather than WebP, because the `type="webp"` of `playwright` is lossy.
     """
     kwargs.setdefault("animations", "disabled")
     return decode(target.screenshot(type="png", **kwargs))
@@ -163,13 +163,13 @@ class Deck:
       `data-animo` attribute of the root element, so that a test can wait for the snap
       instead of racing it;
     - every slide container carries `data-animo-slide="<slide>"`, which is what scopes
-      a tag name to one slide, in the tests as in the runtime's own CSS;
+      a tag name to one slide, in the tests as in the CSS of the runtime;
     - that container also carries the resolved plan, as JSON, in `data-animo-plan`;
-    - the root element carries `data-animo-paused` while the deck's own clock is stopped,
+    - the root element carries `data-animo-paused` while the clock of the deck is stopped,
       which is the one thing the runtime knows that the fragment does not carry.
 
     The first three are also what `tests/documents/stand_in_deck.html` implements,
-    which is what the harness's own tests are exercised against.
+    which is what the tests of the harness are exercised against.
     """
 
     page: Page = attrs.field()
@@ -220,7 +220,7 @@ class Deck:
         """The bounding boxes of every group carrying this tag, in document order.
 
         The search is scoped to the slide the runtime is currently showing,
-        because a tag name means nothing outside its own slide.
+        because a tag name means nothing outside the slide it is on.
         One tag may sit at several places in that slide, and a tag inside a region appears in
         every rendering of its stack, so this returns a list and never a single rectangle.
         `frame` restricts the search to the n-th epoch rendering of the slide, in document
@@ -429,7 +429,7 @@ class Deck:
     def flight(self) -> list[float]:
         """How far into the step each animation now in flight is, in milliseconds.
 
-        The time is read after a frame has been drawn, because an animation measures its own
+        The time is read after a frame has been drawn, because an animation measures its
         current time against the document timeline and not against real time, and firefox
         153 refreshes that timeline only when it draws.
         When it is read any sooner, an animation that was told it began long ago still

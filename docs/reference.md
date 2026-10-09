@@ -77,10 +77,10 @@ The shape and the tempo of the deck, applied as a document show rule.
 ```
 
 The two durations and `transition` are HTML only, because the paged outputs put every state on
-a page of its own with nothing in between.
+a separate page with nothing in between.
 The `transition` argument takes one of the [transitions](#transitions).
 The two durations are defaults, and a duration of zero means that kind of motion is not
-animated unless a primitive or an `init` states a duration of its own.
+animated unless a primitive or an `init` states a duration.
 A reader whose browser asks for reduced motion gets no motion at all.
 
 `easing` takes one of five names, which are the CSS timing functions of the same name:
@@ -302,7 +302,7 @@ A timeline holds at most one `init`, before its first `sub`.
 | `hold`         | `none` or number          | `none`  | seconds the initial state stands before the subslide after it     |
 | `handout`      | `auto`, `true` or `false` | `auto`  | whether the handout keeps the initial state                       |
 
-Without a transition, the slide takes the deck's own.
+Without a transition, the slide takes the default transition of the deck.
 A `duration` of zero is a hard cut, whatever the transition.
 The boundary between two slides takes the `init` of the slide with the higher number,
 in both directions.
@@ -404,7 +404,7 @@ Taught in [Continuous Animations](continuous.md#where-move-puts-things).
 scale(name, f: none, fx: none, fy: none, delay: 0, duration: auto)
 ```
 
-Scale the tag about its own centre. The factor is set rather than multiplied into what is
+Scale the tag about its centre. The factor is set rather than multiplied into what is
 already there, and an axis the call does not mention keeps the factor it had.
 
 | Argument   | Type            | Default | Meaning                           |
@@ -442,8 +442,9 @@ The structural primitives change what typst lays out, so each of them starts a n
 continuous primitives, where they time the crossfade of the region that changed.
 
 All four also take `transition:`, which says how the region that changed crosses the boundary.
-The `transition` argument defaults to `auto`, which is the crossfade whatever the deck's own
-transition is, and it also takes the [transitions](#transitions) `crossfade()` and `morph()`.
+The `transition` argument defaults to `auto`,
+which is the crossfade whatever the default transition of the deck is,
+and it also takes the [transitions](#transitions) `crossfade()` and `morph()`.
 The other transitions move a whole slide and are refused here.
 A `duration` of zero is a hard cut of the region.
 Two operations that change one region at one boundary have to name the same transition,

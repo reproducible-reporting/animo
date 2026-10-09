@@ -3,7 +3,7 @@
 """Tier 3: the effects of a step, planned and applied, on a page with no deck in it.
 
 The runtime is loaded as a classic script without `boot.js`, so its functions are globals of
-the page and nothing is shown, and each test hands them elements of its own.
+the page and nothing is shown, and each test hands them the elements it needs.
 That reaches what a deck cannot show yet:
 a property no primitive animates, a transition no deck names,
 and the order of the two phases of a step.
@@ -162,7 +162,7 @@ def test_each_stack_of_a_boundary_is_carried_by_the_transition_it_names(engine):
     """One boundary may carry one region with one transition and another with another.
 
     The transition named `probe` exists only on this page.
-    It is handed the record of its own stack, `args` included, and plans nothing, so that
+    It is handed the record of the stack it belongs to, `args` included, and plans nothing, so that
     stack keeps its state at rest.
     The stack that names no transition is crossfaded.
     """

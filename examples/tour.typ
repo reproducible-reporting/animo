@@ -527,7 +527,7 @@
   sub(reveal("timed2"))
   // `delay:` holds one operation back inside its step,
   // so the three lines below arrive in the order they are written,
-  // and `duration:` gives the last of them a tempo of its own.
+  // and `duration:` gives the last of them a separate tempo.
   sub(
     reveal("d1"),
     reveal("d2", delay: 0.3),
@@ -638,7 +638,7 @@
   ]
 ]
 
-// The last slide is wiped in from the left, slower than the deck's own transitions.
+// The last slide is wiped in from the left, slower than the default transition of the deck.
 #slide(animation: anim.init(anim.wipe(direction: ltr), duration: 1))[
   #place(center + horizon, text(size: 1.2em, fill: dark, weight: "bold")[
     Thank you for watching!

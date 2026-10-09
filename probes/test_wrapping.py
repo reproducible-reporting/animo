@@ -89,7 +89,7 @@ def test_only_a_filling_wrapper_keeps_centred_content_centred(paged: PagedRunner
 
 @pytest.mark.parametrize("wrapper", list(WRAPPERS))
 def test_a_heading_shifts_under_every_wrapper(paged: PagedRunner, wrapper):
-    """The one construct no wrapper reproduces, because it carries its own block spacing.
+    """The one construct no wrapper reproduces, because it carries block spacing above and below it.
 
     The spacing sits at the wrapper's edge and is trimmed there,
     and the wrapper contributes the generic one instead.

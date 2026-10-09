@@ -33,7 +33,7 @@ snippets = ["tagline"]
 render = "{{ content | plain | unwrap }}"
 
 # The description of the package manifest, which Typst Universe shows next to the package name.
-# It is a snippet of its own rather than the tagline,
+# It is a separate snippet rather than the tagline,
 # because Typst Universe asks a description to be one imperative sentence
 # of about forty to sixty characters that does not repeat the name of the package.
 [[targets]]

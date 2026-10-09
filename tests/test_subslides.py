@@ -38,7 +38,7 @@ ORIGIN = CM
 def mark(name: str, dx: str, dy: str, size: str = "2cm") -> str:
     """A tagged filled square, placed at an offset from the body origin.
 
-    The tag hugs, so that the square's own geometry is the tag site's geometry and the
+    The tag hugs, so that the geometry of the square is the geometry of the tag site and the
     assertions can be written in centimetres from the source.
     """
     return (
@@ -238,7 +238,7 @@ def test_scale_grows_the_element_about_its_own_centre(paged: PagedRunner):
 
 
 def test_an_absolute_move_puts_the_corner_at_a_point_on_the_canvas(paged: PagedRunner):
-    """`x` and `y` are measured from the canvas origin, which is the viewport's own corner.
+    """`x` and `y` are measured from the canvas origin, which is the corner of the viewport.
 
     The square is placed at the body origin, a margin in, so an absolute move to 2 cm has
     to overshoot the shift a `dx: 2cm` would give by exactly that margin.
@@ -253,7 +253,7 @@ def test_an_absolute_move_puts_the_corner_at_a_point_on_the_canvas(paged: PagedR
 
 
 def test_an_absolute_move_is_idempotent(paged: PagedRunner):
-    """A tag's anchor excludes its own display state, so saying it twice says it once.
+    """A tag's anchor excludes the display state of that tag, so saying it twice says it once.
 
     This is what makes the absolute form usable at all, because a step can restate where
     something belongs without having to know what the steps before it did to it.
@@ -277,7 +277,7 @@ def test_relto_puts_one_tag_where_another_one_is(paged: PagedRunner):
     )
     animation = timeline('sub(move("m", relto: "g"))')
     # The green square is written first, so the red one lands on top of it rather than
-    # under it and its own box is the one the raster shows.
+    # under it and its box is the one the raster shows.
     body = f"slide(animation: {animation})[{green}\n  {mark('m', '0cm', '0cm')}]"
     pages = paged.png(deck(body), mode="presentation")
     target = color_box(pages[0], GREEN)
@@ -409,7 +409,7 @@ def test_a_timeline_that_addresses_nothing_changes_no_pixel(paged: PagedRunner):
 def test_a_wrap_none_tag_renders_exactly_as_its_untagged_body(paged: PagedRunner):
     """The body is handed back untouched, and a heading is the case that proves it.
 
-    A heading shifts under every wrapper, because its own block spacing is trimmed at the
+    A heading shifts under every wrapper, because its block spacing is trimmed at the
     wrapper's edge, so it is what would betray a wrapper that `wrap: none` did emit.
     """
     body = (
@@ -430,7 +430,7 @@ def test_a_wrap_none_tag_renders_exactly_as_its_untagged_body(paged: PagedRunner
 def test_tagging_a_headings_text_leaves_the_heading_where_it_was(paged: PagedRunner):
     """The remedy the manual gives for the shift a wrapper around a heading costs.
 
-    A wrapper trims the heading's own block spacing at its edge and contributes the
+    A wrapper trims the block spacing of the heading at its edge and contributes the
     generic paragraph spacing instead, and typst does not expose the value animo would
     have to restore. Tagging the text rather than the heading is exact, not merely close.
     """

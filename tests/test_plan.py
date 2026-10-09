@@ -139,7 +139,7 @@ sub(
 
 
 def test_a_tag_nothing_addressed_has_no_entry_at_all(typst: TypstRunner):
-    """A name absent from a state rests: visible, where the body put it, at its own size.
+    """A name absent from a state rests: visible, where the body put it, at its unscaled size.
 
     A tag the timeline moved but never revealed or hid is visible for the same reason,
     which is what `identity` says.
@@ -276,7 +276,7 @@ sub(move("a", dx: 1cm))
     )
 
 
-# The slide primitive, which keeps a state of its own.
+# The slide primitive, which keeps a separate state.
 
 
 def test_a_pan_is_slide_state_and_touches_no_tag(typst: TypstRunner):
@@ -435,7 +435,7 @@ sub(handout: false, reveal("a"))
 
 
 def test_the_init_flag_asks_for_the_page_of_the_initial_state(typst: TypstRunner):
-    """The state the body declares has no `sub` of its own, so `init` speaks for it."""
+    """The state the body declares has no `sub`, so `init` speaks for it."""
     typst.ok(
         resolved(
             """
@@ -461,7 +461,7 @@ sub(reveal("a"))
 
 
 def test_the_init_flag_and_the_first_step_flag_resolve_independently(typst: TypstRunner):
-    """The flag on `init` names one state, and every other state keeps its own flag.
+    """The flag on `init` names one state, and every other state keeps its flag.
 
     "Keep the first" and "drop the last" are the same slide's business, and a reader will
     expect one to imply something about the other, so the combination is asserted.
@@ -808,7 +808,7 @@ def test_a_bare_step_dictionary_is_refused(typst: TypstRunner):
 
 
 def test_an_unknown_named_argument_of_sub_is_refused(typst: TypstRunner):
-    """`sub` takes one keyword of its own, so anything else is a typo."""
+    """`sub` takes one specific keyword, so anything else is a typo."""
     typst.fails(
         resolved('sub(handuot: true, reveal("a"))'),
         "sub takes no named argument besides wait, hold and handout",
@@ -911,7 +911,7 @@ def test_apply_names_the_argument_that_is_not_a_function(typst: TypstRunner):
 
 @pytest.mark.parametrize("call", ["remove(<a>)", "reset(1)", "replace(<a>)[x]", "apply(<a>, emph)"])
 def test_a_structural_primitive_takes_its_tag_name_as_a_string(typst: TypstRunner, call):
-    """The same check as for the continuous primitives, with the primitive's own name."""
+    """The same check as for the continuous primitives, with the name of the primitive."""
     typst.fails(resolved(f"sub({call})"), f"{call.split('(')[0]} takes the name of a tag")
 
 
@@ -1089,7 +1089,7 @@ def test_a_pan_reaches_the_browser_as_an_anchor_name_and_an_offset_in_points(
 def test_a_length_reaches_the_browser_as_a_number_of_typst_points(typst: TypstRunner):
     """The user unit of a frame's SVG is a typst point, which is what the runtime writes.
 
-    Rounded, because typst's own numbers run to fifteen digits that no renderer can tell
+    Rounded, because the numbers that typst writes run to fifteen digits that no renderer can tell
     apart and that make the emitted page hard to read and hard to diff.
     """
     typst.ok(
@@ -1107,7 +1107,7 @@ def test_a_length_reaches_the_browser_as_a_number_of_typst_points(typst: TypstRu
 def test_every_state_of_the_browser_plan_carries_its_resolved_handout_flag(
     typst: TypstRunner,
 ):
-    """The flag the paged outputs resolve, so a view of one state per slide can pick its own."""
+    """The flag the paged outputs resolve, so a view of one state per slide can pick it."""
     typst.ok(
         resolved(
             """sub(reveal("a"), handout: true)
@@ -1143,7 +1143,7 @@ def test_a_tag_carries_the_transition_its_operations_named(typst: TypstRunner):
 
 
 def test_a_tag_the_timeline_only_reveals_needs_no_anchor(typst: TypstRunner):
-    """Its position is its own anchor at offset zero, and the two terms cancel."""
+    """Its position is its anchor at offset zero, and the two terms cancel."""
     typst.ok(
         resolved(
             'sub(reveal("a"), move("b", dx: 1cm))',

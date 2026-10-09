@@ -120,7 +120,7 @@ while the states inside one epoch differ only in how the same layout is shown.
 A slide with no structural operation has one epoch and costs nothing extra.
 See [Performance](performance.md) for the numbers.
 
-## A Changing Tag Keeps Its Own Box
+## Box Reserved by a Changing Tag
 
 The rest of the slide does not move when a tag's content changes,
 because the tag reserves room for the largest content it holds in any epoch,
@@ -144,8 +144,8 @@ needs `wrap: block`, as the example at the top of this page has.
 The reserved room has a cost: a tag whose first content is short and whose last content is
 long shows a gap in its early states.
 
-Inside a tag's own box, starting removed and starting hidden look the same, since the box
-keeps the room either way, and `remove` frees no space that `hide` would not.
+Inside the box that a tag reserves, starting removed and starting hidden look the same,
+because the box keeps the room either way, and `remove` frees no space that `hide` would not.
 The `remove` primitive is meant for a [region](regions.md),
 where the content that follows takes up the freed space.
 

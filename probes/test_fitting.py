@@ -74,7 +74,7 @@ def test_a_declaration_that_divides_lengths_is_dropped_whole(page, browser_name)
 def test_a_length_over_a_number_fits_the_canvas_in_every_engine(page):
     """The positive half: what animo emits instead, measured end to end.
 
-    The window is set to the deck's own aspect ratio, so the slide is the whole of it
+    The window is set to the aspect ratio of the deck, so the slide is the whole of it
     and the canvas is exactly as much wider as it is in typst points.
     """
     page.set_viewport_size(WINDOW)

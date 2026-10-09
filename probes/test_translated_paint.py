@@ -43,7 +43,7 @@ svg { width: 400px !important; height: 200px !important; }
 # How far each probe moves its element, in CSS pixels and in user units.
 SHIFT = (120, 30)
 
-# Move every paint server and clip path into a zero-size `<svg>` of its own, as the runtime
+# Move every paint server and clip path into a separate zero-size `<svg>`, as the runtime
 # does when it hoists them, so that the references cross from one `<svg>` to another.
 HOIST = """() => {
     const holder = document.createElementNS("http://www.w3.org/2000/svg", "svg");

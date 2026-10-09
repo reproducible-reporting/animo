@@ -30,7 +30,7 @@ So a probe:
 - asserts one entry of *Findings*, and names that entry in its module docstring;
 - is **independent of every Animo feature**, and imports nothing from `src/`;
 - states, where the claim is a comparison, why the comparison is not vacuous.
-  That check is often enough a probe of its own to be worth the habit.
+  That check is often enough a separate probe to be worth the habit.
 
 Probes live in `probes/` and run in the same three tiers as the feature tests,
 through the same fixtures. See [Testing](testing.md) for the tiers.
@@ -40,7 +40,7 @@ pytest probes             # all of them, against the pinned typst
 pytest probes -m browser  # the ones that need a browser, in every engine available
 ```
 
-They also run in a workflow of their own, weekly, against the **newest** typst release.
+They also run in a separate workflow, weekly, against the **newest** typst release.
 That job is non-blocking for pull requests and reports into the run summary.
 
 ## When a Probe Fails
@@ -163,7 +163,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Styling from CSS: what is and is not reachable                               | `test_css_styling.py`                          |
 | Cross-frame geometry, and the two nested transform slots                     | `test_slots.py`                                |
 | A morph keeps the `plus-lighter` sum                                         | `test_morph_sum.py`, `test_morph_shape_sum.py` |
-| Typst writes a shape from its own origin                                     | `test_shape_output.py`                         |
+| Typst writes a shape from a local origin                                     | `test_shape_output.py`                         |
 | The `d` of a path interpolates between paths of one structure                | `test_path_interpolation.py`                   |
 | A `translate` carries an element's clip and gradient, not an ancestor's clip | `test_translated_paint.py`                     |
 | `hide()` cannot be undone in the browser                                     | `test_hide.py`                                 |
@@ -176,7 +176,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Live preview: typst serves and reloads the HTML itself                       | `test_watch.py`                                |
 | Wrapping a tag site: what it changes and what it does not                    | `test_wrapping.py`                             |
 | A cetz draw command is a value, not content                                  | `test_draw_commands.py`                        |
-| What a container resolves from its own children                              | `test_container_children.py`                   |
+| What a container resolves from its direct children                           | `test_container_children.py`                   |
 | Inline versus block, decided by measurement                                  | `test_levels.py`                               |
 | Providing a value down the tree                                              | `test_providing.py`                            |
 | A counter reads the same everywhere a slide lays out                         | `test_counters.py`                             |
@@ -186,7 +186,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 A few probes, and a few feature tests, import a package from Typst Universe:
 the label emission is claimed for a cetz `content()` element and a fletcher node,
 and so is the tag site of each of them.
-They skip with the compiler's own explanation when the package does not resolve,
+They skip with the explanation that the compiler gives when the package does not resolve,
 since a cold package cache without a network connection is an accident of the machine
 and not a behaviour of typst or of Animo.
 The releases they import are pinned in `tests/harness/packages.py`,

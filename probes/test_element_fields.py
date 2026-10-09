@@ -74,7 +74,7 @@ def test_a_scale_reports_ratios_and_has_no_factor_field(typst: TypstRunner):
 def test_an_unset_stroke_on_a_box_reads_back_as_an_empty_dictionary(typst: TypstRunner):
     """Not `none` and not `auto`, which is how a plain wrapper is told from an inked one.
 
-    A `wrap` function may give the inner slot ink of its own, and the outer slot animo
+    A `wrap` function may give the inner slot additional ink, and the outer slot animo
     matches to it may not have any, so the difference has to be assertable.
     """
     typst.ok(

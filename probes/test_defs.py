@@ -90,7 +90,7 @@ def compressed(text: str) -> int:
 
 
 def incompressible(size: int) -> str:
-    """Text with no structure of its own, so that only repetition can compress it."""
+    """Text without structure, so that only repetition can compress it."""
     return b64encode(os.urandom(size * 3 // 4)).decode()[:size]
 
 
@@ -103,7 +103,7 @@ def test_gzip_deduplicates_a_repeat_inside_its_window():
 def test_gzip_does_not_deduplicate_a_repeat_beyond_its_window():
     """The claim: past the window, the same bytes are stored a second time in full.
 
-    The filler compresses to nothing, so it adds no bytes of its own,
+    The filler compresses to nothing, so it adds no bytes,
     and what is left in the difference is the distance between the two copies.
     """
     chunk = incompressible(WINDOW // 3)

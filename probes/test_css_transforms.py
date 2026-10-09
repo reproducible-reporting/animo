@@ -3,9 +3,10 @@
 """Probes for *CSS animation of typst SVG groups*.
 
 Every continuous primitive is one row of the table in that finding.
-The rows that matter most are negative: the `transform` shorthand clobbers typst's own
-positioning, `scale` without `transform-box: fill-box` scales about the wrong origin, and
-the `transform-box` that fixes it moves any group that carries a transform of typst's own.
+The rows that matter most are negative.
+The `transform` shorthand clobbers the positioning that typst writes,
+`scale` without `transform-box: fill-box` scales about the wrong origin,
+and the `transform-box` that fixes it moves any group that carries a transform written by typst.
 All three fail silently, by moving content rather than by raising anything.
 """
 
@@ -19,7 +20,7 @@ from measuring import rect
 from svgtools import SVG, group, parse
 
 # A labelled box with a nested box inside it, which is what `tag` emits.
-# The outer group carries typst's own translate, and the inner group is the slot animo
+# The outer group carries the translate that typst writes, and the inner group is the slot animo
 # writes to.
 FRAME = '#html.frame[#v(20pt)#box(box[Hello world])#label("x")]\n'
 
@@ -65,7 +66,7 @@ def test_the_translate_property_composes_with_typsts_own_transform(typst: TypstR
 
     assert after.x > before.x, "the element did not move at all"
     assert after.y == pytest.approx(before.y, abs=0.05), "the element moved vertically as well"
-    assert transform_after == transform_before, "typst's own transform attribute changed"
+    assert transform_after == transform_before, "the transform attribute that typst writes changed"
 
 
 def test_the_transform_shorthand_clobbers_typsts_positioning(typst: TypstRunner, open_page):
@@ -109,7 +110,7 @@ def test_scale_without_fill_box_displaces_the_element(typst: TypstRunner, open_p
     )
 
 
-# How far the centre of a group may move under a scale about its own centre.
+# How far the centre of a group may move under a scale about its centre.
 #
 # Zero is the claim, and chromium 151 meets it to well under a tenth of a pixel.
 # Firefox 153 resolves `fill-box` to a box whose centre sits about 0.7 px from the one
@@ -209,7 +210,7 @@ def test_a_paused_animation_interpolates_smoothly(typst: TypstRunner, open_page)
     """The Web Animations API is what makes a mid-flight assertion reproducible.
 
     A paused animation with an explicit `currentTime` samples the transition deterministically
-    instead of racing it, and typst's own transform survives every sample.
+    instead of racing it, and the transform that typst writes survives every sample.
     """
     page = open_page(build(typst, ""))
     samples = page.evaluate(
@@ -243,7 +244,7 @@ def test_a_paused_animation_interpolates_smoothly(typst: TypstRunner, open_page)
     assert xs[1] == pytest.approx((xs[0] + xs[2]) / 2, abs=0.5), f"the midpoint is off: {xs}"
     assert opacities == pytest.approx([0.0, 0.5, 1.0], abs=0.01)
     assert len({sample["transform"] for sample in samples}) == 1, (
-        "typst's own transform attribute changed during the animation"
+        "the transform attribute that typst writes changed during the animation"
     )
 
 
@@ -316,7 +317,7 @@ def edge_band(image: np.ndarray) -> float:
 def test_a_scaled_glyph_is_drawn_afresh_rather_than_stretched(typst: TypstRunner, open_page):
     """What a `scale` looks like, which is the half of this finding that is not a number.
 
-    Text under a CSS scale stays as sharp as text at its own size, because the browser
+    Text under a CSS scale stays as sharp as text at its unscaled size, because the browser
     rasterises the glyph outline at the scale it ends up at. Measured over a doubling and
     a quadrupling, the edge per unit of ink halves each time, in chromium 151 and firefox
     153: 0.20, 0.10 and 0.05.
@@ -335,13 +336,13 @@ def test_a_scaled_glyph_is_drawn_afresh_rather_than_stretched(typst: TypstRunner
     for coarse, fine in pairwise(ratios):
         assert fine < 0.7 * coarse, (
             "a doubled glyph carries as much antialiasing edge per unit of ink as the "
-            f"glyph at its own size, so it is being stretched rather than drawn: {ratios}"
+            f"glyph at its unscaled size, so it is being stretched rather than drawn: {ratios}"
         )
 
 
 # The same frame without the nested box, so that the only group inside the labelled one is
 # a group typst positioned rather than a slot animo built.
-# `#box[..]` puts the content's own group directly inside the label, and typst writes the
+# `#box[..]` puts the group of the content directly inside the label, and typst writes the
 # line's y-flip on it, which is what every glyph run in a frame carries.
 # This is the shape of a region footprint: its children are the region's content.
 CONTENT = '#html.frame[#v(20pt)#box[Hello world]#label("y")]\n'
@@ -394,7 +395,7 @@ def test_fill_box_moves_a_group_that_carries_typsts_own_transform(typst: TypstRu
 def test_fill_box_leaves_a_slot_animo_built_where_it_is(typst: TypstRunner, open_page):
     """The other half of the trap is that the two declarations move nothing on a slot.
 
-    `tag` wraps its body twice, so the inner group carries no transform of its own and
+    `tag` wraps its body twice, so the inner group carries no transform and
     there is nothing for an origin to re-anchor. That is what makes the declarations safe
     where animo writes them and unsafe anywhere else.
     """

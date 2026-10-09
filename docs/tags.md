@@ -58,7 +58,7 @@ because that state is a property of the name in the timeline and not of a site.
 
 The same name in a different slide does not interfere.
 A tag reads the plan of the slide it appears in and of no other,
-so a deck that wraps `#slide` in a function of its own changes nothing about how its tags
+so a deck that wraps `#slide` in a custom function changes nothing about how its tags
 resolve.
 
 A name the slide tags nowhere is refused rather than ignored,
@@ -67,13 +67,13 @@ so a misspelt name in a timeline is a compile error and not an operation that do
 ## A Name Is a Label
 
 A tag name becomes the label of the group Animo emits,
-which is the same namespace typst's own `<label>` syntax writes into.
+which is the same namespace that the `<label>` syntax of typst writes into.
 A slide that tags `"figure"` and also writes `#box[..]<figure>` has two groups of one name,
 and in the browser both move.
 Animo cannot tell them apart, because in the output they are the same thing.
 Keep the names of a slide's tags out of the labels that slide writes for itself.
 
-Animo keeps its own names apart as well:
+Animo keeps the names it generates apart as well:
 `animo-` is a reserved prefix, and a tag or region named with it is refused.
 
 ## What a Tag Site Becomes
@@ -108,9 +108,10 @@ The choice `auto` makes is a function of the body alone and never of the timelin
 so adding a `sub()` call in the animation cannot reflow a paragraph,
 and every output type lays the slide out the same way.
 
-What `auto` reads off the body is whether it is **inline or block-level** in typst's own sense.
-Animo determines this by measuring whether the body pushes a zero-sized neighbour onto a line of
-its own.
+What `auto` reads off the body is whether it is **inline or block-level**,
+as typst defines these terms.
+Animo determines this by measuring whether the body pushes a zero-sized neighbour onto a
+separate line.
 The length of the body never enters into the choice.
 The measurement is unbounded, so a paragraph never wraps while it is being measured,
 and a run of text is inline whether it is three words or three lines.
@@ -128,8 +129,8 @@ A `rect`, a `circle` and an `image` are block-level elements in typst,
 so they take the filling block, while a `box` of the same size takes a `#box`.
 
 The wrapper also decides what the continuous primitives mean on the tag.
-A `#box` hugs its body, so `scale` scales about the body's own centre,
-and the `relto:` anchor of `move` and `pan` reads the body's own top-left corner.
+A `#box` hugs its body, so `scale` scales about the centre of the body,
+and the `relto:` anchor of `move` and `pan` reads the top-left corner of the body.
 A `#block(width: 100%)` fills its container,
 so those primitives read the centre and the corner of the container instead.
 A `#block(width: 100%)` also keeps content centred that its container was centring,
@@ -143,7 +144,7 @@ Tag a whole paragraph, or a short phrase that has room,
 rather than a long stretch in the middle of a paragraph.
 
 **A tagged heading shifts by a few points.**
-A heading carries its own block spacing.
+A heading carries block spacing above and below it.
 Inside a tag, that spacing sits at the edge of the wrapper, where typst trims it.
 Typst does not expose the trimmed value, so Animo cannot restore it.
 Tag the heading's text instead when the shift matters:
@@ -205,7 +206,7 @@ must be a typst content element with a tag.
 
 **A cell of a grid or a table is refused**, and so is an item of a list, an enum or a terms
 list.
-A grid reads `fill`, `colspan`, `align` and `stroke` from its own children.
+A grid reads `fill`, `colspan`, `align` and `stroke` from its direct children.
 A tag site is a `context` block between the grid and the cell,
 so the grid takes the whole tag site as the content of a cell with default settings.
 The fill of the cell would then be dropped in every output type, with no panic and no warning.
@@ -222,7 +223,7 @@ Write the tag inside the cell, where the grid still reads the cell itself:
 )
 ```
 
-**A tag inside a cell does not cover the cell's fill.** The grid paints the fill in its own
+**A tag inside a cell does not cover the cell's fill.** The grid paints the fill in a separate
 frame, outside every group a tag produces, so `move`, `scale`, `pan`, `reveal` and `hide` on
 such a tag reach the text and leave the fill standing.
 

@@ -7,7 +7,7 @@ inline-level or block-level.
 Typst does not answer that question, because there is no predicate, and the element
 functions only tell what an element is, not what a `context` block will turn into.
 Measuring does answer it, by putting a zero-sized box on each side of the body
-and seeing whether they are pushed onto lines of their own.
+and seeing whether they are pushed onto separate lines.
 
 These probes pin the decision procedure itself, and the blind spot it has,
 so that a failure here names the typst behaviour and not a `wrap: auto` bug.
@@ -150,7 +150,7 @@ def test_several_paragraphs_are_the_blind_spot(typst: TypstRunner):
 
     The neighbours merge into the first and the last paragraph instead of being pushed off,
     so a body that is itself several paragraphs measures as inline.
-    A `parbreak` among the body's own children says what the measurement cannot.
+    A `parbreak` among the children of the body says what the measurement cannot.
     """
     typst.ok(
         PRELUDE

@@ -77,7 +77,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   Two operations of one step that change two regions inside one region now have to agree
   about their timing and their transition, as two operations inside one region do.
 - **Breaking:** make `primitive-duration:` and `transition-duration:` of the show rule defaults.
-  A primitive or an `init` that states a `duration:` of its own now moves when the deck's
+  A primitive or an `init` that states a `duration:` now moves when the deck's
   duration is zero.
   In a deck with `transition-duration: 0`, a slide that names a transition has to state its
   `duration:` as well to be seen moving.
@@ -111,7 +111,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   After a step back, the slide that was just left stayed on top of the one shown
   and received the clicks meant for it.
 - Pause and resume only the animations that Animo started.
-  The pause key used to pause every animation of the page, including the author's own.
+  The pause key used to pause every animation of the page, including the animations of the author.
 - Choose the transition of a slide boundary from the slide that owns it on a backward step too.
   A step back used to take the transition of the slide it entered.
 

@@ -64,7 +64,7 @@ A `pan` states where the viewport goes in one of two ways, chosen separately for
 | neither, on one axis | nowhere on that axis, unless `relto` asks for the tag |
 
 [`move`](continuous.md#where-move-puts-things) reads the same table one layer in:
-it puts the *element* where `pan` would put the viewport's own corner.
+it puts the *element* where `pan` would put the corner of the viewport.
 
 The **anchor** is the canvas origin, or the tag that `relto` names.
 Either one is placed where the body of a fresh slide starts, which is at the deck's margin.
@@ -100,7 +100,7 @@ The same mechanism serves both `pan` and `move`:
 
 - The anchor is the corner of the box around the tag, not of its ink.
   A tagged phrase is anchored at the top of its line, not at the top of its letters.
-- The tag's own `move` and `scale` do not change its anchor,
+- A `move` or a `scale` of the anchored tag does not change the anchor,
   so an anchor means the same in every state.
 - Where one name tags several places, the first one in the body is the anchor.
 
@@ -136,8 +136,8 @@ so a full-bleed image in the background cannot make the body pannable by acciden
 
 The union is computed from content alone rather than from positions, which do not exist in
 the HTML target, so the canvas comes out the same in the browser and on paper.
-It is exact for a placement written directly in the slide body, with a body that has a size
-of its own. Everywhere else it is an approximation:
+It is exact for a placement written directly in the slide body, with a body that has an
+intrinsic size. Everywhere else it is an approximation:
 
 | Written                                    | Counted                                                      |
 | ------------------------------------------ | ------------------------------------------------------------ |
@@ -151,7 +151,7 @@ it, and one that comes out too small becomes apparent the first time a pan goes 
 `canvas: (width: .., height: ..)` states the canvas explicitly and is the escape hatch for
 all three. An explicit canvas is still clamped to at least the viewport.
 
-A body that runs off the viewport is laid out in a box as tall as its own flow,
+A body that runs off the viewport is laid out in a box as tall as its flow,
 and that box is what a `#place` inside it resolves against.
 On such a slide `place(bottom + right)` means the bottom right of the whole flow rather
 than of the first screenful, so a mark that belongs on the first screenful needs an
@@ -162,7 +162,7 @@ explicit `dy:`.
 | Output type         | A pan is                                                    |
 | ------------------- | ----------------------------------------------------------- |
 | HTML presentation   | a `translate` of the canvas, animated like every other step |
-| Static presentation | a page per state, each showing its own part of the canvas   |
+| Static presentation | a page per state, each showing its part of the canvas       |
 | Static handouts     | the viewport of each state the handout keeps                |
 
 In the browser the pan moves the element holding the whole rendering of the slide,

@@ -34,7 +34,7 @@ While changing the script itself, a shorter run into a scratch file is what to u
 
 ## What Is Measured
 
-Each deck measured here has a reason of its own.
+Each deck measured here has a separate reason.
 
 [`examples/tour.typ`](../examples/tour.typ) is the **realistic** one.
 It is the deck the manual embeds, so it says what an author of a real deck waits for,
@@ -47,7 +47,7 @@ rather than a guess about where the time went:
 
 | Difference                                                | Isolates                                      |
 | --------------------------------------------------------- | --------------------------------------------- |
-| a variant against its own `plain=on` run                  | what Animo's machinery costs over plain typst |
+| a variant against the `plain=on` run of that variant      | what Animo's machinery costs over plain typst |
 | the slope over `base`, `epochs-2`, `epochs-4`, `epochs-8` | one epoch, in seconds and in bytes            |
 | `regions-2-epochs-4` minus the same run `-sized`          | one region measuring one epoch of prose       |
 | `figure-regions-2-epochs-4` minus the same run `-sized`   | one region measuring one epoch of cetz canvas |

@@ -16,10 +16,10 @@
 // One frame covers every state of the slide, and the browser runtime puts a state's
 // display state on the groups as CSS.
 //
-// Between epochs the content itself may change, and a tag whose content changes is its own
-// region.
+// Between epochs the content itself may change, and a tag whose content changes forms an
+// implicit region.
 // Its outer slot is fixed at the largest extent over the epochs, so that the change stays
-// inside the tag's own box and nothing around it moves.
+// inside the box of the tag and nothing around it moves.
 // A tag with no box has no extent to fix, so its content may only change inside a region.
 
 #import "canvas.typ": anchor-marker, site-marker
@@ -35,7 +35,7 @@
 // What a tag site lays out in one epoch, with its wrappers applied, or `none` for nothing.
 //
 // The wrappers go around the content and inside both slots,
-// so that a wrapper with ink of its own moves and scales with the element.
+// so that a wrapper that draws ink moves and scales with the element.
 // `apply` wraps outermost-last, which is the order of the list.
 #let content-of(name, body, epoch) = {
   let resolved = epoch.tags.at(name, default: pristine)
@@ -71,7 +71,7 @@
           + "or pan to",
       )
     }
-    // Such a tag has no box and no footprint of its own,
+    // Such a tag has no box and no separate footprint,
     // so the region that bounds it is one around it, and a change of its content needs one.
     // Without it the change would be confined to no area, and the HTML target, which lays
     // out what lies outside every region once, would have no rendering to show it in.
@@ -127,7 +127,7 @@
       slots(name, wrapper, anchor: anchor, payload, display: current)
     }
   } else {
-    // The implicit region. Every epoch is laid out with a view of its own, so that the tags
+    // The implicit region. Every epoch is laid out with a separate view, so that the tags
     // nested in it resolve their content for that epoch as well.
     // In the HTML target it places an epoch stack, as an explicit region does.
     let key = (kind: "tag", name: name)
@@ -143,7 +143,7 @@
     }
     let renderings = range(view.epochs.len()).map(rendering)
     let container(sized, inner, footprint) = {
-      // The tag's own box is the region this key names, and the label on it is what the
+      // The box of the tag is the region this key names, and the label on it is what the
       // runtime crossfades when the content inside changes.
       member(view, "tag", name, key, group: name)
       [#sized({

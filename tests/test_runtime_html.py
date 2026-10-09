@@ -8,7 +8,7 @@ The rest is what the controller promises to the code around it:
 the events that say the position changed and what the page looks like when they arrive,
 the rule that only the current slide takes the pointer,
 and the two places where the runtime has to leave something alone,
-which are a control and an animation that is not its own.
+which are a control and an animation that the runtime did not start.
 """
 
 import pytest
@@ -48,7 +48,7 @@ def recorded(page) -> list[dict]:
 
 
 def forget(page) -> None:
-    """Drop the events recorded so far, so that a test reads the ones of its own action."""
+    """Drop the events recorded so far, so that a test reads only what its next action causes."""
     page.evaluate("() => { window.animoEvents.length = 0 }")
 
 
@@ -284,7 +284,7 @@ CONTROL = """() => {
 
 
 def test_an_event_inside_a_control_does_not_step_the_deck(page, deck_at, typst: TypstRunner):
-    """A control handles its own input, whether the event hits it or one of its children.
+    """A control handles the input it receives, whether the event hits it or one of its children.
 
     The click on the stage at the end is what shows the same deck does step on an event
     that is not in a control, so the rest is not a deck that ignores everything.
@@ -327,8 +327,8 @@ PLAY_STATES = """() => document.getAnimations().map(
 def play_states(page) -> dict[str, set[str]]:
     """The play states of the animations of the page, by the name each goes by.
 
-    The runtime's own go by their `id`, and an animation with none goes by the name of its
-    CSS animation.
+    The animations of the runtime go by their `id`,
+    and an animation with none goes by the name of its CSS animation.
     """
     found: dict[str, set[str]] = {}
     for name, state in page.evaluate(PLAY_STATES):
@@ -339,8 +339,8 @@ def play_states(page) -> dict[str, set[str]]:
 def test_pausing_leaves_a_css_animation_of_the_page_alone(page, deck_at, typst: TypstRunner):
     """The pause key stops the animations the runtime created and no others.
 
-    The runtime tells its own by the `id` it gives them, and the page here holds one made by
-    a stylesheet and one made by a script.
+    The runtime recognises the animations it started by the `id` it gives them,
+    and the page here holds one made by a stylesheet and one made by a script.
     """
     line = '#tag("a", wrap: block)[A line that starts out hidden.]'
     animation = '{ import anim: *\n  sub(reveal("a"))\n  sub(wait: 10) }'

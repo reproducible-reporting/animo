@@ -51,7 +51,7 @@
 // A panic empties the block it is raised in, and if that block holds the very tag sites the
 // check reads, the next pass has nothing to check and passes, and the two alternate
 // (see *Findings*).
-// The check therefore runs in a context block of its own, which emits nothing.
+// The check therefore runs in a separate context block, which emits nothing.
 // A panic there leaves the slide and its tag sites alone, typst keeps only the errors of the
 // pass it ends on, and so a site that is reported a pass late is a miss that is forgotten,
 // while a tag that is really missing fails the last pass and is reported.
@@ -81,7 +81,7 @@
   // The anchor of a tag is the corner the body gave it,
   // and a `move` or a `scale` on a tag around it moves that corner.
   // The presentation and the browser still resolve the anchor from an untransformed layout,
-  // the first from its own first page and the second from the slide before anything is
+  // the first from the first page of the slide and the second from the slide before anything is
   // written on it, while a handout reads whichever page it keeps.
   // The three output types would therefore disagree,
   // and a `move` that reads an anchor inside the tag it moves would not even converge.
@@ -115,8 +115,8 @@
   // what the browser needs.
   // A claim about groups also stays true beside the refusal a `wrap: none` tag raises where
   // it is written.
-  // That tag exists and became no group, and its own message is the one that says what to
-  // do about it.
+  // That tag exists and became no group,
+  // and the message about that tag is the one that says what to do about it.
   for name in asked.names {
     assert(
       name in present,
@@ -125,7 +125,7 @@
         + " addresses "
         + name
         + " with a continuous primitive, but no tag site on that slide became a group of "
-        + "that name; a name means nothing outside its own slide, "
+        + "that name; a name means nothing outside the slide it is on, "
         + "and a label the document wrote itself is not a tag site",
     )
   }
@@ -153,7 +153,7 @@
 // parts of one duration.
 // `index` is where this slide sits, so that the message names both slides.
 //
-// This runs in a context block of its own that emits nothing, for the reason
+// This runs in a separate context block that emits nothing, for the reason
 // `check-handout-pages` does.
 // A panic here empties no slide and leaves nothing for the next introspection pass to
 // disagree about.
@@ -205,7 +205,7 @@
 //
 // The box is the viewport, so a `#place(bottom + right, ..)` in a layer resolves its
 // alignment against the viewport, and an `image(width: 100%, height: 100%)` fills the slide.
-// The box clips at the viewport's own edge, as the viewport clips all three layers alike.
+// The box clips at the edge of the viewport, as the viewport clips all three layers alike.
 //
 // The layer is laid out under a provider that refuses every tag and every region in it,
 // so that the two layers stay content that nothing in the timeline addresses.
@@ -226,8 +226,8 @@
 
 // A colour overlay, as the paged outputs draw it.
 //
-// A background colour is the page's own `fill`, which is behind everything, and an overlay
-// colour is ink over the slide, so it is a layer of its own.
+// A background colour is the `fill` of the page, which is behind everything, and an overlay
+// colour is ink over the slide, so it is a separate layer.
 // Only an alpha channel makes an overlay colour useful,
 // and a dimming tint is the case it exists for.
 //
@@ -291,14 +291,15 @@
   // whether there is a slide around it.
   // It is published rather than provided because it has to be readable where no provider
   // ran, and it is set around the enclosing context block rather than inside it, because
-  // a state read inside `measure` resolves at that block's own location.
+  // a state read inside `measure` resolves at the location of that block.
   inside.update(true)
   context {
     let shape = deck-shape.get()
     let index = position.get().first()
     // How the boundary above this slide is crossed, as the timeline's `init` says it.
-    // This is the name of a transition, or `auto` for the deck's own, and the parameters the
-    // transition took, with the duration of `init` beside them when it states one.
+    // This is the name of a transition, or `auto` for the default transition of the deck,
+    // and the parameters the transition took,
+    // with the duration of `init` beside them when it states one.
     // The boundary belongs to this slide and is crossed the same way in both directions,
     // so stepping back over it undoes exactly what stepping forward over it did.
     // The paged outputs ignore it, because two consecutive pages have nothing between them
@@ -468,7 +469,7 @@
               ..browser-plan(plan, names, regions: {
                 // The regions of the tags that become no group, read back from the
                 // frame below. Only layout knows which tags a region holds, so this is an
-                // introspection pass away, and it changes no layout of its own.
+                // introspection pass away, and it changes no layout.
                 // A slide that changes no content has nothing to read.
                 if plan.epochs.len() > 1 {
                   let members = members-of(index)
@@ -514,7 +515,7 @@
             // One frame rather than one per stack, because the scope of typst's
             // deduplicator is the frame, so the renderings define each glyph they share once
             // between them instead of once each. See *Findings*.
-            // The frame's own extent is the block below and not the extent of what the
+            // The extent of the frame is the block below and not the extent of what the
             // body holds, which is what keeps the canvas element the box animo computed.
             html.frame(block(
               width: size.width,
@@ -526,7 +527,7 @@
             )),
           )
           // The overlay comes last, so that it paints last.
-          // The three layers are positioned siblings with no z-index of their own,
+          // The three layers are positioned siblings without a z-index,
           // and such elements paint in document order.
           // A colour overlay is one declaration on this element rather than a frame of its
           // own, while a colour background is a declaration on the slide container.
@@ -553,7 +554,7 @@
       // wrapper carries.
       // The document converges because neither consumer moves what it measures.
       // A pan shifts the whole canvas and the markers with it, which the canvas origin
-      // cancels out of, and a tag's own translation sits inside the wrapper whose corner the
+      // cancels out of, and the translation of a tag sits inside the wrapper whose corner the
       // marker marks.
       let anchors = anchors-of(index, asked.anchored)
       let pans = plan.states.map(state => paged-pan(

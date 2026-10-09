@@ -170,7 +170,7 @@ def browser(playwright_instance, browser_name, request):
                 f"pointing at .venv/playwright does it unconditionally.\n{exc}"
             ) from exc
         # The reason is short, because it is printed once per test in the tier.
-        # `--browser webkit` is the way to see playwright's own diagnosis, because naming
+        # `--browser webkit` is the way to see the diagnosis of playwright, because naming
         # the engine makes it required and the branch above reports the failure in full.
         pytest.skip(
             f"{browser_name} cannot be launched on this machine; "
@@ -182,7 +182,7 @@ def browser(playwright_instance, browser_name, request):
 
 @pytest.fixture
 def page(browser):
-    """A fresh browser page, in a context of its own, for one test."""
+    """A fresh browser page, in a separate context, for one test."""
     context = browser.new_context()
     page = context.new_page()
     yield page
@@ -221,7 +221,7 @@ def timed_deck_at(page):
     The clock is installed before the page is loaded, because the runtime arms its first
     timer on the first paint.
     Only `setTimeout` and the clocks beside it are faked.
-    The document timeline is the browser's own,
+    The document timeline belongs to the browser,
     so motion still runs in real time and is still scrubbable.
     `requestAnimationFrame` is faked with the timers and stops firing, so `Deck.flight`,
     which waits for a frame, cannot be used on a deck opened here. See *Findings*.
@@ -230,7 +230,7 @@ def timed_deck_at(page):
     def opener(path: Path) -> Deck:
         page.clock.install(time=0)
         # A minute ahead of where the clock was installed, because an installed clock is
-        # still running and cannot be paused in its own past.
+        # still running and cannot be paused at a moment in its past.
         # The two calls take real milliseconds, and a loaded machine takes more of them.
         # Nothing is loaded yet, so the jump has no timer to fire.
         page.clock.pause_at(60_000)

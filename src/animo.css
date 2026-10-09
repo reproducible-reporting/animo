@@ -5,19 +5,19 @@ SPDX-License-Identifier: Apache-2.0
 
 /*
   The stylesheet of an animo deck.
-  The deck's own geometry is appended to this file as custom properties on `:root`,
+  The geometry of each deck is appended to this file as custom properties on `:root`,
   so everything below is the same for every deck.
 */
 
 /*
   A reader who asked for less motion gets none, whatever the deck or the timeline asks for.
 
-  The time that motion takes is the deck's own default.
+  The time that motion takes defaults to the settings of the deck.
   `--animo-primitive-duration`, `--animo-transition-duration` and `--animo-easing` are
   written from the `primitive-duration:`, `transition-duration:` and `easing:` arguments of
   the show rule, into the `:root` block that is appended to this file.
   The runtime reads them at every step, so a value reaches every operation that asked for
-  nothing of its own, and an operation that states a duration takes that one instead.
+  nothing, and an operation that states a duration takes that one instead.
 
   A media query cannot reach a number written in a typst source, so zeroing the defaults
   would leave every stated duration moving. The reader's preference is a property of its
@@ -37,7 +37,7 @@ SPDX-License-Identifier: Apache-2.0
 
 /*
   The surround the slide is centred on, which is not part of any slide.
-  It is a declaration on the page's own root elements rather than on the stage below.
+  It is a declaration on the root elements of the page rather than on the stage below.
   The stage isolates the blend that crossfades two slides, and the ground of the isolating
   element is inside the group it isolates, so a surround written there would be summed into
   both slides.
@@ -54,7 +54,7 @@ body {
 
 /*
   The window: the stage, centred on the surround.
-  It carries no background and no isolation of its own.
+  It carries no background and no isolation.
   Controls that belong to the window rather than to a slide are children of the deck beside
   the stage, because a corner of the window can lie outside the stage.
 */
@@ -155,7 +155,7 @@ body {
   Both are frames of the slide rather than renderings inside the canvas's frame, which keeps
   them out of the `plus-lighter` blend below and independent of the number of epochs.
   A slide with four epochs still carries one of each.
-  The three are positioned elements with no z-index of their own, so they paint in document
+  The three are positioned elements without a z-index, so they paint in document
   order, which is the order the slide emits them in.
   A layer that is a colour rather than content needs no frame.
   The background colour is a declaration on the slide container, which is already behind the

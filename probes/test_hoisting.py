@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 """Probes for *Hoisting shared `<defs>`: sound in the browser, out of reach in typst*.
 
-Every epoch frame carries its own glyph definitions, and the repeats are the larger half of
-an animo page. Whether they can be dropped is two questions, and the probes here answer
-both in the order the answers matter.
+Every epoch frame carries a separate copy of its glyph definitions,
+and the repeats are the larger half of an animo page.
+Whether they can be dropped is two questions,
+and the probes here answer both in the order the answers matter.
 
 The browser half is the mechanism.
 A `<use>` resolves the first matching id in the document, whatever inline `<svg>` that id
@@ -54,7 +55,7 @@ def test_a_use_resolves_a_definition_that_lives_in_an_earlier_frame(
 
     The page is rendered as it comes out of typst, then again with every repeated
     definition dropped, and the two rasters are compared. The frame that is shown is the
-    one that lost its definitions, so a `<use>` that did not reach out of its own `<svg>`
+    one that lost its definitions, so a `<use>` that did not reach out of the `<svg>` that holds it
     would render blank glyphs and the two rasters would differ everywhere there is ink.
     """
     path = typst.html(stacked([SENTENCE, SENTENCE], SHOW_LAST))
@@ -155,7 +156,7 @@ def test_a_rendering_inside_a_merged_frame_is_addressed_as_a_frame_is(
     `visibility` scopes one of them away exactly as it scopes a frame away today, and
     `plus-lighter` sums the two, which on a *group* works because the two are the outermost
     groups of one frame and so are ink beside each other (see the crossfade finding).
-    The sum lands on the frame's own isolated backdrop, which `STACK_CSS` writes, because a
+    The sum lands on the isolated backdrop of the frame, which `STACK_CSS` writes, because a
     group's blend reaches the page in webkit 26.5 when no frame confines it.
     Measured in each engine, on the two opaque colours below.
     """

@@ -52,7 +52,7 @@ def test_the_viewport_clips_and_fills_the_window_at_the_deck_aspect_ratio(
 ):
     """A deck that does not fit the window is not a presentation.
 
-    The window is set to the deck's own aspect ratio, so the viewport has to be the
+    The window is set to the aspect ratio of the deck, so the viewport has to be the
     whole of it.
     Any letterboxing here would be a scaling bug rather than a choice.
     """
@@ -138,7 +138,7 @@ def test_a_document_that_states_nothing_has_no_title_and_typsts_language(open_pa
 
 
 def test_the_deck_element_carries_its_settings_as_json(open_page, three_slides):
-    """The deck's own transition is the setting a deck that states nothing still has."""
+    """A deck that states no transition still carries the default transition in its settings."""
     page = open_page(three_slides)
     config = page.locator(".animo-deck").get_attribute("data-animo-config")
     assert config == '{"transition":{"name":"crossfade"}}'
@@ -184,7 +184,7 @@ def test_reduced_motion_outranks_a_deck_that_asked_for_motion(page, open_page, t
     Without `!important` a later `:root` block could set the property back, and a reader
     who asked for less motion would get the deck's answer instead of theirs.
     The deck's durations stay as stated, because they are defaults that a duration written
-    in the timeline overrides, so the query sets a property of its own.
+    in the timeline overrides, so the query sets a separate property.
     """
     page.emulate_media(reduced_motion="reduce")
     source = deck(
@@ -288,7 +288,7 @@ def test_stepping_leaves_no_history_behind(page, open_page, three_slides):
     """`replaceState`, not `pushState`: otherwise the back button walks one step per click.
 
     A deck is stepped through hundreds of times in a talk, and a history entry per step
-    makes the browser's own back button useless for leaving the deck.
+    makes the back button of the browser useless for leaving the deck.
     """
     open_page(three_slides)
     before = page.evaluate("() => history.length")
@@ -316,7 +316,7 @@ def test_a_colour_background_becomes_css_on_the_slide(open_page, typst: TypstRun
 def test_a_colour_overlay_becomes_css_on_a_layer_of_its_own(open_page, typst: TypstRunner):
     """An overlay colour cannot be the container's background, which is behind the canvas.
 
-    It is ink over the slide, so it gets an element of its own in front of the canvas,
+    It is ink over the slide, so it gets a separate element in front of the canvas,
     and only its alpha makes it useful, because a dimming tint is the case it exists for.
     """
     source = deck('slide(overlay: rgb("#0000ff80"))[body]')
@@ -347,7 +347,7 @@ def test_an_opaque_colour_overlay_covers_the_body_in_the_browser(open_page, typs
         )
         shots[layer] = screenshot(page.locator(".animo-slide[data-animo-current]"))
     red = (shots["background"] == np.array([255, 0, 0], dtype=np.uint8)).all(axis=2)
-    assert red.any(), "the control lost the body for a reason of its own"
+    assert red.any(), "the control lost the body for an unrelated reason"
     assert not (shots["overlay"] == np.array([255, 0, 0], dtype=np.uint8)).all(axis=2).any(), (
         "the body shows through an opaque overlay, so the layer is behind the canvas"
     )
@@ -389,10 +389,10 @@ def test_a_slide_carries_one_frame_per_epoch_and_one_per_layer(open_page, layere
 def test_the_layers_are_siblings_of_the_canvas_in_painting_order(open_page, layered):
     """*Architecture* rule 5: beside the canvas, never among its frames.
 
-    The order is the painting order, because all three are positioned elements with no
-    z-index of their own. Being outside the canvas is also what keeps them out of the
+    The order is the painting order, because all three are positioned elements without a
+    z-index. Being outside the canvas is also what keeps them out of the
     `plus-lighter` blend the epoch renderings use, which is asserted here rather than left
-    to the selector that happens to express it. Neither layer's own frame carries the
+    to the selector that happens to express it. The frame of neither layer carries the
     blend either, which is what says the selector reaches the renderings and not every
     frame of the slide.
     """
@@ -425,7 +425,7 @@ def test_the_layers_are_siblings_of_the_canvas_in_painting_order(open_page, laye
 # In webkit, a slide also lost them on a step back to it, which hides a later slide that
 # defines the same ids.
 # The background is the recipe the refusal message of `background` gives for a gradient, and
-# the body has a clipped box and a gradient of its own, which are the two kinds of paint
+# the body has a clipped box and a separate gradient, which are the two kinds of paint
 # server that a slide emits on the canvas.
 PAINT_SERVERS = tuple(
     "slide(background: rect(width: 100%, height: 100%, fill: gradient.linear(navy, teal)))"

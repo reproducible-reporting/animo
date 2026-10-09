@@ -7,7 +7,7 @@ and the tag sites of those two packages are a feature of animo,
 so the probes and the feature tests import them from here.
 Typst downloads them from Universe on first use, which is the only thing in the suite
 that reaches the network, so a test that cannot resolve its package skips
-with the compiler's own explanation rather than failing.
+with the explanation that the compiler gives rather than failing.
 """
 
 import pytest

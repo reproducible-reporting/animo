@@ -47,10 +47,10 @@ FREEZES_WHILE_IDLE = {"chromium": False, "firefox": True, "webkit": False}
 #
 # Both are read after a frame has been drawn. Before that they read the same, because an
 # animation's current time is measured against the timeline rather than against real time,
-# so a stale timeline hides its own staleness until it is refreshed.
+# so a stale timeline hides that it is stale until it is refreshed.
 #
 # The real time those two frames took is measured alongside them, because it is what the
-# scheduled animation's own reading is held against.
+# reading of the scheduled animation is held against.
 MEASURE = """async () => {
     const target = document.body;
     const began = performance.now();

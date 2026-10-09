@@ -13,7 +13,7 @@ const ORIGIN = { x: 0, y: 0 };
  *
  * `anchor(relto) + offset - anchor(self)`, where the anchor of `null` is the canvas origin.
  * `self` is the moved tag, or `null` for the viewport, which is anchored at the origin too.
- * A pair whose anchor is the tag's own name is therefore the identity, which is what a tag
+ * A pair whose `relto` names the moved tag is therefore the identity, which is what a tag
  * the timeline never moved carries, and it needs no anchor to resolve.
  *
  * An anchor the page does not have leaves the offset alone, which can only happen on a page
@@ -62,12 +62,12 @@ function declarations(slide, name, display) {
 }
 
 /**
- * The declarations that centre the transforms of one slot on the element's own box.
+ * The declarations that centre the transforms of one slot on the box of the element.
  *
  * Without this a `scale` grows the element about the origin of the whole frame and moves it
  * far across the slide. Both declarations are planned here, on the one element the runtime
  * transforms, and never as a rule in the stylesheet.
- * The declarations re-anchor the element's own `transform` attribute as much as the
+ * The declarations re-anchor the `transform` attribute of the element as much as the
  * properties beside it, so a selector broad enough to reach a group typst positioned
  * displaces that group, silently and with no transform property set at all.
  * A labelled group is not always a tag site, because a region's footprint carries a label
@@ -78,9 +78,11 @@ const CENTRED = { "transform-box": "fill-box", "transform-origin": "center" };
 /**
  * The tags whose anchor this slide's plan asks for, as a set of names.
  *
- * A position is `anchor(relto) + offset - anchor(self)`, so a pair naming the tag's own
- * anchor asks for nothing, because the two terms cancel whatever that anchor is. Every state of a
- * plan holds every addressed tag, so a slide of tags that merely appear asks for none.
+ * A position is `anchor(relto) + offset - anchor(self)`,
+ * so a pair whose `relto` names the moved tag asks for nothing,
+ * because the two terms cancel whatever that anchor is.
+ * Every state of a plan holds every addressed tag,
+ * so a slide of tags that merely appear asks for none.
  */
 function wantedAnchors(slide) {
   const names = new Set();
@@ -126,7 +128,7 @@ function epochOf(element) {
  * The first site is the first in document order among the sites of the lowest epoch, which is
  * the site a paged output reads in the first page that lays the tag out. Document order alone
  * would put a site that only a later epoch lays out first, when it comes earlier in the body.
- * A tag that holds an epoch stack of its own has a slot in every rendering of the stack, and
+ * A tag that holds an epoch stack has a slot in every rendering of the stack, and
  * its group is the one around the stack.
  */
 function firstSite(slide, name) {
@@ -186,8 +188,8 @@ function percent(length, full) {
 /**
  * The CSS of one state's pan, which is a `translate` on the canvas.
  *
- * The pan is a percentage, because a translate in percent is a fraction of the canvas's own
- * box, which follows the window as the canvas does, and a percentage animates in every
+ * The pan is a percentage, because a translate in percent is a fraction of the box of the
+ * canvas, which follows the window as the canvas does, and a percentage animates in every
  * engine.
  * A length written as a multiple of `--animo-unit` would have to put a custom property into
  * a keyframe.
@@ -224,7 +226,7 @@ function viewport(slide, state) {
  * `step` is the state whose own operations are being walked, which is the higher of the
  * two a step runs between, forwards and backwards alike.
  * One step is one schedule, and a backward step is that schedule mirrored rather than a
- * schedule of its own.
+ * separate schedule.
  * A backward step that walked over a join runs between states that are not neighbours,
  * and the schedules of the steps it walked over are not replayed one by one.
  * What the audience saw across a join was one motion redirected before it arrived,

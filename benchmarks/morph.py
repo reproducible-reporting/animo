@@ -42,8 +42,8 @@ from playwright.sync_api import sync_playwright  # noqa: E402
 
 WORK = ROOT / "tmp" / "benchmarks"
 
-# The slide, with a paragraph of `words` words of typst's own placeholder text, which is the
-# same on every machine, and a clause inserted at its start by a morph.
+# The slide, with a paragraph of `words` words of the `lorem` placeholder text of typst,
+# which is the same on every machine, and a clause inserted at its start by a morph.
 DECK = """\
 #import "@preview/animo:0.1.1": *
 #show: animo

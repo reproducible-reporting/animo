@@ -20,7 +20,7 @@ from test_morph_resize_html import close, paths, resizing
 
 # A square that becomes a circle in a tag of a region, a filled square that becomes a stroked
 # circle, a tag that holds two shapes on each side, and a square that becomes a circle in a
-# tag that is a region of its own.
+# tag that forms an implicit region.
 SHAPES = """
   #region(name: "r")[
     #tag("one")[#square(size: 1cm, fill: blue)]
@@ -74,7 +74,7 @@ def same_geometry(a: str, b: str) -> bool:
 
 @pytest.mark.parametrize("label", ["one", "fill", "own"])
 def test_both_copies_of_a_shape_morph_show_one_geometry(midway, label):
-    """A square into a circle, a filled square into a stroked circle, and in a tag's own region.
+    """A square into a circle, a filled square into a stroked circle, and one in an implicit region.
 
     The two copies compute the same `d`, which the plus-lighter sum needs, and their box lies
     halfway between the boxes of the two shapes at rest.

@@ -13,7 +13,7 @@ What surfaces is a convergence warning about an element count, pointing at the `
 with nothing about the panic that caused it.
 
 What makes the next pass pass is that the panic empties the block it is raised in.
-A check in a block of its own, which emits nothing the check reads, does not change the
+A check in a separate block, which emits nothing the check reads, does not change the
 document by failing, and typst keeps only the errors of the pass it ends on.
 A value that is missing in an early pass is forgotten, and one that is missing for good is
 reported.
@@ -52,7 +52,7 @@ APART = """\
 #metadata(none)<seed>
 // The checked value, which appears only in the second pass: the first sees no seed.
 #context if query(<seed>).len() > 0 [#metadata(EMITTED)<m>]
-// The check, in a block of its own that emits nothing, so failing changes nothing it reads.
+// The check, in a separate block that emits nothing, so failing changes nothing it reads.
 #context if 2 not in query(<m>).map(it => it.value) {
   panic("the checked value is missing")
 }

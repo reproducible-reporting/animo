@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
 
-# Formatting and hygiene run on pre-commit.ci rather than in a workflow of their own,
+# Formatting and hygiene run on pre-commit.ci rather than in a separate workflow,
 # because the service pushes the fixes that `mdformat`, `ruff` and `snipwise fix` make
 # instead of failing a pull request with a diff.
 ci:
@@ -102,7 +102,7 @@ repos:
   hooks:
     # `uv sync` silently rewrites an out-of-date lock file instead of failing,
     # so a dependency edit that was never locked reaches a contributor's machine
-    # as a resolution of its own rather than as the one continuous integration ran.
+    # as a separate resolution rather than as the one continuous integration ran.
     - id: uv-lock
 - repo: local
   hooks:

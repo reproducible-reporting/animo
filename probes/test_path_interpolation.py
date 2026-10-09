@@ -20,9 +20,9 @@ from htmldoc import document
 from test_morph_sum import DURATION, deviation
 
 # Pairs of shapes of one structure, each written twice at two sizes, and a pair whose
-# structures differ. Every shape is placed at the origin of its own rendering.
+# structures differ. Every shape is placed at the origin of the rendering that holds it.
 # The shapes are filled, because typst strokes a shape without a fill and writes the stroke
-# as a path of its own, which starts elsewhere.
+# as a separate path, which starts elsewhere.
 PAIRS = {
     "rect": (
         "rect(width: 20pt, height: 10pt, fill: black)",
@@ -77,7 +77,7 @@ PATHS = """(names) => Object.fromEntries(names.map((name) => [
     document.querySelector(`[data-typst-label="${name}"] path`).getAttribute("d"),
 ]))"""
 
-# The first path animated from its own `d` to that of the second, paused at each moment, with
+# The first path animated from its `d` to that of the second, paused at each moment, with
 # the computed `d` and the box `getBBox()` gives.
 SAMPLE = """([name, duration, moments]) => {
     const [a, b] = [0, 1].map((side) =>

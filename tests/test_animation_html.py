@@ -23,14 +23,14 @@ from harness import Deck, TypstRunner, assert_identical, screenshot
 CM = 28.3465
 
 # How far a measured displacement may be from the length the source states, in CSS pixels.
-# The floor is the browser's own rounding of a transform, and a real error is far larger,
+# The floor is the rounding of a transform in the browser, and a real error is far larger,
 # because the smallest length a timeline states here is a centimetre, which is 28 points.
 TOLERANCE = 0.5
 
 # How long a presenter leaves the deck alone before stepping, in milliseconds.
 # Firefox 153 freezes `document.timeline` while the page draws nothing, so a runtime that
 # takes a start time off it is a whole `PAUSE` into the step it has just begun,
-# and with animo's own 400 ms it would be past the end of it. See *Findings*.
+# and with the default 400 ms of animo it would be past the end of it. See *Findings*.
 PAUSE = 500
 
 # How much further into a step it may report itself than the time that really passed since
@@ -41,7 +41,7 @@ PAUSE = 500
 # and the allowance stays far below that.
 SLACK = 50
 
-# How far the centre of a group may move under a scale about its own centre.
+# How far the centre of a group may move under a scale about its centre.
 # Zero is the claim. Firefox 153 resolves `fill-box` to a box whose centre sits about
 # 0.7 CSS pixels from the one `getBBox` reports, which is invisible in a transition.
 # See *Findings*, where the probe for that row allows the same.
@@ -52,8 +52,8 @@ def mark(name: str, dx: str = "0cm", dy: str = "0cm", size: str = "2cm", **argum
     """A tagged filled square, placed at an offset from the body origin.
 
     A square rather than a glyph, because the claim is about where content lands and a
-    square's corners are a number. The tag hugs, so the square's own geometry is the tag
-    site's geometry and an assertion can be written in centimetres from the source.
+    square's corners are a number. The tag hugs, so the geometry of the square is the
+    geometry of the tag site and an assertion can be written in centimetres from the source.
     """
     extra = "".join(f", {key}: {value}" for key, value in arguments.items())
     return (
@@ -128,7 +128,7 @@ def test_scale_grows_the_element_about_its_own_centre(deck_at, typst: TypstRunne
 
 
 def test_an_absolute_move_puts_the_corner_at_a_point_on_the_canvas(deck_at, typst: TypstRunner):
-    """`x` and `y` are measured from the canvas origin, which is the viewport's own corner.
+    """`x` and `y` are measured from the canvas origin, which is the corner of the viewport.
 
     The square is placed at the body origin, a margin in, so the displacement an absolute
     move to 2 cm produces is 2 cm less that margin, and the runtime is what subtracts the
@@ -143,7 +143,7 @@ def test_an_absolute_move_puts_the_corner_at_a_point_on_the_canvas(deck_at, typs
 
 
 def test_an_absolute_move_is_idempotent(deck_at, typst: TypstRunner):
-    """A tag's anchor excludes its own display state, so saying it twice says it once."""
+    """A tag's anchor excludes the display state of that tag, so saying it twice says it once."""
     presentation: Deck = deck_at(
         animated(
             typst,
@@ -295,14 +295,14 @@ PARAGRAPH = (
 def test_a_region_does_not_displace_what_it_holds(deck_at, typst: TypstRunner):
     """What a scale needs may reach the slot animo built, and nothing else.
 
-    `transform-box` and `transform-origin` re-anchor an element's own `transform` as much
+    `transform-box` and `transform-origin` re-anchor the `transform` of an element as much
     as the CSS properties beside them, so wherever they land on a group typst positioned,
     its content moves and nothing errors (see *Findings*). A region's group is the labelled
     group that is easiest to get this wrong on, because it is not a tag site, so its children are
     the author's content rather than a slot, and it carries a label because the crossfade
     addresses it.
 
-    One epoch, so the footprint is the body's own size and the two decks are the same
+    One epoch, so the footprint is the size of the body and the two decks are the same
     picture. The two open in turn on one page, so each is read before the next is opened.
     """
     held: Deck = deck_at(typst.html(deck(f"slide[#region[{PARAGRAPH}]]"), name="region.html"))
@@ -334,7 +334,7 @@ def test_typsts_own_transform_survives_every_state(deck_at, moving):
                     .getAttribute('transform')"""
             )
         )
-    assert len(seen) == 1, f"typst's own transform changed between states: {seen}"
+    assert len(seen) == 1, f"the transform that typst writes changed between states: {seen}"
 
 
 def test_a_move_is_the_same_fraction_of_the_slide_at_any_window_size(page, deck_at, moving):
@@ -497,8 +497,8 @@ def test_a_deep_link_snaps_to_the_state_without_animating(page, deck_at, moving)
 def test_a_subslide_step_leaves_no_history_behind(page, deck_at, moving):
     """`replaceState`, not `pushState`, for subslides as well as for slides.
 
-    A talk steps hundreds of times, and a history entry per step makes the browser's own
-    back button useless for leaving the deck.
+    A talk steps hundreds of times, and a history entry per step makes the back button of the
+    browser useless for leaving the deck.
     """
     presentation: Deck = deck_at(moving)
     before = page.evaluate("() => history.length")
@@ -541,7 +541,7 @@ def test_a_timeline_moves_only_the_tags_of_its_own_slide(deck_at, typst: TypstRu
 def test_a_tag_inside_a_tag_is_animated_on_its_own(deck_at, typst: TypstRunner):
     """Two slots nested in two more, which is what a tag inside a tag emits.
 
-    The inner tag's own group sits inside the outer tag's continuous slot, so the two
+    The group of the inner tag sits inside the continuous slot of the outer tag, so the two
     displacements compose rather than replacing one another.
     """
     presentation: Deck = deck_at(

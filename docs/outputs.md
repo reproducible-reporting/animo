@@ -69,13 +69,13 @@ so a deck can show content in some output types only:
 }
 ```
 
-Typst's own `target()` cannot make this distinction inside a slide.
+The `target()` function of typst cannot make this distinction inside a slide.
 The HTML output lays a slide out inside an `html.frame`, where `target()` returns `"paged"`.
 
 ## The File Format Is Not an Output Type
 
 A static output type is a paged *mode*, and it says which pages exist.
-The file format is typst's own `--format` flag, and it says how those pages are written.
+The file format is the `--format` flag of typst, and it says how those pages are written.
 The two are independent, so either static type exports to PDF, SVG or PNG.
 SVG is suited to embedding a page in another document,
 and PNG serves consumers that need a raster image.

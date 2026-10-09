@@ -35,7 +35,7 @@ from harness import (
 )
 
 # How long a step takes in these tests, in milliseconds, and the moment sampled in it.
-# Slowed down from animo's own 400 ms so that a paused animation cannot already have ended,
+# Slowed down from the default 400 ms of animo so that a paused animation cannot already have ended,
 # and linear so that the moment sampled is the fraction of the step it looks like.
 DURATION = 4000
 MIDPOINT = DURATION / 2
@@ -112,7 +112,7 @@ def reflowing(typst: TypstRunner):
     )
 
 
-# The same slide with both outer layers, each ink of its own in a corner the region does not
+# The same slide with both outer layers, each with ink in a corner the region does not
 # reach, so that the comparisons below stay about the region.
 MARKER = '#place(bottom + right, rect(width: 1cm, height: 1cm, fill: rgb("#0000ff")))'
 
@@ -209,7 +209,7 @@ def test_only_the_current_epochs_rendering_paints(deck_at, reflowing):
 def test_the_plan_names_the_tags_each_boundary_changes(deck_at, reflowing):
     """Both boundaries change the claim, and the runtime finds the stack that holds it.
 
-    A tag carries its own timing in the record of its name, which a boundary that says
+    A tag carries its timing in the record of its name, which a boundary that says
     nothing about when it happens leaves out entirely.
     """
     presentation: Deck = deck_at(reflowing)
@@ -300,7 +300,7 @@ def test_it_is_still_identical_outside_the_region_mid_crossfade(page, deck_at, r
     """The claim during the transition, which is what the containment is really about.
 
     The outgoing rendering is scoped down to the region it is handing over, so it paints
-    nothing anywhere else and the pixels outside are the incoming one's own, exactly.
+    nothing anywhere else and the pixels outside are exactly those of the incoming one.
     This test and the one above chain the claim together.
     The two epochs agree outside the region at rest, and the step between them moves nothing
     outside it either.
@@ -384,7 +384,7 @@ def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
     Both halves of the region invariant are asserted again with them present.
     Nothing outside the region moves while the step is in flight, and inside it the midpoint is
     still the exact sum of the two renderings rather than a washed-out quarter grey.
-    The overlay's own ink is checked first, so that neither claim can hold because the
+    The ink of the overlay is checked first, so that neither claim can hold because the
     layers are not there.
     """
     presentation: Deck = deck_at(reflowing_layered)
@@ -413,7 +413,7 @@ def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
 # stack, per engine, as a deviation out of 255 and a number of pixels allowed to exceed one.
 #
 # Chromium 151 and firefox 153 draw the two the same. Playwright's webkit 26.5 draws the
-# glyphs of a group that blends or isolates through a layer of its own, and the antialiased
+# glyphs of a group that blends or isolates through a separate layer, and the antialiased
 # edges of a few of them land differently from the same glyphs drawn without one: 5 pixels by
 # up to 20/255 on this slide, with either the blend or the isolation alone.
 REST = {"chromium": (1, 0), "firefox": (1, 0), "webkit": (24, 16)}
@@ -453,8 +453,8 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
 
 
 # A mark of an exact colour on the canvas, at the top left of the body, which is one deck
-# margin in from the corner of the viewport. A blend that reached the slide's own white
-# ground would sum the two and take the mark to white.
+# margin in from the corner of the viewport. A blend that reached the white
+# ground of the slide would sum the two and take the mark to white.
 GROUND = '#place(top + left, rect(width: 2cm, height: 2cm, fill: rgb("#ff0000")))\n\n  ' + REFLOWING
 
 
@@ -527,8 +527,8 @@ def test_stepping_back_across_a_boundary_returns_to_the_earlier_rendering(deck_a
     assert_identical(before, screenshot(presentation.current), what="the state and its return")
 
 
-def test_a_region_of_its_own_is_crossfaded_by_the_tags_own_name(deck_at, typst: TypstRunner):
-    """A tag with no explicit region around it is its own region, so it holds the stack."""
+def test_an_implicit_region_is_crossfaded_by_the_tag_name(deck_at, typst: TypstRunner):
+    """A tag with no explicit region around it forms an implicit region, so it holds the stack."""
     presentation: Deck = deck_at(
         animated(
             typst,
@@ -543,7 +543,7 @@ def test_a_region_of_its_own_is_crossfaded_by_the_tags_own_name(deck_at, typst: 
 def test_continuous_state_reaches_a_tag_in_every_rendering_of_its_own_stack(
     page, deck_at, typst: TypstRunner
 ):
-    """Rule 1 for a tag that is its own region, whose slot is inside each rendering."""
+    """Rule 1 for a tag that forms an implicit region, whose slot is inside each rendering."""
     presentation: Deck = deck_at(
         animated(
             typst,
@@ -586,7 +586,7 @@ ANIMATING = """() => Array.from(
 def test_a_stack_that_the_boundary_does_not_change_snaps(page, deck_at, typst: TypstRunner):
     """Only the stack that holds what changed crosses, and every other one shows the epoch.
 
-    The second region has a stack of its own, because every region that sits in no other one
+    The second region has a separate stack, because every region that sits in no other one
     is laid out once per epoch, and its renderings are the same picture, so it takes the
     rendering of the epoch being entered at once.
     """
@@ -622,4 +622,6 @@ def test_a_tag_without_a_group_crosses_the_region_the_plan_names(page, deck_at, 
     durations = presentation.page.evaluate(
         "() => document.getAnimations().map((a) => a.effect.getTiming().duration)"
     )
-    assert durations == [2 * DURATION, 2 * DURATION], "the region took the deck's own timing"
+    assert durations == [2 * DURATION, 2 * DURATION], (
+        "the region took the default timing of the deck"
+    )

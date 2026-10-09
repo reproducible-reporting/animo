@@ -77,7 +77,7 @@ class Reference:
     def write(self, name: str, image: np.ndarray):
         """Store a rendering as a lossless WebP.
 
-        WebP defaults to lossy, in `Pillow` as in `playwright`'s own `type="webp"`,
+        WebP defaults to lossy, in `Pillow` as in the `type="webp"` of `playwright`,
         so `lossless=True` is not optional.
         Comparison always happens on decoded arrays, so the storage format
         never enters an assertion.

@@ -9,7 +9,7 @@ If the two drift, nothing downstream can be trusted, so the agreement is tested 
 rather than inferred from the features that depend on it.
 
 It is expressed in numbers rather than in pixels.
-Typst's own rasteriser and a browser's SVG renderer do not have to agree on the pixels of
+The rasteriser of typst and the SVG renderer of a browser do not have to agree on the pixels of
 a glyph, and asking them to would make this test fail on an unrelated upgrade.
 They do have to agree on where a filled square lands, to a fraction of the slide.
 """
@@ -19,7 +19,7 @@ import pytest
 from decks import MARK_SIZE, MARKS, deck, marks_deck
 from harness import Deck, TypstRunner, screenshot
 
-# The browser window is the deck's own aspect ratio, so the viewport fills it and the
+# The browser window has the aspect ratio of the deck, so the viewport fills it and the
 # comparison is between two pictures of the same rectangle at two resolutions.
 WINDOW = {"width": 908, "height": 511}
 
@@ -188,7 +188,8 @@ RELTO_SITES = {
 # disagreement is at most 0.001 pt in chromium 151 and 0.005 pt in firefox 153,
 # which is the rounding of the two boxes the browser's pan is read off.
 # The disagreement this guards against is a box height,
-# which is what reading typst's own position of a tag in the middle of a line would cost.
+# which is what reading the position that typst reports for a tag in the middle of a line
+# would cost.
 RELTO_TOLERANCE = 0.05
 
 
@@ -196,7 +197,7 @@ def test_relto_resolves_to_the_same_anchor_in_both_targets(deck_at, typst: Typst
     """The open question of the design, measured rather than assumed, for every kind of site.
 
     The browser's numbers are handed to the paged compilation through `--input`, which
-    asserts the agreement inside the document that resolved its own.
+    asserts the agreement inside the document that resolved the paged positions.
     """
     slides = [
         f'slide(animation: {{ import anim: *\n  sub(pan(relto: "a")) }})[\n  {body}\n]'
@@ -229,12 +230,12 @@ def test_relto_resolves_to_the_same_anchor_in_both_targets(deck_at, typst: Typst
 # How far the two targets may disagree about how far a `move` translates a tag, in points.
 # A move reads two anchors and subtracts them, so the rounding of a `relto` enters twice,
 # and one of the two is the anchor of the tag being transformed, which is the case an inline
-# tag site makes awkward, because the wrapper's own position is the line's baseline.
+# tag site makes awkward, because the position of the wrapper is the baseline of the line.
 # Measured on typst 0.15.0 over the sites below, at windows 1280 and 640 pixels wide, the
 # disagreement is at most 0.0005 pt in chromium 151 and in firefox 153, over every kind of
 # site.
-# That is ten times closer than the `relto` figure above, because the browser's own
-# translation is read here where a pan is read off two boxes.
+# That is ten times closer than the `relto` figure above, because the translation
+# of the browser is read here where a pan is read off two boxes.
 # The same allowance is kept all the same, since the disagreement this guards against is a
 # box height either way.
 MOVE_TOLERANCE = RELTO_TOLERANCE
@@ -243,10 +244,10 @@ MOVE_TOLERANCE = RELTO_TOLERANCE
 def test_a_move_resolves_to_the_same_translation_in_both_targets(deck_at, typst: TypstRunner):
     """A move subtracts two anchors, so a target that reads either one wrong lands elsewhere.
 
-    The browser's own translation is read rather than the geometry it produces, because it
+    The translation in the browser is read rather than the geometry it produces, because it
     is the number the runtime computed, in the user units of the frame, which are typst points,
     so the comparison is between the two resolutions and not between two measurements.
-    Paper publishes its own beside the pans it resolved.
+    Paper publishes its translations beside the pans it resolved.
     """
     target = '#place(dx: 11cm, dy: 5cm, tag("m", wrap: box, rect(width: 1cm, height: 1cm)))'
     slides = [

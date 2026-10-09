@@ -11,7 +11,7 @@
 // and `move` sets the position of the axes it names, where a `dx` adds to the offset it
 // found there.
 //
-// A state keeps the slide's own state apart from the state of its tags,
+// A state keeps the state of the slide apart from the state of its tags,
 // because a slide primitive touches no tag, and a tag primitive no viewport.
 //
 // The result is *provided* to the body, not published to a state.
@@ -20,7 +20,7 @@
 // and varying a value inside `measure` is exactly what a region has to do
 // to size its footprint over its epochs.
 // A marker element plus a show rule does reach inside `measure`, providers nest with the
-// innermost winning, and the marker's own label does not reach the output.
+// innermost winning, and the label of the marker does not reach the output.
 // See *Findings*.
 
 #import "anim.typ": (
@@ -37,8 +37,8 @@
 //
 // A target reads the pair as `anchor(relto) + offset - anchor(self)`, where `anchor(none)`
 // is the canvas origin. For a `pan`, `anchor(self)` is the canvas origin too, so the pair
-// is where the viewport goes. For a `move`, `anchor(self)` is the moved tag's own anchor,
-// so a pair whose `relto` is the tag's own name is the identity, whatever that anchor
+// is where the viewport goes. For a `move`, `anchor(self)` is the anchor of the moved tag,
+// so a pair whose `relto` names the moved tag is the identity, whatever that anchor
 // turns out to be.
 #let at(relto) = (
   x: (relto: relto, offset: 0pt),
@@ -73,11 +73,11 @@
 }
 
 // The display state of a tag that nothing has addressed yet, which is visible, where the
-// body put the tag, and at its own size.
+// body put the tag, and at its unscaled size.
 //
-// The position is the tag's own anchor at offset zero, which is why this function takes the
+// The position is the anchor of the tag at offset zero, which is why this function takes the
 // name.
-// A target subtracts the tag's own anchor from every position it resolves, so the default
+// A target subtracts the anchor of the moved tag from every position it resolves, so the default
 // has to be the one pair that cancels against it.
 #let identity(name) = (hidden: false, ..at(name), scale: (x: 1.0, y: 1.0))
 
@@ -108,7 +108,8 @@
 // That length is the last moment any of the step's operations reaches, which is the largest
 // `delay + duration` over all of them, the pan and the structural ones included.
 // Half of that sum can be missing here, because the duration of an operation that stated
-// none is the deck's own and lives in a stylesheet the resolver cannot read.
+// none is the `primitive-duration:` of the deck,
+// which lives in a stylesheet the resolver cannot read.
 // The two kinds are therefore kept apart and the browser adds the number it has to each.
 // `stated` is the largest end over the operations that stated a duration, and `unstated`
 // the largest delay over the operations that did not.
@@ -206,7 +207,7 @@
 // How a state's `wait:` or `hold:` is written, for a message that names both sides of a
 // gap that two numbers claim.
 //
-// State 0 has no `sub`, so its two numbers are its `init`'s own, and every later state is
+// State 0 has no `sub`, so its two numbers are those of its `init`, and every later state is
 // the step of the `sub` with that index.
 #let gap-site(state, what) = if state == 0 {
   "init(" + what + ": ..)"
@@ -374,7 +375,7 @@
   // Stating `true` or `false` overrides it in either direction,
   // including a final state the author would rather not hand out.
   //
-  // State 0 goes through the same rule rather than through a case of its own.
+  // State 0 goes through the same rule rather than through a separate case.
   // A slide with no `sub` at all works because its only state is also its last one,
   // so `auto` keeps it and `init(handout: false)` leaves the slide out of the handout.
   let last = states.len() - 1
@@ -404,8 +405,9 @@
 
 // The tags whose anchor a paged rendering has to read, as a sorted array of names.
 //
-// A position is `anchor(relto) + offset - anchor(self)`, so a pair that names the tag's own
-// anchor needs no anchor at all, because the two terms cancel whatever it is.
+// A position is `anchor(relto) + offset - anchor(self)`,
+// so a pair whose `relto` names the moved tag needs no anchor at all,
+// because the two terms cancel whatever that anchor is.
 // Reading only the anchors that are needed keeps a slide whose tags merely appear from
 // querying for every one of them, because every state of the plan holds every addressed tag.
 #let anchor-names(plan) = {
@@ -487,7 +489,7 @@
 // within one rendering of the slide,
 // and `(kind: "tag", name: ..)` for the implicit region of a tag whose content changes.
 // `explicit` says whether an explicit region bounds the content, in which case a tag inside
-// it reserves no footprint of its own and its changes reflow the region.
+// it reserves no separate footprint and its changes reflow the region.
 // `stable` says whether the content is laid out in every epoch, which an explicit region
 // needs to know before it takes a number.
 // A region inside content that changes would shift the numbers of every region after it
@@ -532,7 +534,7 @@
 //
 // `stack` says whether a region places a stack of one rendering per epoch in its footprint,
 // rather than the rendering of `epoch` alone.
-// Only the HTML target asks for stacks, because a page lays out the epoch of its own state.
+// Only the HTML target asks for stacks, because a page lays out the epoch of the state it shows.
 // The renderings of a stack are handed a view without it, so stacks do not nest.
 // A region inside a stack is laid out once per rendering of the stack already.
 //
@@ -541,7 +543,8 @@
 // epoch that state belongs to under the display state the page resolved.
 // An HTML frame is not one of them, so it names its `epoch` instead.
 // One frame covers every state of the slide, `state` is `none` to say so,
-// and the display state stays empty because the browser puts a state's own on the groups.
+// and the display state stays empty,
+// because the browser puts the display state of each state on the groups.
 // What lies outside every region is the same in every epoch, so the frame names epoch 0 and
 // the regions stack the others.
 #let view-of(
@@ -588,7 +591,7 @@
 // The flags travel in every output type rather than only in the handout, so that a stack
 // lays out the same renderings in all three.
 // This is the part of a view that content outside the body may have, which is why a stack
-// view is a record of its own rather than the view a tag site is handed.
+// view is a separate record rather than the view a tag site is handed.
 #let stack-view-for(handouts, state) = (handouts: handouts, state: state)
 
 // The stack view of the rendering a view describes.

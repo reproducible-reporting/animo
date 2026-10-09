@@ -202,9 +202,9 @@ and [Selecting States for Handouts](continuous.md#selecting-states-for-handouts)
 The `init` call is written at most once, before the first `sub`,
 and Animo refuses it anywhere else.
 
-### The Deck's Own Transition
+### Default Transition of the Deck
 
-A slide whose `init` names no transition takes the deck's own,
+A slide whose `init` names no transition takes the default transition of the deck,
 which is the `transition:` argument of the show rule and defaults to `anim.crossfade()`:
 
 ```typst
@@ -212,7 +212,7 @@ which is the `transition:` argument of the show rule and defaults to `anim.cross
 ```
 
 The duration of a transition is the deck's `transition-duration`,
-unless an `init` call states its own `duration:`.
+unless an `init` call states a `duration:`.
 A `transition-duration` of zero makes a hard cut the default.
 A slide in such a deck that names a transition and states no duration takes that zero,
 and is entered with a cut rather than with the transition it names.

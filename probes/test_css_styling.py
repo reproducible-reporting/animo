@@ -28,7 +28,7 @@ def test_a_rule_on_the_descendants_wins_without_important(typst: TypstRunner, op
 
 
 def test_a_rule_on_the_group_does_not_reach_the_glyphs(typst: TypstRunner, open_page):
-    """The glyphs' own attribute beats an inherited value, so the group is the wrong target."""
+    """The attribute on the glyphs beats an inherited value, so the group is the wrong target."""
     path = typst.html(
         document(FRAME, '[data-typst-label="x"] { fill: rgb(0, 128, 0); }'), name="group.html"
     )

@@ -183,7 +183,7 @@ class PagedRunner:
     """The tier-1 runner, which owns the scratch directory and writes the documents."""
 
     _count: list[int] = attrs.field(factory=lambda: [0])
-    """How many renderings this runner has produced, so that each gets its own directory."""
+    """How many renderings this runner has produced, so that each gets a separate directory."""
 
     def _slot(self) -> Path:
         self._count[0] += 1

@@ -69,7 +69,7 @@ A number written into a rendering would therefore stay the same over a whole run
 `per-subslide` lays its callback out **once per subslide**,
 stacks the renderings in a container the size of the largest of them,
 and the browser shows the one belonging to the subslide on screen.
-A page of a paged output knows its own single state, so it just carries that state's rendering.
+A page of a paged output knows the single state it shows, so it just carries that state's rendering.
 Despite these different mechanisms, all three output types agree.
 
 ```typst

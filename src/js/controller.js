@@ -84,7 +84,7 @@ function show(position, animate = false) {
     animate && crossing && neighbour ? slideTransitionOf(Math.max(wanted.slide, from)) : null;
   const boundary = boundaryTiming(transition);
   const slide = deck.get(wanted.slide);
-  // Which state the slide being entered is showing, which is where its own motion starts
+  // Which state the slide being entered is showing, which is where its motion starts
   // and which is not the deck's position when a join is being walked back over.
   const shown = slide?.shown ?? null;
   // Whether that slide moves into the state it is asked for rather than snapping into it.
@@ -135,8 +135,8 @@ function show(position, animate = false) {
   // The step is planned whole before any of it is written, and then applied in one task, so
   // that a boundary and whatever it carries take the same frame's time, which is the step's
   // one clock, and so that no part of the plan reads a style another part has written.
-  // The slide being entered takes the deck's own step where the boundary takes the deck's
-  // slide duration.
+  // The operations of the slide being entered take `--animo-primitive-duration`,
+  // where the boundary takes `--animo-transition-duration`.
   // A join is two clocks started on one frame, going back as coming.
   const effects = new Map();
   planSlides(effects, current.slide, leaving, boundary, transition, fresh);
@@ -205,8 +205,8 @@ function jump(position) {
 /**
  * The position after one, or `null` at the end of the deck.
  *
- * Stepping past the last state of a slide enters the next one, which is the rule the
- * presenter's own forward key follows, so a gap inside a slide and a gap across a slide
+ * Stepping past the last state of a slide enters the next one, which is the rule that the
+ * forward key of the presenter follows, so a gap inside a slide and a gap across a slide
  * boundary are the same timer on the same sequence of positions.
  */
 function after(position) {
@@ -225,7 +225,7 @@ function before(position) {
   return position.slide > 1 ? { slide, state: count(slide) - 1 } : null;
 }
 
-/** A state's own number of seconds under one key, in milliseconds, or `null`. */
+/** The number of seconds that one state gives under one key, in milliseconds, or `null`. */
 function secondsOf(position, key) {
   const seconds = deck.get(position.slide)?.states[position.state]?.[key];
   return typeof seconds === "number" ? seconds * 1000 : null;
@@ -285,8 +285,8 @@ function landing(position) {
 // which is what a pause keeps and a resume puts back.
 // `id` is the running timer, which is `null` while the clock is stopped.
 //
-// This is the only timer the runtime sets. An operation's own `delay:` becomes its effect's
-// delay instead, so a step keeps one clock however its operations are staggered.
+// This is the only timer the runtime sets. The `delay:` of an operation becomes the delay
+// of its effect instead, so a step keeps one clock however its operations are staggered.
 let pending = null;
 
 // Why the clock is stopped, as a set of reasons. The clock is stopped while the set holds any.
@@ -302,8 +302,8 @@ let pending = null;
 //   The two are never held together, because the forward step that ends `travel` is
 //   expected to start the deck again whether or not the pause key had been pressed before.
 //
-// A mode that takes the deck over, such as an overview or an annotation, holds a reason of
-// its own, so that leaving it cannot start a clock that the pause key stopped.
+// A mode that takes the deck over, such as an overview or an annotation, holds a separate
+// reason, so that leaving it cannot start a clock that the pause key stopped.
 const holds = new Set();
 
 // Which way the deck is travelling, `1` or `-1`. It is what the clock steps the deck by
@@ -349,7 +349,7 @@ function schedule(left) {
  * Arm the timer for the next step in the direction of travel, and clear whatever was pending.
  *
  * Called whenever a position is entered, whatever entered it, so a presenter stepping by
- * hand is never racing a clock that is still counting and a deep link starts its own timer
+ * hand is never racing a clock that is still counting and a deep link starts a new timer
  * from where it lands.
  *
  * One gap times the step in both directions, because a gap lies between two states rather
@@ -401,7 +401,7 @@ function arm() {
  * The animations of the runtime are the only ones touched, so a CSS animation of the
  * page carries on.
  *
- * The key releases the reasons that are its own, `user` and `travel`, and holds `user` when
+ * The key releases the reasons that belong to it, `user` and `travel`, and holds `user` when
  * neither is held. Where a reason of a mode is held as well, the deck stays stopped and the
  * key changes nothing else.
  *

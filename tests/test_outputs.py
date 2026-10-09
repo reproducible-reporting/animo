@@ -136,8 +136,8 @@ def test_the_overlay_is_drawn_over_the_body_and_the_background_under_it(paged: P
 def test_a_colour_overlay_is_ink_over_the_slide_and_not_a_page_fill(paged: PagedRunner):
     """This is where the two arguments stop being symmetric.
 
-    A background colour is the page's own `fill`, which is behind everything;
-    an overlay colour is a layer of its own, so an opaque one covers the body.
+    A background colour is the `fill` of the page, which is behind everything;
+    an overlay colour is a separate layer, so an opaque one covers the body.
     The second raster is the control: the same colour as a background leaves the body
     visible, so the first assertion is about the layer and not about the colour.
     """

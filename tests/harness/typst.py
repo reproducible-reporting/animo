@@ -53,7 +53,7 @@ class TypstResult:
         return self.returncode == 0
 
     def check(self) -> TypstResult:
-        """Raise `AssertionError` with the compiler's own explanation when it failed."""
+        """Raise `AssertionError` with the explanation of the compiler when it failed."""
         if not self.ok:
             raise AssertionError(f"typst compile failed with {self.returncode}:\n{self.report()}")
         return self
@@ -96,7 +96,7 @@ def compile_typst(
         which is how a document that only has to compile is compiled.
     fmt
         The output format, passed as `--format`.
-        Defaults to typst's own choice, which follows the suffix of `output`.
+        Defaults to the choice of typst, which follows the suffix of `output`.
     sysinp
         Key-value pairs passed as `--input`, which is how the output mode is selected.
     features
@@ -158,7 +158,7 @@ class TypstRunner:
     """The directory the documents are written in, inside the repository."""
 
     _count: list[int] = attrs.field(factory=lambda: [0])
-    """How many documents this runner has written, so that each gets its own name."""
+    """How many documents this runner has written, so that each gets a separate name."""
 
     def source(self, body: str, name: str | None = None) -> Path:
         """Write `body` as a document and return its path."""

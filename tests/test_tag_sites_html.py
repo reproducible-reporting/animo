@@ -56,7 +56,7 @@ def test_a_tag_inside_math_is_a_group_the_runtime_moves(deck_at, sites):
 
 
 def test_a_tag_on_a_cetz_content_element_is_a_group_the_runtime_moves(deck_at, sites):
-    """cetz draws into the frame's own coordinates, so the group is addressable as usual."""
+    """cetz draws into the coordinates of the frame, so the group is addressable as usual."""
     presentation: Deck = deck_at(sites)
     unit = presentation.unit
     before = presentation.rects("lab")

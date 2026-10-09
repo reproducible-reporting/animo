@@ -1,15 +1,15 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *What a container resolves from its own children*.
+"""Probes for *What a container resolves from its direct children*.
 
 This is what decides that a tag or a region around a `grid.cell` or an `item` element is
 refused rather than supported. A site is a `context` block between the container and the
-element, and a container that reads its own children never sees the element behind one.
+element, and a container that reads its direct children never sees the element behind one.
 
 The probes are the argument in three parts. A container keeps the settings of a direct
 child and drops those of a child behind a `context` block, a `box` or a `styled`, while a
 label leaves them alone. An item behind one is taken as the content of an item with default
-settings, so it renders as a nested list or enum. A container paints the fill in its own
+settings, so it renders as a nested list or enum. A container paints the fill in a separate
 frame, outside any group a label inside the cell produces, which is why rebuilding the cell
 around the site would restore the picture and leave the continuous primitives reaching only
 the cell's content.
@@ -144,8 +144,8 @@ def test_an_enum_item_behind_a_context_block_is_nested_rather_than_renumbered(
 ):
     """The explicit number survives into the nested enum, and the item's place does not.
 
-    This is the half that is easy to state the other way round. The enclosing enum numbers
-    the item that holds the nested one from its own count, so the direct form renders two
+    This is the half that is easy to state the other way round. The enclosing enum gives
+    the item that holds the nested one the next number in its count, so the direct form renders two
     numbers and the nested form renders three, with the explicit one still among them.
     """
 

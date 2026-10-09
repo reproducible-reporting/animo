@@ -39,7 +39,7 @@ Stepping past the last subslide of a slide goes to the next slide,
 and stepping back before the first one goes to the previous slide's last subslide.
 A remote that sends a click or an arrow key therefore works without configuration.
 
-The deck fills the browser window at its own aspect ratio,
+The deck fills the browser window at the aspect ratio of the deck,
 and a length inside a slide stays a typst length at any window size:
 `move("a", dx: 2cm)` moves the element two centimetres of the slide.
 
@@ -78,7 +78,7 @@ Even then, the presenter can fully control the deck:
   so a remote that sends `Space` still works.
   A deck stopped with `Space` stays stopped while the presenter steps through it,
   so stepping through a paused deck does not start its clock again.
-- **A deep link starts its own timer from where it lands**,
+- **A deep link starts a new timer from where it lands**,
   so a fragment into an autoplaying deck resumes the playback from there.
 
 The URL fragment holds only the position and not whether the deck is paused,
@@ -114,19 +114,19 @@ and `easing` is one of `"linear"`, `"ease"`, `"ease-in"`, `"ease-out"` and `"eas
 listed in [Reference](reference.md#animo).
 A name outside that list is refused when the deck is compiled.
 
-`primitive-duration` is the duration of any animation primitive that states no `duration:` of
-its own, so restating it in the show rule changes the tempo of the whole deck
+`primitive-duration` is the duration of any animation primitive that states no `duration:`,
+so restating it in the show rule changes the tempo of the whole deck
 and leaves the primitives that stated a duration alone.
 A step lasts as long as its slowest primitive, and a `delay:` pushes that out further.
 
 `transition-duration` is how long the transition into a slide takes.
-A slide whose [`init`](slides.md#slide-transitions) states a `duration:` of its own takes that
+A slide whose [`init`](slides.md#slide-transitions) states a `duration:` takes that
 instead.
 How long a slide stands is decided by the presenter and by the timeline.
 
 Both durations are defaults.
 A duration of zero means that kind of motion lands without animating,
-unless a primitive or an `init` states a duration of its own,
+unless a primitive or an `init` states a duration,
 so hard cuts between slides, with the subslides still moving, are written as:
 
 ```typst
@@ -134,7 +134,7 @@ so hard cuts between slides, with the subslides still moving, are written as:
 ```
 
 A slide of that deck that names a transition in its `init` and states no `duration:` is
-entered with a cut, and [Slide Transitions](slides.md#the-decks-own-transition) shows how to
+entered with a cut, and [Slide Transitions](slides.md#default-transition-of-the-deck) shows how to
 push one slide in anyway.
 
 A reader whose browser asks for reduced motion gets no motion at all,

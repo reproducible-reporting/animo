@@ -244,7 +244,7 @@ def test_numbered_counts_slides_and_position_counts_all_of_them(typst: TypstRunn
 
 # The transition between two slides.
 
-# A slide with ink of its own, so that a comparison of two renderings is about a page
+# A slide with ink on it, so that a comparison of two renderings is about a page
 # that holds something rather than about an empty one.
 # INIT is replaced by the arguments of the slide's `init`, which is where a slide says how it
 # is entered.
@@ -259,7 +259,7 @@ def entered(arguments: str = "") -> str:
     return ENTERED.replace("INIT", arguments)
 
 
-# Every form the transition into a slide takes, with and without a duration of its own.
+# Every form the transition into a slide takes, with and without a stated duration.
 TRANSITIONS = [
     "",
     "duration: 0",
@@ -277,7 +277,7 @@ TRANSITIONS = [
 @pytest.mark.parametrize("html", [False, True])
 @pytest.mark.parametrize("value", TRANSITIONS)
 def test_init_takes_a_transition_and_a_duration(typst: TypstRunner, value, html):
-    """A transition is a function of `anim`, and the duration is `init`'s own."""
+    """A transition is a function of `anim`, and the duration is an argument of `init`."""
     typst.ok(deck(entered(value)), html=html)
 
 
@@ -366,7 +366,7 @@ def test_a_cut_reaches_the_html_output_as_a_duration_of_zero(typst: TypstRunner)
     It travels as one attribute per slide rather than as an entry in the plan, for the
     reason the plan itself is an attribute, which is that an inspector shows it beside the
     slide.
-    A cut is no transition of its own, so the slide keeps the deck's and states no time.
+    A cut is no separate transition, so the slide keeps the deck's and states no time.
     """
     page = typst.html(deck(entered("duration: 0"), entered()), name="cut.html").read_text()
     assert page.count('data-animo-transition="auto"') == 2
@@ -403,8 +403,8 @@ def test_the_deck_states_its_own_transition_in_its_configuration(typst: TypstRun
 
 
 def test_a_named_transition_travels_as_its_name(typst: TypstRunner):
-    """A slide without a transition stays `auto` rather than resolving to the deck's own in
-    typst.
+    """A slide without a transition stays `auto` in typst,
+    rather than resolving to the default transition of the deck.
 
     Which transition `auto` means is the deck's, which the deck states once in its
     configuration, so resolving it here would put the same answer in every slide.
@@ -462,7 +462,7 @@ def test_a_handout_flag_on_init_that_is_not_a_flag_is_refused(typst: TypstRunner
 def test_a_handout_that_holds_no_page_at_all_is_refused(typst: TypstRunner):
     """Typst does not refuse a document without pages, so the deck refuses it instead.
 
-    Typst emits one blank page of its own default size, which looks like a rendering failure
+    Typst emits one blank page at its default page size, which looks like a rendering failure
     rather than like the flag doing what it was told.
     The deck therefore says what really happened.
     """

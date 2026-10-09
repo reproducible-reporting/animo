@@ -9,7 +9,7 @@ a group in the frame. These probes assert the three behaviours that make those t
 - Typst records a box that sits on a line at the line's baseline, not at its corner,
   in the middle of the line and at the start of a paragraph alike,
   while the same box as the only content of a placement is recorded at its corner.
-  An element's own position therefore does not say where it starts.
+  The position of an element therefore does not say where it starts.
 - A zero-size marker placed at `top + left` inside the box is recorded at the box's corner,
   wherever the box sits, and it changes no pixel of the page.
 - That corner is the origin of the box's labelled group in the SVG of an `html.frame`.
@@ -46,9 +46,9 @@ def sites(marked: bool = True) -> str:
 
 
 def test_a_box_in_the_middle_of_a_line_is_located_at_the_baseline(typst: TypstRunner):
-    """An element's own position is one box height below its corner here.
+    """The position of an element is one box height below its corner here.
 
-    That is the disagreement a `relto` read off the tag's own position would have with the
+    That is the disagreement a `relto` read off the position of the tag would have with the
     browser, which reads the group's origin, and it is a whole line for text.
     """
     typst.ok(
@@ -83,7 +83,7 @@ def test_a_box_that_opens_its_paragraph_is_located_at_the_baseline_too(typst: Ty
 def test_a_box_that_is_all_a_placement_holds_is_located_at_its_corner(typst: TypstRunner):
     """The same box, placed on its own, is recorded at its corner after all.
 
-    No correction by the box's own height therefore recovers the corner from the position,
+    No correction by the height of the box therefore recovers the corner from the position,
     because whether one applies depends on what the box happens to sit in.
     """
     typst.ok(
@@ -134,7 +134,7 @@ def test_the_corner_on_paper_is_the_group_origin_in_the_browser(page, typst: Typ
     """The two targets read the same point by different means, and agree on it.
 
     The browser's numbers are handed to the paged compilation of the same source, which
-    asserts the agreement where its own positions are.
+    asserts the agreement where the paged positions are.
     """
     source = typst.source(
         sites()

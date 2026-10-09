@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Measure what an animo deck costs to compile and how much of a page it becomes.
 
-Each deck measured here has a reason of its own.
+Each deck measured here has a separate reason.
 `examples/tour.typ` is the realistic one, which says what an author of a real deck waits for.
 `benchmarks/scaling.typ` is the controlled one.
 It holds everything constant except one axis, so that a term of the cost model is the
@@ -98,7 +98,7 @@ VARIANTS = {
 """The points of the controlled deck that are measured, each a set of `--input` knobs.
 
 Every one of them is also compiled with `plain=on`, which is the same content laid out by
-typst with animo out of the way, so that every variant carries its own floor.
+typst with animo out of the way, so that every variant carries a separate floor.
 
 The two variants at `states-4-epochs-3` are a pair that differs in the `number` knob alone,
 at a point where a deck really has several subslides and several epochs.
@@ -180,7 +180,8 @@ def compile_once(source: Path, output: Path, kind: str, inputs: dict[str, str]):
 CANVAS = re.compile(r'<div class="animo-canvas".*?</div>', re.S)
 """The frame of one slide, the element its body and its epoch stacks are laid out in.
 
-The canvas element holds nothing but that frame, so the first `</div>` after it is its own.
+The canvas element holds nothing but that frame,
+so the first `</div>` after it closes the canvas element.
 """
 
 EPOCH = re.compile(r'data-typst-label="animo-epoch-\d+"')
@@ -206,8 +207,8 @@ def defs_share(markup: str) -> dict:
     file can reach, because a package never holds the markup a frame became
     (see *Findings*).
     `merged_*` drops the repeats inside one slide's canvas, which is the reachable scope.
-    Animo lays the body of a slide and its epoch stacks out in one frame, so typst's own
-    deduplicator has already removed them and `merged_*` reads back as the page itself.
+    Animo lays the body of a slide and its epoch stacks out in one frame, so the
+    deduplicator of typst has already removed them and `merged_*` reads back as the page itself.
     It is kept because a number that stops moving is what says the scope is exhausted.
 
     Returns
@@ -274,7 +275,7 @@ def compile_rusage(source: Path, output: Path, kind: str, inputs: dict[str, str]
     The compiler is run here rather than through the harness because the harness reports
     what typst wrote and not what the process used, and peak memory is half of what a
     placement-heavy slide costs.
-    The flags are the harness's own: the repository as the typst root, the repository-local
+    The flags are those of the test harness: the repository as the typst root, the repository-local
     package directory on `TYPST_PACKAGE_PATH`, and only the fonts typst embeds.
 
     Returns
@@ -360,7 +361,7 @@ def measure_watch(
     template
         A line of the deck with the round number left out, such as `'#let x = "{}"'`.
         The deck has to hold that line with a zero in it, and every round rewrites it with
-        the round's own number, so that every edit is a different edit and a real one.
+        the number of the round, so that every edit is a different edit and a real one.
         `None` appends a line instead, which changes the source without changing anything
         the document lays out, and so measures the floor rather than an edit.
     rounds
@@ -394,7 +395,7 @@ def measure_watch(
         argv, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env, text=True, bufsize=1
     )
     # Round zero is the deck as it is written, so its marker is the template with
-    # nothing in the slot, and every later round puts its own number there.
+    # nothing in the slot, and every later round puts its number there.
     marker = None if template is None else template.format("")
     if marker is not None and marker not in deck.read_text():
         print(
@@ -514,7 +515,7 @@ def derive(scaling: dict) -> dict:
             name: round(entry["handout"]["min"] / entry["plain"]["min"], 2)
             for name, entry in scaling.items()
         },
-        # The sweep holds `regions` at zero, so the changing tag is its own implicit region
+        # The sweep holds `regions` at zero, so the changing tag forms an implicit region
         # and one more epoch is one more rendering plus one more measurement of that region.
         "seconds_per_epoch_per_slide": round(slope(sweep("min")) / slides, 4),
         "seconds_per_region_measurement": round(
@@ -539,7 +540,7 @@ def derive(scaling: dict) -> dict:
         # And how much is left inside one slide's frame, which is the scope animo already
         # exhausts by laying every epoch rendering of a slide out in one of them. It reads
         # as nothing, and a reading that is not nothing is a slide whose renderings ended
-        # up in frames of their own again.
+        # up in separate frames again.
         "merging_saves_gzipped": {
             name: round(1 - entry["html"]["merged_gzip_bytes"] / entry["html"]["gzip_bytes"], 3)
             for name, entry in scaling.items()

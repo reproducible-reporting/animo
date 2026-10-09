@@ -38,7 +38,7 @@
 // Its callback is laid out once per subslide,
 // and the one belonging to the subslide being shown is what the audience sees:
 // the browser chooses between the renderings,
-// and a page of a paged output carries the rendering of its own state.
+// and a page of a paged output carries the rendering of the state on that page.
 // A subslide number is written only where there is more than one subslide to tell apart,
 // which is what keeps it out of the way on an ordinary slide.
 #let footer = context {

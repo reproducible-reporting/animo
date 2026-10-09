@@ -180,7 +180,7 @@ def test_the_same_two_epochs_agree_on_paper(typst: TypstRunner, paged: PagedRunn
 
 SAME = (EPOCHS[0], EPOCHS[0])
 
-# The blend on the region's own group, which is what *Architecture* asks for.
+# The blend on the group of the region, which is what *Architecture* asks for.
 ON_GROUPS = """\
 .stack > * [data-typst-label="region"] {
   opacity: 0.5;
@@ -190,7 +190,7 @@ ON_GROUPS = """\
 
 # The blend on the frames, with the outgoing frame scoped down to the region by visibility.
 # The scoping uses `visibility` rather than `opacity` or `display`, because a descendant can
-# take it back, while the frame stays laid out and makes no stacking context of its own.
+# take it back, while the frame stays laid out and makes no stacking context.
 ON_FRAMES = """\
 .stack > * { mix-blend-mode: plus-lighter; }
 .stack > *:nth-child(2) { visibility: hidden; }
@@ -261,7 +261,7 @@ def test_a_group_blends_with_ink_in_its_own_frame(typst: TypstRunner, open_page,
 
 
 def test_a_group_does_not_blend_with_ink_in_another_frame(typst: TypstRunner, open_page):
-    """Why the crossfade is not scoped to a region's own group.
+    """Why the crossfade is not scoped to the group of a region.
 
     Two frames of identical content, each with its region group at half opacity and
     `mix-blend-mode: plus-lighter` on the group: if the blend reached across the frames,
@@ -378,16 +378,17 @@ def test_whether_a_scoped_blend_sums_depends_on_the_shape_and_the_engine(
     assert pixels <= allowed_pixels, f"{pixels} pixels dipped during the crossfade"
 
 
-# How far a group's blend reaches past its own frame, which is not the same in every engine
+# How far a group's blend reaches past the frame that holds it,
+# which is not the same in every engine
 # and is why the frame isolates instead of the containment being inherited.
 #
-# The probe above answers it for typst's own output, where chromium and firefox contain the
+# The probe above answers it for the output of typst, where chromium and firefox contain the
 # blend. These answer it for a handwritten stack of the same shape, where the three engines
 # do not agree.
 # The mark is dark red over dark green, so a blend that reaches the green comes back with
 # green in it and one that does not stays pure red.
 #
-# The frame's own isolation is taken off for these, because the question is where a blend
+# The isolation of the frame is taken off for these, because the question is where a blend
 # stops when no frame confines it, and `STACK_CSS` writes the rule that confines it.
 MARK = '#box(width: 120pt, height: 60pt, fill: rgb("#400000"))[]#label("mark")'
 UNDER = '#box(width: 120pt, height: 60pt, fill: rgb("#004000"))[]'
@@ -400,12 +401,12 @@ ON_PAGE = "body { background: #004000; }\n" + BLENDED
 ON_PAGE_WITHOUT_ISOLATION = ".stack { isolation: auto; }\n" + ON_PAGE
 
 # What each engine was measured to do, as the pixel under the mark.
-# Dark red alone means the blend stopped before whatever was put under the mark's own frame,
+# Dark red alone means the blend stopped before whatever was put under the frame of the mark,
 # and red plus green means that ground was summed into it.
 CONTAINED = (0x40, 0x00, 0x00)
 REACHED = (0x40, 0x40, 0x00)
 
-# The ground under the mark's own frame, and what each engine does with it.
+# The ground under the frame of the mark, and what each engine does with it.
 # The last row is the control for the one above it.
 # With the isolation taken off the stack, chromium reaches the page, which is what says its
 # answer in the third row is the isolation working rather than a boundary it would have

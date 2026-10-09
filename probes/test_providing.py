@@ -5,7 +5,7 @@
 A slide has to hand its plan to the tags inside its body,
 and a region has to hand a different epoch to the same tags once per epoch while it measures.
 A state cannot do the second job, because a state resolves at a document position
-and `measure` has no position of its own.
+and `measure` has no document position.
 A marker element plus a show rule can, and that is what decides the mechanism.
 
 These probes build the mechanism by hand, with no animo in sight.
@@ -105,7 +105,7 @@ EPOCHS = """\
   inner: ([i], [iiiiiiiiii], none),
 )
 
-// A tag resolves its own content for the epoch it is handed, behind a context read of its own.
+// A tag resolves its content for the epoch it is handed, behind a separate context read.
 #let tag(name) = ask(view => context {
   let _ = text.size
   let c = contents.at(name).at(view.epoch)
@@ -149,7 +149,7 @@ EPOCHS = """\
 def test_a_region_measures_its_opaque_body_once_per_epoch(typst: TypstRunner, html):
     """The epoch is a provided value, and a region varies it inside `layout` and `measure`.
 
-    The tags inside the body resolve their own content for the provided epoch, behind
+    The tags inside the body resolve their content for the provided epoch, behind
     nested `context` reads, a tag inside a tag and a region inside a region included.
     Each epoch measures differently while the footprint stays one,
     and the document converges in both targets with no warning.
@@ -159,7 +159,7 @@ def test_a_region_measures_its_opaque_body_once_per_epoch(typst: TypstRunner, ht
 
 
 def test_a_marker_produced_inside_a_context_block_is_still_replaced(typst: TypstRunner):
-    """The marker is emitted from a `context`, because a tag has measuring of its own to do."""
+    """The marker is emitted from a `context`, because a tag has measuring to do as well."""
     typst.ok(
         PRELUDE
         + """
@@ -174,8 +174,8 @@ def test_a_marker_produced_inside_a_context_block_is_still_replaced(typst: Typst
     )
 
 
-def test_the_markers_own_label_does_not_reach_the_output(typst: TypstRunner):
-    """A tag built this way emits one `data-typst-label`, its own.
+def test_the_label_of_the_marker_does_not_reach_the_output(typst: TypstRunner):
+    """A tag built this way emits one `data-typst-label`, which is the label of the tag.
 
     The marker is labelled too, and a label on the content a show rule produces would
     be indistinguishable from the tag's in the browser.
@@ -221,9 +221,9 @@ def test_a_replaced_marker_costs_no_layout(paged: PagedRunner):
 
     A tag may hand its body back untouched, and "untouched" has to mean untouched.
     The `context` block, the `metadata` element and the show-rule replacement that carry
-    the value may contribute no spacing of their own.
+    the value may contribute no spacing.
     This is measured on a heading between two paragraphs, which is the case that betrays a
-    wrapper, since a wrapper trims a heading's own block spacing at its edge.
+    wrapper, since a wrapper trims the block spacing of a heading at its edge.
     """
     flow = (
         "= A Heading\n\nBefore.\n\nBODY\n\n"

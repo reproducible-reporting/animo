@@ -112,7 +112,7 @@ function transitionOf(name) {
 /**
  * How a step gets from one slide to the next.
  *
- * This is a table of its own rather than an entry in the one above, because the two are
+ * This is a separate table rather than an entry in the one above, because the two are
  * handed different things and neither could use the other's.
  * An epoch transition is given the renderings of one region, inside a slide that it holds
  * still.
@@ -135,7 +135,7 @@ function transitionOf(name) {
  *
  * A `direction` is the direction of travel on a forward step, which typst writes as `ltr`,
  * `rtl`, `ttb` or `btt`. Typst states every parameter, its defaults included, so the
- * runtime holds no defaults of its own.
+ * runtime holds no defaults.
  */
 const slideTransitions = {
   /**
@@ -191,7 +191,7 @@ const TRAVEL = {
 /**
  * A `translate` that has carried a container `fraction` of the stage along a direction.
  *
- * A percentage of a container's own box is a fraction of the stage, because a slide fills
+ * A percentage of the box of a container is a fraction of the stage, because a slide fills
  * it, so a pushed slide keeps its place at any window size without the runtime measuring
  * one.
  *
@@ -230,8 +230,8 @@ const defaultSlideTransition = "crossfade";
  * The transition the boundary above one slide takes, as `{name, args}`, or `null` for a
  * slide the deck does not have.
  *
- * `auto` resolves here rather than in typst, to the deck's own transition, which the deck
- * states in its configuration and which is the crossfade on a page that states none.
+ * `auto` resolves here rather than in typst, to the default transition of the deck, which
+ * the deck states in its configuration and which is the crossfade on a page that states none.
  * A `duration` the slide's `init` states travels in `args` either way, because it belongs
  * to the slide rather than to the transition.
  * A name or a parameter typst does not know is refused at compile time, so nothing unknown
@@ -391,7 +391,7 @@ function differs(stack, epoch) {
  * the step changes in it, which a morph does not match. The operations of one stack agree
  * about the timing and the transition, because typst refuses a boundary otherwise. A stack
  * whose renderings differ while the plan names no tag of it, which is a region whose site
- * typst had not reported when it wrote the plan, crossfades on the deck's own timing.
+ * typst had not reported when it wrote the plan, crossfades on the default timing of the deck.
  *
  * A step that animates hands over every boundary between the two epochs, which is one for an
  * ordinary step and several for a backward step that walked over a join. A step that snaps
@@ -399,8 +399,8 @@ function differs(stack, epoch) {
  *
  * A step over more than one boundary drops the timings of the operations that opened them,
  * as it drops the schedules of the steps it walked over, because those steps are ones the
- * deck ran through, and the one clock left is this step's own. A stack that two of the boundaries
- * change takes the record of the first.
+ * deck ran through, and the one clock left is the clock of this step.
+ * A stack that two of the boundaries change takes the record of the first.
  */
 function planBoundary(effects, slide, { index, from, options, mirror }) {
   const to = slide.states[index]?.epoch ?? 0;

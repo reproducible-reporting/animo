@@ -25,7 +25,7 @@
   import anim: *
   init(handout: true)
   // `relto` shows the tag the way a fresh slide shows its first line,
-  // which is at the deck's own margin.
+  // which is at the margin of the deck.
   sub(handout: true, pan(relto: "right"))
   // The two ways of saying where the viewport goes combine, one per axis:
   // stay on the tag horizontally and scroll down from where the viewport is.
@@ -39,7 +39,7 @@
   Nothing there flows onto a next slide: the viewport clips, and `pan` is what brings
   the rest of the canvas into view.
 
-  // A placed element contributes its own extent to the automatic canvas,
+  // A placed element contributes its extent to the automatic canvas,
   // so this is what makes the slide two screens wide.
   #place(dx: 18cm, dy: 0cm, tag("right", card[
     = To the Right

@@ -10,7 +10,7 @@ The clip is a half-second sine wave, generated here rather than stored,
 so the repository carries no media asset.
 This narrows the finding deliberately.
 The finding measured an Opus file, and what is reproduced is the mechanism
-(a `data:` URI decodes and reports its own length) rather than the codec.
+(a `data:` URI decodes and reports its length) rather than the codec.
 """
 
 import base64
@@ -92,7 +92,7 @@ def test_autoplay_is_gated_on_a_user_gesture():
     interacted with the document, which is why a self-playing deck needs one click.
     Measured on 2026-09-12 with playwright 1.62 and its bundled headless chromium 151:
     `play()` resolves regardless, over `file://` and over `http://`,
-    with playwright's own `--autoplay-policy=no-user-gesture-required` removed and the
+    with the `--autoplay-policy=no-user-gesture-required` of playwright removed and the
     gesture requirement asked for explicitly.
     The headless shell simply does not apply the gate, so a probe here would assert
     the opposite of the finding and prove nothing about a real browser.

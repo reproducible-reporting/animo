@@ -66,7 +66,7 @@ The initial version has the following (non)features:
   Whatever falls outside the viewport is clipped, and `pan` brings the rest of the canvas into view.
 - A **background** and an **overlay** per slide, each either a colour or arbitrary content, both
   belonging to the viewport, so a `pan` moves the slide under them
-- **Timing**: every primitive may be delayed and given a duration of its own.
+- **Timing**: every primitive may be delayed and given a separate duration.
   The gap before a subslide or a slide may run on a timer rather than wait for a presenter click.
   The timer is written as `wait:` on the subslide that comes up after the gap,
   or as `hold:` on the subslide that stays on screen during the gap.
@@ -111,11 +111,11 @@ Example usage:
       - The primitives are imported *inside* this block, so they do not shadow
         the typst built-ins `move`, `scale` and `hide` in the slide body.
       - Each call to `sub` creates a subslide; the block joins them into a list.
-      - The state before the first `sub` is a subslide of its own, which shows
+      - The state before the first `sub` is a subslide too, which shows
         the slide exactly as the body declares it.
       - `init` describes that initial state. An `init` call is optional, and
         comes before the first `sub`. It says how the slide is entered, here with
-        a push upwards over one second instead of the deck's own transition.
+        a push upwards over one second instead of the default transition of the deck.
         It also takes `wait`, `hold` and `handout`, as `sub` does.
     */
     import anim: *
@@ -254,7 +254,7 @@ because only a filling container has a width that the ratio can refer to.
 The renderings are stacked in a container with the footprint of the largest rendering.
 An implicit region follows the same rule, but takes the maximum over its epochs
 rather than over the states.
-Each rendering carries a label of Animo's own.
+Each rendering carries a label with the reserved `animo-` prefix.
 A paged output lays out only the rendering of the state on the page,
 and the browser shows the rendering that belongs to the current position.
 All three output types therefore agree,
@@ -297,9 +297,9 @@ A slide has two rectangles, and `pan` is defined by the difference between them.
   See *Resolved Design Decisions*.
 
 - The body is laid out in a **box** as wide and as tall as the inner area of the viewport,
-  unless the body's own flow is taller, in which case the box is as tall as the flow.
+  unless the flow of the body is taller, in which case the box is as tall as the flow.
   The box has to grow, because a fixed-height container stacks the block-level content
-  that does not fit at its own bottom edge rather than letting it flow past
+  that does not fit at the bottom edge of the container rather than letting it flow past
   (measured under *Findings*).
   In a fixed-height box, a derivation that runs off the viewport would arrive
   as a pile of overlapping blocks instead of as the content a `pan` is meant to reach.
@@ -383,7 +383,7 @@ Four rules govern both layers alike:
 
 - **They are rendered once per slide in HTML**, not once per epoch,
   because nothing in a layer can depend on an epoch.
-  Each layer is one `html.frame` of its own beside the canvas element,
+  Each layer is a separate `html.frame` beside the canvas element,
   so a slide with four epoch renderings still carries one background and one overlay.
   The cost of a layer therefore does not grow with the number of epochs,
   which makes a layer the cheapest place for a number.
@@ -400,7 +400,7 @@ Four rules govern both layers alike:
   A rendering chosen per state requires this,
   and placing a layer on every page amounted to the same cost anyway.
 
-- **The viewport clips all three layers alike,** at its own edge,
+- **The viewport clips all three layers alike,** at the edge of the viewport,
   and no layer clips another.
 
 ### Tags
@@ -470,7 +470,7 @@ A `box` and a `block` render identically for content that already sits between
 paragraph breaks, while a wrapper at `width: auto` left-aligns anything the container was
 centring, such as a `figure` or a block equation (measured; see *Findings*).
 
-A function is accepted so that the inner slot can carry ink of its own,
+A function is accepted so that the inner slot can draw additional ink,
 `box.with(inset: 4pt, stroke: red)` for instance, which then moves and scales with the element.
 Animo requires the result to be a `box` or a `block`,
 and otherwise panics with a message that names the tag,
@@ -495,12 +495,12 @@ before any show rule or `context` exists (measured; see *Findings*).
 An earlier version handed such a body back untouched,
 which made every primitive a silent no-op on it.
 The symptom then surfaced three tools away from its cause.
-The author writes a cetz `content()` element with a tag of its own instead,
+The author writes a cetz `content()` element with a separate tag instead,
 or a canvas written as a function of what it draws and tagged as a whole.
 The timeline then replaces the canvas with the same function called with other arguments.
 
 **A body a container would have resolved is refused** as well, and the refusal covers `region`
-for the same reason. A grid, a table, a list, an enum and a terms list read their own children
+for the same reason. A grid, a table, a list, an enum and a terms list read their direct children
 and keep the ones that are `cell` or `item` elements, and every other child becomes the body of a
 cell or an item with default settings (measured; see *Findings*).
 A tag site is a `context` block that stands between the container and the element,
@@ -511,7 +511,7 @@ Typst neither panics nor warns, so the author would find the mistake only in the
 
 The alternative was to rebuild the cell around the site,
 which was rejected because of what it leaves behind.
-A grid paints a cell's fill in its own frame, outside every group a site produces
+A grid paints the fill of a cell in a separate frame, outside every group a site produces
 (measured; see *Findings*), so the rebuild restores the fill in the rendering and leaves `move`,
 `scale`, `pan`, `reveal` and `hide` reaching only the cell's content.
 Those primitives would then be the silent no-op that the cetz refusal above prevents,
@@ -529,7 +529,7 @@ so the tagged item turns into a nested list.
 
 Wrapping has a cost, which the manual states explicitly:
 a tagged inline phrase can no longer break across lines, so its paragraph may reflow,
-and a tagged heading shifts by a few points, because a heading's own block spacing is trimmed
+and a tagged heading shifts by a few points, because the block spacing of a heading is trimmed
 at the wrapper's edge and replaced by the generic one (measured; see *Findings*).
 Tagging the heading's text instead, `= #tag("t")[Head]`, avoids the shift exactly:
 the wrapper is then inside the heading rather than around it, and the page is unchanged to
@@ -599,7 +599,7 @@ subslides**. It is the unit of reflow and the unit of redrawing.
 - **Regions nest.** An inner region is itself a fixed footprint, so an outer region's layout
   does not depend on the inner region's state. Footprints compose, and states do not multiply
   (see *States and epochs* for why this matters to the cost).
-- **A tag that is not inside an explicit region is its own region**, i.e. `#tag("x")[c]`
+- **A tag that is not inside an explicit region forms an implicit region**, i.e. `#tag("x")[c]`
   behaves as `#region[#tag("x")[c]]`, with an anonymous region so that the tag name stays
   unambiguous.
   This document uses two words for the two cases.
@@ -609,7 +609,8 @@ subslides**. It is the unit of reflow and the unit of redrawing.
   so in this document "outside a region" means outside an explicit region,
   and never "in no region".
   A tag with `wrap: none` is the one exception, as the next bullet says.
-  Structural changes to a tag in an implicit region reflow only within the tag's own box.
+  Structural changes to a tag in an implicit region reflow only within the box that the tag
+  reserves.
   A replacement is laid out in the largest box that any of the tag's states needs,
   which is the closest thing to "just swap this element" that keeps the rest of the slide still.
 - **A `wrap: none` tag has no box, so it gets no implicit region.**
@@ -691,7 +692,7 @@ and is awkward inside math.
 A region beside a draw command in a canvas body is a type error,
 exactly as any other content in a canvas body is (measured; see *Findings*).
 In those places, a bare tag works instead.
-The implicit-region rule above gives a bare tag a fixed footprint of its own,
+The implicit-region rule above gives a bare tag a fixed footprint,
 so `replace` on a tag inside math or inside a cetz `content` element works there
 as it does anywhere else.
 
@@ -723,7 +724,7 @@ init(transition, duration: auto, wait: none, hold: none, handout: auto)
 ```
 
 `init(..)` describes the slide's **initial state**, which is state 0.
-The initial state is the slide as the body declares it, and has no `sub` of its own.
+The initial state is the slide as the body declares it, and has no `sub`.
 The `init` call adds no state, so the subslides after it keep their numbers.
 A timeline holds at most one `init`, before its first `sub`.
 A second `init`, or one after a `sub`, is refused,
@@ -731,7 +732,7 @@ so that what `init` says never depends on where it was written.
 A timeline without `init` behaves as one whose `init` states nothing.
 
 - `transition` is how the slide is **entered**, one of the transition functions of
-  *Transitions*. It is optional, and a slide without it takes the deck's own transition.
+  *Transitions*. It is optional, and a slide without it takes the default transition of the deck.
 - `duration:` is how long the transition into the slide takes, in seconds.
   `auto` is the deck's `transition-duration:`, and zero is a hard cut, whatever `transition`
   names.
@@ -751,7 +752,7 @@ The `init` of the first slide of a deck has no boundary to time, so its `transit
 Every argument of `init` except `handout:` is HTML only,
 because the paged outputs put two slides on two pages with nothing between them.
 
-`sub` takes three keyword arguments of its own.
+`sub` takes three keyword arguments.
 `wait:` and `hold:` are under *Timing*.
 `handout:` says whether the handout shows that subslide, and is three-valued:
 
@@ -763,7 +764,7 @@ because the paged outputs put two slides on two pages with nothing between them.
   of the handout entirely.
 
 Every state carries this flag, the initial state included.
-The initial state has no `sub` of its own, so its flag is written as `init(handout: ..)`,
+The initial state has no `sub`, so its flag is written as `init(handout: ..)`,
 with the same three values and the same meaning.
 A slide with no `sub` at all has only state 0, which is therefore also its last state,
 so `auto` keeps it and `init(handout: false)` leaves the slide out of the handout.
@@ -796,7 +797,7 @@ they are pure CSS on the existing frame, so they animate smoothly and cost nothi
 | `reveal(tag)`                         | make the element visible (fades in, in HTML)                       |
 | `hide(tag)`                           | make the element invisible, keeping its space (fades out, in HTML) |
 | `move(tag, x:, y:, dx:, dy:, relto:)` | translate the element, optionally relative to another tag          |
-| `scale(tag, f:, fx:, fy:)`            | scale the element about its own centre                             |
+| `scale(tag, f:, fx:, fy:)`            | scale the element about its centre                                 |
 | `pan(x:, y:, dx:, dy:, relto:)`       | move the viewport over the canvas, optionally relative to a tag    |
 
 The first four are element primitives.
@@ -823,14 +824,14 @@ The two primitives differ only in their anchor:
 - for `pan` it is the canvas origin, or with `relto` the named tag, placed where the body of a
   fresh slide starts, at the deck's margin;
 - for `move` it is the canvas origin, or with `relto` the named tag, and what is put there is
-  the **moved tag's own anchor**, so `move("a", x: 2cm, y: 0pt)` puts `a`'s top-left corner
+  the **anchor of the moved tag**, so `move("a", x: 2cm, y: 0pt)` puts `a`'s top-left corner
   2 cm from the left edge of the canvas.
 
 The anchor of a tag is the top-left corner of the first site of its name in document order, as
 the body laid it out, in the first rendering that lays that site out.
 This definition has the following consequences:
 
-1. **A tag's anchor excludes its own display state**, so it means the same in every state. A
+1. **A tag's anchor excludes the display state of that tag**, so it means the same in every state. A
    `move` is therefore idempotent in its absolute form: `move("a", x: 2cm)` twice leaves `a` in
    the same place, and `move("b", relto: "a", ..)` is unaffected by whatever moved `a`.
 1. **A name with several sites moves as one.** The first site in document order lands on the
@@ -856,14 +857,14 @@ A transform around a tag moves the corners of that tag and of every tag inside i
 so their anchors stop being the corners that the body gave them.
 No rendering can then recover the anchor that the design promises.
 The static presentation and the browser read an untransformed layout,
-the static presentation from its own first page,
+the static presentation from the first page of the slide,
 and the browser from the slide before anything is written on it.
 The handout reads whichever page it keeps, which may show the transform.
 A `pan(relto: ..)` that names a tag below a transform would therefore put the viewport
 in two different places in two output types.
 A `move` whose `relto` names a tag inside the tag it moves would not even converge,
-because the move's own translation moves the marker it reads.
-The rule also covers the moved tag's own anchor,
+because the translation of the move shifts the marker it reads.
+The rule also covers the anchor of the moved tag,
 so `move("a", x: ..)` on a tag inside a moved tag is refused for the same reason.
 Only reading the anchor is refused, and nesting itself is allowed.
 A tag inside a moved tag is the ordinary way to move a group and light up a part of it.
@@ -877,7 +878,7 @@ What the anchor of a tag is exactly, and how the two targets read it, is under *
 The resolver keeps each axis as a pair of an anchor name and an offset,
 rather than as a single number.
 `x` sets both, `dx` adds to the offset and leaves the anchor alone,
-and the default pair is the element's own anchor at offset zero.
+and the default pair is the anchor of the moved tag at offset zero.
 A target computes the translation as `anchor(relto) + offset - anchor(self)`,
 which is the identity when nothing has been said.
 This lets absolute and relative forms alternate along a timeline
@@ -910,7 +911,7 @@ which is the crossfade by default, rather than with motion.
 | `replace(tag, body)` | substitute new content at the tag site, with reflow inside the region   |
 | `remove(tag)`        | drop the content and free its space, with reflow inside the region      |
 | `apply(tag, ..fns)`  | wrap the content in the given content-to-content functions; accumulates |
-| `reset(tag)`         | back to the body's own content, with all applied wrappers dropped       |
+| `reset(tag)`         | back to the content in the body, with all applied wrappers dropped      |
 
 Notes and consequences:
 
@@ -944,7 +945,7 @@ Notes and consequences:
   and `hide` is the right primitive.
 - Structural primitives work at every tag site inside a region, a `wrap: none` one included,
   because typst renders the epoch and needs no group to do it. Outside an explicit region a
-  `wrap: none` site has no box of its own that a change could stay inside, so a structural
+  `wrap: none` site has no box that a change could stay inside, so a structural
   primitive on it is refused; see *Regions*.
   Continuous primitives need a labelled group and so need a wrapped tag site. A tag site is
   content in either case: raw cetz draw commands are refused, and no primitive reaches them.
@@ -967,7 +968,7 @@ Notes and consequences:
   and says how the region they change crosses the epoch boundary.
   `auto`, the default, is the crossfade, whatever the deck's `transition:` says,
   because the deck's argument is about slide boundaries.
-  The operation's own `delay:` and `duration:` time the transition,
+  The `delay:` and `duration:` of the operation time the transition,
   and a `duration:` of zero is a hard cut of the region.
   The `transition:` argument belongs to the operation rather than to `sub`,
   so that one subslide can carry one region with one transition and another region with
@@ -1004,10 +1005,10 @@ The time is stated by the call that causes the change, which is the structural p
 region and `init` for a slide, so one `sub` states the timing of all its operations in one way,
 and a transition never receives a number it would have to refuse.
 A **hard cut** is a crossing that takes no time, so it is written as `duration: 0` rather than
-as a transition of its own, and every transition with a duration of zero is the same cut.
+as a separate transition, and every transition with a duration of zero is the same cut.
 
 A `direction` is the direction of travel on a forward step, one of `ltr`, `rtl`, `ttb` and
-`btt`, which are typst's own directions.
+`btt`, which are the directions that typst defines.
 A backward step plays the same transition from the other end, so it travels the other way.
 A transition a region cannot take, such as a push, is refused on a structural primitive at
 compile time, and a transition a slide cannot take, which is the morph, is refused in `init`
@@ -1025,14 +1026,14 @@ Four arguments decide *when* and *how long* rather than *what*.
 `duration:` says how long that operation then takes,
 and on `init` how long the transition into the slide takes.
 All four are plain numbers of seconds,
-because typst has no time literal of its own and `2s` would not parse,
+because typst has no time literal and `2s` would not parse,
 and because one unit across the whole API keeps two numbers on one call comparable.
 All four are HTML only.
 The paged outputs are one page per state with nothing between them,
 so there is no clock to measure any of them on.
 The stylesheet is the one place where a time carries a unit,
 because a custom property read as a CSS `<time>` must carry one.
-Animo writes its own values as `0.4s` rather than as `400ms`,
+Animo writes the values it generates as `0.4s` rather than as `400ms`,
 so that every number an author reads or writes is still a number of seconds,
 and the runtime accepts either spelling.
 
@@ -1050,7 +1051,7 @@ rather than as a custom property, because it is structured and no media query ha
 
 The two durations are numbers of seconds like every other time an author writes,
 and each is `0.4` by default.
-They are only defaults, so a call that states a `duration:` of its own takes that duration.
+They are only defaults, so a call that states a `duration:` takes that duration.
 A deck that sets one of them to zero does not animate motion of that kind
 unless a call asks for it.
 The deck above therefore cuts between its slides while the steps inside them keep moving.
@@ -1066,9 +1067,9 @@ A name outside that list is refused at compile time,
 because a timing function the browser rejects would throw in the middle of a talk.
 The three arguments reach the runtime as the custom properties `--animo-primitive-duration`,
 `--animo-transition-duration` and `--animo-easing` on `:root`.
-The deck writes these properties into its own stylesheet beside its geometry,
+The deck writes these properties into the deck stylesheet beside its geometry,
 and the runtime reads them at every step,
-so restating one of them reaches every operation that asked for nothing of its own.
+so restating one of them reaches every operation that asked for nothing.
 They are HTML only, like the four times above, and the paged outputs ignore them.
 
 **`wait:` is the delay before the subslide it is written on is entered, and `hold:` is the delay
@@ -1126,12 +1127,12 @@ Inside a slide, the resolver sees both sides of every gap.
 Across a slide boundary, neither slide's resolver sees both sides,
 because the trailing `hold:` and the leading `wait:` are resolved by two calls.
 A slide therefore always hands its trailing `hold:` to the next slide through a typst `state`,
-and the next slide checks that `hold:` against its own leading `wait:`.
+and the next slide checks that `hold:` against its leading `wait:`.
 The deck-wide refusal of the handout uses the same mechanism.
 
 Timing does not take the deck away from the presenter. **A forward step cancels the pending timer
 and re-arms from the state it lands on**, so a presenter can always run ahead of the clock and a
-deep link starts its own timer from where it lands.
+deep link starts a new timer from where it lands.
 
 **A backward step lands on the nearest earlier state the deck would rest at.**
 A gap of zero is a join rather than a stop.
@@ -1215,7 +1216,7 @@ so a deck restored from a fragment comes back running, also after a reload by `t
 A `wait` and a `hold` are measured from the moment the subslide they are timed against was
 **triggered**, not from the moment its animations finished.
 A gap shorter than that subslide's motion therefore interrupts the motion.
-This needs no rule of its own,
+This needs no separate rule,
 because an interrupted subslide continues from where it is (see *Architecture*).
 A `hold: 0` is the limiting case, and the reason the measurement is defined this way.
 A `hold: 0` starts the next subslide at the same moment as the subslide it is written on,
@@ -1255,14 +1256,14 @@ On a structural operation, a delay holds back the **crossfade of the region it c
 The epoch boundary lasts until the last of these crossfades has finished,
 and the outgoing frame stays visible in the regions it hands over for that whole time.
 Staggering two structural changes therefore works
-when they sit in two regions, which two bare tags always do, since each is its own implicit
+when they sit in two regions, which two bare tags always do, since each forms an implicit
 region.
 Two operations that change *one* region at one boundary and disagree about `delay:` are refused.
 A region crossfades once, so there is nothing for a precedence rule to pick between.
 
 **`duration:` says how long one operation takes**, and every primitive takes it beside `delay:`,
 defaulting to `auto`.
-`auto` is the deck's own `primitive-duration:`,
+`auto` is the `primitive-duration:` of the deck,
 so a timeline that asks for nothing follows the tempo of the deck,
 and a change of the deck's tempo still reaches every operation that did not ask for something
 else.
@@ -1271,20 +1272,20 @@ so `reveal("a", delay: 0.5, duration: 2)` fades in over two seconds.
 A `duration:` becomes the duration of the Web Animations API effect,
 just as `delay:` becomes the delay of that effect.
 The subslide therefore still has one clock, an interrupted subslide behaves as before,
-and a backward step keeps every operation's own duration while mirroring the moment it starts
+and a backward step keeps the duration of every operation while mirroring the moment it starts
 at.
 
 **A reader who asked for less motion gets none, whatever the deck or the timeline says.**
 A number written in a typst source is invisible to a media query, so the reader's preference
-reaches the runtime as a custom property of its own on `:root`, `--animo-motion`, which is
+reaches the runtime as a separate custom property on `:root`, `--animo-motion`, which is
 `auto` unless `prefers-reduced-motion: reduce` sets it to `none`.
 The runtime reads `--animo-motion` at every step.
 While it is `none`, every step snaps, whatever duration the deck or a call states,
 and takes the same path that a deep link takes.
-The preference is a property of its own rather than a zero written over the deck's durations.
-A deck duration is only a default that a call's own `duration:` overrides,
+The preference is a separate property rather than a zero written over the deck's durations.
+A deck duration is only a default that the `duration:` of a call overrides,
 so a zeroed default would leave every stated duration animating.
-The deck writes its own `:root` block after the stylesheet that holds the query,
+The deck writes its `:root` block after the stylesheet that holds the query,
 so the declaration in the query is `!important`
 and the guard wins by cascade weight rather than by source order.
 The `!important` declaration also wins over a stylesheet that an author adds to the page,
@@ -1339,9 +1340,9 @@ States and epochs form the execution model that ties the two classes of primitiv
 A region cannot substitute the content of an epoch into its body,
 because it receives its body as opaque content and cannot rewrite the tags nested inside it.
 Instead, the current epoch is an entry of the view provided to the body (see *Scoping*).
-The region measures by laying its own body out once per epoch,
+The region measures by laying its body out once per epoch,
 under a copy of the view with that entry set to the epoch,
-and each tag resolves its own content for the epoch as it is laid out.
+and each tag resolves its content for the epoch as it is laid out.
 This was verified in both targets, inside `layout` and `measure`,
 with nested `context` reads and no convergence warning (see *Findings*).
 
@@ -1349,7 +1350,7 @@ This mechanism matters in two ways.
 It makes reflow inside a region possible without turning the body into a function of the epoch,
 which is the `s => ([body], s)` threading that *Resolved Design Decisions* rejects.
 It is also **indifferent to where time-dependent content is written**,
-because a tag could resolve its content for the epoch from the plan or from its own arguments
+because a tag could resolve its content for the epoch from the plan or from its arguments
 equally well.
 Where `replace`'s content belongs is therefore not a question of feasibility,
 and is settled on other grounds below.
@@ -1368,7 +1369,7 @@ In the paged outputs, each layer is laid out once per page of the slide
 (see *Background and overlay*).
 
 In HTML the body of a slide is laid out once, and every region that sits in no other region
-lays its own body out once per epoch, as an epoch stack in its footprint (see *Architecture*).
+lays its body out once per epoch, as an epoch stack in its footprint (see *Architecture*).
 A slide with one epoch is one rendering and nothing more.
 
 A `per-subslide` is the one construct whose cost is counted in **states** rather than in epochs,
@@ -1425,7 +1426,7 @@ Animations are then performed in the browser:
 - `move` animates the CSS `translate` property, computed from the measured anchors as
   *anchor(relto) + offset - anchor(self)*, which is the identity for a tag the timeline has not
   moved
-- `scale` animates the CSS `scale` property, about the element's own centre, with one value for
+- `scale` animates the CSS `scale` property, about the centre of the element, with one value for
   `f` and two for `fx`/`fy`
 - `pan` animates `translate` on the canvas element inside the clipping viewport, as a
   percentage of the canvas, which follows the window without being measured
@@ -1446,16 +1447,16 @@ Animations are then performed in the browser:
   also animates `translate` on the **matches** inside it.
   A match is a pair of elements, one in the outgoing region and one in the incoming one,
   that show the same ink.
-  The outgoing element travels from its own place to the place of the incoming one,
-  and the incoming element travels from the place of the outgoing one to its own,
+  The outgoing element travels from its place to the place of the incoming one,
+  and the incoming element travels from the place of the outgoing one to its place,
   so the two are at one position at every moment.
   Their opacities are those of the crossfade, `1 - t` and `t`, which `plus-lighter` adds to
   one, so the pair reads as one opaque element on the path and a pair whose colours differ
   reads as the interpolation of the two colours.
-  Nothing is cloned and no opacity is touched beyond the crossfade's own.
+  Nothing is cloned and no opacity is touched other than the one the crossfade animates.
   Unmatched content fades out or in where it is.
   The translations are animation effects and never inline style, so a slide at rest carries no
-  morph translation, and the outgoing element jumps back to its own place when its animation
+  morph translation, and the outgoing element jumps back to its place when its animation
   ends, at which point its opacity is zero.
   See *Resolved Design Decisions* for what counts as a match
 - a slide boundary crossfades the two **slide containers** by the same means.
@@ -1477,7 +1478,8 @@ Animations are then performed in the browser:
   and laying out every slide of a long deck costs seconds of first paint.
   The deck's surround is also a colour on the page rather than on the stage,
   because the stage isolates the blend,
-  and its own background would otherwise be added into both slides (see *Findings* for both)
+  and the background of the stage would otherwise be added into both slides
+  (see *Findings* for both)
 - a slide boundary that pushes, covers or wipes animates `translate` or a `clip-path` inset on
   the two containers instead.
   A transition is a function of the boundary's owner, which is the slide with the higher number,
@@ -1550,13 +1552,13 @@ The HTML presentation rests on the following rules:
    *Findings*).
    `transform-box: fill-box` and `transform-origin: center` make a `scale` grow the element in
    place, and they fall under a similar prohibition.
-   They also re-anchor the element's own `transform` attribute,
+   They also re-anchor the `transform` attribute of the element,
    so on a group that typst positioned they move the group's content (see *Findings*).
    The runtime therefore writes both properties on the slot it is about to transform,
    and never as a rule in the stylesheet, which cannot tell a slot from a region's content.
    A resize and a shape morph also animate `d` and `stroke-width` on the two paths they pair.
    Neither property is a transform, and neither is ever written as inline style,
-   so a path at rest shows its own attributes.
+   so a path at rest shows its attributes.
 
 1. Continuous state and boundary state get **separate nested slots**. `tag` wraps its body
    twice, in two wrappers of the same kind, so every tag site emits a labelled outer group with
@@ -1567,7 +1569,7 @@ The HTML presentation rests on the following rules:
    CSS gives each element only one `translate` and one `scale`,
    so the split is what keeps the two classes from clobbering each other.
    The order follows from how a boundary effect is measured:
-   it is measured in the frame's own coordinates
+   it is measured in the coordinates of the frame
    and must sit *above* the continuous transforms rather than inside them,
    or a tag that is being scaled or (later) rotated while its region reflows
    moves by the wrong amount in the wrong direction.
@@ -1587,7 +1589,7 @@ The HTML presentation rests on the following rules:
    but `translate` is used there too, for consistency and to leave `scale` free for a future
    zoom.
    A background or overlay that is content belongs to the viewport rather than to the canvas.
-   In HTML, each layer is therefore a frame of its own beside the canvas element,
+   In HTML, each layer is therefore a separate frame beside the canvas element,
    rather than ink in the canvas's frame, and a pan moves the canvas between them.
    On paper, the layers are placed on the page before and after the panned canvas.
    One frame per layer and per slide covers every state and every epoch,
@@ -1611,7 +1613,7 @@ and stepping backwards would not undo what stepping forwards did.
 State 0 is resolved from the timeline like every other state,
 from which operation addresses a name first.
 The runtime therefore applies what it is given and resolves nothing,
-and no tag site reports a display state of its own.
+and no tag site reports a display state.
 The one exception is the anchor of a `relto`.
 Each state carries its pan, and each moved tag its position,
 as an anchor and an offset per axis, `(relto:, offset:)`, with the offset in points.
@@ -1626,8 +1628,8 @@ A state also carries how long the step that enters it lasts,
 which is the length that a backward step mirrors its operations about.
 That length travels as two numbers rather than one.
 The resolver can add up only the operations that stated a duration,
-because the duration that the other operations take is the deck's own and lives in the
-stylesheet.
+because the other operations take the `primitive-duration:` of the deck,
+which lives in the stylesheet.
 The resolver therefore hands over the largest end it could compute
 and the largest delay of the operations it could not,
 and the runtime adds `--animo-primitive-duration` to the second number.
@@ -1675,14 +1677,14 @@ which the deck writes from its `primitive-duration:` and `easing:` arguments,
 so the values live in the stylesheet rather than in the runtime.
 A slide boundary has a third such property, `--animo-transition-duration`,
 which is also `0.4s` by default, so a deck of hard cuts states only one argument.
-An operation that states a `duration:` of its own overrides `--animo-primitive-duration` for
+An operation that states a `duration:` overrides `--animo-primitive-duration` for
 itself, and an `init` that states one overrides `--animo-transition-duration`,
-also where the deck's own is zero.
+also where the `transition-duration:` of the deck is zero.
 Reduced motion is decided in one place, the custom property `--animo-motion`.
 The media query `prefers-reduced-motion: reduce` sets it to `none`,
 and every step then snaps, as a deep link and the first paint do (see *Timing*).
 
-An operation's `delay:` and `duration:` become the effect's own delay and duration
+An operation's `delay:` and `duration:` become the delay and the duration of the effect
 rather than separate timers, which keeps the step's one clock intact.
 A gap's `wait:` or `hold:` is the only timer the runtime sets.
 That timer is armed when a step is entered,
@@ -1695,14 +1697,16 @@ since it walks back over the joins it finds on the way.
 
 **How `relto` finds its tag, and `move` its target.** The anchor of a tag is the top-left corner
 of the first site of its name in document order, as the body laid it out, which is the corner of
-the tag's outer wrapper. The tag's own display state sits inside that wrapper and does not enter
-the anchor, so `relto` means the same in every state, and an absolute `move` is idempotent. One
-mechanism serves both primitives: `pan` reads the anchor of its `relto`, and `move` reads the
-anchor of its `relto` and of the tag it moves.
+the tag's outer wrapper.
+The display state of the tag sits inside that wrapper and does not enter the anchor,
+so `relto` means the same in every state, and an absolute `move` is idempotent.
+One mechanism serves both primitives:
+`pan` reads the anchor of its `relto`, and `move` reads the anchor of its `relto` and of the
+tag it moves.
 The two targets read the corner by different means, because positions cannot be read in HTML.
 The browser reads the origin of the labelled group, mapped into the user space of its frame,
 when the slide is first shown and before anything is written on it.
-On paper, typst cannot use the wrapper's own position,
+On paper, typst cannot use the position of the wrapper,
 which for a box on a line is the line's baseline (see *Findings*).
 Every tag site therefore carries a zero-size marker at the corner of its outer slot.
 Every page also carries a marker at the canvas origin,
@@ -1736,7 +1740,7 @@ Anchors are resolved once per slide rather than once per state.
 On paper, that is one introspection pass over the slide's pages,
 and in the browser, one measurement when the slide is first shown.
 Only the tags that the plan actually names are read.
-A position whose anchor is the tag's own name needs no reading at all,
+A position whose `relto` names the moved tag needs no reading at all,
 since the two terms cancel whatever that anchor is.
 
 Two refusals depend on anchors, and neither can be decided before the body is laid out.
@@ -1744,11 +1748,11 @@ They are a pan or a move relative to a tag the slide does not have,
 and an anchor read from inside a tag that the timeline moves or scales.
 Both can only be detected from `query`, and a panic raised there may be swallowed.
 Both checks are reported reliably because of where they run.
-Each runs in a context block of its own after the slide, which emits nothing.
+Each runs in a separate context block after the slide, which emits nothing.
 The checks compare the timeline against the tag sites that the slide's rendering reported,
 which are the site reports in HTML and the anchor markers on paper.
 Each report carries the tags whose display state encloses the site.
-A failing check then empties only its own context block.
+A failing check then empties only the context block it runs in.
 A site that is reported one layout pass late is forgotten together with the errors of that pass,
 and a tag that is really missing fails the pass that typst ends on (see *Findings*).
 
@@ -1756,7 +1760,7 @@ The view's `within` entry exists for the second refusal.
 Which tags enclose a site is a fact about the body, and the body is opaque to the resolver.
 A site therefore learns which tags enclose it from the view it is handed,
 as it learns everything else about its slide.
-Every enclosing site that carries a display state of its own,
+Every enclosing site that carries a display state,
 which is a wrapped tag or a named region, extends that entry.
 Only a name the timeline addresses with a continuous primitive extends it,
 so a deck with no continuous primitive threads nothing.
@@ -1811,7 +1815,7 @@ the body:
   Such a selector naturally matches *all* elements with the same tag inside one slide.
   This is exactly the "several places, one tag" requirement,
   and it also applies continuous state to every rendering of every stack of the slide at once.
-- In the **paged** outputs, `#slide` resolves its own animation plan before rendering its
+- In the **paged** outputs, `#slide` resolves its animation plan before rendering its
   subslides and hands the result to the body, so each tag site sees the plan of the slide it
   sits in.
 
@@ -1819,22 +1823,23 @@ Names share one namespace with the labels Animo emits for itself, since both end
 `data-typst-label` in the same output and the runtime addresses what it finds there. The prefix
 `animo-` is reserved for Animo's own labels, and `tag` and `region` refuse a name that starts
 with it.
-An unnamed region needs a label of its own,
+An unnamed region needs a label,
 because a boundary crossfades it and only a labelled box becomes a group at all.
 An unnamed region therefore gets the label `animo-region-<n>`,
-where `n` is the region's own number, which is the same in every output type.
+where `n` is the number of the region, which is the same in every output type.
 A region inside an epoch stack counts once,
 not once per rendering. The renderings of an epoch stack themselves take `animo-epoch-<n>` out
 of the same reserved prefix.
 
-The namespace is also shared with **the document's own labels**, which Animo cannot reserve.
+The namespace is also shared with **the labels that the document defines**, which Animo cannot
+reserve.
 `#box[..]<x>` emits the same attribute as a tag of that name,
 and nothing in the output tells the two apart.
 The consequence is asymmetric.
 Typst resolves a timeline through the tag,
-so on paper a label of the document's own is never addressed.
+so on paper a label that the document defines is never addressed.
 The runtime resolves a timeline through the attribute,
-so in the browser a label of the document's own is addressed.
+so in the browser a label that the document defines is addressed.
 A continuous primitive on a name that became no group on its slide is therefore refused
 in every target, just like a `pan(relto:)` to a missing tag.
 A misspelt name is the likely cause, the refusal costs a deck nothing it could have wanted,
@@ -1880,7 +1885,7 @@ given. A view has the following entries:
 - the **region** the content sits in, which consists of the key of the nearest region whose
   footprint is the same in every epoch, whether an explicit region bounds the content,
   and whether the content itself is laid out in every epoch.
-  A tag inside an explicit region reserves no footprint of its own.
+  A tag inside an explicit region reserves no separate footprint.
   Every site reports the key of its region, which is how the regions that a boundary redraws
   are found, since only layout knows which tags a region holds;
 - the **tags whose display state encloses the content**, outermost first. Every site reports
@@ -1906,9 +1911,9 @@ because `state.get()` inside `measure(..)` resolves at the enclosing context's l
 so a caller cannot set a state, measure, set it again and measure again,
 which is exactly what a region has to do to size its footprint over its epochs.
 A show rule does reach inside `measure`, providers nest with the innermost winning,
-and the marker's own label does not reach the output (measured; see *Findings*).
+and the label of the marker does not reach the output (measured; see *Findings*).
 Because a view is an argument rather than a document position,
-a deck that wraps `#slide` in its own function changes nothing.
+a deck that wraps `#slide` in a custom function changes nothing.
 
 A few things about a slide are published rather than provided, and none of them is the plan.
 The slide counter and the flag that says whether this slide is counted are published because
@@ -2096,7 +2101,7 @@ They are settled, and the evidence is in *Findings*.
 
 - **How are group-like containers and tags related?** They are orthogonal and both are kept.
   A region is the *unit of reflow and redrawing*, and a tag is the *addressable handle*.
-  A tag not inside an explicit region gets an implicit region of its own,
+  A tag not inside an explicit region gets a separate implicit region,
   so the simple case needs no extra syntax,
   and `region(name: ..)` covers the case where the container itself must be animated.
 
@@ -2174,7 +2179,7 @@ They are settled, and the evidence is in *Findings*.
   (see the `import *` footgun under *Findings*).
 
 - **Can the handout keep a slide's initial state?** Yes, with `init(handout: ..)`.
-  The flag belongs to a state, and the initial state has no `sub` of its own,
+  The flag belongs to a state, and the initial state has no `sub`,
   so it is written on `init`, which is the call that describes that state,
   with the three values that `sub(handout: ..)` takes.
   This matters as soon as a timeline restores what the body hides,
@@ -2201,7 +2206,7 @@ They are settled, and the evidence is in *Findings*.
   `init` adds no state, so it keeps every subslide index,
   and it takes the keywords of `sub` with the meaning they have there,
   so the initial state is described in the same way as every other state.
-  `init` is a call of its own rather than a keyword of the first `sub`,
+  `init` is a separate call rather than a keyword of the first `sub`,
   because a slide without `sub` has an initial state too.
   A timeline holds `init` at most once and before its first `sub`,
   so its position carries no meaning,
@@ -2210,7 +2215,7 @@ They are settled, and the evidence is in *Findings*.
 - **Where is the timing of a transition stated, and what is a hard cut?** On the call that
   causes the change, and a hard cut is a duration of zero.
   A structural primitive states the `delay:` and `duration:` of the transition of its region,
-  just as a continuous primitive states its own,
+  just as a continuous primitive states the `delay:` and `duration:` of its operation,
   so one `sub` times all its operations in the same way.
   `init` states the `duration:` of the transition into the slide, because no primitive
   causes that change, and `wait:` takes the place of a delay there.
@@ -2222,10 +2227,10 @@ They are settled, and the evidence is in *Findings*.
   when the default is zero, since otherwise a deck of hard cuts could not push one slide in.
   The cost is that `init(push())` in such a deck is a cut, so the manual says that a named
   transition in a deck of cuts needs its duration too.
-  Reduced motion then needs a property of its own, `--animo-motion`, because zeroing a
+  Reduced motion then needs a separate property, `--animo-motion`, because zeroing a
   default no longer stops a stated duration.
   A per-slide `easing` was dropped together with the dictionary form of a transition,
-  because a primitive has no easing of its own.
+  because a primitive states no easing.
   An easing on every call is left for when a deck needs it.
 
 - **Must the syntax become heavier (body as a function)?** No. `sanor` threads a mutable
@@ -2258,7 +2263,7 @@ They are settled, and the evidence is in *Findings*.
 
 - **HTML export: `reveal.js` or custom?** Custom. Animo animates `<g>` nodes inside an
   inline SVG, so reveal.js's DOM-fragment machinery contributes almost nothing while
-  imposing its own slide model, CSS cascade and scaling.
+  imposing a separate slide model, CSS cascade and scaling.
   Panning is not part of reveal's model either,
   which is why `touying-exporter` turned to impress.js for it. `slipst`'s complete
   custom runtime is ~214 lines of TypeScript plus ~68 lines of CSS, so the cost is small.
@@ -2284,8 +2289,8 @@ They are settled, and the evidence is in *Findings*.
   rather than `top + left`, because a horizontal component overrides an inherited alignment
   (see *Findings*).
 
-- **Does `layout(size => ..)` give a region the right width?** In a container with a width of
-  its own, yes.
+- **Does `layout(size => ..)` give a region the right width?** In a container whose width does
+  not depend on its content, yes.
   In a container that takes the width of its content, `layout` hands over the whole body width,
   and the region cannot detect this.
   That is a documented restriction with `width:` as the remedy (see *Findings*).
@@ -2329,7 +2334,7 @@ They are settled, and the evidence is in *Findings*.
   CSS transitions handle none of the three well.
   The Web Animations API also makes a mid-flight assertion reproducible,
   because a test pauses the animation and sets a `currentTime` instead of racing it.
-  It is also where an operation's own `duration:` and the shared clock of the epoch crossfade
+  It is also where the `duration:` of an operation and the shared clock of the epoch crossfade
   belong.
   The default duration and easing live in CSS,
   as `--animo-primitive-duration` and `--animo-easing` on `:root`,
@@ -2340,23 +2345,26 @@ They are settled, and the evidence is in *Findings*.
 
 - **How does an author state the deck's tempo?** As three arguments of the deck's show rule,
   `primitive-duration:`, `transition-duration:` and `easing:`,
-  which the deck writes into the `:root` block of its own stylesheet beside its geometry.
+  which the deck writes into the `:root` block of the deck stylesheet beside its geometry.
   The values end up in CSS, beside the `--animo-motion` that `prefers-reduced-motion: reduce`
   sets, and the runtime reads them at every step, so restating one costs no second pass over
   the timeline. Leaving
   the author to write that CSS was the first answer, and it was wrong on two counts. Writing a
   `<style>` element from typst means calling `html.elem`, guarded by a `target()` test because
   the paged outputs have no `html` module, which is markup in a deck's source and a guard an
-  author has to know about. Such a stylesheet also lands after animo's own, where it outranked
-  the reduced-motion query in chromium 151 and firefox 153, so a deck that restated its tempo
-  quietly took the guarantee away from the reader. Making the query's declaration
-  `!important` settles both that stylesheet and the deck's own block, because the guard then
-  wins by cascade weight rather than by source order. An easing is checked against a list of
+  author has to know about.
+  Such a stylesheet also lands after the stylesheet of Animo,
+  where it outranked the reduced-motion query in chromium 151 and firefox 153,
+  so a deck that restated its tempo quietly took the guarantee away from the reader.
+  Making the query's declaration
+  `!important` settles both that stylesheet and the `:root` block of the deck,
+  because the guard then wins by cascade weight rather than by source order.
+  An easing is checked against a list of
   five names in typst rather than passed through, because a timing function the browser
   rejects throws where the audience can see it, and because the list is what a reference page
   can state.
   The principle is narrow.
-  Every setting that animo's own runtime reads is stated in typst,
+  Every setting that the runtime of Animo reads is stated in typst,
   which is not a promise to expose the page's styling,
   and `html.elem` stays available for what animo does not cover.
 
@@ -2365,12 +2373,12 @@ They are settled, and the evidence is in *Findings*.
   The first answer was a single rule, `.animo-canvas [data-typst-label] > g`,
   which is the selector through which the continuous properties themselves are written.
   That rule was wrong for a reason that only showed up in a real deck.
-  The two declarations re-anchor the element's own `transform` attribute
+  The two declarations re-anchor the `transform` attribute of the element
   as much as the properties beside them (see *Findings*),
   and a labelled group is not always a tag site. A region's
   footprint carries a label too, because the crossfade addresses it, and its children are the
   author's content rather than a slot, so the rule reached typst's glyph runs and moved each of
-  them by its own fill box. Every candidate selector that excludes a region's children is a
+  them by its fill box. Every candidate selector that excludes a region's children is a
   guess about the shape of content Animo does not build: `:only-child` fails on a region holding
   one group, and `:not([transform])` would exclude a real slot the moment an inline footprint
   offsets one. Writing the two declarations where the transform is written needs no such guess,
@@ -2381,14 +2389,14 @@ They are settled, and the evidence is in *Findings*.
   defaults changes.
   Measurements in chromium 151 and firefox 153 (see *Findings*) show the following.
   A scaled glyph is drawn afresh at the scale it ends up at rather than stretched,
-  so text stays as sharp at 200% as at its own size,
+  so text stays as sharp at 200% as at its unscaled size,
   and strokes scale geometrically with it.
   That is what a figure needs, and it makes `scale` usable on text.
   A value under a running animation
   rasterises bit for bit as the same value in a style declaration, so the hand-off at the end of
   a step is invisible and there is no antialiasing seam at a subslide boundary.
   An author still has to know what a `scale` does.
-  It scales about the element's own centre and nothing reflows,
+  It scales about the centre of the element and nothing reflows,
   so a doubled paragraph overlaps its neighbours.
 
 - **What does a handout page of a panned slide show?** The viewport of its state, exactly as the
@@ -2404,7 +2412,7 @@ They are settled, and the evidence is in *Findings*.
   inline box, block, centred figure, math, heading text, grid cell, list item, a tag inside a
   tag), at windows 1280 and 640 pixels wide, the browser's pan differs from typst's by at most
   0.001 pt in chromium 151 and 0.005 pt in firefox 153.
-  Reading typst's own position of the tag did not agree,
+  Reading the position that typst reports for the tag did not agree,
   because that position was a box height too low for every tag on a line.
   The agreement therefore comes neither from a tolerance nor from making one target
   authoritative. `relto` promises the corner of the tag's wrapper, and
@@ -2419,7 +2427,7 @@ They are settled, and the evidence is in *Findings*.
   Neither costs anything measurable.
   The figure is smaller than the one above because it is a different measurement,
   not because the mechanism is better.
-  Here the runtime's own `translate` is read in the user units of the frame,
+  Here the `translate` that the runtime writes is read in the user units of the frame,
   while a pan is read off two boxes on the page.
   The 0.005 pt is therefore the error of reading a rendered pan,
   and 0.0005 pt is the difference between the two resolutions themselves.
@@ -2503,7 +2511,7 @@ They are settled, and the evidence is in *Findings*.
   and **unreachable from inside typst 0.15.0**,
   because a package never holds the markup that a frame became.
   What is reachable is one frame per slide that holds every rendering of the slide,
-  which makes typst's own deduplicator share the definitions of a slide's epochs.
+  which makes the deduplicator of typst share the definitions of a slide's epochs.
   *Findings* has measurements of both.
   The reachable half is specified under *Architecture*,
   since it changes what an epoch frame is rather than only how many bytes one weighs.
@@ -2599,7 +2607,7 @@ They are settled, and the evidence is in *Findings*.
   Reveal-then-hide and reset-then-remove are both "once",
   and by the entry above nothing can choose between them without an argument.
   An `apply`-then-drop form is a third meaning.
-  It needs identity in the wrapper list so that only its own wrapper is dropped,
+  It needs identity in the wrapper list so that only the wrapper it added is dropped,
   and it costs two epochs where the display form costs none.
   Each of these forms also needs a rule for a `once` in the last `sub`,
   which has no next state to undo it in.
@@ -2615,7 +2623,7 @@ They are settled, and the evidence is in *Findings*.
   Sharing the vocabulary with `pan` costs nothing,
   because the resolver already keeps a pan as an anchor and a per-axis offset,
   and the runtime already measures a tag's anchor for `relto`.
-  `move` differs in only one term, which subtracts the moved tag's own anchor.
+  `move` differs in only one term, which subtracts the anchor of the moved tag.
   The price is stated in *Animation primitives*.
   A name with several sites lands its first site on the target,
   and an element that is also scaled lands its unscaled corner, because a scale is about a
@@ -2624,7 +2632,7 @@ They are settled, and the evidence is in *Findings*.
 - **Does a scale factor multiply into what is there, or set it?** It sets it.
   Multiplying was the earlier answer, and it makes a factor unreadable in isolation.
   `scale("a", 2)` at subslide 7 means nothing until every earlier `scale` on `a` has been found
-  and multiplied, and returning an element to its own size means writing a reciprocal
+  and multiplied, and returning an element to its unscaled size means writing a reciprocal
   that changes whenever an earlier subslide does.
   Setting makes `scale("a", f: 1)` restore the element whatever came before,
   and makes the primitive agree with `move`, whose absolute form is likewise idempotent.
@@ -2638,7 +2646,7 @@ They are settled, and the evidence is in *Findings*.
   arbitrary content, and both belong to the **viewport**. Extending `background` from a colour or
   an image to content costs nothing,
   because *Architecture* rule 5 already had a content background as a
-  frame of its own beside the canvas, and `overlay` is that same construct one layer up. Making
+  separate frame beside the canvas, and `overlay` is that same construct one layer up. Making
   them viewport-bound rather than canvas-bound keeps a logo in the same place on screen instead
   of letting it travel with the canvas, keeps a full-bleed image from silently enlarging the
   automatic canvas, and keeps
@@ -2654,7 +2662,7 @@ They are settled, and the evidence is in *Findings*.
   which is that a silent no-op hides the cause of a mistake.
 
 - **What happens between two slides?** A transition, which may take no time.
-  A slide without a transition of its own takes the deck's transition,
+  A slide that states no transition takes the deck's transition,
   which is the crossfade unless the show rule's `transition:` names another,
   and `init(duration: 0)` cuts.
   In both directions, the boundary takes the `init` of the slide with the higher number,
@@ -2703,7 +2711,7 @@ They are settled, and the evidence is in *Findings*.
      between the renderings, and the content it holds is matched instead.
      The same holds for a tag or a `per-subslide` rendering that holds a tag the boundary
      changes, whose content differs for the same reason.
-     Without this rule, a tag around an equation whose numerator is a tag of its own would be
+     Without this rule, a tag around an equation whose numerator is a separate tag would be
      carried as one block, and none of the terms or the fraction bar inside it would move.
      Without that exception, `replace("eq", transition: morph())` on a tag inside an explicit
      region would move the old equation as one block onto the new one and match none of its
@@ -2721,7 +2729,7 @@ They are settled, and the evidence is in *Findings*.
        right for a morph that does not scale.
        Spaces are not elements of typst's output, so a word is carried as its letters.
      - A shape is a `<path>`, and its key is the `d` with the stroke width, cap, join, miter
-       limit and dash. Typst starts the `d` of every shape at the shape's own origin and puts
+       limit and dash. Typst starts the `d` of every shape at the origin of the shape and puts
        its place in a transform, so two copies of one shape at two places have one `d`
        (see *Findings*). The stroke width is in the key because a route does not scale a
        stroke, and so is the `fill-rule`, because two copies under two rules cover two areas.
@@ -2819,8 +2827,8 @@ They are settled, and the evidence is in *Findings*.
   A shape that changes size, such as the bar of a fraction whose numerator grows, has another
   `d` and is no ink match, and the resize carries it when its structure stays.
   A letter is a `<use>` of an outline in the definitions and not a path, so a shape morph does
-  not turn a letter into another letter. Glyph outlines have many subpaths, and manim's own
-  `TransformMatchingTex` fades the letters it cannot match rather than morphing them.
+  not turn a letter into another letter. Glyph outlines have many subpaths, and the
+  `TransformMatchingTex` of manim fades the letters it cannot match rather than morphing them.
   An author who wants a letter to change its outline draws it as a shape, with typst's
   `curve` or with cetz.
   Elements of one key are paired in document order, which for a plot is the order it draws its
@@ -2829,7 +2837,7 @@ They are settled, and the evidence is in *Findings*.
   no mark moves. That limitation is accepted. A pairing that minimises the total distance is the
   assignment problem, which the Hungarian method solves in time cubic in the number of marks.
   Finding near partners more cheaply gives up the linear cost of the match and brings edge
-  cases of its own, in which the pairing a mark gets is harder to predict than its place in
+  cases too, in which the pairing a mark gets is harder to predict than its place in
   the order the plot draws.
   The subsequence is found with a diff of the Myers kind, whose cost grows with the number
   of elements times the number of differences, and a region whose ink differs in more than a
@@ -2870,7 +2878,7 @@ They are settled, and the evidence is in *Findings*.
   `wait:` names the gap before the subslide it is written on and `hold:` the gap after it,
   and both apply to `sub` and to `init`.
   A slide's initial state is timed by `init(wait: ..)` and `init(hold: ..)`,
-  because it has no `sub` of its own.
+  because it has no `sub`.
 
   The first draft had only `wait:`.
   It defined the gap as the delay before a subslide,
@@ -2879,7 +2887,7 @@ They are settled, and the evidence is in *Findings*.
   and it recorded as a real cost that the other form survives editing better.
   Using the package reopened the question, and two of the three grounds did not survive.
   The two-keyword claim is wrong: `init(hold: ..)` times state 0, every later
-  state is a `sub` that carries its own, and the last state of a slide with no `sub` at all *is*
+  state is a `sub` that carries its `hold:`, and the last state of a slide with no `sub` at all *is*
   state 0, so one keyword covers it either way. And the coverage `wait:` alone was
   supposed to buy is not there: `init(wait: ..)` on the first slide of a deck does nothing,
   because a gap is read when its state is entered from a predecessor and state 0 of slide 1 has
@@ -2925,7 +2933,7 @@ They are settled, and the evidence is in *Findings*.
   All these timing values are plain numbers of seconds,
   since typst has no time literal and `2s` does not parse.
 
-- **Does an operation get a duration of its own, and in what unit?** Yes, `duration:`, beside
+- **Does an operation get a separate duration, and in what unit?** Yes, `duration:`, beside
   `delay:` on every primitive, defaulting to `auto`, and in seconds like everything else an
   author writes.
   It was planned as `time:`, and was added once `delay:` had built the plumbing,
@@ -2944,7 +2952,7 @@ They are settled, and the evidence is in *Findings*.
   (see *Timing*), because a media query cannot reach a number written in a typst source,
   and a reader who asked for no motion should not have to ask a second time.
   **The default is `auto` rather than a number**,
-  so that "unset" and "as long as the deck's own step" stay distinguishable.
+  so that "unset" and "as long as the `primitive-duration:` of the deck" stay distinguishable.
   A deck-wide restyle needs that distinction to reach the operations that stated no duration
   and to leave the others alone.
 
@@ -2968,7 +2976,7 @@ They are settled, and the evidence is in *Findings*.
   one is shown, which is exactly what `reveal` and `hide` already do.
   A number is therefore a stack of renderings, each with a label,
   and the runtime shows the rendering that belongs to the current position,
-  while a page of a paged output lays out the rendering of its own state.
+  while a page of a paged output lays out the rendering of the state it shows.
   The three output types then agree by construction rather than by arrangement, and nothing
   about a number travels in the plan.
 
@@ -2990,7 +2998,7 @@ They are settled, and the evidence is in *Findings*.
   deck-wide pair, `step` and `steps`, where a bar spanning the talk can reach them.
 
   **Numbering epochs instead was rejected.**
-  Numbering epochs would cost nothing, because a frame knows its own epoch,
+  Numbering epochs would cost nothing, because a frame knows its epoch,
   but it would not serve the purpose of a number.
   An epoch number does not advance on a continuous subslide,
   so it is constant on the ordinary slide that only reveals things.
@@ -3129,7 +3137,7 @@ and the others are still undecided.
 
   The walk left one problem, which presenting showed later.
   A backward step over a join that runs out of a slide
-  leaves the slide it walks back into at a state before its own last state.
+  leaves the slide it walks back into at a state before its last state.
   On the way back, that slide now moves into the state it lands on while the boundary crosses it,
   rather than snapping into place under the crossfade.
   Only a backward step does so. *Timing* states
@@ -3174,7 +3182,7 @@ and the others are still undecided.
 - Whether a group of shapes that travel one distance should move as one animation, as the
   glyphs of a run do. A cetz drawing that moves as a whole is better put in a tag, which
   already moves as one. A plot of 1000 marks whose axis range changes, so that each mark has a
-  route of its own, costs a key press of 93 ms in chromium 151 and 134 ms in firefox 153, and
+  separate route, costs a key press of 93 ms in chromium 151 and 134 ms in firefox 153, and
   chromium then draws a frame every 51 ms, measured with `benchmarks/morph.py`.
 
 ## Development Infrastructure
@@ -3259,11 +3267,11 @@ and what takes more than one command is a script under `tools/`:
   of commands, and a deck that fails one of them fails the documentation build.
 - `tools/build_package.py` writes the subtree that is submitted to `typst/packages`, which is the
   tracked files minus the `exclude` list of the manifest. The Universe package checker reads that
-  subtree and not the working tree, so it has to exist as a directory of its own.
+  subtree and not the working tree, so it has to exist as a separate directory.
 - `tools/release_notes.py` reads one version's section out of `CHANGELOG.md`, so a GitHub release
   does not restate it.
 
-The benchmarks are a script for a reason of their own, stated in
+The benchmarks are a separate script for a reason stated in
 [docs/environment.md](../docs/environment.md): a measurement is only meaningful when it is
 requested explicitly, on an idle machine, and a target that ran by default would record numbers
 taken while something else had the processor.
@@ -3333,7 +3341,7 @@ Upstream sources consulted for the findings:
 | Directory             | Relevance                                                                                                                       |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | `../typst`            | typst 0.15.0 checkout; `crates/typst-svg` (label emission, def id hashing) and `crates/typst-library` (`measure`, `html.frame`) |
-| `../typst-dev-assets` | assets used by typst's own test suite, handy for rendering tests                                                                |
+| `../typst-dev-assets` | assets used by the test suite of typst, handy for rendering tests                                                               |
 | `../krilla`           | the PDF writer typst builds on; relevant only if PDF-level features (pdfpc metadata, layers) are ever needed                    |
 
 Real decks that constitute the test corpus and the motivation:

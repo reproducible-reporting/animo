@@ -30,7 +30,7 @@
 
 // A length as a number of typst points, rounded to a tenth of a thousandth.
 //
-// Typst's own numbers run to fifteen digits, which no renderer can tell apart and which
+// The numbers that typst writes run to fifteen digits, which no renderer can tell apart and which
 // makes the emitted page hard to read and hard to diff.
 //
 // Must be called in a context, because a length may be relative to the text size,
@@ -44,7 +44,7 @@
 // Everything else is already arithmetic, because the offset is in typst points and the
 // runtime adds the anchors it measured.
 //
-// A tag's own name as the anchor is the identity, which a tag the timeline never moved
+// A pair whose `relto` names the moved tag is the identity, which a tag the timeline never moved
 // carries, so the runtime needs no anchor at all for it.
 //
 // Must be called in a context.
@@ -87,7 +87,7 @@
 //
 // A field at its default is left out, and a record whose fields are all at their default
 // is left out entirely, because the runtime reads a missing delay as "starts with its
-// step" and a missing duration as "takes as long as the deck's own step", which is what an
+// step" and a missing duration as "takes the `primitive-duration:` of the deck", which is what an
 // operation that states no timing asks for.
 // A deck that times nothing therefore carries no timing at all.
 // The pruning is per field rather than per record because of `auto`, which is the duration
@@ -122,13 +122,13 @@
 
 // How long one step lasts, as the browser needs it, or `none` when it needs nothing.
 //
-// A step whose every operation starts with it and takes the deck's own step lasts exactly
-// that step, which is what the runtime assumes when it finds no span, so such a step
-// carries none.
+// A step whose every operation starts with it and takes the `primitive-duration:` of the deck
+// lasts exactly that duration, which is what the runtime assumes when it finds no span,
+// so such a step carries none.
 // An `unstated` of zero on its own is that case.
-// Beside a `stated`, an `unstated` of zero is a statement of its own and travels,
-// because it says that some operation of the step takes the deck's own step where another
-// one runs past it.
+// Beside a `stated`, an `unstated` of zero is a separate statement and travels,
+// because it says that some operation of the step takes the `primitive-duration:` of the deck
+// where another one runs past it.
 #let span-for(span) = {
   let kept = (
     entry("stated", span.stated) + entry("unstated", span.unstated)
@@ -185,7 +185,7 @@
 // The first epoch begins no boundary and changes nothing.
 //
 // A state also carries the `wait` before it is entered, the `hold` before the state after
-// it is, the `timing` of the operations its own step performed and the `span` of that
+// it is, the `timing` of the operations its step performed and the `span` of that
 // step, all in seconds, because none of them can be resolved anywhere but at the moment
 // the step runs.
 // All are left out when they say nothing, and a gap timed by neither of its neighbours is a

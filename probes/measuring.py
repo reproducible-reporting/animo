@@ -7,7 +7,7 @@ A probe reports on typst and on a browser, so it queries the document directly.
 which a probe document deliberately does not implement.
 
 The measurement itself is the harness's, because reading the box of an SVG group is the
-one piece of browser geometry that is not obvious, and a probe that read it its own way
+one piece of browser geometry that is not obvious, and a probe that read it differently
 would be probing the wrong thing.
 """
 

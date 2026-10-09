@@ -5,7 +5,7 @@
 A deck that plays itself is a `setTimeout` in the runtime, and a `setTimeout` is exactly
 what the animation harness cannot scrub.
 An animation is paused and told where it is, while a timer only ever fires.
-The timer is therefore driven instead, with `playwright`'s own fake clock,
+The timer is therefore driven instead, with the fake clock of `playwright`,
 and the runtime carries no test seam at all.
 
 The properties below make that work, and each is asserted here, because each of them
@@ -18,7 +18,7 @@ rather than as a broken tool.
   settled, so what a test may not do is expect a zero-length gap to stay pending.
 - `run_for` fires the timers that fall due, in order, including the ones a fired timer
   sets, which is what makes a deck step itself more than once.
-- The document timeline is the browser's own and is not faked, so the motion a timed step
+- The document timeline belongs to the browser and is not faked, so the motion a timed step
   starts still runs in real time and is still scrubbable.
 
 What the pause does reach is `requestAnimationFrame`, which stops firing with the timers,
@@ -38,14 +38,14 @@ PAUSE = 300
 STEP = 1000
 
 # Where the clock is stopped, as a time after the one it was installed at.
-# An installed clock is still running and cannot be paused in its own past, and the two
+# An installed clock is still running and cannot be paused at a moment in its past, and the two
 # calls take real milliseconds, so this is a minute ahead rather than nothing at all.
 # Nothing is loaded when the jump happens, so it has no timer to fire.
 PAUSED_AT = 60_000
 
 # A page that counts itself forward on a chain of timers, one every `STEP`, and publishes
 # the count where a test can read it.
-# This is the shape of the runtime's own autoplay, which is a timer armed whenever a step is
+# This is the shape of the autoplay in the runtime, which is a timer armed whenever a step is
 # entered, and which the step it enters arms again.
 PAGE = """<!doctype html>
 <script>

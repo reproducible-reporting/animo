@@ -54,7 +54,7 @@ on:
       - .github/workflows/release.yml
 
 concurrency:
-  # A tag has a ref of its own, so a run that publishes is never cancelled by a push.
+  # A tag has a separate ref, so a run that publishes is never cancelled by a push.
   group: release-${{ github.ref }}
   cancel-in-progress: true
 
@@ -88,7 +88,7 @@ jobs:
       # so it is pointed at the copy above rather than at the checkout.
       # It reads the manifest at the root of what is mounted,
       # so the mount is the version directory rather than the directory that contains it.
-      # It runs as a container rather than through its own GitHub Action,
+      # It runs as a container rather than through the GitHub Action of the checker,
       # because that action expects credentials for a GitHub App
       # that a personal repository does not have.
       - name: Check the package as it would be submitted

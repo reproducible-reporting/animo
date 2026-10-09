@@ -109,7 +109,7 @@
 // progress bar needs, because a rendering that states a ratio has nothing else to be a
 // ratio of, and a stack that hugs is what a number in a line of text needs.
 //
-// A function and `none` are refused where a tag takes them, because a stack is animo's own
+// A function and `none` are refused where a tag takes them, because animo creates every stack
 // container and every rendering in it has to become a group the runtime can address.
 //
 // Must be called in a context, because `auto` measures.

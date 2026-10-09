@@ -25,7 +25,7 @@ Animo builds dynamic HTML and static PDF presentations using [typst](https://typ
 The [short tour of Animo](https://reproducible-reporting.github.io/animo/examples/tour.html)
 gives a quick impression of its capabilities.
 
-A minimal single-slide deck with a single animation looks like this:
+A minimal deck with one slide and one animation looks like this:
 
 ```typst
 #import "@preview/animo:0.1.1": *

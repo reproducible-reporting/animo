@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Probes for *The head of a page that a package builds itself*.
 
-A deck builds its own `<html>` element, because the stylesheet and the runtime go into its
+A deck builds the `<html>` element itself, because the stylesheet and the runtime go into its
 head, and typst then leaves the head to it.
 These probes assert what that leaves the package to do and what it can read to do it.
 """
@@ -17,7 +17,7 @@ SETTINGS = """\
 
 
 def test_typst_writes_the_title_and_the_language_into_a_head_it_builds(typst: TypstRunner):
-    """The reference: a document that builds no head of its own gets both from typst.
+    """The reference: a document that builds no head gets both from typst.
 
     The title is the plain text of the content it was set to.
     Typst 0.15.0 names the authors `authors`, where the name HTML defines is `author`.

@@ -357,7 +357,7 @@ def test_nothing_outside_a_region_changes_while_its_inside_reflows(paged: PagedR
 
 
 def test_a_nested_region_redraws_only_its_own_band(paged: PagedRunner):
-    """The outer region's own content after the inner region holds still."""
+    """The content of the outer region after the inner region holds still."""
     long = "An inner replacement that wraps onto more lines than the short one does. " * 2
     animation = timeline(f'sub(replace("t")[{long}])')
     body = (

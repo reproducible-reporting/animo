@@ -25,8 +25,8 @@
 
 #slide(animation: {
   import anim: *
-  // An absolute move puts the tag's own top-left corner at a distance from the canvas
-  // origin. The anchor is the corner the body gave the tag, so the move is idempotent:
+  // An absolute move puts the top-left corner of the moved tag at a distance from the
+  // canvas origin. The anchor is the corner the body gave the tag, so the move is idempotent:
   // stating it twice leaves the ball where the first one put it.
   sub(move("ball", x: 12cm, y: 5cm))
   // A relative move shifts the tag from wherever it already is.
@@ -55,8 +55,9 @@
   // `wait:` brings this step up two seconds after the step before it was triggered,
   // and `hold:` sends the deck on two seconds after this one was.
   sub(wait: 2, hold: 2, reveal("gap"))
-  // `delay:` holds one operation back inside its step, and `duration:` gives it a tempo
-  // of its own. The step keeps one clock: both become the browser animation's own.
+  // `delay:` holds one operation back inside its step, and `duration:` gives it a
+  // separate tempo. The step keeps one clock,
+  // because both become the delay and the duration of the browser animation.
   sub(
     reveal("first"),
     reveal("second", delay: 0.4),

@@ -24,7 +24,7 @@
 // An `epoch` stack holds one rendering of a region per content state of the slide, and a
 // `subslide` stack holds one rendering of a `per-subslide` per state of the slide.
 // The runtime reads the renderings of a stack from the children of one group, so the
-// renderings of one stack are siblings and every stack has a container of its own.
+// renderings of one stack are siblings and every stack has a separate container.
 // A rendering of `none` is not placed, exactly as a tag site whose content an epoch removed
 // lays out nothing.
 //
@@ -48,7 +48,7 @@
 //
 // The content is measured inside a box, because a rendering carries the display state of
 // its epoch and a `move` is block-level.
-// A block-level body pushes the pole onto a line of its own, so the descent read beside it
+// A block-level body pushes the pole onto a separate line, so the descent read beside it
 // covers a whole line and the ascent turns negative.
 // The box is also the slot the rendering sits in on the page, so what is measured is what
 // the line gives it.
@@ -68,7 +68,7 @@
 // A box takes its baseline from the first line of its content even at a fixed size, so a
 // fixed box alone still moves its line when one rendering's first line is taller, or when
 // a rendering lays out nothing at all (measured on typst 0.15.0; see *Findings*).
-// A rendering is placed instead, which gives the box no baseline of its own, at the height
+// A rendering is placed instead, which gives the box no baseline, at the height
 // that puts its baseline where the tallest one's is, and the box is lowered by the deepest
 // descent.
 #let inline-footprint(renderings) = {

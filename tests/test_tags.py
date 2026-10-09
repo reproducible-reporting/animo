@@ -103,7 +103,7 @@ def test_wrap_auto_measures_whether_the_body_breaks_the_line(typst: TypstRunner,
 def test_a_tag_inside_a_heading_wraps_its_text(typst: TypstRunner):
     """This is the way around the few points a wrapper around a whole heading costs.
 
-    The body is then an inline phrase, so it hugs, and the heading keeps its own block
+    The body is then an inline phrase, so it hugs, and the heading keeps its block
     spacing because no wrapper sits at its edge.
     """
     source = deck('slide[= #tag("t")[Head]]') + check(
@@ -137,7 +137,7 @@ def test_wrap_overrides_the_measurement_in_both_directions(typst: TypstRunner, w
 def test_a_wrap_function_builds_the_inner_slot_and_the_outer_one_follows_it(
     typst: TypstRunner,
 ):
-    """A wrapper that carries ink of its own moves and scales with the element.
+    """A wrapper that draws ink moves and scales with the element.
 
     The outer slot has to be a plain wrapper of the same kind, because the inner one is
     where the ink is and the outer one is the boundary slot.
@@ -182,7 +182,7 @@ def test_a_tag_whose_body_is_not_content_is_refused_whatever_its_wrap(typst: Typ
 def test_a_tag_site_is_two_nested_wrappers_with_the_label_on_the_outer_one(
     typst: TypstRunner,
 ):
-    """Continuous state and boundary state each need a slot of their own.
+    """Continuous state and boundary state each need a separate slot.
 
     CSS gives an element one `translate` and one `scale`, so without this nesting the
     crossfade and the morph would clobber `move` and `scale`.
@@ -195,7 +195,7 @@ def test_a_tag_site_is_two_nested_wrappers_with_the_label_on_the_outer_one(
         "assert.eq(moved-of(query(<t>).first()).body.func(), scale)",
         "assert.eq(moved-of(query(<t>).first()).body.reflow, false)",
         # The anchor of a `pan(relto:)`, first in the outer slot and outside the inner one,
-        # so that the tag's own display state does not move it.
+        # so that the display state of the tag does not move the anchor.
         "assert.eq(query(<t>).first().body.children.first().func(), place)",
     )
     typst.ok(source)
@@ -382,7 +382,7 @@ def test_a_continuous_primitive_on_a_wrap_none_tag_is_refused(typst: TypstRunner
     """Without a label there is no group, so the browser would silently do nothing.
 
     Failing here rather than in the browser much later is the reason a tag knows which
-    names the timeline animates anywhere in the slide, and not only in its own state.
+    names the timeline animates anywhere in the slide, and not only in the state it is in.
     """
     animation = '{ import anim: *\n  sub(move("t", dx: 1cm)) }'
     typst.fails(
@@ -440,7 +440,7 @@ def test_a_continuous_primitive_on_a_name_the_slide_does_not_tag_is_refused(
 
 
 def test_a_tag_of_that_name_on_another_slide_does_not_answer_for_it(typst: TypstRunner):
-    """A name is scoped to its own slide, and a continuous primitive is scoped with it."""
+    """A name is scoped to the slide it is on, and a continuous primitive is scoped with it."""
     animation = timeline('sub(move("nowhere", dx: 1cm))')
     source = deck(
         'slide[#tag("nowhere")[on another slide]]',
@@ -508,18 +508,18 @@ NESTED = '#place(dx: 2cm, dy: 2cm, tag("outer", wrap: box)[before #tag("inner")[
 @pytest.mark.parametrize(
     "step",
     ['move("outer", relto: "inner")', 'pan(relto: "inner")', 'move("inner", x: 1cm)'],
-    ids=["a move relative to it", "a pan relative to it", "its own absolute move"],
+    ids=["a move relative to it", "a pan relative to it", "an absolute move of the tag"],
 )
 def test_an_anchor_inside_a_transformed_tag_is_refused(typst: TypstRunner, step, target):
     """No rendering can read such an anchor as the design says an anchor is read.
 
     An anchor is the corner the body gave a tag, and a `move` or a `scale` on a tag around
     it moves that corner. The presentation and the browser still read an untransformed
-    layout, the first from its own first page and the second from the slide before anything
+    layout, the first from the first page of the slide and the second from the slide before anything
     is written on it, while a handout reads whichever page it keeps.
     The three would therefore disagree, which is what the refusal is for,
     and `move("outer", relto: "inner")` would not even converge,
-    because the anchor it reads is one its own translation moves.
+    because the anchor it reads is one its translation moves.
 
     Refused in every output type and for every way of reading the anchor, because a refusal
     that depended on the mode compiled would be worse than the disagreement it prevents.
@@ -534,7 +534,7 @@ def test_an_anchor_inside_a_transformed_tag_is_refused(typst: TypstRunner, step,
 
 
 def test_a_tag_inside_a_tag_that_is_only_revealed_keeps_its_anchor(typst: TypstRunner):
-    """`reveal` and `hide` move nothing, so an anchor below one is still the body's own."""
+    """`reveal` and `hide` move nothing, so an anchor below one is still where the body put it."""
     animation = timeline('sub(hide("outer"))', 'sub(pan(relto: "inner"))')
     typst.ok(deck(f"slide(animation: {animation})[{NESTED}]"))
 
@@ -566,8 +566,8 @@ def test_a_named_region_answers_for_a_continuous_primitive(typst: TypstRunner):
     typst.ok(source)
 
 
-def test_a_wrap_none_tag_keeps_its_own_refusal(typst: TypstRunner):
-    """Such a tag became no group, so both refusals are true and its own says what to do.
+def test_a_wrap_none_tag_keeps_its_refusal(typst: TypstRunner):
+    """Such a tag became no group, so both refusals are true.
 
     They come from different blocks, so typst reports both. The one worth reading is the
     one at the tag site, which names the wrap.

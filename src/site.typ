@@ -23,13 +23,14 @@
 // The prefix of every label animo emits for itself.
 //
 // The generated label of an unnamed region ends up in the output as a `data-typst-label`
-// beside the author's own names, and the runtime crossfades what it finds there, so the
+// beside the names that the author chose, and the runtime crossfades what it finds there, so the
 // two cannot be allowed to collide.
 // Reserving one prefix keeps them apart, and the same prefix covers the labels animo emits
-// for its own introspection.
+// for its introspection.
 #let reserved = "animo-"
 
-// Check that the name of a site is a string that stays out of animo's own label namespace.
+// Check that the name of a site is a string
+// that stays out of the label namespace that animo reserves.
 //
 // `what` names the site in the diagnosis, such as "a tag" or "a region".
 #let check-name(what, name) = {
@@ -50,7 +51,7 @@
 }
 
 // What a site shows when nothing has addressed it, which is the site where the body put it,
-// at its own size.
+// at its unscaled size.
 //
 // The view hands a tag site two lengths rather than the anchor and the offset the resolver
 // keeps, because only the rendering knows where an anchor is.
@@ -92,16 +93,16 @@
   ),
 )
 
-// What a container resolves from its own children.
+// What a container resolves from its direct children.
 //
-// A grid, a table, a list, an enum and a terms list read their own children and keep the
+// A grid, a table, a list, an enum and a terms list read their direct children and keep the
 // ones that are `cell` or `item` elements.
 // Every other child becomes the body of a cell or an item with default settings.
 // A tag site and a region are a `context` block, which is one of those other children, so
 // the element the author wrote stops being the container's child
 // (measured on typst 0.15.0; see *Findings*).
 //
-// `body` names the field that holds the child's own content, for a child whose settings are
+// `body` names the field that holds the content of the child, for a child whose settings are
 // the whole of the loss.
 // Such a child that sets nothing beside its body lays out the same either way and is left
 // alone.
@@ -165,7 +166,7 @@
 // `holding` is the site written around a block that carries the fill, which a timeline that
 // moves, scales, reveals or hides the filled box needs.
 // The second way is named only for a cell, because a grid and a table paint the fill in
-// their own frame, outside every group a site produces, so a site inside a cell never
+// a separate frame, outside every group a site produces, so a site inside a cell never
 // covers that fill (measured; see *Findings*).
 //
 // A label on the child does not stop the container from reading it, so the key a label adds
@@ -186,7 +187,7 @@
       + child.call
       + ", and "
       + child.container
-      + " reads that element from its own children; "
+      + " reads that element from its direct children; "
       + "a site is a context block between the two, so the container drops "
       + child.dropped
       + "; write the site inside the element instead, as in "
@@ -199,7 +200,7 @@
     message += (
       ". The fill is painted by "
         + child.container
-        + " in its own frame, outside every group a site produces, "
+        + " in a separate frame, outside every group a site produces, "
         + "so a site inside a cell does not cover the fill either: "
         + "a timeline that moves, scales, reveals or hides the filled box "
         + "needs the fill on a block the site holds, as in "

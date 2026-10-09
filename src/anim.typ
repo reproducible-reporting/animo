@@ -33,7 +33,7 @@
 //
 // A primitive addresses a tag and nothing else, so this is about a tag's name.
 // The name a site declares is checked by `check-name` in `site.typ`, which also keeps it
-// out of animo's own label namespace.
+// out of the label namespace that animo reserves.
 #let check-tag-name(kind, name) = {
   assert(
     type(name) == str,
@@ -71,7 +71,7 @@
 
 // Check a number of seconds, which is the unit of every time an author writes.
 //
-// Typst has no time literal of its own, so `2s` does not parse, and one unit across the
+// Typst has no time literal, so `2s` does not parse, and one unit across the
 // whole package keeps two numbers on one call comparable.
 // A negative number is refused, because an operation cannot start before the step it is
 // written in, and a step cannot be entered before the one it follows.
@@ -95,13 +95,13 @@
   float(value)
 }
 
-// Check how long an operation takes, which is a number of seconds or the deck's own.
+// Check how long an operation takes, which is a number of seconds or `auto`.
 //
 // `auto` is the deck's `primitive-duration:`, which is `--animo-primitive-duration` on
 // `:root`, and it stays `auto` rather than becoming the number that property holds.
 // That number lives in a stylesheet the resolver cannot read.
 // Carrying `auto` through to the browser keeps a duration that is unset apart from one that
-// is as long as the deck's own primitive, so a change of the deck's tempo reaches the
+// is as long as the `primitive-duration:` of the deck, so a change of the deck's tempo reaches the
 // operations that stated no duration and leaves the ones that did alone.
 #let check-duration(what, value) = {
   if value == auto { auto } else { check-seconds(what, "duration", value) }
@@ -207,14 +207,14 @@
 
 // Move an element, saying where it goes in the two ways `pan` says it, one per axis.
 //
-// `x` and `y` put the element's own anchor at a distance from another anchor,
+// `x` and `y` put the anchor of the moved tag at a distance from another anchor,
 // which is the canvas origin or, with `relto`, the named tag.
 // `dx` and `dy` shift the element from wherever it already is.
 // An axis the call says nothing about stays where it is, unless `relto` asks for the tag,
 // in which case that axis goes to the anchor as well.
 //
 // The anchor of a tag is the corner of its wrapper as the body laid it out,
-// so the anchor excludes the tag's own display state.
+// so the anchor excludes the display state of that tag.
 // An absolute `move` is therefore idempotent,
 // and a `move(relto: ..)` is unaffected by whatever moved the tag it is relative to.
 /// Move a tag, per axis to a position with `x` and `y` or by an offset with `dx` and `dy`.
@@ -254,7 +254,7 @@
   )
 }
 
-// Scale an element about its own centre, isotropically with `f` or per axis with `fx`/`fy`.
+// Scale an element about its centre, isotropically with `f` or per axis with `fx`/`fy`.
 //
 // The factor is *set* rather than multiplied into what is already there,
 // so a factor can be read on its own.
@@ -264,7 +264,7 @@
 //
 // `f` together with either of the others is refused rather than resolved by a precedence
 // rule, because a call that gives both says two different things.
-/// Set the scale factor of a tag about its own centre. The factor is set, not multiplied.
+/// Set the scale factor of a tag about its centre. The factor is set, not multiplied.
 ///
 /// - name (str): The name of the tag.
 /// - f (none, int, float, ratio): The factor of both axes.
@@ -484,7 +484,7 @@
 //
 // The message has to name the star import, because the failure it produces is a value that
 // looks like nothing in particular, several lines away from the call that made it.
-// A transition and an `init` are values of animo's own that belong elsewhere, so each gets
+// A transition and an `init` are values of animo that belong elsewhere, so each gets
 // a message that says where.
 #let check-op(value, position) = {
   let where = "argument " + str(position) + " of sub"
@@ -522,7 +522,7 @@
 //
 // The flag belongs to a state, and two of animo's calls carry one:
 // `sub` for the state its step brings about, and `init` for the initial state,
-// which has no `sub` of its own.
+// which has no `sub`.
 // `which` names the call, because the two are written in different places and a reader
 // of the message is looking at one of them.
 #let check-handout(which, value) = {
@@ -601,7 +601,7 @@
   handout: auto,
 )
 
-// `init(..)` is about the initial state, state 0, which has no `sub` of its own.
+// `init(..)` is about the initial state, state 0, which has no `sub`.
 //
 // It adds no state, so the subslides after it keep their numbers, and it returns a
 // one-element array for the reason `sub` does.
@@ -660,7 +660,7 @@
 //
 // The `animation` argument is a code block of an optional `init(..)` call followed by
 // `sub(..)` calls, which joins into an array.
-// Everything else is a mistake with a recognisable shape, so each gets its own message.
+// Everything else is a mistake with a recognisable shape, so each gets a separate message.
 // `init` is refused anywhere but first, so that what it says never depends on where it was
 // written.
 #let check-timeline(animation) = {

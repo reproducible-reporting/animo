@@ -20,11 +20,11 @@ PAGE = "#set page(width: 200pt, height: 60pt, margin: 10pt)\n"
 def test_a_nested_box_gives_a_second_untransformed_slot(typst: TypstRunner):
     """`#box(box[..])#label(..)` emits a labelled outer group and a bare inner one.
 
-    The inner group carries no transform of its own,
+    The inner group carries no transform,
     which is what makes `[data-typst-label="x"] > g` a slot animo may write to.
     """
     element = group(parse(typst.svg(PAGE + '#box(box[Hello world])#label("outer")\n')), "outer")
-    assert "transform" in element.attrib, "typst's own placement transform is gone"
+    assert "transform" in element.attrib, "the placement transform that typst writes is gone"
     children = list(element)
     assert len(children) == 1
     assert children[0].tag == f"{SVG}g"

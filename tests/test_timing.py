@@ -8,8 +8,8 @@ All of them are numbers of seconds, and they decide *when* and *how long* rather
 the first naming the gap before it and the second the gap after it,
 `delay:` times one operation inside a step,
 and `duration:` says how long that operation then takes.
-`duration:` also takes `auto`, which is the deck's own step duration and its default:
-that number lives in a stylesheet the resolver cannot read,
+`duration:` defaults to `auto`, which stands for the `primitive-duration:` of the deck.
+That number lives in a stylesheet the resolver cannot read,
 so `auto` travels to the browser as itself rather than as a number.
 None of the three changes a layout, so the assertions are of two kinds:
 the resolved structure, which holds the numbers,
@@ -160,7 +160,7 @@ def test_a_negative_duration_is_refused(typst: TypstRunner):
 
 
 def test_a_duration_of_auto_is_accepted_on_every_kind(typst: TypstRunner):
-    """Stating the default explicitly is how a deck says "the deck's own step"."""
+    """Stating the default explicitly asks for the `primitive-duration:` of the deck."""
     typst.ok(
         resolved(
             'sub(reveal("a", duration: auto), replace("b", duration: auto)[x])',
@@ -186,7 +186,7 @@ sub(hide("a"))
 
 
 def test_init_writes_the_wait_of_the_initial_state(typst: TypstRunner):
-    """State 0 has no `sub` of its own, so `init(wait: ..)` is where its wait is written."""
+    """State 0 has no `sub`, so `init(wait: ..)` is where its wait is written."""
     typst.ok(
         resolved(
             'sub(wait: 1, reveal("a"))',
@@ -258,7 +258,7 @@ def test_the_slide_writes_the_hold_of_its_initial_state(typst: TypstRunner):
 
     This is the gap the author thinks of as "how long the slide stands there before it
     starts moving", and it is one keyword rather than two, because every later state is a
-    `sub` and carries its own, the last one included.
+    `sub` and carries its `hold:`, the last one included.
     """
     typst.ok(
         resolved(
@@ -433,8 +433,9 @@ def test_an_unstated_duration_stays_auto_in_the_plan(typst: TypstRunner):
     """The default is `auto` and not the number `--animo-primitive-duration` happens to hold.
 
     The resolver cannot read a stylesheet, and carrying `auto` through is what keeps
-    "unset" and "as long as the deck's own step" apart, so that a deck-wide restyle
-    reaches the operations that said nothing and leaves the ones that did alone.
+    "unset" and "as long as the `primitive-duration:` of the deck" apart,
+    so that a deck-wide restyle reaches the operations that said nothing
+    and leaves the ones that did alone.
     """
     typst.ok(
         resolved(
@@ -457,7 +458,7 @@ def test_a_pan_keeps_its_delay_beside_the_tags(typst: TypstRunner):
 
 
 def test_state_zero_is_untimed(typst: TypstRunner):
-    """No step enters it, so there is nothing for an operation of its own to be late for."""
+    """No step enters it, so there is nothing for an operation of state 0 to be late for."""
     typst.ok(
         resolved(
             'sub(reveal("a", delay: 0.2))',
@@ -494,7 +495,7 @@ def test_a_timeline_that_times_nothing_carries_no_timing(typst: TypstRunner):
 
 
 def test_a_timed_timeline_carries_both_numbers_in_seconds(typst: TypstRunner):
-    """`wait` on the state it brings up, and `timing` on what its own step performed."""
+    """`wait` on the state it brings up, and `timing` on what its step performed."""
     typst.ok(
         resolved(
             'sub(wait: 2, reveal("a", delay: 0.2))',
@@ -524,7 +525,8 @@ def test_a_stated_duration_travels_as_a_number_of_seconds(typst: TypstRunner):
 def test_an_auto_duration_reaches_the_browser_as_nothing_at_all(typst: TypstRunner):
     """`auto` is the duration that lives in the stylesheet, so it has no number to carry.
 
-    The runtime reads a missing duration as the deck's own, which is what `auto` means,
+    The runtime reads a missing duration as the `primitive-duration:` of the deck,
+    which is what `auto` means,
     so a deck that states none carries none.
     """
     typst.ok(
@@ -566,14 +568,14 @@ def test_two_operations_in_one_region_may_not_disagree_about_a_duration_either(
 
 
 def test_the_same_two_durations_in_two_regions_are_not_refused(typst: TypstRunner):
-    """Two bare tags are two regions, so each crossfade has a length of its own."""
+    """Two bare tags are two regions, so each crossfade has a separate length."""
     body = '#tag("a")[A]\n#tag("b")[B]'
     source = deck(f"slide(animation: {timeline(DISAGREE_DURATION)})[{body}]")
     typst.ok(source)
 
 
 def test_the_same_two_operations_in_two_regions_are_not_refused(typst: TypstRunner):
-    """Two bare tags are always two regions, so each crossfade has one timing of its own."""
+    """Two bare tags are always two regions, so each crossfade has one separate timing."""
     body = '#tag("a")[A]\n#tag("b")[B]'
     source = deck(f"slide(animation: {timeline(DISAGREE)})[{body}]")
     typst.ok(source)

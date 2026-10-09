@@ -40,7 +40,7 @@ function intentOf(table, input) {
 /**
  * Whether an event happened inside a control.
  *
- * A control handles its own input, so a key pressed on one and a click on one are not
+ * A control handles the input it receives, so a key pressed on one and a click on one are not
  * the deck's. The attribute is what marks an element as a control.
  */
 function inControl(event) {

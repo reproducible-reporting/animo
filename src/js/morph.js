@@ -5,11 +5,11 @@
 // the outgoing and the incoming region share from its old place to its new one.
 //
 // A match is a pair of elements, one in each region, that show the same ink.
-// The outgoing element is translated from its own place to the place of the incoming one, and
-// the incoming element from the place of the outgoing one to its own, so the two are at one
+// The outgoing element is translated from its place to the place of the incoming one, and
+// the incoming element from the place of the outgoing one to its place, so the two are at one
 // position at every moment. The crossfade puts them at `1 - t` and `t`, and the
 // `plus-lighter` on the renderings adds the two to one opaque element on the path, so the
-// morph needs no opacity of its own and clones nothing. See *Findings*.
+// morph needs no additional opacity and clones nothing. See *Findings*.
 // A resize is a match of two paths of one structure whose geometry differs, and both paths
 // also animate their `d` and stroke width from the outgoing geometry to the incoming one, so
 // the two have one geometry at every moment as well. A shape morph is a match of two paths of
@@ -18,7 +18,8 @@
 //
 // The translations and resizes are routes and never states. They are animations over a
 // `translate`, a `d` and a `stroke-width` whose inline style stays unset, so a slide at rest
-// carries none, and the geometry a later step reads is the layout's own once they are over.
+// carries none,
+// and the geometry a later step reads is the geometry of the layout once they are over.
 // Until then, `slide.morphed` holds every element a morph is still moving, which is what a
 // later step needs to know to read the layout under them and to settle them.
 
@@ -38,7 +39,7 @@ const MORPH_STILL = 0.01;
 /** No `translate`, as a keyframe states it. */
 const AT_REST = "0px 0px";
 
-/** The elements that draw ink of their own, which are the candidates of a match below tags. */
+/** The elements that draw ink themselves, which are the candidates of a match below tags. */
 const INK = new Set(["use", "path", "image"]);
 
 /**
@@ -124,7 +125,7 @@ function morphStack(effects, slide, { stack, from, to, record, options, mirror }
  *
  * A tag and a named region do, and so does the rendering of one state of a `per-subslide`,
  * which is the same in both regions. An unnamed region is a box around content and not a
- * thing of its own, so what it holds is matched in its place.
+ * separate thing, so what it holds is matched in its place.
  */
 function movesAsOne(label) {
   return !label.startsWith("animo-") || stackLabel(label)?.kind === "subslide";
@@ -285,8 +286,8 @@ function shapeMorphs(before, after, changed, outgoing, incoming) {
 }
 
 /**
- * The tag an element belongs to: the nearest labelled group above it that is no part of
- * Animo's own, inside its region or, failing that, the nearest labelled group above the
+ * The tag an element belongs to: the nearest labelled group above it that Animo did not
+ * create, inside its region or, failing that, the nearest labelled group above the
  * region when that is a tag, or `null`.
  */
 function holder(element, region) {
@@ -433,8 +434,8 @@ function ink(region, claimed) {
  * What an element draws, as a string that two elements share when they show the same ink.
  *
  * Typst writes a glyph as a `<use>` of a definition named by a hash of its outline, a shape as
- * a `<path>` whose `d` starts at its own origin, and an image as an `<image>` without a
- * position of its own, so in each case the place is in a transform and the key leaves it out.
+ * a `<path>` whose `d` starts at a local origin, and an image as an `<image>` without a
+ * position, so in each case the place is in a transform and the key leaves it out.
  * The colours are left out of every key. See *Findings*.
  */
 function inkKey(element) {
@@ -607,7 +608,7 @@ function measured(slide, [outgoing, incoming, resize], screen) {
  * resize animates, or `null` for a match that keeps its geometry.
  *
  * Both paths start at what the outgoing one shows and end at the `d` of the incoming one.
- * Each path states its `d` in its own user space from its own origin, and `sameFrame` holds,
+ * Each path states its `d` in its user space from a local origin, and `sameFrame` holds,
  * so the two have one geometry at every moment, and the route's `translate` puts them at one
  * place. An exact match whose outgoing path an earlier resize is still changing goes on from
  * what that path shows as well.
@@ -665,10 +666,10 @@ function running(slide, element, screen) {
 /**
  * Where an element puts its origin on the screen, in CSS pixels.
  *
- * `getScreenCTM()` includes the element's own `translate` in all three engines, and the `x`
+ * `getScreenCTM()` includes the `translate` of the element itself in all three engines, and the `x`
  * and `y` of a `<use>` are an offset inside it. See *Findings*.
  * A glyph, a path or an image that no morph is moving has no `translate`, so its matrix is its
- * parent's followed by its own `transform` attribute, and the glyphs of a run share the
+ * parent's followed by its `transform` attribute, and the glyphs of a run share the
  * parent's.
  */
 function origin(slide, element, screen) {
@@ -724,8 +725,8 @@ function translation(element) {
  * A `translate` of an element as a distance on the screen.
  *
  * A `translate` acts in the user space of the element's parent, which for a glyph is a run
- * that typst has flipped upside down, so the distance goes through the parent's matrix and
- * not through the element's own.
+ * that typst has flipped upside down, so the distance goes through the matrix of the parent
+ * and not through the matrix of the element.
  */
 function onScreen(element, { x, y }, screen) {
   const point = new DOMPoint(x, y, 0, 0).matrixTransform(matrixOf(element.parentNode, screen));
@@ -752,7 +753,7 @@ function px({ x, y }) {
  * Typst draws a run of text as a group of `<use>` elements, so a run whose every glyph is
  * matched to every glyph of one other run, at one distance, can be carried with one
  * animation instead of one per glyph. A run with a glyph a morph is still moving keeps its
- * matches, because the glyph's own translation would be added to the run's.
+ * matches, because the translation of the glyph would be added to the translation of the run.
  */
 function rigid(measuredPairs, morphed) {
   const result = [];
@@ -845,8 +846,8 @@ function carry(effects, slide, { outgoing, incoming, delta, shape = null }, timi
     start: { translate: px(back), ...shape?.start },
     end: { translate: AT_REST, ...shape?.end },
   });
-  // Both paths end at the incoming geometry, which is the incoming path's own at rest, in the
-  // commands the two share while they move.
+  // Both paths end at the incoming geometry, which is the geometry of the incoming path at rest,
+  // in the commands the two share while they move.
   morphed.set(outgoing, { epoch: from, stack, end, heading: end, shape: shape?.end });
   morphed.set(incoming, { epoch: to, stack, end: null, heading: null, shape: shape?.end });
 }
@@ -865,7 +866,7 @@ function parsed(value) {
  * middle of it. The exception is an element of the rendering being entered, which this step
  * shows as it is laid out.
  * The translation of such an element snaps to rest, and a morph of this step that matches
- * it again gives it a route of its own. Every other translation snaps to rest, as the
+ * it again gives it a separate route. Every other translation snaps to rest, as the
  * crossfade of a stack the step does not carry does. The `d` and the stroke width of a resize
  * run on or snap with the translation of their path.
  *

@@ -21,7 +21,7 @@
 #import "transition.typ": check-slide-transition, crossfade
 
 // The shape a deck has when its show rule is not told otherwise.
-// The shape is stated once, because the show rule's own arguments default to it as well.
+// The shape is stated once, because the arguments of the show rule default to it as well.
 #let deck-defaults = (width: 16cm, height: 9cm, margin: 1cm)
 
 // The shape of the deck, as a dictionary with `width`, `height` and `margin`.
@@ -64,7 +64,7 @@
 
 // What the handout holds, as `slides` and the `pages` they asked for.
 //
-// A slide knows its own states, so it knows what it contributes, but a handout with no
+// A slide knows its states, so it knows what it contributes, but a handout with no
 // pages at all is a property of the whole deck and only the deck can see it.
 // The two numbers are kept apart because a document with no slides is an empty document
 // rather than a handout whose every page was turned down.
@@ -74,11 +74,11 @@
 //
 // `handout:` is the only thing that says what a handout holds, so a deck whose every state
 // turned its page down would produce a handout with no content.
-// Typst does not refuse such a document and emits one blank page of its own default size,
+// Typst does not refuse such a document and emits one blank page at its default page size,
 // which looks like a rendering failure rather than like the flag doing what it was told
 // (measured on typst 0.15.0; see *Findings*).
 //
-// This runs in a context block of its own that emits nothing, so a panic here empties no
+// This runs in a separate context block that emits nothing, so a panic here empties no
 // slide and leaves nothing for the next introspection pass to disagree about.
 //
 // Must be called in a context.
@@ -172,7 +172,8 @@
   )
 }
 
-// The stylesheet of one deck: the static rules, followed by the deck's own answers.
+// The stylesheet of one deck: the static rules, followed by a `:root` block with
+// the settings of this deck.
 //
 // The reduced-motion query wins by the `!important` it carries rather than by source order,
 // because this block comes after it. See `animo.css`.
@@ -212,7 +213,7 @@
 
 // Content as the plain text it reads as, for an element of the head that takes text only.
 //
-// Typst writes its own `<title>` from the plain text of `document(title:)`, and a deck builds
+// Typst writes a `<title>` from the plain text of `document(title:)`, and a deck builds
 // its head itself, so this function does what typst does there.
 // It keeps the text and drops the markup around it,
 // and an element that holds no text, such as an image, contributes nothing.
@@ -238,7 +239,7 @@
   }
 }
 
-// The elements of the head that say what the page is, from typst's own settings.
+// The elements of the head that say what the page is, from the document settings of typst.
 //
 // These are the ones typst writes into a head it builds itself: a title, a description, the
 // authors and the keywords, each from `document`.

@@ -144,7 +144,7 @@ NESTING_DEPTH = """\
 #let depth = state("depth", 0)
 #let step(it) = { depth.update(d => d + 1); it; depth.update(d => d - 1) }
 
-// Each placement is identified by its own offset, so that what the rule reports can be
+// Each placement is identified by a distinct offset, so that what the rule reports can be
 // matched to where the placement was written without depending on document order.
 #let watch(body) = {
   show box: step

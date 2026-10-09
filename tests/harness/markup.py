@@ -48,7 +48,7 @@ def drop_repeated_defs(markup: str) -> tuple[str, dict]:
         pieces.append(markup[end : block.start(1)])
         kept = []
         # The children of `<defs>` are a flat sequence of elements that each open with
-        # their own id, so splitting before every such opening tag cuts the block into
+        # an id, so splitting before every such opening tag cuts the block into
         # exactly one chunk per definition, whatever the element kinds turn out to be.
         for chunk in re.split(r'(?=<\w+ id=")', block.group(1)):
             found = DEFINITION.match(chunk)

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Typst writes a shape from its own origin*.
+"""Probes for *Typst writes a shape from a local origin*.
 
 A morph pairs a shape or an image in one rendering with one in the other by what it draws,
 and leaves out where it is drawn. That rests on how typst writes the SVG of a frame:

@@ -3,7 +3,7 @@
 """Probes for *The frame is the smallest unit of DOM addressability*.
 
 This is the finding that forces the whole epoch model.
-If a sub-area of a frame could be given its own DOM node, animo would swap regions as DOM
+If a sub-area of a frame could be given a separate DOM node, animo would swap regions as DOM
 nodes, and would not have to lay out every epoch of a region inside the slide's frame.
 Every probe here is a way in which that is not possible.
 """
@@ -12,7 +12,7 @@ from harness import TypstRunner, compile_typst
 
 
 def test_html_elem_inside_a_frame_is_dropped(typst: TypstRunner):
-    """A region cannot be its own HTML element inside a slide frame.
+    """A region cannot be a separate HTML element inside a slide frame.
 
     The compiler warns and carries on, and the element is simply not there,
     with no error to say so.

@@ -86,7 +86,7 @@ def test_the_same_holds_for_the_filling_wrapper(typst: TypstRunner):
 def test_the_slots_are_what_contain_the_block_level_transforms(typst: TypstRunner):
     """`move` and `scale` are block-level, so without a slot they would break the line.
 
-    This is the reason the transforms sit inside the tag's own slots
+    This is the reason the transforms sit inside the slots of the tag
     rather than around them.
     """
     typst.ok(
@@ -111,7 +111,7 @@ def test_a_rendering_reports_its_baseline_only_inside_a_slot(typst: TypstRunner)
     `measure` reports a height and no baseline,
     so the descent is read off a line that holds the content beside a zero-width pole
     taller than it.
-    A `move` is block-level and pushes that pole onto a line of its own,
+    A `move` is block-level and pushes that pole onto a separate line,
     so a rendering measured with no slot around it reports a descent of a whole line
     and an ascent below zero.
     The height is the same either way, which is what keeps this out of sight

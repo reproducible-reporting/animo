@@ -242,7 +242,7 @@ def test_a_shape_removed_in_one_place_is_not_resized_into_one_added_in_another(
     assert any(moving(presentation, "q", "use")[0])
 
 
-# A rectangle that is replaced by a larger one in a tag of its own.
+# A rectangle that is replaced by a larger one in a separate tag.
 FENCED = """
   #region(name: "k")[
     #tag("t")[#box(rect(width: 0.5cm, height: 0.3cm, fill: blue))]

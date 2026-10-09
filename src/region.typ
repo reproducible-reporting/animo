@@ -17,13 +17,13 @@
 // Only a region that sits in no other region places a stack,
 // because the renderings of a stack are laid out once per epoch already,
 // and a region inside one lays out the epoch of its rendering.
-// A page lays out the epoch of its own state, so a region on paper lays out that epoch alone.
+// A page lays out the epoch of the state it shows, so a region on paper lays out that epoch alone.
 //
 // A region between paragraphs is shaped by `block-region` below, which receives one
 // rendering per epoch, `none` for an epoch with nothing to lay out, and a function that
 // builds the container, and which knows nothing about tags.
-// An explicit region and a tag that is its own region therefore share one measurement.
-// A tag is its own region when its content changes and no explicit region holds it.
+// An explicit region and a tag that forms an implicit region therefore share one measurement.
+// A tag forms an implicit region when its content changes and no explicit region holds it.
 // Such a tag on a line is an `inline-stack` of `stack.typ`, and `stack.typ` also measures the
 // box a region reserves.
 //
@@ -147,7 +147,7 @@
 //
 // A region the timeline never addresses still has to be addressable by the runtime, because
 // it holds the epoch stack that a boundary crossfades, and only a labelled box or block becomes
-// a group at all. The number is the region's own, so the label is the same in every output
+// a group at all. The number belongs to the region, so the label is the same in every output
 // type, and the reserved prefix keeps it out of the author's namespace.
 #let region-group(id) = reserved + "region-" + str(id)
 
@@ -177,10 +177,10 @@
     } else {
       (kind: "region", id: numbering.base + stacked-counter.get().first())
     }
-    // Every epoch is laid out with a view of its own, so that the tags in the body resolve
+    // Every epoch is laid out with a separate view, so that the tags in the body resolve
     // their content for that epoch, and learn that a region bounds them.
     //
-    // A region with a name carries a display state of its own, so it is one of the tags
+    // A region with a name carries a display state, so it is one of the tags
     // enclosing what it holds, exactly as a tag site is, and for the same reason.
     // A `move` on the region moves the corner every anchor below it is read from.
     let inside = (key: key, explicit: true, stable: stable)

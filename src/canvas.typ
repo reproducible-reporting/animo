@@ -28,7 +28,7 @@
 
 // The label every recorded placement carries.
 // One label serves the whole document and the slide index in the value does the scoping,
-// because a tag name means nothing outside its own slide.
+// because a tag name means nothing outside the slide it is on.
 #let place-label = label("animo-place")
 
 // The label a slide's computed canvas carries.
@@ -44,7 +44,7 @@
 // and a paged rendering reads the corner of the site out of the same marker.
 //
 // On paper the marker is placed,
-// and a `relto` reads the corner of the marker rather than the wrapper's own position.
+// and a `relto` reads the corner of the marker rather than the position of the wrapper.
 // Typst records an element in the middle of a line at the line's baseline, not at its
 // top-left corner, while a placement records the corner of the container it is placed in,
 // whatever that container is.
@@ -75,11 +75,11 @@
 
 // Record every placement of a slide body, so that the canvas can be sized from it.
 //
-// The recording has to be invisible to typst's own layout, which rules out `layout(size => ..)`
+// The recording has to be invisible to the layout of typst, which rules out `layout(size => ..)`
 // inside the rule, because `layout` is block-level and breaks the paragraph the placement
 // sits in.
 // A `context` block holding nothing but `metadata` is inline and changes no measurement.
-// The marker a tag site places for its anchor is animo's own and has no extent to record.
+// The marker a tag site places for its anchor comes from animo and has no extent to record.
 #let record-placements(index, body) = {
   show place: it => {
     if it.body.at("label", default: none) == site-label { return it }
@@ -136,7 +136,7 @@
 // The box a slide body is laid out in, as a dictionary with `width` and `height`.
 //
 // The width is the viewport's inner width, and the height is that of the viewport unless the
-// body's own flow is taller, because a taller body needs a taller box.
+// flow of the body is taller, because a taller body needs a taller box.
 // Measured on typst 0.15.0, every block-level element that does not fit a fixed-height
 // container is stacked at the container's bottom edge rather than overflowing past it, so a
 // derivation that runs off the viewport comes out as a pile of overlapping blocks.
@@ -271,8 +271,9 @@
 // order, and the browser takes the first site in the earliest epoch that holds one.
 // A name with no site on any page of the slide is absent from the answer.
 //
-// The marker sits inside the outer wrapper and outside the tag's own display state, so a
-// tag's own `move` does not enter its anchor, while the display state of a tag around it does.
+// The marker sits inside the outer wrapper and outside the display state of its tag,
+// so a `move` of that tag does not enter its anchor,
+// while the display state of a tag around it does.
 //
 // The query covers the whole slide rather than one name, because every state of a plan
 // holds every addressed tag, so a per-name query would be a pass over the document per tag
@@ -335,10 +336,10 @@
 
 // The display state of one state with every tag's position resolved to two lengths.
 //
-// The translation a tag is given is what its own anchor has to travel to reach the position
+// The translation a tag is given is what its anchor has to travel to reach the position
 // the timeline states, so a tag the timeline never moved is left exactly where the body put
 // it.
-// The position of such a tag is its own anchor at offset zero, and the two terms cancel.
+// The position of such a tag is its anchor at offset zero, and the two terms cancel.
 #let paged-display(display, anchors) = {
   let resolved = (:)
   for (name, current) in display {
