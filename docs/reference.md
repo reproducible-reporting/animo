@@ -183,10 +183,11 @@ so a structural primitive reaches it only inside a region.
 A `grid.cell`, a `table.cell` and an item of a list, an enum or a terms list
 are read by the container they sit in, which never sees them behind a tag site.
 Write the tag inside the element instead (see [Tags](tags.md#where-a-tag-may-sit)).
-A cell that sets nothing beside its body lays out the same either way and is left alone.
-An item is refused whatever it carries,
-because what the container drops there is the item's place in the container
-rather than a setting on it.
+A cell that sets nothing beside its body lays out the same either way, so a tag around it is
+accepted.
+A tag around an item is refused whatever the item carries,
+because the list then takes the whole tag site as the body of a new item,
+so the tagged item turns into a nested list.
 
 Taught in [Tags](tags.md).
 
@@ -242,10 +243,9 @@ The **subslide info** the callback receives:
 The `handout` key is the same in every output type,
 so the HTML presentation and the static presentation can mark the subslides the handout keeps.
 
-`step` and `steps` are named for the presenter's steps, which is how a progress indicator reads
-them.
-A step is the transition from one subslide to the next, so `steps` counts subslides rather than
-transitions.
+Despite their names, `step` and `steps` count subslides.
+The presenter takes `steps - 1` steps to get from the first subslide of the deck to the last,
+which is what a progress indicator measures against.
 
 ```typst
 #per-subslide(it => if it.count > 1 [(#it.number/#it.count)])
@@ -291,7 +291,7 @@ init(..transition, duration: auto, wait: none, hold: none, handout: auto)
 ```
 
 The initial state of the slide, which is the slide as its body declares it before the first
-`sub`. It adds no subslide.
+`sub`. The `init` call adds no subslide.
 A timeline holds at most one `init`, before its first `sub`.
 
 | Argument       | Type                      | Default | Meaning                                                           |
@@ -339,8 +339,8 @@ Taught in [Continuous Animations](continuous.md).
 
 ## Continuous Primitives
 
-They change how already-rendered content is displayed, so they are smooth in the browser
-and add no renderings in the paged outputs.
+The continuous primitives change how already-rendered content is displayed,
+so they are smooth in the browser and add no renderings in the paged outputs.
 Every one of them takes `delay:` and `duration:`.
 
 | Argument   | Type             | Default | Meaning                                                   |
@@ -354,7 +354,7 @@ Every one of them takes `delay:` and `duration:`.
 reveal(name, delay: 0, duration: auto)
 ```
 
-Make the tag visible. It keeps the space it had either way.
+Make the tag visible. The tag takes the same space whether it is visible or not.
 
 ```typst
 sub(reveal("claim"))
@@ -437,7 +437,7 @@ Taught in [The Viewport](viewport.md#panning).
 
 ## Structural Primitives
 
-They change what typst lays out, so each of them starts a new
+The structural primitives change what typst lays out, so each of them starts a new
 [epoch](structural.md#epochs). All four take the same `delay:` and `duration:` as the
 continuous primitives, where they time the crossfade of the region that changed.
 
@@ -448,8 +448,8 @@ The other transitions move a whole slide and are refused here.
 A `duration` of zero is a hard cut of the region.
 Two operations that change one region at one boundary have to name the same transition,
 as they have to agree about their timing.
-A region inside another region crosses with it, so two operations that change two regions
-inside one region count as changing one region here.
+A region inside another region crosses the boundary together with the outer region,
+so two operations that change two regions inside one region count as changing one region here.
 The `transition` argument is HTML only, because two pages have nothing between them.
 
 ### `anim.replace`
@@ -522,7 +522,7 @@ A transition is written in three places:
 - as `transition:` of [`animo`](#animo), for every slide whose `init` names none.
 
 The `direction` parameter is `ltr`, `rtl`, `ttb` or `btt`,
-the direction of travel on a forward step.
+and gives the direction of travel on a forward step.
 A backward step travels the other way.
 
 | Transition       | Slide | Region |
@@ -547,11 +547,12 @@ The outgoing content fades out while the incoming content fades in.
 morph()
 ```
 
-The content that the outgoing and the incoming region share moves from its old place to its
-new one, and the rest fades out and in where it is.
-A tag moves as one, unless the primitive changes it, and the letters, shapes and images
-outside a tag are matched one by one by their shape.
-`init` and the deck refuse it, because a morph carries a region.
+Content that both versions of a region share moves from its old place to its new place,
+and the rest fades out and in where it is.
+A tag moves as one, unless the primitive changes that tag.
+The letters, shapes and images outside a tag are matched one by one by their shape.
+The `init` call and the deck's `transition:` refuse `morph()`, because a morph carries a region
+across a boundary inside a slide.
 
 ```typst
 sub(replace("eq", transition: morph())[$ (a + b)^2 = a^2 + 2 a b + b^2 $])

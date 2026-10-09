@@ -18,9 +18,9 @@
 //
 // The recording costs a `context`, a `measure` and a queried element per placement, so a
 // slide records only where the canvas can be observed.
-// `pan` is the only thing that reads it: the viewport clips in both targets, so a slide
-// whose timeline never pans is drawn the same whatever canvas it gets, and takes the
-// viewport clamped to its body box.
+// `pan` is the only thing that reads the canvas.
+// The viewport clips in both targets, so a slide whose timeline never pans is drawn the same
+// whatever canvas it gets, and takes the viewport clamped to its body box.
 // A rendering that is measured rather than laid out records nothing either, since a
 // `metadata` element inside a `measure` never reaches `query`.
 
@@ -38,14 +38,16 @@
 
 // The label of the marker every tag site emits to report itself.
 //
-// One report serves both targets and both readers: a slide checks what its timeline asks
-// against the sites its rendering produced, in the HTML target as on paper, and a paged
-// rendering reads the corner of the site out of the same marker.
+// One report serves both targets and both readers.
+// A slide checks what its timeline asks against the sites its rendering produced,
+// in the HTML target as on paper,
+// and a paged rendering reads the corner of the site out of the same marker.
 //
-// On paper the marker is placed, and that corner is what a `relto` reads, rather than the
-// wrapper's own position, because typst records an element in the middle of a line at the
-// line's baseline, not at its top-left corner, while a placement records the corner of the
-// container it is placed in, whatever that container is.
+// On paper the marker is placed,
+// and a `relto` reads the corner of the marker rather than the wrapper's own position.
+// Typst records an element in the middle of a line at the line's baseline, not at its
+// top-left corner, while a placement records the corner of the container it is placed in,
+// whatever that container is.
 // Measured on typst 0.15.0; see *Findings*.
 #let site-label = label("animo-site")
 
@@ -138,7 +140,7 @@
 // Measured on typst 0.15.0, every block-level element that does not fit a fixed-height
 // container is stacked at the container's bottom edge rather than overflowing past it, so a
 // derivation that runs off the viewport comes out as a pile of overlapping blocks.
-// See *Findings* in the design document.
+// See *Findings*.
 //
 // The height comes from an unbounded measurement of the body alone, which `#place` contributes
 // nothing to, so the box does not depend on the canvas it ends up on and the introspection that
@@ -242,8 +244,8 @@
 
 // The same report, placed at the corner of a tag site's outer wrapper, for the paged outputs.
 //
-// Placed, so that it takes no room, and a page with the marker rasterises identically to the
-// same page without it.
+// The report is placed, so that it takes no room,
+// and a page with the marker rasterises identically to the same page without it.
 // The HTML target, which cannot read positions, emits the unplaced form instead, so the
 // groups the browser addresses are untouched.
 #let anchor-marker(view, name) = place(top + left, site-marker(
@@ -264,15 +266,15 @@
 
 // Where the first site of each of these tags sits on the canvas of one slide.
 //
-// The first site in document order, on the first page of the slide that lays it out, which
-// is the site the browser finds first as well: a page is a state, states run in epoch order,
-// and the browser takes the first occurrence in the first epoch frame that holds one.
+// This is the first site in document order, on the first page of the slide that lays it out.
+// The browser finds the same site first, because a page is a state, states run in epoch
+// order, and the browser takes the first site in the earliest epoch that holds one.
 // A name with no site on any page of the slide is absent from the answer.
 //
 // The marker sits inside the outer wrapper and outside the tag's own display state, so a
 // tag's own `move` does not enter its anchor, while the display state of a tag around it does.
 //
-// One query for the whole slide rather than one per name, because every state of a plan
+// The query covers the whole slide rather than one name, because every state of a plan
 // holds every addressed tag, so a per-name query would be a pass over the document per tag
 // per state.
 //
@@ -335,7 +337,8 @@
 //
 // The translation a tag is given is what its own anchor has to travel to reach the position
 // the timeline states, so a tag the timeline never moved is left exactly where the body put
-// it: its position is its own anchor at offset zero, and the two terms cancel.
+// it.
+// The position of such a tag is its own anchor at offset zero, and the two terms cancel.
 #let paged-display(display, anchors) = {
   let resolved = (:)
   for (name, current) in display {

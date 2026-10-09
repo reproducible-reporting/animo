@@ -6,7 +6,8 @@ A tag inside math and a tag on a cetz `content()` element have to reach the brow
 `<g data-typst-label>` groups and animate like any other, because that is the whole of the
 promise that anything laid out as content can be tagged.
 
-The negative half is asserted just as directly: a `wrap: none` tag emits no group at all.
+The negative half is asserted just as directly, which is that a `wrap: none` tag emits no
+group at all.
 That is the reason the continuous primitives are refused on such a tag at compile time, so
 a typst release that started emitting one should be noticed here rather than quietly make
 a refusal pointless.
@@ -67,7 +68,7 @@ def test_a_tag_on_a_cetz_content_element_is_a_group_the_runtime_moves(deck_at, s
 def test_a_wrap_none_tag_emits_no_group_at_all(deck_at, sites):
     """Which is why a continuous primitive on such a tag is refused when the deck compiles.
 
-    Asserted directly rather than inferred from the refusal, so that a typst release that
+    This is asserted directly rather than inferred from the refusal, so that a typst release that
     began labelling something else would be noticed here.
     """
     presentation: Deck = deck_at(sites)

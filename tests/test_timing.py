@@ -257,8 +257,8 @@ def test_the_slide_writes_the_hold_of_its_initial_state(typst: TypstRunner):
     """State 0 has no `sub`, so how long it is held is written on `init`.
 
     This is the gap the author thinks of as "how long the slide stands there before it
-    starts moving", and it is one keyword rather than two: every later state is a `sub`
-    and carries its own, the last one included.
+    starts moving", and it is one keyword rather than two, because every later state is a
+    `sub` and carries its own, the last one included.
     """
     typst.ok(
         resolved(
@@ -342,8 +342,8 @@ sub(reveal("b"))
 def test_a_hold_reaches_the_browser_plan(typst: TypstRunner):
     """Both numbers travel, because the gap across a slide boundary is emitted twice.
 
-    One resolved number per gap cannot be written here: a slide's trailing `hold:` and the
-    next slide's leading `wait:` are resolved by two calls, so the runtime is the first
+    One resolved number per gap cannot be written here, because a slide's trailing `hold:`
+    and the next slide's leading `wait:` are resolved by two calls, so the runtime is the first
     place that sees both sides of that one gap.
     """
     typst.ok(
@@ -364,7 +364,7 @@ def test_a_hold_reaches_the_browser_plan(typst: TypstRunner):
 def test_a_slide_boundary_timed_from_both_sides_is_refused(typst: TypstRunner):
     """The trailing `hold:` of one slide and the leading `wait:` of the next are one gap.
 
-    Neither slide can refuse it alone: the two numbers are resolved by two calls of
+    Neither slide can refuse it alone, because the two numbers are resolved by two calls of
     `resolve`, so the pair is visible nowhere but between the slides.
     """
     result = typst.fails(
@@ -509,7 +509,7 @@ def test_a_timed_timeline_carries_both_numbers_in_seconds(typst: TypstRunner):
 
 
 def test_a_stated_duration_travels_as_a_number_of_seconds(typst: TypstRunner):
-    """And the delay beside it stays out, because a field at its default says nothing."""
+    """The delay beside the duration stays out, because a field at its default says nothing."""
     typst.ok(
         resolved(
             'sub(reveal("a", duration: 2))',

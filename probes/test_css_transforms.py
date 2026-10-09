@@ -18,8 +18,9 @@ from htmldoc import document
 from measuring import rect
 from svgtools import SVG, group, parse
 
-# A labelled box with a nested box inside it, which is what `tag` emits:
-# the outer group carries typst's own translate, the inner group is the slot animo writes to.
+# A labelled box with a nested box inside it, which is what `tag` emits.
+# The outer group carries typst's own translate, and the inner group is the slot animo
+# writes to.
 FRAME = '#html.frame[#v(20pt)#box(box[Hello world])#label("x")]\n'
 
 
@@ -70,7 +71,7 @@ def test_the_translate_property_composes_with_typsts_own_transform(typst: TypstR
 def test_the_transform_shorthand_clobbers_typsts_positioning(typst: TypstRunner, open_page):
     """The prohibition in *Architecture* rule 3, measured.
 
-    Nothing errors: the element simply loses the offset typst gave it,
+    Nothing errors, and the element simply loses the offset typst gave it,
     which is why animo may never emit the shorthand and a stray one in user CSS
     silently breaks a deck.
     """
@@ -300,9 +301,10 @@ def edge_band(image: np.ndarray) -> float:
     """How much antialiasing edge a rendering carries, per unit of ink.
 
     Ink is what is nearly black, the band is everything in between, and the ratio is what
-    tells a re-rasterised glyph from an upscaled picture of one: ink grows with the square
-    of a scale factor while an edge grows with the factor, so the ratio halves at every
-    doubling if the glyph is drawn afresh, and stays put if it is stretched.
+    tells a re-rasterised glyph from an upscaled picture of one.
+    Ink grows with the square of a scale factor while an edge grows with the factor,
+    so the ratio halves at every doubling if the glyph is drawn afresh,
+    and stays put if it is stretched.
     """
     grey = image.mean(axis=2)
     ink = int((grey < 64).sum())
@@ -372,7 +374,7 @@ def test_fill_box_moves_a_group_that_carries_typsts_own_transform(typst: TypstRu
     of a glyph run is a reflection and moves by twice the distance from the origin to the
     fill box's centre. Nothing errors and no transform property is set at all.
 
-    So a rule that reaches a group animo did not build displaces content, which is the same
+    A rule that reaches a group animo did not build therefore displaces content, which is the same
     failure mode as the `transform` shorthand two probes up.
     """
     page = open_page(typst.html(document(CONTENT), name="plain.html"))
@@ -390,7 +392,7 @@ def test_fill_box_moves_a_group_that_carries_typsts_own_transform(typst: TypstRu
 
 
 def test_fill_box_leaves_a_slot_animo_built_where_it_is(typst: TypstRunner, open_page):
-    """The other half of the trap: on a slot the two declarations move nothing.
+    """The other half of the trap is that the two declarations move nothing on a slot.
 
     `tag` wraps its body twice, so the inner group carries no transform of its own and
     there is nothing for an origin to re-anchor. That is what makes the declarations safe

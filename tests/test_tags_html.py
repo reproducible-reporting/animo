@@ -2,9 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tier 3: what a tag site and a timeline leave in the HTML output.
 
-This version animates nothing in the browser, so there are only two claims to check, and
-both are seams that the runtime of a later version needs to find in place: the groups it
-addresses, and the number of states it steps through.
+This module checks the two seams the browser runtime needs to find in place,
+which are the groups it addresses and the number of states it steps through.
 The layout inside those groups is checked here too, because the frames the browser is
 handed are laid out by the same engine as the pages and can be wrong in the same way.
 """
@@ -61,8 +60,7 @@ def test_a_slide_carries_one_state_per_subslide_step(open_page, animated):
 def test_the_runtime_steps_through_the_states_of_a_slide(deck_at, animated):
     """The position the states are addressed by, which `typst watch` reloads into.
 
-    Nothing moves between them yet, and that is the one thing this test may not assert,
-    because it is exactly what the browser runtime changes next.
+    What moves between the states is asserted in `test_animation_html.py`.
     """
     presentation = deck_at(animated)
     assert presentation.goto(1, 2).position == (1, 2)

@@ -4,8 +4,8 @@
 
 A tag has to wrap its body, and the wrapper it may use depends on whether the body is
 inline-level or block-level.
-Typst answers that question for nobody: there is no predicate, and the element functions
-only tell what an element is, not what a `context` block will turn into.
+Typst does not answer that question, because there is no predicate, and the element
+functions only tell what an element is, not what a `context` block will turn into.
 Measuring does answer it, by putting a zero-sized box on each side of the body
 and seeing whether they are pushed onto lines of their own.
 
@@ -28,7 +28,7 @@ PRELUDE = """\
 """
 
 # The body, its name for the test id, and whether it is block-level.
-# Everything a slide is likely to hold.
+# The table covers everything a slide is likely to hold.
 SAMPLES = (
     ("[word]", False),
     ("box[word]", False),
@@ -77,8 +77,8 @@ def test_the_break_test_says_what_the_body_is(typst: TypstRunner, body, is_block
 def test_the_separation_needs_no_tolerance(typst: TypstRunner):
     """Inline is exactly zero and block is at least twelve points, over the whole table.
 
-    A decision procedure with a threshold in it would be a guess;
-    this one has a gap of twelve points and a difference that is bit-for-bit zero.
+    A decision procedure with a threshold in it would be a guess,
+    while this one has a gap of twelve points and a difference that is bit-for-bit zero.
     """
     inline = ", ".join(body for body, is_block in SAMPLES if not is_block)
     block = ", ".join(body for body, is_block in SAMPLES if is_block)

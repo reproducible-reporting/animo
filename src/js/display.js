@@ -17,7 +17,7 @@ const ORIGIN = { x: 0, y: 0 };
  * the timeline never moved carries, and it needs no anchor to resolve.
  *
  * An anchor the page does not have leaves the offset alone, which can only happen on a page
- * edited by hand: typst refuses a timeline relative to a tag its slide does not have.
+ * edited by hand, because typst refuses a timeline relative to a tag its slide does not have.
  */
 function resolvePosition(slide, position, self) {
   const own = self === null ? null : (slide.anchors.get(self) ?? null);
@@ -41,12 +41,12 @@ function resolvePosition(slide, position, self) {
 /**
  * The CSS of one tag's display state.
  *
- * Only the individual transform properties, never the `transform` shorthand: it would
- * clobber the positioning typst wrote on the labelled group that holds this one.
+ * The CSS uses only the individual transform properties and never the `transform` shorthand,
+ * which would clobber the positioning typst wrote on the labelled group that holds this one.
  * A length inside a frame's SVG is a user unit, which is a typst point, so a move stays
  * the same fraction of the slide at any window size without the runtime measuring one.
  *
- * One `scale` value rather than two while the two axes agree, because a property whose
+ * The CSS has one `scale` value rather than two while the two axes agree, because a property whose
  * keyframes are equal at both ends stops the browser from drawing the ones beside it
  * (see *Findings*), and the engines do not compute `1 1` to the same string, so a tag at
  * rest would otherwise look like a tag that changed.
@@ -66,11 +66,12 @@ function declarations(slide, name, display) {
  *
  * Without this a `scale` grows the element about the origin of the whole frame and moves it
  * far across the slide. Both declarations are planned here, on the one element the runtime
- * transforms, and never as a rule in the stylesheet: they re-anchor the element's own
- * `transform` attribute as much as the properties beside it, so a selector broad enough to
- * reach a group typst positioned displaces it, silently and with no transform property set
- * at all. A labelled group is not always a tag site, because a region's footprint carries
- * a label too, and its children are the region's content. See *Findings*.
+ * transforms, and never as a rule in the stylesheet.
+ * The declarations re-anchor the element's own `transform` attribute as much as the
+ * properties beside it, so a selector broad enough to reach a group typst positioned
+ * displaces that group, silently and with no transform property set at all.
+ * A labelled group is not always a tag site, because a region's footprint carries a label
+ * too, and its children are the region's content. See *Findings*.
  */
 const CENTRED = { "transform-box": "fill-box", "transform-origin": "center" };
 
@@ -78,7 +79,7 @@ const CENTRED = { "transform-box": "fill-box", "transform-origin": "center" };
  * The tags whose anchor this slide's plan asks for, as a set of names.
  *
  * A position is `anchor(relto) + offset - anchor(self)`, so a pair naming the tag's own
- * anchor asks for nothing: the two terms cancel whatever that anchor is. Every state of a
+ * anchor asks for nothing, because the two terms cancel whatever that anchor is. Every state of a
  * plan holds every addressed tag, so a slide of tags that merely appear asks for none.
  */
 function wantedAnchors(slide) {
@@ -149,13 +150,14 @@ function firstSite(slide, name) {
  * Where the first site of every tag the plan asks about sits on the canvas, in points.
  *
  * The anchor is the origin of the tag's labelled group, which is the top-left corner of the
- * wrapper typst laid out, and not the box of its ink: that is the corner the paged outputs
- * read as well, so the two targets resolve the same quantity rather than two neighbours.
- * It is mapped into the user space of the frame, whose units are typst points and whose
+ * wrapper typst laid out, and not the box of its ink.
+ * The paged outputs read the same corner,
+ * so the two targets resolve the same quantity rather than two neighbours.
+ * The anchor is mapped into the user space of the frame, whose units are typst points and whose
  * origin is the canvas origin, so the pan of the canvas cancels out of it.
  * `firstSite` says which site is the first.
  *
- * It has to be read while the slide has a layout and before the runtime has written a
+ * The anchors have to be read while the slide has a layout and before the runtime has written a
  * display state on it, because a tag around the anchor would otherwise move it by
  * whatever state that happens to be.
  */
@@ -184,9 +186,11 @@ function percent(length, full) {
 /**
  * The CSS of one state's pan, which is a `translate` on the canvas.
  *
- * A percentage, because a translate in percent is a fraction of the canvas's own box, which
- * follows the window as the canvas does, and it animates in every engine: a length written
- * as a multiple of `--animo-unit` would have to put a custom property into a keyframe.
+ * The pan is a percentage, because a translate in percent is a fraction of the canvas's own
+ * box, which follows the window as the canvas does, and a percentage animates in every
+ * engine.
+ * A length written as a multiple of `--animo-unit` would have to put a custom property into
+ * a keyframe.
  */
 function viewport(slide, state) {
   const at = resolvePosition(slide, state.pan, null);
@@ -218,12 +222,13 @@ function viewport(slide, state) {
  * browser starts them all on the same frame.
  *
  * `step` is the state whose own operations are being walked, which is the higher of the
- * two a step runs between, forwards and backwards alike: one step is one schedule, and a
- * backward step is that schedule mirrored rather than a schedule of its own. A backward
- * step that walked over a join runs between states that are not neighbours, and the
- * schedules of the steps it walked over go with them: what the audience saw across a join
- * was one motion redirected before it arrived, which neither schedule replayed on its own
- * reproduces, so the way back is one motion too.
+ * two a step runs between, forwards and backwards alike.
+ * One step is one schedule, and a backward step is that schedule mirrored rather than a
+ * schedule of its own.
+ * A backward step that walked over a join runs between states that are not neighbours,
+ * and the schedules of the steps it walked over are not replayed one by one.
+ * What the audience saw across a join was one motion redirected before it arrived,
+ * which neither schedule replayed on its own reproduces, so the way back is one motion too.
  *
  * `reverse` says which way that schedule is read. Every effect of a backward step is
  * mirrored about the length of the step it undoes, so the operation that arrived last is

@@ -21,7 +21,7 @@
 // to size its footprint over its epochs.
 // A marker element plus a show rule does reach inside `measure`, providers nest with the
 // innermost winning, and the marker's own label does not reach the output.
-// See *Findings* in the design document.
+// See *Findings*.
 
 #import "anim.typ": (
   check-timeline, continuous-kinds, slide-kinds, structural-kinds,
@@ -30,8 +30,9 @@
 // A position, per axis, as an anchor and an offset from it.
 //
 // An axis is a pair rather than a length, because the anchor of a `relto` is a tag's
-// position, which only a rendering knows: typst on paper and the browser in the HTML
-// target. The resolver keeps the two apart so that each target adds the anchor it
+// position, which only a rendering knows.
+// That rendering is typst on paper and the browser in the HTML target.
+// The resolver keeps the anchor and the offset apart so that each target adds the anchor it
 // measured, and a `dx` after a `relto` keeps the anchor it moves from.
 //
 // A target reads the pair as `anchor(relto) + offset - anchor(self)`, where `anchor(none)`
@@ -44,15 +45,17 @@
   y: (relto: relto, offset: 0pt),
 )
 
-// The position of the viewport before anything has panned it: the canvas origin.
+// The position of the viewport before anything has panned it, which is the canvas origin.
 #let unpanned = at(none)
 
 // A position after one operation that says where something goes, one axis at a time.
 //
 // `move` and `pan` differ in what their anchors mean and in nothing else, so both resolve
-// their axes here: `x` sets the anchor and the offset, `dx` adds to the offset and keeps
-// the anchor it moves from, an axis the call says nothing about keeps the pair it had, and
-// `relto` alone sends both axes to the anchor.
+// their axes here.
+// `x` sets the anchor and the offset, and `dx` adds to the offset and keeps the anchor it
+// moves from.
+// An axis the call says nothing about keeps the pair it had,
+// and `relto` alone sends both axes to the anchor.
 #let apply-position(position, op) = {
   for (axis, absolute, relative) in (("x", op.x, op.dx), ("y", op.y, op.dy)) {
     let current = position.at(axis)
@@ -69,8 +72,8 @@
   position
 }
 
-// The display state of a tag that nothing has addressed yet: visible, where the body put
-// it, at its own size.
+// The display state of a tag that nothing has addressed yet, which is visible, where the
+// body put the tag, and at its own size.
 //
 // The position is the tag's own anchor at offset zero, which is why this function takes the
 // name.
@@ -84,10 +87,10 @@
 // Two operations of one step on one tag may start at different moments, and an effect has
 // one delay, so the step becomes as many effects as it has moments.
 //
-// This is the closest thing to a register of the display state, and a property added to it
-// has to be added in seven more places: `identity` and `apply-op` here, `at-rest` and
-// `displayed` in `site.typ`, `tags-of` in `runtime.typ`, and `declarations` and `showing`
-// in `animo.js`.
+// This is the closest thing to a register of the display state.
+// A property added to it has to be added in `identity` and `apply-op` here, in `at-rest` and
+// `displayed` in `site.typ`, in `tags-of` in `runtime.typ`, in `declarations` in
+// `display.js` and in `showing` in `effects.js`.
 #let property-of = (
   reveal: "opacity",
   hide: "opacity",
@@ -275,8 +278,8 @@
 //
 // An epoch is a maximal run of consecutive states with the same content state, and a new one
 // starts at every state whose step holds a structural operation.
-// So a slide with no structural operation has exactly one epoch, and nothing is measured
-// more than once for it.
+// A slide with no structural operation therefore has exactly one epoch, and nothing is
+// measured more than once for it.
 //
 // A state holds `display`, the state of the tags keyed by name, `slide`, the state of the
 // slide, the index of its `epoch`, its resolved `handout` flag, the `wait` before it is
@@ -371,9 +374,9 @@
   // Stating `true` or `false` overrides it in either direction,
   // including a final state the author would rather not hand out.
   //
-  // State 0 goes through the same rule rather than through a case of its own, which is what
-  // makes a slide with no `sub` at all work: its only state is also its last one, so `auto`
-  // keeps it and `init(handout: false)` leaves the slide out of the handout.
+  // State 0 goes through the same rule rather than through a case of its own.
+  // A slide with no `sub` at all works because its only state is also its last one,
+  // so `auto` keeps it and `init(handout: false)` leaves the slide out of the handout.
   let last = states.len() - 1
   check-gaps(states)
   (
@@ -431,8 +434,9 @@
 // because a tag site that cannot be animated at all has to say so at the first
 // opportunity rather than in the state where the browser would silently do nothing.
 // The tag a `pan` is relative to counts as addressed, since `pan` is a continuous
-// primitive too: its position is read off the tag's group, and a tag with no group has
-// no position for a browser to read.
+// primitive too.
+// The position of that tag is read off the tag's group,
+// and a tag with no group has no position for a browser to read.
 //
 // `targets` is every tag the timeline is relative to, as `(kind:, relto:)` pairs in the
 // order written. The kind is what a refusal names, because "a pan relative to a tag the
@@ -475,12 +479,13 @@
   )
 }
 
-// Where the body of a slide sits: in no region at all.
+// Where the body of a slide sits, which is in no region at all.
 //
 // `key` identifies the nearest region whose footprint is the same in every epoch, which is
-// the area a change of content inside it is confined to: `(kind: "region", id: ..)` for an
-// explicit region, numbered in document order within one rendering of the slide, and
-// `(kind: "tag", name: ..)` for the implicit region of a tag whose content changes.
+// the area a change of content inside it is confined to.
+// The key is `(kind: "region", id: ..)` for an explicit region, numbered in document order
+// within one rendering of the slide,
+// and `(kind: "tag", name: ..)` for the implicit region of a tag whose content changes.
 // `explicit` says whether an explicit region bounds the content, in which case a tag inside
 // it reserves no footprint of its own and its changes reflow the region.
 // `stable` says whether the content is laid out in every epoch, which an explicit region
@@ -490,7 +495,7 @@
 // contains it anyway.
 #let outermost = (key: none, explicit: false, stable: true)
 
-// What a tag site is handed: everything about the rendering it is part of.
+// What a tag site is handed, which is everything about the rendering it is part of.
 //
 // `slide` is the position of the slide in the deck.
 // A tag needs it to report anything back out of the frame it sits in,
@@ -508,32 +513,35 @@
 // `region` is where the site sits, as `outermost` above describes.
 //
 // `within` is the tags whose display state encloses the site, outermost first, and only the
-// ones the timeline addresses with a continuous primitive: a tag it never addresses cannot
-// transform anything, so it need not thread a view through its body at all.
-// A site reports it, which is how a timeline that reads an anchor below a transform is
+// ones the timeline addresses with a continuous primitive.
+// A tag the timeline never addresses cannot transform anything,
+// so such a tag need not thread a view through its body at all.
+// A site reports `within`, which is how a timeline that reads an anchor below a transform is
 // refused rather than resolved differently in each output type.
 //
-// `display` is the state's display state with every position resolved to two lengths, which
-// only the rendering knows: a position is an anchor and an offset, and the anchor is a tag's
-// corner. A tag site puts what it is handed on its content and resolves nothing itself.
+// `display` is the state's display state with every position resolved to two lengths,
+// which only the rendering can do.
+// A position is an anchor and an offset, and the anchor is a tag's corner.
+// A tag site puts what it is handed on its content and resolves nothing itself.
 //
-// `numbering` is how a region numbers itself: `none` on `region-counter` of `region.typ`,
-// and inside the rendering of an epoch stack as `(base:, counts:)`, the number of the region
-// holding the stack and whether the rendering steps `region-counter`, as `region.typ`
-// describes.
+// `numbering` says how a region numbers itself.
+// It is `none` for a region that numbers itself on `region-counter` of `region.typ`.
+// Inside the rendering of an epoch stack it is `(base:, counts:)`, which holds the number of
+// the region holding the stack and whether the rendering steps `region-counter`,
+// as `region.typ` describes.
 //
 // `stack` says whether a region places a stack of one rendering per epoch in its footprint,
 // rather than the rendering of `epoch` alone.
 // Only the HTML target asks for stacks, because a page lays out the epoch of its own state.
-// The renderings of a stack are handed a view without it, so stacks do not nest: a region
-// inside a stack is laid out once per rendering of the stack already.
+// The renderings of a stack are handed a view without it, so stacks do not nest.
+// A region inside a stack is laid out once per rendering of the stack already.
 //
 // A rendering names one of `state` and `epoch`, and never both.
 // A paged rendering is one of the S+1 states, so it names its `state`, and lays out the
 // epoch that state belongs to under the display state the page resolved.
-// An HTML frame is not one of them, so it names its `epoch` instead: one frame covers every
-// state of the slide, `state` is `none` to say so, and the display state stays empty because
-// the browser puts a state's own on the groups.
+// An HTML frame is not one of them, so it names its `epoch` instead.
+// One frame covers every state of the slide, `state` is `none` to say so,
+// and the display state stays empty because the browser puts a state's own on the groups.
 // What lies outside every region is the same in every epoch, so the frame names epoch 0 and
 // the regions stack the others.
 #let view-of(
@@ -564,15 +572,15 @@
 
 // The label of the marker a `per-subslide` emits to ask for the stack view of its slide.
 //
-// A second marker rather than a second use of `ask-label`, because the two are answered in
-// different places.
+// This is a second marker rather than a second use of `ask-label`, because the two are
+// answered in different places.
 // A tag is answered by the body's view and refused everywhere else.
 // A stack of renderings is answered wherever a slide lays content out, the background and
 // the overlay included, because it addresses nothing in the timeline and is content the
 // slide renders for itself.
 #let stack-view-label = label("animo-stack-view")
 
-// A stack view: what a stack of one rendering per state is built from.
+// A stack view, which is what a stack of one rendering per state is built from.
 //
 // `handouts` holds the resolved `handout` flag of every state of the slide, so its length is
 // how many states the slide has, and `state` is which of them is being laid out, `none` in
@@ -611,7 +619,7 @@
 
 // Refuse every tag and every region in `body`, naming the argument it was written in.
 //
-// This is a provider like `provide`, and the reason is the diagnosis.
+// This is a provider like `provide`, and its purpose is the diagnosis.
 // A marker nobody replaced is indistinguishable from one that was, so a tag in a background
 // or an overlay cannot be found afterwards, and handing it back untouched would drop its
 // content silently, which is what `tag` avoids by refusing raw cetz draw commands.

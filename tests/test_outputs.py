@@ -4,7 +4,7 @@
 
 A static deck has no subslides, so the presentation and the handout are the same pages,
 and saying so numerically is what proves that both go through one layout rather than two.
-Everything else here is about the viewport: it is the page, it clips, and it carries the
+Everything else here is about the viewport, which is the page, clips, and carries the
 background and the overlay.
 """
 
@@ -180,12 +180,12 @@ def test_a_layer_is_drawn_identically_on_every_page_of_a_slide(paged: PagedRunne
                 page[rows, columns],
                 what=f"the {layer} on pages 1 and {index}",
             )
-    # And the crops are the layers rather than blank paper, which is what makes the
+    # The crops are also the layers rather than blank paper, which is what makes the
     # comparison above say anything at all.
     assert at(pages[0], 0.5, 0.5) == RED
     assert at(pages[0], 4, 4) == BLUE
-    # The body is the control: it does differ between the pages, so the two layers holding
-    # still is a fact about them.
+    # The body is the control.
+    # It does differ between the pages, so the two layers holding still is a fact about them.
     assert not np.array_equal(pages[0], pages[1]), "the four pages are the same page"
 
 

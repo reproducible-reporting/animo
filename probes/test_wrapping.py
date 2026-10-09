@@ -4,9 +4,9 @@
 
 A tag has to wrap its body to become an addressable group,
 and the wrapper must not move the slide around it.
-Rasterising the same page with and without the wrapper says exactly what a wrapper costs,
-and the answer is not the expected one:
-a `box` and a `block` are interchangeable in a flow, and what matters is the width.
+Rasterising the same page with and without the wrapper says exactly what a wrapper costs.
+A `box` and a `block` turn out to be interchangeable in a flow, and what matters is the
+width.
 """
 
 import pytest
@@ -67,7 +67,7 @@ def test_every_wrapper_is_invisible_around_width_blind_content(paged: PagedRunne
 def test_only_a_filling_wrapper_keeps_centred_content_centred(paged: PagedRunner, body):
     """A wrapper at `width: auto` hugs, and hugging left-aligns what the container centred.
 
-    So the choice a tag makes is hugging versus filling,
+    The choice a tag makes is therefore between hugging and filling,
     and the filling wrapper is `block(width: 100%)` rather than a bare `block`.
     """
     plain = paged.png(flow(body), ppi=144)[0]

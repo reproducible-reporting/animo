@@ -28,10 +28,10 @@ from test_structural import PRESENTATION, check, marker
 from test_subslides import timeline
 
 # A figure with one tagged label on it, as a function of what it draws.
-# The circle, the line and the mesh are geometry, which no tag can address; the label is
-# content, which every primitive can.
-# Being a function of `mesh` is what makes the geometry changeable after all: the timeline
-# replaces the whole canvas with the same function called differently.
+# The circle, the line and the mesh are geometry, which no tag can address,
+# while the label is content, which every primitive can address.
+# Being a function of `mesh` is what makes the geometry changeable after all,
+# because the timeline replaces the whole canvas with the same function called differently.
 SCENE = """#let scene(mesh: true, label: LABEL) = cetz.canvas({
   import cetz.draw: *
   circle((0, 0), radius: 1)
@@ -56,9 +56,10 @@ def cetz_deck(typst: TypstRunner, *slides: str, label: str = 'tag("lab")[Hi]', *
 def test_a_tag_inside_math_is_one_addressable_site(typst: TypstRunner):
     """A box in an equation becomes a group, which is what the browser addresses.
 
-    The trap this rules out is the parsing one: `#box[b] <bb>` with a space is literal math
-    content and attaches to nothing. A tag returns a markup block holding the box and the
-    label together, which attaches inside math as it does outside it.
+    The trap this rules out is the parsing one.
+    `#box[b] <bb>` with a space is literal math content and attaches to nothing.
+    A tag returns a markup block holding the box and the label together, which attaches
+    inside math as it does outside it.
     """
     source = deck('slide[$ a + #tag("b")[$b$] = c $]') + check(
         "assert.eq(query(<b>).len(), 1)",
@@ -257,9 +258,9 @@ def band_of(pages, changed: Box) -> Box:
 def test_replacing_part_of_an_equation_reflows_only_that_equation(paged: PagedRunner):
     """The equation keeps its width, so it stays centred and nothing else on the slide moves.
 
-    This is the max-footprint rule doing the only thing it can do inside math: the room the
-    replacement needs is reserved in every epoch, which is why a longer right-hand side does
-    not shift the equation it sits in.
+    This is the max-footprint rule doing the only thing it can do inside math.
+    The room the replacement needs is reserved in every epoch,
+    which is why a longer right-hand side does not shift the equation it sits in.
     """
     animation = timeline('sub(replace("b")[$beta + gamma + delta$])')
     body = (
@@ -299,8 +300,9 @@ def test_a_region_around_a_canvas_relays_the_figure_out(paged: PagedRunner):
     """Inside an explicit region the tag reserves nothing, so cetz lays the figure out afresh.
 
     The label grows, the canvas grows with it, and a centred canvas therefore moves inside
-    the region. That is the region earning its keep: the paragraph below it does not move,
-    although everything in the figure did.
+    the region.
+    The region keeps the paragraph below it where it is, although everything in the figure
+    moved.
     """
     animation = timeline('sub(replace("lab")[A much longer label indeed])')
     source = cetz_deck(

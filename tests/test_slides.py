@@ -68,9 +68,10 @@ def test_a_slide_that_never_pans_takes_the_viewport_whatever_it_places(typst: Ty
     """The canvas of such a slide is unobservable, so animo does not pay to compute it.
 
     `pan` is the only reader of the canvas, and the viewport clips in both targets, so a
-    slide with no pan in its timeline is drawn the same whatever canvas it gets. The
-    second slide is the control: the same placement with a pan does grow the canvas, so
-    this is about the timeline and not about the placement.
+    slide with no pan in its timeline is drawn the same whatever canvas it gets.
+    The second slide is the control.
+    The same placement with a pan does grow the canvas, so this is about the timeline and
+    not about the placement.
     """
     body = "[#place(dx: 20cm, dy: 2cm)[#box(width: 3cm, height: 1cm)]]"
     source = deck(f"slide{body}", f"slide({PANS}){body}") + canvas_check(
@@ -115,8 +116,9 @@ def test_a_nested_placement_is_counted_from_the_canvas_origin(typst: TypstRunner
     A placement inside a box reports its offset against that box, and the show rule
     cannot tell that apart from an offset against the slide body.
     Animo counts it anyway, from the canvas origin, which is short of the truth by
-    wherever the box sits: the canvas comes out too small rather than too large,
-    and `canvas:` is the override.
+    wherever the box sits.
+    The canvas therefore comes out too small rather than too large, and `canvas:` is the
+    override.
     """
     inner = "#place(dx: 20cm)[#box(width: 3cm, height: 1cm)]"
     body = f"slide({PANS})[#box(width: 4cm, height: 2cm)[{inner}]]"
@@ -143,9 +145,10 @@ def test_a_ratio_sized_placement_is_counted_short(typst: TypstRunner):
     """The union is not exact even for a top-level placement, and this is why.
 
     The rule measures the placed body without a container to resolve a ratio against, so
-    `rect(width: 100%, height: 100%)` reports nothing and adds nothing. The second slide
-    is the control: the same rectangle at an absolute size does grow the canvas, so the
-    first is about the ratio and not about the placement.
+    `rect(width: 100%, height: 100%)` reports nothing and adds nothing.
+    The second slide is the control.
+    The same rectangle at an absolute size does grow the canvas, so the first is about the
+    ratio and not about the placement.
     """
     ratio = f"slide({PANS})[#place(dx: 2cm, rect(width: 100%, height: 100%))]"
     absolute = f"slide({PANS})[#place(dx: 2cm, rect(width: 16cm, height: 9cm))]"
@@ -208,8 +211,8 @@ def test_a_tempo_the_browser_could_not_take_is_refused(
 
     A duration is a number of seconds like every other time an author writes, and an
     easing is one of the five names the reference lists, so both are refusable here.
-    The paged target checks them too, which is why this is a tier 1 test: a deck that
-    compiles to a PDF has to compile to a presentation as well.
+    The paged target checks them too, which is why this is a tier 1 test.
+    A deck that compiles to a PDF has to compile to a presentation as well.
     """
     typst.fails(deck("slide[a]", timing=argument), message)
 
@@ -361,7 +364,8 @@ def test_a_cut_reaches_the_html_output_as_a_duration_of_zero(typst: TypstRunner)
     that animo ignored everywhere.
 
     It travels as one attribute per slide rather than as an entry in the plan, for the
-    reason the plan itself is an attribute: an inspector shows it beside the slide.
+    reason the plan itself is an attribute, which is that an inspector shows it beside the
+    slide.
     A cut is no transition of its own, so the slide keeps the deck's and states no time.
     """
     page = typst.html(deck(entered("duration: 0"), entered()), name="cut.html").read_text()
@@ -421,8 +425,9 @@ def test_the_old_arguments_of_a_slide_are_gone(typst: TypstRunner):
 def test_a_timeline_that_is_not_one_is_refused_by_the_slide(typst: TypstRunner):
     """The slide hands its argument to the resolver before it lays out its body.
 
-    What a timeline may hold is asserted in `test_plan.py`; this is the one assertion
-    that `#slide` is on that path at all rather than ignoring the argument.
+    What a timeline may hold is asserted in `test_plan.py`.
+    This is the one assertion that `#slide` is on that path at all rather than ignoring the
+    argument.
     """
     typst.fails(
         deck("slide(animation: (1,))[body]"),
@@ -437,8 +442,11 @@ KEEP = "slide(animation: anim.init(handout: FLAG))[body]"
 
 
 def test_init_takes_the_handout_flag_of_the_initial_state(typst: TypstRunner):
-    """What it resolves to is asserted in `test_plan.py`; this is the one assertion that
-    `#slide` is on that path at all rather than ignoring the argument."""
+    """What it resolves to is asserted in `test_plan.py`.
+
+    This is the one assertion that `#slide` is on that path at all rather than ignoring the
+    argument.
+    """
     typst.ok(deck(KEEP.replace("FLAG", "true"), KEEP.replace("FLAG", "false")))
 
 
@@ -452,9 +460,12 @@ def test_a_handout_flag_on_init_that_is_not_a_flag_is_refused(typst: TypstRunner
 
 
 def test_a_handout_that_holds_no_page_at_all_is_refused(typst: TypstRunner):
-    """Typst does not refuse a document without pages: it emits one blank page of its own
-    default size, which looks like a rendering failure rather than like the flag doing
-    what it was told. So the deck says what really happened."""
+    """Typst does not refuse a document without pages, so the deck refuses it instead.
+
+    Typst emits one blank page of its own default size, which looks like a rendering failure
+    rather than like the flag doing what it was told.
+    The deck therefore says what really happened.
+    """
     typst.fails(
         deck(KEEP.replace("FLAG", "false"), KEEP.replace("FLAG", "false")),
         "every state of this deck gave up its handout page",
@@ -539,8 +550,9 @@ def test_a_tag_or_a_region_in_a_layer_is_refused(typst: TypstRunner, which, site
 def test_neither_layer_enters_the_automatic_canvas(typst: TypstRunner, html):
     """A full-bleed background may not make the body pannable by accident.
 
-    The third slide is the control: the same placements in the *body* do grow the canvas,
-    without which the first two would pass on a rule that counts nothing at all.
+    The third slide is the control.
+    The same placements in the *body* do grow the canvas,
+    and without that control the first two would pass on a rule that counts nothing at all.
     """
     source = deck(
         f"slide({PANS})[plain]",

@@ -4,8 +4,9 @@
 """Extract the notes of one release from `CHANGELOG.md`.
 
 The changelog is where a release is described, and a GitHub release that restated it would
-be a second copy to keep in step. So the workflow reads the section out of the file rather
-than being handed a text of its own.
+be a second copy to keep in step.
+The workflow therefore reads the section out of the file rather than being handed a text of
+its own.
 """
 
 import argparse

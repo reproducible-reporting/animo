@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 
 <!-- snipwise.md BEGIN tagline -->
 
-Animo builds both dynamic HTML and static PDF presentations using [typst](https://typst.app/).
+Animo builds dynamic HTML and static PDF presentations using [typst](https://typst.app/) from a single source.
 
 <!-- snipwise.md END tagline -->
 
@@ -35,11 +35,9 @@ A minimal single-slide deck with a single animation looks like this:
   import anim: *
   sub(reveal("punchline"))
 })[
-  = Hello
+  What makes a good punchline?
 
-  This is static text shown right away.
-
-  #tag("punchline")[This will only appear on the next subslide.]
+  #tag("punchline")[Timing.]
 ]
 ```
 
@@ -50,7 +48,7 @@ Key features:
 
 - One source file compiles to an animated HTML deck, a presentation PDF and a handout PDF.
 - The HTML presentation comes with a runtime that supports visual effects,
-  such as moving, scaling, fading, replacing, resetting, hiding and revealing content.
+  such as moving, scaling, fading, replacing, resetting, hiding, revealing and morphing content.
 - Slides are drawn on a canvas that can be larger than the slide, so the deck can pan over it.
 - Plain typst inside a slide: no template machinery and no theme to learn.
 - Every position in a deck is a URL, so a deep link lands on a subslide.
@@ -69,7 +67,8 @@ Key features:
 | [`numbering.typ`](https://github.com/reproducible-reporting/animo/blob/v0.1.1/examples/numbering.typ) | Slide and subslide numbers, and a progress bar.            | <a href="https://reproducible-reporting.github.io/animo/examples/numbering.html" target="_blank" rel="noopener">HTML</a> · <a href="https://reproducible-reporting.github.io/animo/examples/numbering-presentation.pdf" target="_blank" rel="noopener">PDF</a> · <a href="https://reproducible-reporting.github.io/animo/examples/numbering-handouts.pdf" target="_blank" rel="noopener">handouts</a> |
 | [`tour.typ`](https://github.com/reproducible-reporting/animo/blob/v0.1.1/examples/tour.typ)           | Every feature of Animo in one deck.                        | <a href="https://reproducible-reporting.github.io/animo/examples/tour.html" target="_blank" rel="noopener">HTML</a> · <a href="https://reproducible-reporting.github.io/animo/examples/tour-presentation.pdf" target="_blank" rel="noopener">PDF</a> · <a href="https://reproducible-reporting.github.io/animo/examples/tour-handouts.pdf" target="_blank" rel="noopener">handouts</a>                |
 
-A deck opens in a new tab and is stepped through with the arrow keys or a click.
+A deck opens in a new tab.
+Step through the HTML version with the arrow keys or a click.
 
 ## Status
 

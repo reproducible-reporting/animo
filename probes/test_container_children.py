@@ -59,7 +59,7 @@ def test_an_element_between_a_grid_and_its_cell_drops_the_cell_settings(typst: T
     """A `context` block, a `box` and a `styled` all hide the cell from the grid.
 
     The `styled` case is the one that is guessed wrong, and it is why a package must not
-    look through `styled` on this path: typst does not look through it either. Without this,
+    look through `styled` on this path, because typst does not look through it either. Without this,
     a refusal written against `context` alone would let `text(red, grid.cell(..))` past.
     """
     for between in (
@@ -92,7 +92,7 @@ def test_a_table_loses_the_same_settings(typst: TypstRunner):
 def test_colspan_goes_the_way_the_fill_does(typst: TypstRunner):
     """The loss is the whole of the cell's settings, and not the fill alone.
 
-    Asserted as two comparisons rather than as one absence. A `colspan` the grid reads
+    The loss is asserted as two comparisons rather than as one absence. A `colspan` the grid reads
     changes the rendering, and a `colspan` behind a `context` block changes nothing, so the
     setting reached the grid in the first case and was dropped in the second.
     """
@@ -114,8 +114,9 @@ def test_an_item_behind_a_context_block_loses_its_place_in_its_container(typst: 
     """A list takes the item as content, and a terms list refuses outright.
 
     The list half is asserted from the document, where the structure is, rather than from
-    the rendering: the container still has two children, and the second one holds the item
-    instead of being it.
+    the rendering.
+    The container still has two children, and the second one holds the item instead of
+    being it.
     """
     typst.ok(
         PAGE

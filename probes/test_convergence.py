@@ -3,19 +3,21 @@
 """Probes for *A panic that depends on `query` can be swallowed*.
 
 Animo reads the document back with `query` in several places, and a value read that way is
-read once per introspection pass. A check on such a value is therefore not a check on the
-document but a check on one pass, and if it fails the pass, the failure may never be
-reported: typst runs the document again, the next pass sees a different document because
-the failed one produced nothing, and the two alternate until the iteration limit.
+read once per introspection pass.
+A check on such a value is therefore a check on one pass rather than on the document,
+and if it fails the pass, the failure may never be reported.
+Typst runs the document again, the next pass sees a different document because the failed
+one produced nothing, and the two alternate until the iteration limit.
 
 What surfaces is a convergence warning about an element count, pointing at the `query`,
 with nothing about the panic that caused it.
 
 What makes the next pass pass is that the panic empties the block it is raised in.
 A check in a block of its own, which emits nothing the check reads, does not change the
-document by failing, and typst keeps only the errors of the pass it ends on:
-a value that is missing in an early pass is forgotten, and one that is missing for good
-is reported. So a diagnostic that depends on `query` is either a value animo resolves,
+document by failing, and typst keeps only the errors of the pass it ends on.
+A value that is missing in an early pass is forgotten, and one that is missing for good is
+reported.
+A diagnostic that depends on `query` is therefore either a value animo resolves,
 or a panic raised in a block that emits nothing it reads.
 """
 

@@ -8,7 +8,7 @@ holds halfway through a step, and what a deep link lands on.
 
 Two things make them reproducible.
 A deep link *snaps*, so a test that only cares about a state never races a transition.
-And a transition is driven by the Web Animations API, so a test that does care about the
+A transition is also driven by the Web Animations API, so a test that does care about the
 middle of one pauses it at a stated moment instead of sampling whenever it got there.
 
 Geometry is read with `getBBox` and `getScreenCTM`, never with `getBoundingClientRect`,
@@ -23,7 +23,7 @@ from harness import Deck, TypstRunner, assert_identical, screenshot
 CM = 28.3465
 
 # How far a measured displacement may be from the length the source states, in CSS pixels.
-# The floor is the browser's own rounding of a transform; a real error is far larger,
+# The floor is the browser's own rounding of a transform, and a real error is far larger,
 # because the smallest length a timeline states here is a centimetre, which is 28 points.
 TOLERANCE = 0.5
 
@@ -106,8 +106,8 @@ def test_moves_accumulate_and_a_scale_multiplies(deck_at, moving):
     before = presentation.rects("m")[0]
     after = presentation.goto(1, 2).rects("m")[0]
     assert after.width == pytest.approx(2 * before.width, abs=TOLERANCE)
-    # The centre has travelled the sum of the two moves; the corner has not, because the
-    # square is twice as large about that centre.
+    # The centre has travelled the sum of the two moves, while the corner has not, because
+    # the square is twice as large about that centre.
     assert after.center[0] - before.center[0] == pytest.approx(4 * CM * unit, abs=TOLERANCE)
     assert after.center[1] - before.center[1] == pytest.approx(1 * CM * unit, abs=TOLERANCE)
 
@@ -176,9 +176,10 @@ def test_relto_lands_one_tag_on_another_and_ignores_what_moved_it(deck_at, typst
 def test_a_per_axis_scale_is_two_values_and_an_isotropic_one_is_one(deck_at, typst: TypstRunner):
     """The two axes are independent, and a factor is set rather than multiplied into.
 
-    The spelling matters as much as the geometry: a `scale` whose two values are equal is
-    written as one, because a property that holds still in the keyframes stops the browser
-    from drawing the ones beside it. See *Findings*.
+    The spelling matters as much as the geometry.
+    A `scale` whose two values are equal is written as one, because a property that holds
+    still in the keyframes stops the browser from drawing the ones beside it.
+    See *Findings*.
     """
     presentation: Deck = deck_at(
         animated(
@@ -221,10 +222,12 @@ def test_every_site_of_a_name_takes_the_translation_of_the_first(deck_at, typst:
 def test_the_anchor_is_read_from_the_first_epoch_that_lays_the_tag_out(deck_at, typst: TypstRunner):
     """Which site is the first one, when a tag is not laid out in every epoch.
 
-    The rule both targets read: the first site in document order, in the first rendering
-    that lays the tag out. In the browser that is the first in document order among the sites
-    of the lowest epoch, where a site outside every epoch stack counts as epoch 0; on paper it
-    is the first page, which is state 0 in the presentation and so the same epoch.
+    Both targets read the first site in document order, in the first rendering that lays
+    the tag out.
+    In the browser that is the first in document order among the sites of the lowest epoch,
+    where a site outside every epoch stack counts as epoch 0.
+    On paper it is the first page, which is state 0 in the presentation and so the same
+    epoch.
 
     The tag here is inside an explicit region and absent from epoch 0, so the two
     definitions have somewhere to diverge: a rendering that does not lay it out holds no
@@ -295,7 +298,7 @@ def test_a_region_does_not_displace_what_it_holds(deck_at, typst: TypstRunner):
     `transform-box` and `transform-origin` re-anchor an element's own `transform` as much
     as the CSS properties beside them, so wherever they land on a group typst positioned,
     its content moves and nothing errors (see *Findings*). A region's group is the labelled
-    group that is easiest to get this wrong on: it is not a tag site, so its children are
+    group that is easiest to get this wrong on, because it is not a tag site, so its children are
     the author's content rather than a slot, and it carries a label because the crossfade
     addresses it.
 
@@ -337,8 +340,8 @@ def test_typsts_own_transform_survives_every_state(deck_at, moving):
 def test_a_move_is_the_same_fraction_of_the_slide_at_any_window_size(page, deck_at, moving):
     """A length inside a frame is a user unit, so animo never has to measure the window.
 
-    Measured at two sizes rather than assumed: the whole scheme of writing typst points
-    as CSS lengths rests on it.
+    The fraction is measured at two sizes rather than assumed, because the whole scheme of
+    writing typst points as CSS lengths rests on it.
     """
     presentation: Deck = deck_at(moving)
     fractions = []
@@ -413,10 +416,11 @@ def test_a_step_animates_only_the_properties_it_changes(deck_at, typst: TypstRun
     """A property that holds still in the keyframes is not free.
 
     In chromium 151 a `translate` or `scale` that is equal at both ends stops the browser
-    from drawing the `opacity` beside it: the element stays as it was for the whole step
-    and jumps at the end. Nothing in the DOM says so, because every value the animation
-    computes is right and only the drawing is missing, which is why this is asserted on
-    what the step animates rather than on what it looks like. See *Findings*.
+    from drawing the `opacity` beside it.
+    The element stays as it was for the whole step and jumps at the end.
+    Nothing in the DOM says so, because every value the animation computes is right and only
+    the drawing is missing, which is why this is asserted on what the step animates rather
+    than on what it looks like. See *Findings*.
     """
     presentation: Deck = deck_at(
         animated(
@@ -437,9 +441,9 @@ def test_a_step_taken_after_a_pause_starts_at_its_beginning(page, deck_at, movin
     """A presenter talks over a slide and then steps, which is the ordinary case.
 
     The step is slowed down so that it cannot have finished within the pause,
-    and the assertion is about the clock rather than about the geometry: an animation that
-    began too early is not wrong about where it is going, only about when it set off, and
-    that is invisible in every state it passes through and in the one it lands on.
+    and the assertion is about the clock rather than about the geometry, because an
+    animation that began too early is not wrong about where it is going, only about when it
+    set off, and that is invisible in every state it passes through and in the one it lands on.
 
     How far along the step is when it is read is bounded by the time that really passed
     since the key, and not by what a frame is expected to cost:

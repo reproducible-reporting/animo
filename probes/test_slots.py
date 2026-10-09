@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Probes for *Cross-frame geometry is readable, so morphing is possible*.
 
-Two things are recorded under that heading.
-The geometry of a label is readable in both epoch frames, which is what makes a FLIP morph
-implementable without help from typst.
-And a tag site needs *two* nested groups, because CSS gives each element only one `translate`
-and one `scale`, so the continuous primitives and anything belonging to an epoch boundary
-need a slot each.
+The heading records that the geometry of a label is readable in both epoch frames,
+which is what makes a FLIP morph implementable without help from typst.
+It also records that a tag site needs *two* nested groups,
+because CSS gives each element only one `translate` and one `scale`,
+so the continuous primitives and anything belonging to an epoch boundary need a slot each.
 """
 
 from harness import TypstRunner

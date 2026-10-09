@@ -14,8 +14,8 @@ SPDX-License-Identifier: Apache-2.0
 # Architecture of the HTML Output
 
 How a slide reaches the browser, and what the runtime is allowed to do there.
-The specification it follows is *Architecture* in the design document,
-and every measurement it cites is an entry of *Findings* with a probe under `probes/`.
+This page follows the *Architecture* section of the design document,
+and every measurement cited here is an entry of *Findings* with a probe under `probes/`.
 [Developing Animo](development.md) says where both documents live.
 
 ## What Typst Emits
@@ -23,29 +23,31 @@ and every measurement it cites is an entry of *Findings* with a probe under `pro
 The slides are the children of one stage element, which is the only child of the deck element,
 so the page is `.animo-deck > .animo-stage > .animo-slide`.
 The deck fills the window and centres the stage.
-The stage is as large as the window allows at the deck's aspect ratio, it clips, and it isolates.
+The stage is as large as the window allows at the deck's aspect ratio.
+The stage clips its content and is an isolated stacking context.
 A slide is one container element in the stage, as large as the stage,
-carrying its plan as JSON in `data-animo-plan`,
-and inside it a `.animo-canvas` element holding **one `html.frame` for the whole slide**,
+and the container carries the plan of the slide as JSON in `data-animo-plan`.
+Inside the container, a `.animo-canvas` element holds **one `html.frame` for the whole slide**,
 in which the body is laid out **once**.
 Every region whose content changes, explicit or the implicit one of a tag, holds
 **one rendering of its body per epoch**, placed at one point of its footprint in epoch order.
 Each rendering is a labelled block, so it becomes a `<g data-typst-label="animo-epoch-N">`
 the runtime can show, hide and blend.
 Only a region that sits in no other region does this.
-A region inside the rendering of another is laid out once per rendering already,
-so it lays out the epoch of that rendering.
-One frame and not one per region, because typst's deduplicator has the frame for its scope:
-the renderings of a slide then define each glyph they share once between them instead of
+A region inside the rendering of another region is already laid out once per rendering,
+so the inner region lays out the epoch of that rendering.
+A slide has one frame rather than one per region, because the scope of typst's deduplicator
+is the frame.
+The renderings of a slide then define each glyph they share once between them instead of
 once each.
 The slide container clips the canvas.
 The container also carries `data-animo-transition`, which is how the boundary above the
 slide is crossed, as the slide's `init` says.
-It is one value per slide, so it is an attribute rather than an entry in the plan,
-for the reason the plan itself is an attribute.
+The transition is one value per slide, so it is an attribute of the container,
+like the plan itself, rather than an entry in the plan.
 
-The renderings of a region are one kind of **stack**,
-which is a set of renderings placed at one point of which the runtime shows one at a time.
+The renderings of a region are one kind of **stack**.
+A stack is a set of renderings placed at one point, of which the runtime shows one at a time.
 Every rendering of a stack is labelled `animo-<kind>-<index>`,
 and the renderings of one stack are the children of one group.
 The kind says what the index counts.
@@ -65,9 +67,9 @@ A region reserves the same footprint in every epoch,
 so what is around it is laid out once for all of them.
 
 A region inside an epoch stack is laid out once per rendering,
-and it takes the number it takes on paper, where one rendering is laid out.
-It counts on a second counter that every rendering sets back to zero,
-and its number is that of the region holding the stack plus that count.
+and still gets the same number as on paper, where only one rendering is laid out.
+Such a region counts on a second counter, which every rendering sets back to zero.
+Its number is the number of the region holding the stack plus the value of that second counter.
 Every update of either counter is a constant or a step,
 so the numbers settle in one pass of layout however many regions a slide has.
 
@@ -84,12 +86,13 @@ a stack holds the group of every tag laid out in it,
 and its region's own label when the region is a tag.
 A `wrap: none` tag becomes no group, so an epoch entry also holds `regions`,
 which names such a tag by the label of the group of the region that holds its stack.
-Typst reads that from the membership reports every tag site and region writes,
-and leaves it out when no changed tag lacks a group.
+Typst derives `regions` from the membership reports that every tag site and region writes,
+and leaves `regions` out when every changed tag has a group.
 
-A state also carries the `wait:` before it is entered, the `hold:` before the state after
-it is, and the timing of the operations its own subslide performed, and a name in an epoch's
-`changed` carries the timing of what changed it, all in seconds.
+A state also carries the `wait:` before it is entered, the `hold:` before the next state is
+entered, and the timing of the operations its own subslide performed.
+A name in an epoch's `changed` carries the timing of the operation that changed the tag.
+All of these are in seconds.
 None of them can be resolved anywhere but at the moment the step runs.
 Both gap numbers travel rather than one resolved number per gap, because the gap across a
 slide boundary is timed by two slides and the runtime is the first place that sees both
@@ -126,11 +129,14 @@ no anchor at all. The pan travels the same way, with the canvas origin for its o
 The offsets are in typst points, which are the user units of a frame's SVG.
 
 The anchors themselves cannot travel, because a tag's position does not exist in the HTML
-target. The runtime measures the ones the plan names when the slide is first shown and
-before it has written anything on it, off the origin of each tag's labelled group, mapped
-into the user space of its frame. Typst reads the same corner on paper, off a zero-size
-marker each tag site places inside its outer slot, and the two agree to within a thousandth
-of a point.
+target.
+The runtime measures the anchors that the plan names when the slide is first shown,
+before the runtime has written anything on the slide.
+It reads each anchor off the origin of the tag's labelled group,
+mapped into the user space of the frame.
+Typst reads the same corner on paper, off a zero-size marker that each tag site places inside
+its outer slot.
+The two measurements agree to within a thousandth of a point.
 
 ## What a Step Animates
 
@@ -145,14 +151,14 @@ from what it was showing to what the new state says, and stepping back animates 
 | `pan`            | the CSS `translate` property of the canvas               |
 
 A step across a slide boundary animates too, but it moves nothing:
-it crossfades the two containers, and the subslide state of the slide being entered is in
-place before it comes up.
+it crossfades the two containers.
+The slide being entered is already in its subslide state when it comes into view.
 
-Three things never animate, and all three for the same reason:
-the audience has not seen the steps that lead to the state they would animate into.
-A deep link, including the one `typst watch` reloads into; the first paint, which is a deep
-link to wherever the fragment points; and a jump that is not a step across one boundary,
-which `Home` and `End` are.
+A deep link, the first paint and a jump that is not a step across one boundary never animate,
+because the audience has not seen the steps that lead to the state they would animate into.
+A deep link includes the one that `typst watch` reloads into.
+The first paint is a deep link to wherever the fragment points.
+`Home` and `End` are jumps.
 
 The deck's `primitive-duration:` and `transition-duration:` are defaults,
 which a `duration:` written in the timeline overrides, also when the default is zero.
@@ -160,18 +166,17 @@ A reader who has asked their system for reduced motion therefore needs a signal 
 because a media query cannot reach a number written in a typst source.
 Animo's own stylesheet sets `--animo-motion: none` under `prefers-reduced-motion: reduce`,
 and the runtime snaps every step while it is set.
-The declaration is `!important`, because a stylesheet added to the page comes after it and
-would otherwise outrank it.
-A step that lands without motion lands whole, so a `delay:` is dropped with the duration it
-was holding an operation back inside, and a `duration:` written in the timeline is ignored
-with it.
+The declaration is `!important`, because a stylesheet added to the page comes after Animo's
+own stylesheet and would otherwise outrank the declaration.
+A step that lands without motion lands whole,
+so the `delay:` and the `duration:` of every operation are ignored.
 A `wait:` and a `hold:` are not touched, because zeroing them would run an autoplaying deck
 through itself at once.
 
 ## The Five Rules
 
 **1. Continuous state is applied to every rendering of every stack at once.**
-Not only to the one being shown.
+The hidden renderings receive it as well as the one being shown.
 Entering an epoch then needs no initialisation,
 and a step that both replaces and moves a tag moves it by the same amount in the rendering
 it leaves and in the one it arrives at, so the composite stays registered.
@@ -186,11 +191,11 @@ Two things make the containment exact:
   Its renderings are the region's body laid out once per epoch,
   so the outgoing rendering has no ink outside the region's footprint.
   A rendering that is not being shown is `visibility: hidden` rather than `display: none`,
-  because it stays laid out and its geometry readable.
-  Every rendering of the stack that is still painting takes part and not only the one being
-  left, because a boundary crossed while an earlier one is still running finds more than
-  one of them painting the region; they then all fade out on the new boundary's clock, so
-  the region's ink stays at one.
+  so that it stays laid out and its geometry stays readable.
+  A boundary crossed while an earlier boundary is still running finds more than one rendering
+  painting the region.
+  Every rendering that is still painting therefore takes part, not only the one being left,
+  and they all fade out on the new boundary's clock, so the region's ink stays at one.
 - `mix-blend-mode: plus-lighter` on the renderings makes the two halves add, and
   `isolation: isolate` on the group that holds them keeps the sum inside the stack.
   Without the isolation, chromium 151 and webkit 26.5 add the two halves to the ink under the
@@ -199,9 +204,9 @@ Two things make the containment exact:
 
 A stack crosses a boundary when the boundary changes a tag it holds,
 or a tag without a group that the plan places in its region.
-It also crosses when its renderings on the two sides of the boundary differ,
-which `differs` reads once by comparing their children,
-and then it takes the deck's own timing.
+A stack also crosses a boundary when its renderings on the two sides of the boundary differ.
+The function `differs` detects that once, by comparing their children,
+and such a stack takes the deck's own timing.
 
 **3. Only the individual transform properties, never the `transform` shorthand**,
 which would clobber the positioning typst wrote into the SVG.
@@ -227,13 +232,15 @@ and the record of each stack a boundary crosses names the entry that carries it.
 A record that names none takes `crossfade`.
 The author names a transition with the `transition:` argument of a structural operation,
 so one boundary may carry one region with one transition and another region with another.
-Typst refuses a transition that is not in `region-transitions` in `src/transition.typ`,
-and it refuses two operations that change one region at one boundary and name two
-transitions, where a region is the outermost one, since that is the one holding the stack.
+Typst refuses a transition that is not in `region-transitions` in `src/transition.typ`.
+It also refuses two operations that change one region at one boundary and name two different
+transitions.
+Here a region means the outermost region, because the outermost region holds the stack.
 
 `planBoundary` runs once per slide and step, before any stack is planned.
-It finds the stacks the step carries and gives each the record of the first tag the boundary
-changes in it, with `names`, the tags the step changes in it.
+It finds the stacks that the step carries.
+Each such stack gets the record of the first tag that the boundary changes in the stack,
+together with `names`, which lists every tag that the step changes in the stack.
 It then settles what an earlier morph is still moving, as the next section says.
 `planEpoch` then plans every epoch stack for every transition alike.
 The rendering of the state being shown is visible and opaque,
@@ -262,10 +269,11 @@ A match is a pair of elements, one in the outgoing region and one in the incomin
 Tags come first: two labelled groups of one name, paired by index in document order,
 and translated on their outer slot.
 A tag whose name is among the `names` of the stack's record is one the boundary changes,
-and neither it nor a group that holds it is matched as a whole.
-Then the ink: the `<use>`, `<path>` and `<image>` elements outside every matched group,
-in document order and outside every `<defs>`, `<clipPath>` and glyph `<symbol>`,
-paired by `commonSubsequence`, a diff of the Myers kind over one key per element.
+and neither that tag nor a group that holds it is matched as a whole.
+Then the ink is matched.
+The ink is every `<use>`, `<path>` and `<image>` element outside every matched group,
+in document order and outside every `<defs>`, `<clipPath>` and glyph `<symbol>`.
+The ink is paired by `commonSubsequence`, a diff of the Myers kind over one key per element.
 `inkKey` writes the key from what the element draws apart from its place and its colour.
 For a glyph that is the `href`.
 For a path it is the `d` and the stroke attributes other than the colour,
@@ -273,14 +281,15 @@ because typst writes every shape from its own origin and puts its place in a `tr
 For an image it is the `href`, the `width` and the `height`.
 `clipsAbove` appends the clips between the element and its region, each with its place on
 the screen, so that a match never moves under a clip that is in another place in the other
-region, and the same rule applies to a tag match.
+region.
+The same rule applies to a tag match.
 Each distinct key is replaced by a small integer before the diff, which then compares
 numbers.
 Above `MORPH_DIFFERENCES` differences the diff gives up and the ink is crossfaded.
 The glyphs of one text run that all travel the same distance are carried by one animation
 on the run instead of one each.
 
-Then the resizes, in an engine for which `CSS.supports` accepts `d` (`RESIZES`).
+Then come the resizes, in an engine for which `CSS.supports` accepts `d` (`RESIZES`).
 `resizes` takes the paths the ink diff left over between two consecutive ink matches, which
 form a hunk, and pairs them by a second `commonSubsequence` per hunk over a structure key.
 `pathStructure` writes that key from the command letters of the `d`, the count of its
@@ -288,7 +297,7 @@ numbers and the stroke attributes other than the width, and `matches` appends th
 and `labelsAbove`, the labels of the groups between the path and its region.
 `sameFrame` drops a pair whose two user spaces differ in more than a translation.
 
-Last the shape morphs, in the same engines.
+Last come the shape morphs, in the same engines.
 `shapeMorphs` takes the paths left over after the resizes and assigns each to the tag it
 belongs to, which is the nearest labelled group above it that is not Animo's own,
 or the tag around the region when the region is a tag's implicit one.
@@ -298,8 +307,7 @@ each region pairs the two, whatever their structure, under the same clips and `s
 The distance of a match is measured on the screen, from where the outgoing element is
 displayed to where the incoming one is laid out, and mapped into the user space of each
 element's parent through the inverse of the parent's `getScreenCTM()`.
-Both renderings stay laid out under `visibility`, which is what makes the outgoing geometry
-readable at all.
+Both renderings stay laid out under `visibility`, so the outgoing geometry can be read.
 The outgoing element animates from what it shows to the incoming place, with an `end` of its
 own in the effect, and the incoming element from the outgoing place to rest.
 Neither is written as inline style, so the slide at rest carries no morph translation.
@@ -324,9 +332,10 @@ route (see *Findings*).
 `slide.morphed` holds every element a morph is still moving, with the epoch of its rendering,
 the stack that holds it, where its route ends and, for a resize or a shape morph, where its
 `d` and stroke width end.
-`settleMorphs` reads it at every step, before any transition plans.
-A translation in a stack the step carries again runs on to its end on the new boundary's
-clock, unless it is in the rendering being entered, and every other one snaps to rest.
+`settleMorphs` reads `slide.morphed` at every step, before any transition plans.
+A translation in a stack that the step carries again runs on to its end on the new boundary's
+clock, unless the translation is in the rendering being entered.
+Every other translation snaps to rest.
 A resize runs on or snaps with its translation, and a later match of a path that is still
 being resized starts from the geometry it shows.
 The measurement of an incoming element subtracts the translations that are still running on
@@ -334,9 +343,9 @@ it and above it, which `getScreenCTM()` includes.
 
 ## Where the Slide Boundary Is Selected
 
-`slideTransitions` in `src/js/boundaries.js` is the same seam one container out,
-and a table of its own rather than an entry in the one above,
-because the two are handed different things.
+`slideTransitions` in `src/js/boundaries.js` plays the same role for slide containers.
+It is a table of its own rather than an entry in `transitions`,
+because the two tables are handed different things.
 A transition of an epoch boundary gets the renderings of one region,
 inside a slide that it holds still.
 A transition of a slide boundary gets two containers and has nothing to hold still,
@@ -345,8 +354,9 @@ since two slides share nothing, so the whole container is the unit.
 The slide that owns a boundary is the one with the higher number,
 which is the slide a forward step enters,
 and its `data-animo-transition` chooses the transition in both directions.
-The parameters of the transition, every one of them stated by typst, travel as JSON in
-`data-animo-transition-args`, together with the `duration` its `init` stated.
+Typst states every parameter of the transition,
+and the parameters travel as JSON in `data-animo-transition-args`,
+together with the `duration` that the slide's `init` stated.
 `auto` resolves to the transition in the `data-animo-config` of the deck element,
 and a `duration` beside `auto` applies to that transition.
 
@@ -364,10 +374,9 @@ The owner comes later in the document, so it is in front in both directions.
 The crossfade animates `opacity` on the two containers,
 through the `mix-blend-mode: plus-lighter` the stylesheet puts on every slide,
 inside the `isolation: isolate` on the stage.
-A plain crossfade handles two opaque grounds incorrectly,
-and the surround therefore sits on `body` rather than on the stage:
-the ground of the element that isolates a blend is inside the group it isolates,
-so a surround written there would be summed into both slides.
+The background of the element that isolates a blend is inside the group it isolates.
+A surround written on the stage would therefore be summed into both slides,
+so the surround sits on `body` instead.
 
 A push and a cover animate `translate` and a wipe animates an `inset` as `clip-path`.
 These three overlap two opaque slides, which would add to a third colour under
@@ -379,10 +388,12 @@ The stage clips a slide that a push moved out of it.
 
 **Two slides are laid out at a time and no more**:
 the one being shown, and the one a boundary is crossing from.
-`display: none` on the rest keeps a long deck cheap to open, which was measured:
-laying every slide out for the whole session doubled the first paint of a sixty-slide deck.
-That is also why a slide's anchors are still measured on its first showing,
-which is the moment it is first laid out and is still before anything has been written on it.
+`display: none` on the rest keeps a long deck cheap to open.
+Laying every slide out for the whole session doubled the first paint of a sixty-slide deck,
+as measured.
+For the same reason, the anchors of a slide are measured when the slide is first shown.
+That is the moment the slide is first laid out,
+and it comes before the runtime has written anything on the slide.
 
 A gradient, a clip path, a tiling, a mask and a filter are referenced through ids that typst
 derives from their content, and a reference resolves to the first definition in the document,
@@ -426,37 +437,50 @@ because a `translate` or `scale` that is equal at both ends stops chromium from 
 `opacity` animated beside it. See *Findings*.
 
 An operation's `delay:` becomes that animation's own delay rather than a timer of its own,
-which keeps the single clock when a step's operations arrive in an order.
+so the step keeps a single clock when its operations arrive one after another.
 A delayed effect fills **backwards**, because the state it is arriving at is already the
-element's inline style: an effect that did not hold its first keyframe while it waits would
-show that state, and then jump back to animate forwards into it. See *Findings*.
+element's inline style.
+An effect that did not hold its first keyframe while it waits would first show that state,
+and then jump back to animate forwards into it. See *Findings*.
 
-A backward step is the same schedule mirrored: each operation is turned around about the
-length of the step it undoes, so the last operation to arrive is the first to leave and the
-step ends where the earlier state began.
-The length of a step is what the plan carries the two extra numbers for, since an operation
-that stated no duration takes one that only the stylesheet knows.
+A backward step plays the schedule of the forward step it undoes from the other end.
+The length of a step is the moment its last operation ends.
+An operation that ran from `delay` to `delay + duration` in the forward step
+runs from `length - delay - duration` to `length - delay` in the backward step.
+The operation that arrived last is therefore the first to leave,
+and the backward step takes as long as the forward step did.
+
+Typst cannot compute the length of a step on its own,
+because an operation that states no duration takes `--animo-primitive-duration`,
+whose value only the stylesheet knows.
+Each state in the plan therefore carries a `span` with two numbers.
+The number `stated` is the latest end over the operations that stated a duration,
+and `unstated` is the latest delay over the operations that did not.
+The runtime adds the deck's duration to `unstated`
+and takes the larger of the two sums as the length of the step.
 
 The one timer the runtime does set is a gap's `wait:` or `hold:`.
-It is armed whenever a position is entered, whatever entered it, and cleared whenever
-another one is, so a presenter stepping by hand never races a clock that is still counting.
+This timer is armed whenever a position is entered, whatever entered it,
+and cleared whenever another position is entered,
+so a presenter stepping by hand never races a clock that is still counting.
 A backward step arms the same gap the other way, so a deck travels back over the gaps it
 travelled forward over and comes to rest where it would wait for the presenter.
 It is also the one step that can land further back than one state, since a gap of zero is a
 join the deck ran through and a backward step walks back over the whole of it.
-A join that ran out of a slide leaves the slide such a step walks back into below its own
-last state, and that is the only case where the slide being entered moves rather than snaps:
-it takes `--animo-primitive-duration` while the boundary takes the duration of the slide's
-`init`, both started on one frame, which is how the forward join ran them.
-A `setTimeout` rather than an animation of zero size, because *Findings* records that the
-document timeline is not a clock, and a deck waiting out a long step is a page with
-nothing to draw.
+When a join ran out of a slide, a backward step over that join walks back into the slide
+at a state before its last one.
+That is the only case where the slide being entered moves rather than snaps.
+The slide takes `--animo-primitive-duration` while the boundary takes the duration of the
+slide's `init`, both started on one frame, as the forward join ran them.
+The timer is a `setTimeout` rather than an animation of zero size,
+because the document timeline is not a clock, as *Findings* records,
+and a deck waiting out a long step is a page with nothing to draw.
 
 A test asserts about a moment of a step by pausing what is in flight and setting its time,
 rather than by racing it.
 When it does, **every raster it compares has to be taken with the step in flight**,
-the ones standing for the endpoints included:
-chromium 151 rasterises glyphs differently while an `opacity` animation runs in their frame,
+including the rasters that stand for the endpoints.
+Chromium 151 rasterises glyphs differently while an `opacity` animation runs in their frame,
 so a raster taken at rest and one taken mid-step come off two different rendering paths.
 
 ## The Files of the Runtime
@@ -537,15 +561,16 @@ The runtime acts only on what belongs to the deck, in these places.
 
 ## What the Page Carries
 
-A few attributes are what the runtime reads, and they can be read back in a browser's
-inspector, which is how a step that does not do what the timeline says is diagnosed.
+The runtime reads a few attributes, which can also be read back in a browser's inspector
+to diagnose a step that does not do what the timeline says.
 
 - Every slide container carries `data-animo-slide` and `data-animo-states`,
   its position in the deck and how many states it has,
   and `data-animo-transition`, which is how the boundary above it is crossed.
-- It also carries `data-animo-plan`, the resolved display state of every state of that
-  slide as JSON, keyed by tag name. That is the whole of what the browser is told,
-  so a wrong step is either in this attribute or in the runtime, and the attribute says
+- Every slide container also carries `data-animo-plan`,
+  which holds the resolved display state of every state of that slide as JSON, keyed by tag name.
+  This attribute is the whole of what the browser is told,
+  so a wrong step is either in this attribute or in the runtime, and the attribute shows
   which.
 - The deck element carries `data-animo-config`, the settings of the deck as JSON,
   which the runtime reads once at load.
@@ -585,14 +610,15 @@ appeared in an earlier slide. Typst's definition ids are content hashes, so thos
 are genuinely the same bytes, and hoisting them into one document-level `<svg>` would be
 sound and would save a further **41% of the gzipped page**,
 because gzip's window is smaller than one slide's frame.
-A package cannot write that markup: `html.frame` is content until the document is encoded,
-and every text node is escaped, so the document-level `<svg>` cannot be written from inside
-a typst compile at all. *Findings* records the measurement.
+A package cannot write that markup.
+An `html.frame` is content until the document is encoded, and every text node is escaped,
+so the document-level `<svg>` cannot be written from inside a typst compile at all.
+*Findings* records the measurement.
 
 A content layer is the clearest case of what is left, because a deck gives every slide the
 same one. On the controlled deck the twelve overlay frames are byte-identical, 78% of each
 is definitions, and hoisting those would take the 233 KiB they weigh to 66 KiB.
-It is also the case no scope inside a slide reaches, since the twelve frames sit in twelve
+No scope inside a slide reaches this duplication, since the twelve frames sit in twelve
 slides.
 
-None of this is urgent: a deck that transfers 245 KiB is a small web page.
+None of this is urgent, because a deck that transfers 245 KiB is a small web page.

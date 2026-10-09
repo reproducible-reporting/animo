@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Probes for *SVG `<defs>` ids are content hashes*.
 
-Relevant because stacking several epoch frames in one document puts duplicate ids
+This is relevant because stacking several epoch frames in one document puts duplicate ids
 in one DOM, and a browser resolves `<use xlink:href="#g..">` to the first match.
 That is harmless only as long as equal ids always mean equal content,
 and, for a gradient, a clip path or a tiling, as long as the first definition is laid out.
@@ -10,7 +10,8 @@ The second condition is probed in `test_hidden_defs.py`.
 
 The last probe here is about `gzip` rather than about typst, and it belongs beside these
 because it is what decides whether the redundancy the others describe costs anything on
-the wire. It does: a deck is served compressed, and the repetition survives compression.
+the wire.
+It does, because a deck is served compressed and the repetition survives compression.
 """
 
 import gzip
@@ -77,8 +78,9 @@ def test_a_glyph_has_one_id_whatever_its_fill(typst: TypstRunner):
 
 # What the redundancy costs on the wire.
 
-# Deflate's sliding window, which no `zlib` setting raises: a repeat further back than this
-# cannot be encoded as a back-reference and is stored again in full.
+# Deflate's sliding window, which no `zlib` setting raises.
+# A repeat further back than this cannot be encoded as a back-reference and is stored again
+# in full.
 WINDOW = 32 * 1024
 
 
@@ -111,13 +113,13 @@ def test_gzip_does_not_deduplicate_a_repeat_beyond_its_window():
 
 
 def test_an_epoch_frame_is_larger_than_the_gzip_window(typst: TypstRunner):
-    """Which puts the duplication across epoch frames out of gzip's reach entirely.
+    """The window puts the duplication across epoch frames out of gzip's reach entirely.
 
     A definition repeated in the next frame is further back than the window whatever sits
     between the two, so whether compression recovers the redundancy is decided by the size
     of one frame and not by the shape of the deck.
-    It is not close: a frame carrying a heading and one sentence already clears the window,
-    and a frame carrying a whole slide clears it several times over.
+    The margin is wide, because a frame carrying a heading and one sentence already clears
+    the window, and a frame carrying a whole slide clears it several times over.
 
     This is the step from *equal ids mean equal content* to *compression does not recover
     it*, and it is measured on real output rather than reasoned about.

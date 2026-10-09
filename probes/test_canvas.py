@@ -9,8 +9,8 @@ so how typst sees a placement decides how the canvas can be sized at all.
 Three routes are closed and one is open, and each of the four is a probe.
 
 Two probes at the end are about how far the open route can be trusted,
-because the union it computes is not exact even where it looks exact:
-an unbounded `measure` of a ratio-sized body reports nothing,
+because the union it computes is not exact even where it looks exact.
+An unbounded `measure` of a ratio-sized body reports nothing,
 and no cheap mechanism separates a top-level placement from a nested one.
 """
 
@@ -132,8 +132,9 @@ def test_an_unbounded_measure_resolves_a_ratio_size_to_zero(typst: TypstRunner):
 
     A show rule over a placement can measure its body, but only without a container to
     resolve a ratio against, so a full-bleed `rect(width: 100%, height: 100%)` reports
-    nothing at all and contributes nothing to the union. The second assertion is the
-    control: an absolutely sized body does measure, so the first is about the ratio.
+    nothing at all and contributes nothing to the union.
+    The second assertion is the control.
+    An absolutely sized body does measure, so the first assertion is about the ratio.
     """
     typst.ok(RATIO_SIZED)
 
@@ -200,9 +201,10 @@ def test_a_nesting_depth_does_not_separate_a_top_level_placement_from_a_nested_o
     **zero** for a placement inside another placement, which has no container in it to
     step the depth. That is the shape both decks beside this repository are written in,
     and it is the shape a slide takes when a group of placements is positioned as a whole.
-    The other half is not probed here because a probe imports no animo: a tag site and a
-    region are a box and a block, so a mechanism that counts containers would read every
-    placement inside a tag as nested. So "count only the placements that can be attributed
-    to the slide body" has no mechanism behind it.
+    The other half is not probed here, because a probe imports no animo.
+    A tag site and a region are a box and a block, so a mechanism that counts containers
+    would read every placement inside a tag as nested.
+    "Count only the placements that can be attributed to the slide body" therefore has no
+    mechanism behind it.
     """
     typst.ok(NESTING_DEPTH)

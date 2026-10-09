@@ -7,9 +7,10 @@ The decks land in `docs/examples/`, which the site build copies to `site/example
 so that the example table can link to a deck a reader opens in a browser.
 They are build products in a source tree, which `.gitignore` covers.
 
-Compiling here rather than in a task runner keeps the documentation to two commands,
-and it is also a test: a deck that the manual points at has to compile to all three
-output types, and this script is what fails when one does not.
+Compiling the decks in a script rather than in a task runner keeps the documentation to two
+commands.
+The script is also a test, because a deck that the manual points at has to compile to all
+three output types, and this script is what fails when one does not.
 """
 
 import argparse
@@ -21,8 +22,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # Where the site publishes a deck from, and where the multi-page export is exercised.
-# The SVG pages are not published: they are one file per page, which is clutter beside
-# the three products a reader follows a link to, and the format is what is being tested.
+# The SVG pages are not published, because they are one file per page, which is clutter
+# beside the three products a reader follows a link to, and the format is what is being
+# tested.
 PUBLISHED = ROOT / "docs" / "examples"
 SCRATCH = ROOT / "build" / "examples"
 

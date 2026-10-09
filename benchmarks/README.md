@@ -18,7 +18,7 @@ The numbers this directory produces are quoted in
 ./benchmarks/run.py --output benchmarks/results/$(hostname).json
 ```
 
-It is intentionally a script rather than a build target.
+The benchmark is intentionally a script rather than a build target.
 It takes a few minutes and writes a different file every time,
 because seconds are not reproducible,
 so a target that ran by default would leave the working tree dirty after every build.
@@ -34,7 +34,7 @@ While changing the script itself, a shorter run into a scratch file is what to u
 
 ## What Is Measured
 
-Three decks are measured, for three different reasons.
+Each deck measured here has a reason of its own.
 
 [`examples/tour.typ`](../examples/tour.typ) is the **realistic** one.
 It is the deck the manual embeds, so it says what an author of a real deck waits for,
@@ -64,8 +64,8 @@ A number measured on it is comparable only when the deck it was measured on is u
 so the tour deck covers realism and this one covers stability.
 
 Each variant is also compiled with `plain=on`,
-which lays the same content out with Animo out of the way:
-`tag` and `region` become the plainest containers that hold the same ink,
+which lays the same content out with Animo out of the way.
+In that run, `tag` and `region` become the plainest containers that hold the same ink,
 and the timeline is not built at all.
 The content itself is written once, as a function of those two containers,
 so the Animo run and the plain run cannot drift apart.
@@ -74,7 +74,7 @@ so the Animo run and the plain run cannot drift apart.
 The canvas of a slide is the union of its body and of every `#place`d element on it,
 and Animo computes that union only on a slide whose timeline pans.
 The deck is one slide of ten thousand marks over twenty states,
-in the four shapes that say what the union costs and what avoids it:
+in variants that say what the union costs and what avoids it:
 
 | Variant      | Differs in                                                                   |
 | ------------ | ---------------------------------------------------------------------------- |
@@ -88,8 +88,8 @@ and it is the one deck whose **peak memory** is recorded beside its seconds.
 The compiler is run directly rather than through the test harness there,
 because the harness reports what typst wrote and not what the process used.
 
-Beside the cold compiles, the script measures the **live preview loop**:
-how long `typst watch` takes to recompile after an edit.
+Beside the cold compiles, the script measures the **live preview loop**,
+which is how long `typst watch` takes to recompile after an edit.
 A release build is compiled once, while a deck being written is recompiled
 after every edit that lands, and typst memoises across recompiles inside one `watch`
 process, so the cold compile time does not describe what writing a deck feels like.
@@ -110,7 +110,7 @@ differences, which is where the bound in `src/js/morph.js` comes from.
 
 ## The Results
 
-One JSON file per machine under `results/`, committed.
+The results are one JSON file per machine under `results/`, and they are committed.
 A number is only interpretable together with the machine it was measured on,
 so each file records the CPU, the core count, the platform, the typst release,
 the libc that release is linked against, the Animo version and the commit it was measured at.

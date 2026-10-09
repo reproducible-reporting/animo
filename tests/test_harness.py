@@ -4,8 +4,8 @@
 
 A comparison helper that returns the wrong answer would make every probe and every feature
 test agree with whatever the code happens to do, silently.
-So each helper is exercised on a case whose answer is known in advance,
-including the negative case: a comparison that must fail, and does.
+Each helper is therefore exercised on a case whose answer is known in advance,
+including the negative case, which is a comparison that must fail, and does.
 """
 
 from io import BytesIO

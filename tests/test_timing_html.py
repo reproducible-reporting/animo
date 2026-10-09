@@ -6,8 +6,9 @@ Two clocks meet here and are kept apart on purpose.
 
 `wait:` is a `setTimeout` in the runtime, which is exactly what the animation harness
 cannot scrub, so these tests stop the page's clock before the deck is loaded and state how
-much time passes: `timed_deck_at` installs the fake clock and `Deck.run_for` fires the
-timers that are due. Nothing in the runtime knows it is being tested.
+much time passes.
+`timed_deck_at` installs the fake clock and `Deck.run_for` fires the timers that are due.
+Nothing in the runtime knows it is being tested.
 
 `delay:` and `duration:` are the Web Animations API effect's own delay and duration, so
 they run on the document timeline, which the fake clock leaves alone. An operation that
@@ -23,7 +24,8 @@ from harness import EPOCH_GROUPS, Deck, TypstRunner
 # Slowed down from animo's own 400 ms so that a paused animation cannot already have ended,
 # and linear so that the moment sampled is the fraction of the step it looks like.
 # Shorter than the 4 s the other browser modules use, because a delayed step is the one
-# kind a test may also have to wait out: it runs for its delay and its duration together.
+# kind a test may also have to wait out, because it runs for its delay and its duration
+# together.
 DURATION = 1000
 MIDPOINT = DURATION / 2
 
@@ -35,7 +37,8 @@ DELAY = DURATION / 2
 
 # How long an operation that states a duration of its own takes here, in milliseconds.
 # Three times the deck's own step, so that a moment past the end of the step is still well
-# inside it: an operation that never got its own duration would have finished by then.
+# inside it.
+# An operation that never got its own duration would have finished by then.
 OWN = 3 * DURATION
 
 
@@ -72,8 +75,9 @@ def playing(typst: TypstRunner):
     return typst.html(PLAYING, name="playing.html")
 
 
-# The same deck timed from the other side: `hold:` names the gap after the step it is
-# written on, where `wait:` names the gap before it, so these two decks run identically.
+# The same deck timed from the other side.
+# `hold:` names the gap after the step it is written on, where `wait:` names the gap before
+# it, so these two decks run identically.
 HELD = deck(
     "slide(animation: { import anim: *\n"
     "  init(hold: 1)\n"
@@ -120,7 +124,8 @@ def joined(typst: TypstRunner):
 
 
 # One slide with a join, then a run of two, and a state the presenter stops at between
-# them: the deck rests at states 0, 1, 3 and 6 and runs through the rest.
+# them.
+# The deck rests at states 0, 1, 3 and 6 and runs through the rest.
 #
 # Every test below drives this deck with `run_for` and asserts where it rests, never where
 # it is passing through, because a zero-length timer armed while the page loads is not held
@@ -205,8 +210,8 @@ def test_the_first_waits_of_a_deck_are_measured_from_the_first_paint(timed_deck_
     """There is no earlier trigger to measure from, and the deck is not waiting for a key.
 
     The clock is stopped before the page is loaded, so no time at all passes between the
-    first paint and the assertion above it: a timer that were armed on the first key press
-    instead would never fire here.
+    first paint and the assertion above it.
+    A timer that were armed on the first key press instead would never fire here.
     """
     presentation: Deck = timed_deck_at(playing)
     presentation.run_for(SECOND)
@@ -423,9 +428,10 @@ def test_a_stopped_clock_does_not_change_where_a_backward_step_lands(timed_deck_
     """Where a deck rests is what its timeline says, not what its clock is doing.
 
     A state the deck runs through stays addressable all the same, which is what makes the
-    walk affordable: stepping forward through a stopped deck reaches it, and so does a
-    fragment. Both are asserted here, because a stopped deck is the one place a test can
-    rest on a zero-length gap at all: it arms no timer.
+    walk affordable.
+    Stepping forward through a stopped deck reaches it, and so does a fragment.
+    Both are asserted here, because a stopped deck is the one place a test can rest on a
+    zero-length gap at all, since a stopped deck arms no timer.
     """
     presentation: Deck = timed_deck_at(paced)
     presentation.press("ArrowRight")
@@ -600,8 +606,8 @@ def test_a_delayed_operation_ends_where_an_undelayed_one_does(deck_at, delayed):
 def test_two_operations_of_one_step_keep_their_own_moments(page, deck_at, typst: TypstRunner):
     """One effect has one delay, so a step with two moments in it is two effects.
 
-    They are still created in one task and still start on the same frame, which is what
-    keeps the step's one clock: the delay is the effect's own and never a timer.
+    They are still created in one task and still start on the same frame, so the step keeps
+    one clock, because the delay is the effect's own and never a timer.
     """
     presentation: Deck = deck_at(
         animated(
@@ -641,8 +647,8 @@ def test_a_step_that_times_nothing_is_still_one_effect(page, deck_at, typst: Typ
 def timings(page, field: str) -> list:
     """One field of the timing of every animation now in flight, sorted.
 
-    Read off the effect rather than off the clock: a duration is what the operation asked
-    the browser for, and the browser is what says whether it was asked.
+    The field is read off the effect rather than off the clock, because a duration is what
+    the operation asked the browser for, and the browser is what says whether it was asked.
     """
     return sorted(
         page.evaluate(f"() => document.getAnimations().map(a => a.effect.getTiming().{field})")
@@ -663,7 +669,7 @@ def slow_reveal(typst: TypstRunner):
 def test_an_operation_takes_the_duration_it_states(page, deck_at, slow_reveal):
     """The whole point: one step at a tempo of its own, in a deck that keeps its own.
 
-    Asserted by scrubbing to a moment the deck's own step would already have ended at,
+    This is asserted by scrubbing to a moment the deck's own step would already have ended at,
     rather than by racing the operation to it.
     """
     presentation: Deck = deck_at(slow_reveal)
@@ -713,8 +719,9 @@ def test_a_stated_duration_still_follows_a_delay_of_its_own(page, deck_at, typst
 def test_a_step_ends_when_the_last_of_its_operations_does(page, deck_at, typst: TypstRunner):
     """Two durations in one step are two effects, and the step lasts as long as the longer.
 
-    Read as the audience sees it: at a moment past the end of the short one and inside the
-    long one, the first has arrived and the second is still on its way.
+    The step is read as the audience sees it.
+    At a moment past the end of the short one and inside the long one,
+    the first has arrived and the second is still on its way.
     """
     presentation: Deck = deck_at(
         animated(
@@ -739,9 +746,10 @@ def test_a_step_ends_when_the_last_of_its_operations_does(page, deck_at, typst: 
 def schedule(page) -> dict[str, float]:
     """When each animation now in flight starts, keyed by the tag it is animating.
 
-    Read off the effect rather than off the clock, as the durations above are: a delay is
-    what the operation asked the browser for. One entry per tag, so a step that animates
-    two properties of one tag is not what this reads.
+    The start is read off the effect rather than off the clock, as the durations above are,
+    because a delay is what the operation asked the browser for.
+    There is one entry per tag, so a step that animates two properties of one tag is not
+    what this reads.
     """
     return dict(
         page.evaluate(
@@ -756,16 +764,18 @@ def schedule(page) -> dict[str, float]:
 LINES = "\n  ".join(f'#tag("{name}", wrap: block)[Line {name}.]' for name in "abc")
 
 # Three operations of one step, arriving one after another, the last of them slower than
-# the deck's own step. The delays alone would not say which order they leave in: what does
-# is where each of them ends, which is what mirroring the step is about.
+# the deck's own step.
+# The delays alone would not say which order they leave in.
+# Where each of them ends says that, and that is what mirroring the step is about.
 STAGGERED = (
     'sub(reveal("a"),'
     f' reveal("b", delay: {DELAY / 1000}),'
     f' reveal("c", delay: {DURATION / 1000}, duration: {OWN / 1000}))'
 )
 
-# How long that step lasts: the last operation of it starts after one step of the deck and
-# then runs for three, and nothing else is still going by then.
+# How long that step lasts.
+# The last operation of it starts after one step of the deck and then runs for three,
+# and nothing else is still going by then.
 STEP = DURATION + OWN
 
 
@@ -779,8 +789,9 @@ def test_a_backward_step_mirrors_the_schedule(page, deck_at, delayed):
     """A backward step is the forward one played from the other end.
 
     The one operation of this step is the last to arrive because it is the only one, so
-    going back it is the first to leave: the delay that held it back moves to the end of
-    the step, where it holds the step open for exactly as long.
+    going back it is the first to leave.
+    The delay that held it back moves to the end of the step, where it holds the step open
+    for exactly as long.
     """
     presentation: Deck = deck_at(delayed)
     page.add_style_tag(content=SLOW)
@@ -997,8 +1008,8 @@ def test_a_boundary_overtaken_mid_crossfade_keeps_its_region_opaque(
     represent. Every rendering that is not the one being entered hands the region over on the
     new boundary's clock, so all of them fade out under one easing while the incoming one
     fades in and the region's ink stays at exactly one throughout.
-    The overlap is not particular to a duration: a `wait:` shorter than a step, or a
-    presenter clicking twice, reaches it as well.
+    The overlap is not particular to a duration, because a `wait:` shorter than a step,
+    or a presenter clicking twice, reaches it as well.
     """
     presentation: Deck = deck_at(
         animated(
@@ -1071,8 +1082,9 @@ BOUNDARY = 2 * DURATION
 
 JOINING = f"{SLOW}\n:root {{ --animo-transition-duration: {BOUNDARY}ms }}"
 
-# A build that spills into the next slide: one press starts the step's own motion and the
-# boundary, which is what `hold: 0` is written on a step for.
+# A build that spills into the next slide.
+# One press starts the step's own motion and the boundary, which is what `hold: 0` is written
+# on a step for.
 SPILLING = deck(
     f'slide(animation: {{ import anim: *\n  sub(hold: 0, reveal("a"))\n}})[\n  {LINE}\n]',
     "slide[= Second]",
@@ -1103,8 +1115,8 @@ def spilling_region(typst: TypstRunner):
 def test_a_backward_step_over_a_join_rewinds_the_slide_it_lands_on(page, deck_at, spilling):
     """The slide being entered is below its own last state, and the way back says so.
 
-    Going forward the audience saw one motion: the step running inside the slide while the
-    boundary carried it away. A backward step that snapped that slide into place would
+    Going forward the audience saw one motion, which was the step running inside the slide
+    while the boundary carried it away. A backward step that snapped that slide into place would
     crossfade a picture the audience never saw, so the slide moves as the boundary crosses
     it, which is the same pair of clocks started on the same frame.
     """
@@ -1177,7 +1189,8 @@ def test_a_snapping_step_drops_a_delay_with_the_duration(page, deck_at, delayed)
 
     `--animo-motion: none` is the one line a reader who asked for less motion reaches
     through the media query in animo's own stylesheet, and it is where the runtime reads
-    the question: a step that snaps snaps whole, delays and all.
+    the question.
+    A step that snaps snaps whole, delays and all.
     """
     presentation: Deck = deck_at(delayed)
     page.add_style_tag(content=":root { --animo-motion: none }")
@@ -1237,9 +1250,10 @@ def test_a_step_interrupted_by_a_shorter_wait_continues_from_where_it_is(
 ):
     """A wait is measured from its predecessor's trigger, not from the end of its motion.
 
-    So a wait shorter than a step's own duration interrupts it, and that needs no rule of
-    its own: an interrupted step continues from where it is, because the display state is
-    the state and the animation is only the route to it.
+    A wait shorter than a step's own duration therefore interrupts it, and that needs no
+    rule of its own.
+    An interrupted step continues from where it is, because the display state is the state
+    and the animation is only the route to it.
     """
     source = deck(
         "slide(animation: { import anim: *\n"

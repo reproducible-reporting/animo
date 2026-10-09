@@ -131,7 +131,7 @@ pytest -n0 tests/test_tags.py
 and the policy on stored reference images.
 
 Previewing a deck is typst's own job.
-It serves the HTML and reloads the browser itself, so Animo ships nothing for live preview:
+Typst serves the HTML and reloads the browser itself, so Animo ships nothing for live preview:
 
 ```bash
 typst watch --format html --features html --open talk.typ talk.html
@@ -145,8 +145,10 @@ The site is two commands, in this order.
 and writes the results into `docs/examples/`, which is a build product in a source tree and
 is covered by `.gitignore`.
 `zensical build --strict` then copies them to `site/examples/`, beside the pages that link
-to them. Compiling them there rather than in a task runner keeps the site to two commands,
-and it is also a test: a deck the manual points at has to compile to every output type.
+to them.
+Compiling the decks in a script rather than in a task runner keeps the site to two commands.
+The script also acts as a test, because a deck that the manual points at has to compile to
+every output type.
 
 The site alone builds without the decks, which is enough for a contributor who only wants
 to read the pages. The links to the decks are absolute, so `--strict` does not chase them;
@@ -161,7 +163,7 @@ because a measurement is only meaningful when it is requested explicitly, on an 
 ./benchmarks/run.py --output benchmarks/results/$(hostname).json
 ```
 
-It takes a few minutes and writes a different file every time, since seconds are not
+A run takes a few minutes and writes a different file every time, since seconds are not
 reproducible. The results are committed, one file per machine, because a number is only
 interpretable together with the machine it was measured on.
 `benchmarks/README.md` says what is measured and why.
@@ -182,9 +184,8 @@ in `src/`, in `probes/`, in `tests/` and in the specification that
 and Snipwise rewrites all of them from the `compiler` field.
 A claim is written as `typst X.Y.Z`, with the word before the number,
 because that is the anchor Snipwise matches on.
-Bumping the field therefore restates every one of those claims for the new release,
-and the probes are what say whether they still hold:
-`pytest` runs `probes/` beside `tests/`.
+Bumping the field therefore restates every one of those claims for the new release.
+The probes check whether those claims still hold, and `pytest` runs `probes/` beside `tests/`.
 Commit a bump only once that run is green.
 
 A figure that came out of a benchmark is written as `with typst X.Y.Z` instead,
@@ -197,4 +198,4 @@ The package directory under `.typst-packages` carries the version in the name of
 which Snipwise cannot rewrite, so `git mv` renames it in the same commit.
 A rename that is forgotten fails the `package symlink matches the manifest` hook,
 which `pre-commit` runs on the commit that bumps the version.
-It also fails `test_package_symlink_points_at_the_working_tree`.
+A forgotten rename also fails `test_package_symlink_points_at_the_working_tree`.

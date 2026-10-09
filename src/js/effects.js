@@ -7,9 +7,10 @@
 // Motion is driven by the Web Animations API rather than by CSS transitions.
 // Each step writes the state's display state as inline style on the tag's inner group and
 // animates from what the element was showing to that, so the style is the state and the
-// animation is only how it got there: a step interrupted halfway continues from where it
-// is, stepping backwards lands on exactly the geometry the earlier state had, and a
-// deep link needs no transition to suppress.
+// animation is only how it got there.
+// A step interrupted halfway therefore continues from where it is,
+// stepping backwards lands on exactly the geometry the earlier state had,
+// and a deep link needs no transition to suppress.
 //
 // When a step starts an animation it never says when it began.
 // Every animation of one step is created in one task, so they are all pending until the
@@ -47,10 +48,11 @@ function milliseconds(value) {
 /**
  * How a step moves, read from the stylesheet at every step, or `null` when it snaps.
  *
- * The values live in CSS rather than in this file: the deck writes its `primitive-duration:`,
- * `transition-duration:` and `easing:` arguments there.
- * `property` is which duration is wanted: a primitive within a slide and a slide boundary
- * have one each, so a deck of hard cuts between slides keeps the motion inside them.
+ * The values live in CSS rather than in this file, because the deck writes its
+ * `primitive-duration:`, `transition-duration:` and `easing:` arguments there.
+ * `property` is which duration is wanted.
+ * A primitive within a slide and a slide boundary have one each,
+ * so a deck of hard cuts between slides keeps the motion inside them.
  *
  * The duration is a default, so a deck duration of zero is still a step that moves when an
  * operation states a duration of its own, and an effect snaps only when it ends up with no
@@ -74,8 +76,9 @@ function timing(property = "--animo-primitive-duration") {
  * The options of one effect: the deck's own, held back and stretched by its operation's.
  *
  * A delay becomes the effect's delay and a duration the effect's duration, rather than a
- * timer of its own, which is what keeps the step's one clock: every animation of a step is
- * still created in one task and measured from the same instant.
+ * timer of its own.
+ * The step therefore keeps one clock, because every animation of a step is still created in
+ * one task and measured from the same instant.
  * A duration the operation does not state is the deck's own, `--animo-primitive-duration`,
  * so that a change of the deck's tempo reaches every operation that said nothing
  * and leaves the ones that did alone.
@@ -84,8 +87,9 @@ function timing(property = "--animo-primitive-duration") {
  * the animation is created, so an effect that does not hold its first keyframe while it
  * waits shows the state it is going to reach and then jumps back to where it started.
  *
- * A step that snaps stays snapped, delays and durations alike: `options` is `null` for a
- * reader who asked for less motion, a deep link and the first paint.
+ * A step that snaps stays snapped, delays and durations alike.
+ * `options` is `null` for a reader who asked for less motion, a deep link and the first
+ * paint.
  * An effect with no time at all, no delay and a duration of zero, snaps as well, which is
  * what an operation that takes the deck's duration of zero and a hard cut both are.
  * A delay with a duration of zero holds the effect back and then jumps.
@@ -95,7 +99,7 @@ function timing(property = "--animo-primitive-duration") {
  * from `delay` to `delay + duration` runs from `mirror - delay - duration` instead and
  * takes exactly as long.
  * The last thing to arrive is then the first to leave, so a backward step undoes a forward
- * one in time as well as in geometry. It is `null` for a step that plays forwards.
+ * one in time as well as in geometry. `mirror` is `null` for a step that plays forwards.
  */
 function scheduled(options, timing, mirror = null) {
   if (options === null) {
@@ -118,9 +122,9 @@ function scheduled(options, timing, mirror = null) {
  * The step ends when the last of its operations does, so this is the largest
  * `delay + duration` over all of them. The resolver could only add up the operations that
  * stated a duration, because the one an operation does not state lives in the stylesheet,
- * so it hands over the two halves and they are added here: `stated` is the largest end it
- * could compute, and `unstated` the largest delay of the operations whose duration is the
- * deck's own.
+ * so it hands over the two halves and they are added here.
+ * `stated` is the largest end it could compute, and `unstated` the largest delay of the
+ * operations whose duration is the deck's own.
  *
  * A step that states no timing at all carries no span, and lasts exactly one step of the
  * deck, which is what every operation of it takes.
@@ -196,16 +200,17 @@ function keyframeName(name) {
  *
  * `options` is `null` for a state that snaps, and otherwise one options object per property
  * of `to`, because two operations of one step may start at different moments and an effect
- * has one delay. A property it has no options for snaps.
+ * has one delay. A property without options snaps.
  *
  * `start` states where an animated property starts, in place of what the element is showing,
- * for an element whose current value is no point on the route to the new one: a slide that
- * a push brings in has not been laid out, and it starts outside the stage.
+ * for an element whose current value is no point on the route to the new one.
+ * A slide that a push brings in has not been laid out, and it starts outside the stage.
  *
  * `end` states where an animated property ends, in place of the state written, for an
- * effect that is a route and not a state: a morph carries an outgoing element to the place of
- * the incoming one, and the element is back at rest once the animation is over, which is
- * when the crossfade has made it transparent.
+ * effect that is a route and not a state.
+ * A morph carries an outgoing element to the place of the incoming one,
+ * and the element is back at rest once the animation is over,
+ * which is when the crossfade has made it transparent.
  */
 function plan(effects, element, to, options = null, { start = null, end = null } = {}) {
   let own = effects.get(element);
@@ -237,30 +242,31 @@ function apply(effects) {
       element.style.setProperty(property, effect.to);
     }
   }
-  // Read after every write of the step, and before any animation is created, so that the
-  // engine recalculates style once. An animation created between two reads makes the second
-  // one recalculate the style of the page again, which costs a step of a few thousand
-  // elements seconds in chromium 151.
+  // The styles are read after every write of the step, and before any animation is created,
+  // so that the engine recalculates style once.
+  // An animation created between two reads makes the second one recalculate the style of the
+  // page again, which costs a step of a few thousand elements seconds in chromium 151.
   const animations = [];
   for (const [element, own] of effects) {
     const names = [...own].filter(([, effect]) => effect.timing !== null).map(([name]) => name);
     if (names.length === 0) {
       continue;
     }
-    // What the element now computes, rather than what was just written: an engine
-    // normalises what it computes, and chromium 151 gives back `0px` for the `0px 0px` of
-    // a tag at rest, so comparing the two spellings finds a difference where there is none.
+    // The animation starts from what the element now computes, rather than from what was
+    // just written, because an engine normalises what it computes.
+    // Chromium 151 gives back `0px` for the `0px 0px` of a tag at rest,
+    // so comparing the two spellings finds a difference where there is none.
     // An effect with an `end` of its own ends there instead, and is not read at all, which
     // is what keeps a morph of a few thousand glyphs from reading as many styles.
     const unstated = names.filter((name) => own.get(name).end === null);
     const shown = unstated.length === 0 ? {} : showing(element, unstated);
     const into = Object.fromEntries(names.map((name) => [name, own.get(name).end ?? shown[name]]));
-    // Only the properties this step actually changes, because in chromium 151 a `translate`
-    // or `scale` that is equal at both ends stops the browser from drawing the `opacity`
-    // beside it, and the element stays as it was until the step ends and then jumps.
+    // Only the properties this step actually changes are animated, because in chromium 151 a
+    // `translate` or `scale` that is equal at both ends stops the browser from drawing the
+    // `opacity` beside it, and the element stays as it was until the step ends and then jumps.
     // Measured; see *Findings*.
     const changed = names.filter((name) => own.get(name).from !== into[name]);
-    // One effect per group of properties that are timed alike, so that a step whose
+    // There is one effect per group of properties that are timed alike, so that a step whose
     // operations are timed alike, which is every step that says nothing about timing, is
     // still one animation on this element.
     const groups = new Map();

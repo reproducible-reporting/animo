@@ -59,8 +59,8 @@ def test_stacking_order_is_fixed_at_compile_time(typst: TypstRunner, open_page):
 
     Z-order changing animations are therefore out of scope,
     and a slide's overlap has to be decided when it is written.
-    Note that epoch frames are stacked as *HTML* elements,
-    where the grid and `opacity` do apply, which is a different mechanism.
+    The renderings of an epoch stack paint in document order as well,
+    which does not matter because `plus-lighter` adds them in any order.
     """
     body = """\
 #html.frame[

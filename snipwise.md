@@ -223,13 +223,13 @@ render = "{{ content | unwrap }}"
 ## `tagline`
 
 ```markdown
-Animo builds both dynamic HTML and static PDF presentations using [typst](https://typst.app/).
+Animo builds dynamic HTML and static PDF presentations using [typst](https://typst.app/) from a single source.
 ```
 
 ## `description`
 
 ```text
-Build dynamic HTML and static PDF presentations.
+Build dynamic HTML and static PDF presentations from a single source.
 ```
 
 ## `keywords`
@@ -239,6 +239,7 @@ animation
 beamer
 handout
 HTML
+morph
 presentation
 reproducibility
 reproducible research

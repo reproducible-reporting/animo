@@ -3,17 +3,18 @@
 """Probes for *A faked clock drives a timer without touching the document timeline*.
 
 A deck that plays itself is a `setTimeout` in the runtime, and a `setTimeout` is exactly
-what the animation harness cannot scrub: an animation is paused and told where it is,
-while a timer only ever fires. So the timer is driven instead, with `playwright`'s own
-fake clock, and the runtime carries no test seam at all.
+what the animation harness cannot scrub.
+An animation is paused and told where it is, while a timer only ever fires.
+The timer is therefore driven instead, with `playwright`'s own fake clock,
+and the runtime carries no test seam at all.
 
-Four properties make that work, and all four are asserted here, because each of them
+The properties below make that work, and each is asserted here, because each of them
 could be lost in a `playwright` upgrade and the loss would show up as a flaky timing tier
 rather than as a broken tool.
 
-- Installed and then paused, the clock stops: a timer does not fire in real time.
-- One length gets past the pause all the same: a timer of zero armed while the page is
-  loading fires. A millisecond is enough to stop it, and so is arming it once the page has
+- Installed and then paused, the clock stops, and a timer does not fire in real time.
+- One length gets past the pause all the same, because a timer of zero armed while the page
+  is loading fires. A millisecond is enough to stop it, and so is arming it once the page has
   settled, so what a test may not do is expect a zero-length gap to stay pending.
 - `run_for` fires the timers that fall due, in order, including the ones a fired timer
   sets, which is what makes a deck step itself more than once.
@@ -43,8 +44,9 @@ STEP = 1000
 PAUSED_AT = 60_000
 
 # A page that counts itself forward on a chain of timers, one every `STEP`, and publishes
-# the count where a test can read it. This is the shape of the runtime's own autoplay: a
-# timer armed whenever a step is entered, which the step it enters arms again.
+# the count where a test can read it.
+# This is the shape of the runtime's own autoplay, which is a timer armed whenever a step is
+# entered, and which the step it enters arms again.
 PAGE = """<!doctype html>
 <script>
   let count = 0;
@@ -88,8 +90,9 @@ FRAME = 100
 SLACK = 50
 
 # Start an animation and leave it where a test can read it.
-# Not awaited on a frame: `requestAnimationFrame` is faked along with the timers, and a
-# page whose clock is stopped never reaches the frame such a wait asks for.
+# The animation is not awaited on a frame, because `requestAnimationFrame` is faked along
+# with the timers, and a page whose clock is stopped never reaches the frame such a wait
+# asks for.
 START = """() => {
     window.probe = document.documentElement.animate(
         [{opacity: 1}, {opacity: 0}],
@@ -133,8 +136,8 @@ def test_a_zero_length_timer_armed_while_loading_fires_anyway(arming):
 
     A gap of zero is the shape a deck joined by `hold: 0` has, and such a gap arms its
     timer as the page is loaded. A test that expected it to stay pending would be flaky
-    rather than wrong, and only on a loaded machine, so it is asserted here instead: a
-    timing test reaches the far side of such a gap with `run_for` and asserts where the
+    rather than wrong, and only on a loaded machine, so it is asserted here instead.
+    A timing test reaches the far side of such a gap with `run_for` and asserts where the
     deck rests, never where it is passing through.
     """
     arming.wait_for_timeout(PAUSE)
@@ -160,9 +163,9 @@ def test_running_the_clock_fires_the_timers_that_fall_due(counting):
 def test_a_timer_set_by_a_timer_falls_due_in_the_same_run(counting):
     """A deck that steps itself twice does so on a chain, so the chain has to be followed.
 
-    This is the property `fast_forward` does not have: it jumps the clock and fires each
-    timer at most once, which would step such a page exactly one place however far it
-    jumped.
+    This is the property `fast_forward` does not have.
+    `fast_forward` jumps the clock and fires each timer at most once,
+    which would step such a page exactly one place however far it jumped.
     """
     counting.clock.run_for(3 * STEP)
     assert counting.evaluate(COUNT) == 3
@@ -175,10 +178,11 @@ def test_running_the_clock_does_not_run_the_animations(counting):
     timeline, and the fake clock does not reach that timeline. Were it to, a step driven
     forward by a timer would arrive already over and no moment inside it could be stated.
 
-    The bound is the real time that passed rather than nothing: the animation goes on
-    running in real time while the clock is moved, and the calls around the move take real
-    milliseconds. A fixed budget instead would measure the machine rather than the engine:
-    the animation reported 168 ms on a workstation running the whole suite in parallel,
+    The bound is the real time that passed rather than nothing, because the animation goes
+    on running in real time while the clock is moved, and the calls around the move take
+    real milliseconds.
+    A fixed budget instead would measure the machine rather than the engine.
+    The animation reported 168 ms on a workstation running the whole suite in parallel,
     against the 17 ms of *A faked clock drives a timer without touching the document
     timeline*.
     """
@@ -196,8 +200,9 @@ def test_running_the_clock_does_not_run_the_animations(counting):
 def test_an_animation_still_runs_while_the_clock_stands_still(counting):
     """The other half of the same claim: the motion a timed step starts is real motion.
 
-    The comparison is not vacuous next to the test above: the same reading is taken after
-    the same animation has been left alone, and only the kind of time that passed differs.
+    The comparison is not vacuous next to the test above, because the same reading is taken
+    after the same animation has been left alone, and only the kind of time that passed
+    differs.
     """
     counting.evaluate(START)
     counting.wait_for_timeout(FLIGHT)

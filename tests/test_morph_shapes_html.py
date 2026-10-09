@@ -184,7 +184,7 @@ def resizing(presentation: Deck) -> bool:
 
 
 def test_a_rectangle_whose_stroke_changes_width_is_a_resize(midway):
-    """A route does not scale a stroke, so the pair is no exact match but a resize.
+    """A route does not scale a stroke, so the pair is a resize rather than an exact match.
 
     In an engine without `d` there is no resize, and the two rectangles fade where they are.
     `test_morph_resize_html.py` asserts what a resize shows.

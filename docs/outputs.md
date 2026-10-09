@@ -59,8 +59,9 @@ presenter, to the pixel.
 `"html"` for the HTML presentation, `"presentation"` for the static presentation
 and `"handout"` for the static handouts.
 The paged strings are the values of `--input animo=`.
-It is a context function, and it gives the same answer in a slide's body, in its layers and
-outside every slide, so a deck can show content in some output types only:
+The `output-type()` function is a context function.
+It gives the same answer in a slide's body, in its layers and outside every slide,
+so a deck can show content in some output types only:
 
 ```typst
 #let hint = context if output-type() == "html" {
@@ -75,8 +76,9 @@ The HTML output lays a slide out inside an `html.frame`, where `target()` return
 
 A static output type is a paged *mode*, and it says which pages exist.
 The file format is typst's own `--format` flag, and it says how those pages are written.
-The two are independent, so either static type exports to PDF, SVG or PNG:
-SVG embeds a page in another document, and PNG serves consumers that need a raster image.
+The two are independent, so either static type exports to PDF, SVG or PNG.
+SVG is suited to embedding a page in another document,
+and PNG serves consumers that need a raster image.
 
 ```bash
 # The handout pages as SVG, one file per page

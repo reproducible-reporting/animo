@@ -9,7 +9,7 @@ against a background that may not.
 Those are unaffected by a glyph rasterisation change in a new typst release,
 while a stored image is not.
 
-So a reference is a last resort, and `Reference.check` demands a `reason`
+A reference is therefore a last resort, and `Reference.check` demands a `reason`
 that says why a picture is the only statement that can be made here.
 A policy without a regeneration command decays into hand-edited binaries,
 so the update path ships with it: `pytest --update-references`.

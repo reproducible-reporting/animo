@@ -4,7 +4,7 @@
 
 A slide number is a counter and is asserted as one.
 The subslide info a `per-subslide` callback is handed is asserted inside the callback,
-which is the only place it exists: the stack is built while the slide is laid out,
+which is the only place it exists, because the stack is built while the slide is laid out,
 and the info it is built from never leaves it.
 
 Both are asserted in both targets, because one number serving all three output types is
@@ -12,8 +12,9 @@ what the whole construct is for. The HTML target is the one where the value cann
 chosen when the frame is rendered, so it is the one that has to agree by construction.
 
 The paged tier asserts which rendering a page shows, and does so in colour rather than in
-glyphs: what is being checked is that a page carries the rendering of its own state, and a
-filled square says that where a rasterised numeral would need to be read.
+glyphs.
+What is being checked is that a page carries the rendering of its own state,
+and a filled square says that where a rasterised numeral would need to be read.
 """
 
 import numpy as np
@@ -21,7 +22,7 @@ import pytest
 from decks import deck
 from harness import PagedRunner, TypstRunner, assert_differs
 
-# What every assertion here is wrapped in: a callback that checks the info it is handed
+# Every assertion here is wrapped in a callback that checks the info it is handed
 # and lays out nothing, so that the deck compiles whatever the info turns out to be.
 CHECKS = """
 #let expect(wanted) = per-subslide(it => {
@@ -304,7 +305,8 @@ def test_the_handout_shows_the_rendering_of_the_state_it_kept(paged: PagedRunner
     """The handout renders a subset of the states, and numbers them as the states they are.
 
     Its page numbering is not the subslide numbering, and this is where the two are most
-    easily confused: the second page of this handout is the third subslide of the slide.
+    easily confused.
+    The second page of this handout is the third subslide of the slide.
     """
     pages = paged.png(swatched("sub(handout: true)", "sub()"))
     assert len(pages) == 2

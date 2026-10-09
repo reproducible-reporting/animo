@@ -69,8 +69,8 @@ inside the rendering. A rendering that involves the label in neither way is left
 #
 # `getBBox()` gives the box in the group's own user units, which are typst points, and
 # `getScreenCTM()` maps that onto the page, so the result is in CSS pixels either way.
-# `getBoundingClientRect()` cannot be used on a group: firefox 153 inflates it to roughly
-# the width of the whole frame where chromium returns the tight box. See *Findings*.
+# `getBoundingClientRect()` cannot be used on a group, because firefox 153 inflates it to
+# roughly the width of the whole frame where chromium returns the tight box. See *Findings*.
 # All four corners are mapped, so the box stays right under a matrix that rotates.
 MEASURE = """node => {
     if (typeof node.getBBox !== "function") {
@@ -129,7 +129,7 @@ def screenshot(target: Page | Locator, **kwargs) -> np.ndarray:
 
     Animations are disabled, so a screenshot is taken at a defined moment
     rather than at whatever point a transition happened to have reached.
-    PNG rather than WebP: `playwright`'s own `type="webp"` is lossy.
+    The format is PNG rather than WebP, because `playwright`'s own `type="webp"` is lossy.
     """
     kwargs.setdefault("animations", "disabled")
     return decode(target.screenshot(type="png", **kwargs))
@@ -140,8 +140,9 @@ def state_hash(slide: int, state: int = 0) -> str:
 
     This is the single place that spells the format out,
     and the whole of tier 3 deep-links through it rather than clicking its way to a state.
-    The fragment is the position and nothing else: a paused deck is not addressable,
-    which is what the runtime's `data-animo-paused` attribute exists for instead.
+    The fragment is the position and nothing else.
+    A paused deck is not addressable, which is what the runtime's `data-animo-paused`
+    attribute exists for instead.
 
     Slides are counted from one and states from zero,
     because state 0 of a slide is the slide exactly as its body declares it.
@@ -262,7 +263,8 @@ class Deck:
     def canvas_frames(self) -> int:
         """How many `html.frame` renderings the canvas of the slide being shown holds.
 
-        One, whatever the epochs: the epoch stacks are groups inside it. This is the count
+        The count is one whatever the epochs, because the epoch stacks are groups inside it.
+        This is the count
         the page weight follows, since typst defines a glyph once per frame that uses it.
         """
         slide, _ = self.position
@@ -345,7 +347,7 @@ class Deck:
     def pan(self) -> tuple[float, float]:
         """How far the viewport has panned over the canvas, in typst points.
 
-        Read off the geometry rather than off the `translate` the runtime wrote,
+        The pan is read off the geometry rather than off the `translate` the runtime wrote,
         because a computed percentage is spelled differently by each engine
         while a box on the page is a number in all of them.
         """
@@ -400,9 +402,9 @@ class Deck:
     def animating(self) -> list[set[str]]:
         """The properties each animation now in flight is driving, one set per animation.
 
-        What a step animates is not the same question as what it changes: a property that
-        holds still in the keyframes is invisible in every state and still costs the step
-        its motion in chromium 151. See *Findings*.
+        What a step animates is not the same question as what it changes.
+        A property that holds still in the keyframes is invisible in every state and still
+        costs the step its motion in chromium 151. See *Findings*.
         """
         timing = ("offset", "computedOffset", "easing", "composite")
         return [
@@ -427,10 +429,11 @@ class Deck:
     def flight(self) -> list[float]:
         """How far into the step each animation now in flight is, in milliseconds.
 
-        Read after a frame has been drawn, because an animation measures its own current
-        time against the document timeline and not against real time, and firefox 153
-        refreshes that timeline only when it draws. Read any sooner and an animation that
-        was told it began long ago still reports zero. See *Findings*.
+        The time is read after a frame has been drawn, because an animation measures its own
+        current time against the document timeline and not against real time, and firefox
+        153 refreshes that timeline only when it draws.
+        When it is read any sooner, an animation that was told it began long ago still
+        reports zero. See *Findings*.
         """
         return self.page.evaluate(
             """async () => {

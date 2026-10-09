@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: Apache-2.0
 """Measure what an animo deck costs to compile and how much of a page it becomes.
 
-Three decks are measured, for three different reasons.
-`examples/tour.typ` is the realistic one: it says what an author of a real deck waits for.
-`benchmarks/scaling.typ` is the controlled one: it holds everything constant except one
-axis, so that a term of the cost model is the difference between two runs rather than a
-guess about where the time went.
-`benchmarks/placements.typ` is the one that grows with what the body draws: it says what
-the automatic canvas of a slide full of `#place` calls costs, in seconds and in memory.
+Each deck measured here has a reason of its own.
+`examples/tour.typ` is the realistic one, which says what an author of a real deck waits for.
+`benchmarks/scaling.typ` is the controlled one.
+It holds everything constant except one axis, so that a term of the cost model is the
+difference between two runs rather than a guess about where the time went.
+`benchmarks/placements.typ` is the one that grows with what the body draws.
+It says what the automatic canvas of a slide full of `#place` calls costs, in seconds and in
+memory.
 
 The result is written as JSON under `results/`, one file per machine, because a number
 without a machine is not a measurement.
@@ -47,9 +48,10 @@ SCALING = HERE / "scaling.typ"
 PLACEMENTS = HERE / "placements.typ"
 
 # A line of the tour that a live-preview measurement rewrites, with the round number left
-# out, so that the edit is an edit of one slide's ink. The tour is free to change, unlike
-# the controlled deck, so this may go missing: the measurement then falls back to appending
-# a line, says so in what it records, and picking another line of the tour repairs it.
+# out, so that the edit is an edit of one slide's ink.
+# The tour is free to change, unlike the controlled deck, so this line may go missing.
+# The measurement then falls back to appending a line and says so in what it records,
+# and picking another line of the tour repairs it.
 TOUR_EDIT = "= Disclaimers{}"
 
 # Where the compiled artefacts go. They are measured and thrown away, so they belong in
@@ -98,9 +100,9 @@ VARIANTS = {
 Every one of them is also compiled with `plain=on`, which is the same content laid out by
 typst with animo out of the way, so that every variant carries its own floor.
 
-The two variants at `states-4-epochs-3` are a pair: they differ in the `number` knob alone,
-at a point where a deck really has several subslides and several epochs, which is what makes
-their difference the cost of a number rather than the cost of a layer.
+The two variants at `states-4-epochs-3` are a pair that differs in the `number` knob alone,
+at a point where a deck really has several subslides and several epochs.
+Their difference is therefore the cost of a number rather than the cost of a layer.
 """
 
 PLACEMENT_VARIANTS = {
@@ -109,17 +111,18 @@ PLACEMENT_VARIANTS = {
     "pan-canvas": {"pan": "on", "canvas": "stated"},
     "pan-image": {"pan": "on", "marks": "image"},
 }
-"""The four shapes of the placement deck, each a set of `--input` knobs.
+"""The variants of the placement deck, each a set of `--input` knobs.
 
 The first two differ in whether the timeline pans, which is what makes animo compute the
-canvas, and the last two are the two ways out of that cost: a canvas that is stated, and
-the same marks drawn as one element instead of one each.
+canvas.
+The last two avoid that cost, one with a canvas that is stated,
+and one with the same marks drawn as one element instead of one each.
 """
 
 PLACEMENT_POINTS = 10000
 """Marks on the slide of the placement deck.
 
-It is a scatter plot of a size an author really writes, and large enough that the union of
+The marks are a scatter plot of a size an author really writes, and large enough that the union of
 the placements is a term of the compile time rather than noise in it.
 """
 
@@ -145,8 +148,8 @@ def run_timed(once: Callable[[], object], repeat: int) -> dict:
     -------
     timing
         The minimum, the median and every sample, in seconds.
-        The minimum is the number to compare across machines: it is the run least disturbed
-        by whatever else the machine was doing.
+        The minimum is the number to compare across machines, because it is the run least
+        disturbed by whatever else the machine was doing.
     """
     samples = []
     for i in range(repeat + 1):
@@ -193,17 +196,19 @@ def defs_share(markup: str) -> dict:
     removing it in two different scopes would leave.
 
     The pages are built here and gzipped, because that is the only honest way to answer
-    whether gzip is enough: a deck is served compressed, so what a saving is worth is the
-    difference between two *compressed* sizes and not between two raw ones. Dropping the
+    whether gzip is enough.
+    A deck is served compressed, so what a saving is worth is the difference between two
+    *compressed* sizes and not between two raw ones. Dropping the
     repeats rather than moving them to a document-level `<svg>` gives the same byte count
     and needs no shell to be written.
 
     `hoisted_*` is every repeat in the document dropped, which no compile of one source
-    file can reach: a package never holds the markup a frame became (see *Findings*).
-    `merged_*` is the reachable scope, the repeats inside one slide's canvas. Animo lays
-    the body of a slide and its epoch stacks out in one frame, so typst's own deduplicator
-    has already removed them and this reads back as the page itself; it is kept because a
-    number that stops moving is what says the scope is exhausted.
+    file can reach, because a package never holds the markup a frame became
+    (see *Findings*).
+    `merged_*` drops the repeats inside one slide's canvas, which is the reachable scope.
+    Animo lays the body of a slide and its epoch stacks out in one frame, so typst's own
+    deduplicator has already removed them and `merged_*` reads back as the page itself.
+    It is kept because a number that stops moving is what says the scope is exhausted.
 
     Returns
     -------
@@ -340,9 +345,10 @@ def measure_watch(
 ) -> dict:
     """How long `typst watch` takes to recompile after an edit, which is the authoring loop.
 
-    A release build is compiled once; a deck being written is recompiled after every
+    A release build is compiled once, while a deck being written is recompiled after every
     keystroke that lands, and typst memoises across recompiles inside one `watch` process.
-    So the cold compile time is the wrong number for authorability and this is the right one.
+    The cold compile time is therefore the wrong number for authorability,
+    and the recompile time is the right one.
 
     Parameters
     ----------
@@ -467,9 +473,9 @@ def knob(name: str, key: str, default: str) -> int:
 def measurements(name: str, slides: int) -> int:
     """How often a region lays its body out to measure it, over one rendering of every slide.
 
-    A region measures once per epoch, and two things take that cost away: a height that is
-    given, since there is then nothing to choose between, and a slide with one epoch, whose
-    only rendering takes the height it takes. Regions nest as footprints rather than as
+    A region measures once per epoch, and the cost goes away for a height that is given,
+    since there is then nothing to choose between, and for a slide with one epoch,
+    whose only rendering takes the height it takes. Regions nest as footprints rather than as
     states, so this is a product and never a power.
 
     The handout is the output this divides, because it renders every slide exactly once
@@ -496,8 +502,8 @@ def derive(scaling: dict) -> dict:
     def per_measurement(measuring: str, given: str) -> float:
         """What one region measuring one epoch costs, as the difference the height makes.
 
-        The handout is what this is read off: it renders one page per slide whatever the
-        epochs, so the two variants differ in their measuring and not in how many times the
+        The handout is what this is read off, because it renders one page per slide whatever
+        the epochs, so the two variants differ in their measuring and not in how many times the
         slide itself is laid out.
         """
         delta = scaling[measuring]["handout"]["min"] - scaling[given]["handout"]["min"]
@@ -509,7 +515,7 @@ def derive(scaling: dict) -> dict:
             for name, entry in scaling.items()
         },
         # The sweep holds `regions` at zero, so the changing tag is its own implicit region
-        # and one more epoch is one more frame plus one more measurement of that region.
+        # and one more epoch is one more rendering plus one more measurement of that region.
         "seconds_per_epoch_per_slide": round(slope(sweep("min")) / slides, 4),
         "seconds_per_region_measurement": round(
             per_measurement("regions-2-epochs-4", "regions-2-epochs-4-sized"), 5
@@ -600,7 +606,7 @@ def environment() -> dict:
 
 
 def main():
-    """Measure both decks and write the result."""
+    """Measure every deck and write the result."""
     args = parse_args()
     result = {
         "environment": environment(),

@@ -6,8 +6,9 @@
 // rather than a guess about where the time went.
 //
 // A number here means something only when the deck it was measured on is the same deck,
-// so this file is meant to stay as it is. Realism is `examples/tour.typ`'s job;
-// this file's job is to hold everything constant except one axis at a time.
+// so this file is meant to stay as it is.
+// Realism is the job of `examples/tour.typ`,
+// and the job of this file is to hold everything constant except one axis at a time.
 //
 // The knobs, as `--input`:
 //
@@ -23,12 +24,14 @@
 // | `number`   | off     | that overlay also numbers the subslide it is shown on      |
 // | `plain`    | off     | lay the same content out as plain typst, one page a slide  |
 //
-// One more line is not a knob but a handle: `revision` below is rewritten in place to
-// measure what `typst watch` recompiles after an edit that touches exactly one slide.
+// One more line is a handle rather than a knob.
+// `revision` below is rewritten in place to measure what `typst watch` recompiles after an
+// edit that touches exactly one slide.
 //
-// `plain` is the floor the overhead factor divides by. It is the same content, laid out by
-// typst with animo out of the way: `tag` and `region` become the plainest containers that
-// hold the same ink, and the timeline is not built at all. The content itself is written
+// `plain` is the floor the overhead factor divides by.
+// It is the same content, laid out by typst with animo out of the way.
+// `tag` and `region` become the plainest containers that hold the same ink,
+// and the timeline is not built at all. The content itself is written
 // once, as a function of those two, so the two drivers cannot drift apart.
 
 #import "@preview/animo:0.1.1": *
@@ -68,8 +71,8 @@
   does relay the lines out rather than swapping one word for another.
 ]
 
-// A cetz canvas, which is the most expensive thing a region can hold:
-// inside a region it is laid out afresh in every epoch.
+// A cetz canvas, which is the most expensive thing a region can hold,
+// because inside a region it is laid out afresh in every epoch.
 #let canvas(iregion, iepoch) = cetz.canvas({
   import cetz.draw: *
   for i in range(6) {
@@ -87,14 +90,18 @@
 // What every slide of the deck carries in front of everything, when the knob asks for it.
 //
 // A deck gives every slide the same overlay, which is what makes its cost a per-slide term
-// rather than a one-off: in the HTML target each is a frame of its own, with glyph
-// definitions of its own, beside the epoch frames of the slide.
-// It is one line of text and one rule, which is what a running header or a talk title is,
-// and deliberately not an image: an image would measure the image rather than the layer.
+// rather than a one-off.
+// In the HTML target each overlay is a frame of its own, with glyph definitions of its own,
+// beside the frame of the slide.
+// The overlay is one line of text and one rule, which is what a running header or a talk
+// title is.
+// It is deliberately not an image, because an image would measure the image rather than the
+// layer.
 //
-// With `number` it also carries a slide and subslide number, which is the one thing in a
-// layer that is not one rendering per slide: a stack holds one rendering per state, so the
-// knob measures what a number finer than a slide number costs where it belongs.
+// With `number` the overlay also carries a slide and subslide number, which is the one
+// thing in a layer that is not one rendering per slide.
+// A stack holds one rendering per state, so the knob measures what a number finer than a
+// slide number costs where it belongs.
 #let banner = {
   place(bottom + left, line(length: 100%, stroke: 0.4pt))
   place(bottom + right, dy: -2mm, text(size: 9pt, {
@@ -119,8 +126,8 @@
     so that every slide carries at least one inline tag site and one wrapped paragraph.
   ]
 
-  // The display equation is here rather than behind a knob: math is what a deck of this
-  // kind is full of, and a tag inside one is a tag site of its own kind.
+  // The display equation is here rather than behind a knob, because math is what a deck of
+  // this kind is full of, and a tag inside one is a tag site of its own kind.
   $
     integral_(-oo)^oo e^(-x^2) dif x = #tag(term)[$sqrt(pi)$]
   $

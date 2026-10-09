@@ -18,9 +18,9 @@
 //
 // The translations and resizes are routes and never states. They are animations over a
 // `translate`, a `d` and a `stroke-width` whose inline style stays unset, so a slide at rest
-// carries none, and the geometry a later step reads is the layout's own once they are over. Until then, `slide.morphed` holds every
-// element a morph is still moving, which is what a later step needs to know to read the
-// layout under them and to settle them.
+// carries none, and the geometry a later step reads is the layout's own once they are over.
+// Until then, `slide.morphed` holds every element a morph is still moving, which is what a
+// later step needs to know to read the layout under them and to settle them.
 
 /**
  * The largest number of differences between the glyphs of two regions for which the glyphs
@@ -486,7 +486,7 @@ function clipsAbove(slide, element, side, clips, screen) {
  * A longest common subsequence of two lists of strings, as pairs of indices, or `null` when
  * the lists differ in more than `limit` places.
  *
- * The diff of the Myers kind, which walks the edit graph one difference at a time and so
+ * The diff is of the Myers kind, which walks the edit graph one difference at a time and so
  * takes time in proportion to the length of the lists times the number of differences. The
  * common head and tail are paired first, because an edit of a paragraph leaves most of it on
  * either side of the change.
@@ -863,8 +863,9 @@ function parsed(value) {
  * A translation in a stack the step carries again runs on to where it was going, on the
  * clock of the new boundary, so it ends as the stack's new crossfade ends rather than in the
  * middle of it. The exception is an element of the rendering being entered, which this step
- * shows as it is laid out: its translation snaps to rest, and a morph of this step that
- * matches it again gives it a route of its own. Every other translation snaps to rest, as the
+ * shows as it is laid out.
+ * The translation of such an element snaps to rest, and a morph of this step that matches
+ * it again gives it a route of its own. Every other translation snaps to rest, as the
  * crossfade of a stack the step does not carry does. The `d` and the stroke width of a resize
  * run on or snap with the translation of their path.
  *

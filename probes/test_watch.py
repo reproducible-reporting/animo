@@ -65,7 +65,7 @@ def fetch(port: int, attempts: int = 100) -> str:
 def written(output: Path, attempts: int = 100) -> str:
     """Read the file typst watch writes, waiting for it to appear.
 
-    Serving and writing are not the same moment: the server answers before the first
+    Serving and writing are not the same moment, because the server answers before the first
     compilation has reached the disk, so waiting for the one does not wait for the other.
     """
     for _ in range(attempts):

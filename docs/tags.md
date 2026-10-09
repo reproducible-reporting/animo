@@ -35,13 +35,13 @@ Each subslide specifies what happens to tagged contents to arrive at a new state
 
 ## Initial State of Tagged Content
 
-Nothing at the tag site says what state it starts in.
-The timeline says it, and a tag takes its initial state from the first operation that
-addresses each of its two slots:
+The initial state of a tag is not written at the tag site.
+A tag takes its initial state from the first operation in the timeline
+that addresses each of its two slots:
 
 - a tag whose first **display** operation is `reveal` **starts hidden**:
   laid out, taking its space, and invisible.
-  `caveat` above is one.
+  The tag `caveat` above is an example.
 - a tag whose first **content** operation is `reset` **starts removed**:
   not laid out at all, so it takes no space until the `reset` brings it in.
 
@@ -143,8 +143,9 @@ Tag a whole paragraph, or a short phrase that has room,
 rather than a long stretch in the middle of a paragraph.
 
 **A tagged heading shifts by a few points.**
-A heading carries its own block spacing, that spacing sits at the wrapper's edge and is
-trimmed there, and typst does not expose the value Animo would have to restore.
+A heading carries its own block spacing.
+Inside a tag, that spacing sits at the edge of the wrapper, where typst trims it.
+Typst does not expose the trimmed value, so Animo cannot restore it.
 Tag the heading's text instead when the shift matters:
 
 ```typst
@@ -173,10 +174,11 @@ and inside **fletcher** on a node label, because both hold ordinary content:
 ```
 
 **Raw cetz draw commands are refused.**
-`grid((0, 0), (4, 2))` is an array of closures rather than content,
-built where it is written, before any show rule exists that could resolve it for a subslide,
-so a tag there could never be reached by any primitive.
-Animo refuses it at the tag site rather than silently doing nothing in every output.
+A draw command such as `grid((0, 0), (4, 2))` is an array of closures rather than content.
+The closures are built where the command is written,
+before any show rule exists that could resolve them for a subslide.
+No primitive could ever reach a tag around a draw command,
+so Animo refuses such a tag at the tag site rather than silently doing nothing in every output.
 
 What to write instead is a figure that is a function of what it draws,
 tagged as a whole and replaced:
@@ -202,10 +204,12 @@ Anything on the figure that has to move smoothly, or be revealed and hidden,
 must be a typst content element with a tag.
 
 **A cell of a grid or a table is refused**, and so is an item of a list, an enum or a terms
-list. A grid reads `fill`, `colspan`, `align` and `stroke` from its own children, a tag site
-is a `context` block between the grid and the cell, and the grid then takes the whole tag site
-as the content of a cell with default settings. The fill is dropped in every output type,
-with no panic and no warning. The same holds for `region`.
+list.
+A grid reads `fill`, `colspan`, `align` and `stroke` from its own children.
+A tag site is a `context` block between the grid and the cell,
+so the grid takes the whole tag site as the content of a cell with default settings.
+The fill of the cell would then be dropped in every output type, with no panic and no warning.
+The same holds for `region`.
 
 Write the tag inside the cell, where the grid still reads the cell itself:
 
@@ -241,9 +245,11 @@ The tag's group then holds the block, and the fill moves, scales, reveals and hi
 A block with a fill is also the shorter answer when the grid was only there for the panel:
 one `#block(fill: ..)` inside a `#place` or a `#stack` needs no cell at all.
 
-A tag around a cell that sets nothing beside its body is left alone, because such a cell lays
-out the same either way. An item is refused whatever it carries, because what a list drops
-there is the item's place in the list rather than a setting on it.
+A tag around a cell that sets nothing beside its body is accepted, because such a cell lays
+out the same either way.
+A tag around an item is refused whatever the item carries,
+because the list then takes the whole tag site as the body of a new item,
+so the tagged item turns into a nested list.
 
 The [Reference](reference.md#tag) has the table of which primitives reach which kind of
 tag site.

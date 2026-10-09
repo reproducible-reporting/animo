@@ -54,7 +54,7 @@ def deck(
 
 
 # Three filled squares at offsets that are easy to state and easy to find in a raster.
-# They are rectangles rather than glyphs on purpose: the cross-target invariant is about
+# They are rectangles rather than glyphs, because the cross-target invariant is about
 # where content lands, and typst's rasteriser and chromium's SVG renderer do not have to
 # agree on the pixels of a letter to agree on the corners of a box.
 MARKS = {

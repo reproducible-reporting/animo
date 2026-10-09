@@ -4,8 +4,9 @@
 // A slide: a viewport onto a canvas, plus the timeline that animates it.
 //
 // The two rectangles are what makes panning mean anything.
-// The viewport is what the audience sees, and it clips: one HTML slide container,
-// one static-presentation page, one handout page.
+// The viewport is what the audience sees, and it clips.
+// The viewport is one HTML slide container, one static-presentation page or one handout
+// page.
 // The canvas is what the body is laid out on, at least as large as the viewport,
 // with its origin at the viewport's origin and the body inset by the deck's margin.
 // A slide that places nothing outside the viewport is indistinguishable from a slide
@@ -13,8 +14,8 @@
 //
 // The timeline is resolved before the body is laid out, because the body's layout depends
 // on it, and the result is provided to the body rather than published to a state.
-// A slide with S `sub` calls has S+1 states:
-// the presentation renders one page each, the handout renders the states that asked for a
+// A slide with S `sub` calls has S+1 states.
+// The presentation renders one page per state, the handout renders the states that asked for a
 // page, and the HTML target renders the body once, in one frame that covers every state,
 // with an epoch stack in every region whose content changes.
 
@@ -50,7 +51,7 @@
 // A panic empties the block it is raised in, and if that block holds the very tag sites the
 // check reads, the next pass has nothing to check and passes, and the two alternate
 // (see *Findings*).
-// So this runs in a context block of its own, which emits nothing.
+// The check therefore runs in a context block of its own, which emits nothing.
 // A panic there leaves the slide and its tag sites alone, typst keeps only the errors of the
 // pass it ends on, and so a site that is reported a pass late is a miss that is forgotten,
 // while a tag that is really missing fails the last pass and is reported.
@@ -76,12 +77,14 @@
     )
   }
   // An anchor below a transform is refused, because no rendering can read it as the design
-  // says an anchor is read. The anchor of a tag is the corner the body gave it, and a `move`
-  // or a `scale` on a tag around it moves that corner: the presentation and the browser
-  // still resolve it from an untransformed layout, the first from its own first page and
-  // the second from the slide before anything is written on it, while a handout reads
-  // whichever page it keeps. So the three output types would disagree, and a `move` that
-  // reads an anchor inside the tag it moves would not even converge.
+  // says an anchor is read.
+  // The anchor of a tag is the corner the body gave it,
+  // and a `move` or a `scale` on a tag around it moves that corner.
+  // The presentation and the browser still resolve the anchor from an untransformed layout,
+  // the first from its own first page and the second from the slide before anything is
+  // written on it, while a handout reads whichever page it keeps.
+  // The three output types would therefore disagree,
+  // and a `move` that reads an anchor inside the tag it moves would not even converge.
   for site in sites {
     if site.name not in asked.anchored { continue }
     for around in site.within {
@@ -109,9 +112,11 @@
   // An assert empties this block, so the first failure is the only one reported.
   //
   // The claim is about groups rather than about tags, which is what the reports say and
-  // what the browser needs. It is also what keeps it true beside the refusal a `wrap: none`
-  // tag raises where it is written: that tag exists and became no group, and its own message
-  // is the one that says what to do about it.
+  // what the browser needs.
+  // A claim about groups also stays true beside the refusal a `wrap: none` tag raises where
+  // it is written.
+  // That tag exists and became no group, and its own message is the one that says what to
+  // do about it.
   for name in asked.names {
     assert(
       name in present,
@@ -149,8 +154,9 @@
 // `index` is where this slide sits, so that the message names both slides.
 //
 // This runs in a context block of its own that emits nothing, for the reason
-// `check-handout-pages` does: a panic here empties no slide and leaves nothing for the
-// next introspection pass to disagree about.
+// `check-handout-pages` does.
+// A panic here empties no slide and leaves nothing for the next introspection pass to
+// disagree about.
 #let check-boundary-gap(index, first) = {
   assert(
     trailing-hold.get() == none or first.wait == none,
@@ -171,9 +177,10 @@
 // where content is a whole rendering.
 // Content is also the only form an image can take, since typst has no image page fill.
 // A gradient or a tiling is refused rather than silently dropped in one of the targets,
-// and the message says the form that does work in all three output types: typst resolves
-// either against the element it fills, CSS would have to be handed an equivalent animo
-// would have to write itself, and a tiling has no CSS equivalent at all.
+// and the message says the form that does work in all three output types.
+// Typst resolves either against the element it fills, CSS would have to be handed an
+// equivalent that animo would have to write itself, and a tiling has no CSS equivalent at
+// all.
 //
 // `which` names the argument, so that a deck with both of them gets a diagnosis about the
 // one it got wrong.
@@ -196,18 +203,20 @@
 
 // One of the two outer layers, as the content both targets draw it from.
 //
-// The box is the viewport: a `#place(bottom + right, ..)` in a layer resolves its alignment
-// against it, and an `image(width: 100%, height: 100%)` fills the slide.
-// It clips at the viewport's own edge, as the viewport clips all three layers alike.
+// The box is the viewport, so a `#place(bottom + right, ..)` in a layer resolves its
+// alignment against the viewport, and an `image(width: 100%, height: 100%)` fills the slide.
+// The box clips at the viewport's own edge, as the viewport clips all three layers alike.
 //
 // The layer is laid out under a provider that refuses every tag and every region in it,
-// so that the two layers stay what they are: content nothing in the timeline addresses.
+// so that the two layers stay content that nothing in the timeline addresses.
 //
 // That provider hands the layer its stack view all the same, so a `per-subslide` in a layer
-// is laid out rather than refused. It addresses nothing and is rendered by the slide
-// itself, so it needs neither a timeline nor an epoch: in the HTML target the one frame of
-// the layer carries every state's rendering, and on paper the layer is placed once per
-// page and lays out the rendering of that page's state.
+// is laid out rather than refused.
+// A `per-subslide` addresses nothing and is rendered by the slide itself,
+// so it needs neither a timeline nor an epoch.
+// In the HTML target the one frame of the layer carries every state's rendering,
+// and on paper the layer is placed once per page and lays out the rendering of that page's
+// state.
 #let layer-of(which, index, viewport, stack-view, ink) = box(
   width: viewport.width,
   height: viewport.height,
@@ -219,7 +228,8 @@
 //
 // A background colour is the page's own `fill`, which is behind everything, and an overlay
 // colour is ink over the slide, so it is a layer of its own.
-// Only an alpha channel makes one useful, and a dimming tint is the case it exists for.
+// Only an alpha channel makes an overlay colour useful,
+// and a dimming tint is the case it exists for.
 //
 // Every visual field of the rectangle is stated, so that a `set rect(..)` in the deck
 // around it cannot put a stroke or a corner radius on a layer animo emits for itself.
@@ -264,17 +274,18 @@
   }
   // Which slide carries a number, and where its states sit in the deck.
   // Both are published rather than provided, because both are read where no view of the
-  // slide reaches: `slide-number()` is an ordinary counter read the author writes anywhere
-  // in the body or in a layer, and the deck-wide step of a state is read from inside a
-  // stack of renderings.
+  // slide reaches.
+  // `slide-number()` is an ordinary counter read the author writes anywhere in the body or
+  // in a layer, and the deck-wide step of a state is read from inside a stack of renderings.
   numbered-flag.update(numbered)
-  // Outside every frame, where `target()` still says what is being compiled, because the
-  // body and the layers are laid out inside frames where it does not.
+  // The output type is published outside every frame, where `target()` still says what is
+  // being compiled, because the body and the layers are laid out inside frames where it
+  // does not.
   context html-output.update(target() == "html")
   step-counter.update(it => it + plan.states.len())
   context check-boundary-gap(position.get().first(), plan.states.first())
-  // Unconditional, so that a slide that holds nothing clears whatever the slide before it
-  // left rather than handing it on to the slide after.
+  // The update is unconditional, so that a slide that holds nothing clears whatever the
+  // slide before it left rather than handing it on to the slide after.
   trailing-hold.update(plan.states.last().hold)
   // A tag outside any slide has to be diagnosed at the tag site, and `inside` is what says
   // whether there is a slide around it.
@@ -285,13 +296,13 @@
   context {
     let shape = deck-shape.get()
     let index = position.get().first()
-    // How the boundary above this slide is crossed, which is what the timeline's `init`
-    // says: the name of a transition, or `auto` for the deck's own, and the parameters the
+    // How the boundary above this slide is crossed, as the timeline's `init` says it.
+    // This is the name of a transition, or `auto` for the deck's own, and the parameters the
     // transition took, with the duration of `init` beside them when it states one.
-    // It belongs to this slide and is crossed the same way in both directions, so stepping
-    // back over it undoes exactly what stepping forward over it did.
-    // The paged outputs ignore it: two consecutive pages have nothing between them to
-    // describe.
+    // The boundary belongs to this slide and is crossed the same way in both directions,
+    // so stepping back over it undoes exactly what stepping forward over it did.
+    // The paged outputs ignore it, because two consecutive pages have nothing between them
+    // to describe.
     let entered = {
       let given = plan.init.transition
       let args = if given == auto { (:) } else { given.args }
@@ -313,7 +324,8 @@
     //
     // Neither is laid out under the `show place:` rule that records the placements, and
     // neither is measured for the body box, so no placement in either enters the automatic
-    // canvas extent: a full-bleed image in the background cannot make the body pannable by
+    // canvas extent.
+    // A full-bleed image in the background therefore cannot make the body pannable by
     // accident, and an overlay full of `#place` cannot either.
     //
     // A layer is built for a state rather than once, because a `per-subslide` in it lays
@@ -341,7 +353,7 @@
       view-of(plan, names, index, epoch: 0)
     } else {
       // State 0 puts every tag where the body put it, so the measuring view needs no
-      // anchors: its display state is empty whatever the timeline says.
+      // anchors, because its display state is empty whatever the timeline says.
       view-of(plan, names, index, state: 0)
     }
 
@@ -430,10 +442,11 @@
           class: "animo-slide",
           data-animo-slide: str(index),
           data-animo-states: str(plan.states.len()),
-          // How the boundary above this slide is crossed. An attribute rather than an
-          // entry in the plan below, for the reason the plan itself is an attribute: it
-          // is one value per slide, and a browser's element inspector shows it beside
-          // the slide it is about.
+          // How the boundary above this slide is crossed.
+          // It is an attribute rather than an entry in the plan below, for the reason the
+          // plan itself is an attribute.
+          // The transition is one value per slide, and a browser's element inspector shows
+          // it beside the slide it is about.
           // The parameters travel beside the name, so the name stays one string.
           data-animo-transition: entered.name,
           ..if entered.args.len() == 0 { (:) } else {
@@ -447,8 +460,8 @@
           // What the browser runtime applies: the resolved display state of every state,
           // state 0 included, which the resolver reads from the timeline alone.
           // The margin and the canvas travel beside the states, because the runtime
-          // turns a pan into a `translate` on the canvas and needs both to do so:
-          // a `relto` puts the tag where the body starts, and a percentage of the canvas
+          // turns a pan into a `translate` on the canvas and needs both to do so.
+          // A `relto` puts the tag where the body starts, and a percentage of the canvas
           // is a length that follows the window without being measured.
           data-animo-plan: json.encode(
             (
@@ -512,11 +525,12 @@
               ),
             )),
           )
-          // Last, so that it paints last: the three layers are positioned siblings with no
-          // z-index of their own, and such elements paint in document order.
+          // The overlay comes last, so that it paints last.
+          // The three layers are positioned siblings with no z-index of their own,
+          // and such elements paint in document order.
           // A colour overlay is one declaration on this element rather than a frame of its
-          // own, where a colour background is a declaration on the slide container: the
-          // container is behind the canvas, and an overlay has to be in front of it.
+          // own, while a colour background is a declaration on the slide container.
+          // The container is behind the canvas, and an overlay has to be in front of it.
           if front-fill != none or over != none {
             html.elem(
               "div",
@@ -536,10 +550,11 @@
       // An anchor is resolved from the positions of this very rendering, which typst
       // reaches by iterating: the first pass finds no tag and resolves as if nothing were
       // relative to one, and the next one reads each tag's corner off the marker its
-      // wrapper carries. The document converges because neither consumer moves what it
-      // measures: a pan shifts the whole canvas and the markers with it, which the canvas
-      // origin cancels out of, and a tag's own translation sits inside the wrapper whose
-      // corner the marker marks.
+      // wrapper carries.
+      // The document converges because neither consumer moves what it measures.
+      // A pan shifts the whole canvas and the markers with it, which the canvas origin
+      // cancels out of, and a tag's own translation sits inside the wrapper whose corner the
+      // marker marks.
       let anchors = anchors-of(index, asked.anchored)
       let pans = plan.states.map(state => paged-pan(
         state.slide.pan,
@@ -558,9 +573,10 @@
 
       // The pages this paged output asks for, in page order:
       // every state in the presentation, and the states that asked for a page in the
-      // handout. A slide whose every state is turned down contributes nothing, and that
-      // is the author's decision to make, because `handout:` is the only thing that says
-      // what a handout holds.
+      // handout.
+      // A slide whose every state is turned down contributes nothing.
+      // That is the author's decision to make, because `handout:` is the only thing that
+      // says what a handout holds.
       // The deck refuses only the case where no slide contributes at all, which is what
       // `handout-tally` below is counted for.
       let page-of(state) = view-of(
@@ -609,7 +625,8 @@
                 laid-out(view, recorded: page-index in recording)
               },
             ))
-            // After the canvas, because placed content paints in document order.
+            // The overlay comes after the canvas, because placed content paints in document
+            // order.
             if front-fill != none {
               place(top + left, tint-of(viewport, front-fill))
             }
@@ -619,15 +636,17 @@
       }
     }
   }
-  // Apart from the block above, so that a panic here cannot empty the slide it checks.
+  // The checks run apart from the block above, so that a panic here cannot empty the slide
+  // it checks.
   context {
     let index = position.get().first()
     // Which region a tag belongs to is a layout-time fact, so this reads the membership
     // reports of the rendering, exactly as the site checks below read the site reports.
     check-boundaries(index, plan.epochs, members-of(index))
     // A paged slide with no page has no tag site to read back, and nothing to show
-    // wrongly; the HTML target renders a frame whatever the handout flags say, so it
-    // checks the same slide over that.
+    // wrongly.
+    // The HTML target renders a frame whatever the handout flags say,
+    // so the same slide is checked over that frame.
     if (
       target() == "html"
         or paged-mode() == "presentation"

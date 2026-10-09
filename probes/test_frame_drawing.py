@@ -3,9 +3,10 @@
 """Probes for *A keyframe property that does not change suppresses the ones that do*.
 
 An effect that animates `opacity` alongside a `translate` or a `scale` holding the same
-value at both ends is not drawn while it runs in chromium 151: the element stays as it was
-and appears in one frame at the end. Every value the animation computes is correct
-throughout, so nothing in the DOM shows this and only the drawing is missing.
+value at both ends is not drawn while it runs in chromium 151.
+The element stays as it was and appears in one frame at the end.
+Every value the animation computes is correct throughout, so nothing in the DOM shows this
+and only the drawing is missing.
 
 That is also why these probes record a video instead of taking screenshots. A screenshot
 repaints the page, which is exactly what the failure needs to disappear, so it reports a
@@ -44,8 +45,9 @@ DRAWN = 4
 #
 # Chromium 151 is the one that does not, which is the finding. Firefox 153 draws it, and so
 # does playwright's webkit 26.5, measured in a container because no webkit build runs on
-# every contributor's distribution: it drew both spellings of the standing value in 18 of
-# the recording's frames, against the 20 of a plain fade.
+# every contributor's distribution.
+# Webkit drew both spellings of the standing value in 18 of the recording's frames,
+# against the 20 of a plain fade.
 # A changed value here is a finding that changed, not a probe that needs fixing.
 DRAWS_A_STANDING_PROPERTY = {"chromium": False, "firefox": True, "webkit": True}
 

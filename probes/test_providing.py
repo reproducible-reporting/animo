@@ -196,7 +196,7 @@ def test_the_markers_own_label_does_not_reach_the_output(typst: TypstRunner):
 
 
 def test_query_cannot_tell_a_replaced_marker_from_a_leftover(typst: TypstRunner):
-    """So a tag outside any slide has to be diagnosed at the tag site.
+    """A tag outside any slide therefore has to be diagnosed at the tag site.
 
     Sweeping the document at the end for markers nobody replaced would report every tag.
     """
@@ -219,10 +219,10 @@ def test_query_cannot_tell_a_replaced_marker_from_a_leftover(typst: TypstRunner)
 def test_a_replaced_marker_costs_no_layout(paged: PagedRunner):
     """The channel is invisible to the layout, which a tag that emits no wrapper needs.
 
-    A tag may hand its body back untouched, and "untouched" has to mean untouched:
-    the `context` block, the `metadata` element and the show-rule replacement that carry
+    A tag may hand its body back untouched, and "untouched" has to mean untouched.
+    The `context` block, the `metadata` element and the show-rule replacement that carry
     the value may contribute no spacing of their own.
-    Measured on a heading between two paragraphs, which is the case that betrays a
+    This is measured on a heading between two paragraphs, which is the case that betrays a
     wrapper, since a wrapper trims a heading's own block spacing at its edge.
     """
     flow = (

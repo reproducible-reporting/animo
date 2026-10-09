@@ -48,7 +48,7 @@ def test_import_path_compiles_to_html(name, tmp_path):
 
 
 def test_compile_helper_reports_failure_instead_of_raising(scratch):
-    """The tier-1 runner is built on this: a failure is a value, not an exception."""
+    """The tier-1 runner relies on a failure being a value rather than an exception."""
     source = write_typst(scratch, '#import "/src/lib.typ": *\n#assert(false, message: "boom")\n')
     result = compile_typst(source, scratch / "out.pdf")
     assert not result.ok

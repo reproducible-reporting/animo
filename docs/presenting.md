@@ -49,46 +49,47 @@ A deck whose gaps state a [`wait:` or a `hold:`](continuous.md#timing) advances 
 from the first paint onwards.
 Even then, the presenter can fully control the deck:
 
-- **A forward step cancels the pending timer** and starts a new one from the state it lands
-  on, so stepping ahead of the clock is never a race with it.
+- **A forward step cancels the pending timer** and starts a new timer from the state it lands
+  on, so stepping ahead of the clock is never a race against the clock.
 - **A backward step lands on the nearest earlier state the deck rests at.**
-  A `hold: 0`, or a `wait: 0` on the step after, is a join rather than a stop:
-  nobody sees that state at rest, so one press forward runs through the whole join and one
-  press back comes back over the whole of it, a slide boundary included.
-  A state inside a run stays reachable by a [deep link](#the-position-is-in-the-url) and by
-  stepping forward while the clock is stopped, and writing `hold: 0.001` instead of
-  `hold: 0` says that the state before it is a stop after all.
+  A `hold: 0`, or a `wait: 0` on the next subslide, joins two states without a stop.
+  Nobody sees the first of the two at rest,
+  so one press forward runs through the whole join and one press back returns over all of it,
+  also across a slide boundary.
+  A state inside a join stays reachable by a [deep link](#the-position-is-in-the-url) and by
+  stepping forward while the clock is stopped.
+  Writing `hold: 0.001` instead of `hold: 0` makes the deck stop at that state after all.
 - **A backward step also turns the clock around.**
-  The deck then plays itself backwards over the gaps it played itself forwards over,
-  and it comes to rest at the state the presenter last pressed a key at,
-  so a run of timed gaps costs one press back as it costs one press forward.
-  One gap times the step in both directions,
-  so a state inside such a run is shown for as long on the way back as on the way out,
-  and a backward key pressed during the travel is one more step back.
-  A deck that times every one of its gaps travels back to its first state.
-  The travel stops there, because nothing earlier is there to travel to
-  and the gap that state carries would carry the deck forward again.
-  A forward step puts that clock back in motion, and so does `Space`.
+  The deck then plays itself backwards over the gaps that it played forwards,
+  and comes to rest at the state where the presenter last pressed a key.
+  A run of timed gaps therefore takes one press back, just as it took one press forward.
+  Each gap lasts as long in both directions,
+  so a state inside such a run is shown as long on the way back as on the way forward.
+  A backward key pressed while the deck travels back is one more step back.
+  A deck that times every one of its gaps travels back to its first state and stops there,
+  because there is no earlier state and the gap of the first state would carry the deck
+  forward again.
+  A forward step or `Space` starts the clock again.
 - **`Space` stops and starts the deck**, the way it stops and starts a video.
-  It stops the motion in flight where it is as well as the clock,
-  resuming picks the wait up where it was left rather than restarting it,
-  and the deck carries on the way it was going.
-  It is also the forward key on a deck that has no clock to stop,
+  Stopping freezes both the clock and any motion in flight.
+  Resuming continues the pending wait instead of restarting it,
+  and the deck carries on in the direction it was going.
+  On a deck that has no clock to stop, `Space` is a forward key,
   so a remote that sends `Space` still works.
   A deck stopped with `Space` stays stopped while the presenter steps through it,
   so stepping through a paused deck does not start its clock again.
 - **A deep link starts its own timer from where it lands**,
   so a fragment into an autoplaying deck resumes the playback from there.
 
-The URL does not carry whether the deck is paused: the fragment holds the
-position only, so a deck restored from a fragment comes back running.
+The URL fragment holds only the position and not whether the deck is paused,
+so a deck restored from a fragment comes back running.
 
 ## The Position Is in the URL
 
 The current position lives in the URL fragment as `#<slide>.<state>`,
 counting slides from one and states from zero,
 so `#3.2` is the third subslide of slide 3.
-It is kept up to date while stepping, and it is read back on load.
+The fragment is kept up to date while stepping, and read back on load.
 
 Opening a fragment **snaps** to that position instead of animating into it,
 so a deep link into the middle of a talk shows the picture and not the transition.

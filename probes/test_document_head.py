@@ -64,7 +64,7 @@ def test_a_title_element_takes_text_and_not_markup(typst: TypstRunner):
 
 
 def test_a_document_rule_inside_a_show_rule_for_everything_is_refused(typst: TypstRunner):
-    """So in HTML the settings an author states come before a show rule that builds the page.
+    """In HTML the settings an author states therefore precede a show rule that builds the page.
 
     A show rule that hands the document back as it is, or in a context block, leaves a later
     rule at the top level. One that puts it in an element, as a deck's show rule does in the

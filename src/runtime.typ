@@ -5,18 +5,20 @@
 //
 // In the paged outputs a state is a page, and typst applies its display state itself.
 // In the HTML target one frame covers every state of the slide, so the display state has
-// to travel to the browser as data: `animo.js` is what puts it on the groups as CSS.
+// to travel to the browser as data.
+// The browser runtime puts the display state on the groups as CSS.
 //
 // The channel is one `data-animo-plan` attribute per slide, holding compact JSON.
-// An attribute rather than a `<script>` element, because the HTML parser escapes and
+// The channel is an attribute rather than a `<script>` element, because the HTML parser escapes and
 // unescapes an attribute value, so no tag name can break the page,
 // and because a browser's element inspector shows it beside the slide it belongs to.
 //
-// Nothing about a display state travels the other way. Every state including state 0 is
-// resolved from the timeline, so the plan is complete when it leaves typst and the runtime
-// applies what it is given. Typst's `hide()` emits nothing to draw, so a tag that starts
-// hidden is rendered normally in the HTML target and hidden by the runtime with
-// `opacity: 0`; only the paged outputs use `hide()`.
+// Nothing about a display state travels the other way.
+// Every state including state 0 is resolved from the timeline,
+// so the plan is complete when it leaves typst and the runtime applies what it is given.
+// Typst's `hide()` emits nothing to draw, so a tag that starts hidden is rendered normally
+// in the HTML target and hidden by the runtime with `opacity: 0`.
+// Only the paged outputs use `hide()`.
 //
 // Tag sites still report themselves, because a slide checks what its timeline asks against
 // the sites its rendering produced, and `query` is what carries a report out of the frame.
@@ -39,8 +41,8 @@
 //
 // The anchor of a `relto` stays a name, because the HTML target has no position
 // introspection and only the browser can read a position off the tag's group.
-// Everything else is already arithmetic: the offset is in typst points, and the runtime
-// adds the anchors it measured.
+// Everything else is already arithmetic, because the offset is in typst points and the
+// runtime adds the anchors it measured.
 //
 // A tag's own name as the anchor is the identity, which a tag the timeline never moved
 // carries, so the runtime needs no anchor at all for it.
@@ -77,8 +79,8 @@
 //
 // Every optional entry of the plan is written this way, so that what the runtime reads is
 // only what a deck actually stated.
-// A dictionary rather than a pair, so that it spreads into a record beside the entries that
-// are always there, and adds to another where every entry is optional.
+// The entry is a dictionary rather than a pair, so that it spreads into a record beside the
+// entries that are always there, and adds to another where every entry is optional.
 #let entry(key, value) = if value == none { (:) } else { ((key): value) }
 
 // A timing record with every field at its default dropped, or `none` when nothing is left.
@@ -86,8 +88,8 @@
 // A field at its default is left out, and a record whose fields are all at their default
 // is left out entirely, because the runtime reads a missing delay as "starts with its
 // step" and a missing duration as "takes as long as the deck's own step", which is what an
-// operation that states no timing asks for. So a deck that times nothing carries no timing
-// at all.
+// operation that states no timing asks for.
+// A deck that times nothing therefore carries no timing at all.
 // The pruning is per field rather than per record because of `auto`, which is the duration
 // that lives in the stylesheet and has no number to travel as.
 #let pruned-timing(record) = {
@@ -122,9 +124,11 @@
 //
 // A step whose every operation starts with it and takes the deck's own step lasts exactly
 // that step, which is what the runtime assumes when it finds no span, so such a step
-// carries none. An `unstated` of zero on its own is that case; beside a `stated` it is a
-// statement of its own and travels, because it says that some operation of the step takes
-// the deck's own step where another one runs past it.
+// carries none.
+// An `unstated` of zero on its own is that case.
+// Beside a `stated`, an `unstated` of zero is a statement of its own and travels,
+// because it says that some operation of the step takes the deck's own step where another
+// one runs past it.
 #let span-for(span) = {
   let kept = (
     entry("stated", span.stated) + entry("unstated", span.unstated)
@@ -132,10 +136,10 @@
   if kept.len() != 0 and kept != (unstated: 0.0) { kept }
 }
 
-// What one boundary changes, as the runtime reads it: every tag whose content the boundary
-// changes, by name, with the timing of the operations that changed it and the name of the
-// transition they named for it, with its parameters when it has any, both left out for
-// `auto`.
+// What one boundary changes, as the runtime reads it.
+// This is every tag whose content the boundary changes, by name,
+// with the timing of the operations that changed it and the name of the transition they
+// named for it, with its parameters when it has any, both left out for `auto`.
 //
 // The runtime finds the stacks a boundary crosses by these names, because a stack holds the
 // groups of the tags laid out in it.
@@ -143,10 +147,12 @@
 // stack, because `check-boundaries` refuses the boundary otherwise, so the first operation
 // speaks for all of them.
 //
-// A tag that becomes no group has nothing in a stack to be found by, so `regions` names, by
-// the label of the group of the region that holds its stack, the tag whose record that
-// stack takes, as `groupless-regions` in `member.typ` reads it from the membership reports.
-// It is left out when it is empty, which it is in a deck whose every changed tag has a group.
+// A tag that becomes no group has nothing in a stack to be found by.
+// For such a tag, `regions` maps the label of the group of the region that holds its stack
+// to the name of the tag whose record that stack takes,
+// as `groupless-regions` in `member.typ` reads it from the membership reports.
+// `regions` is left out when it is empty,
+// which it is in a deck whose every changed tag has a group.
 #let boundary-of(epoch, regions) = {
   let changed = (:)
   for name in epoch.changed {
@@ -186,8 +192,9 @@
 // presenter click, which is what a state with neither number gets.
 //
 // Both numbers travel, rather than one resolved number per gap, because the gap across a
-// slide boundary is timed by two slides and the two are emitted by two calls of this: the
-// runtime is the first place that sees both sides of it.
+// slide boundary is timed by two slides and the two are emitted by two calls of this
+// function.
+// The runtime is the first place that sees both sides of that gap.
 //
 // Must be called in a context.
 #let browser-plan(plan, names, regions: auto) = (

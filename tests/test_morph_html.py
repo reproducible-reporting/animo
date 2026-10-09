@@ -150,8 +150,8 @@ def test_every_moving_glyph_has_a_partner_halfway_along_its_route(page, deck_at,
     Every glyph that the outgoing region moves is displayed where a glyph of the same shape in
     the incoming region is displayed, and that point is halfway between where the two are
     laid out, which is where a linear route puts it.
-    The count is what says the assertion is not vacuous: the inserted clause moves every
-    glyph after it, and the replacement moves `Hello world`.
+    The count says that the assertion is not vacuous, because the inserted clause moves
+    every glyph after it, and the replacement moves `Hello world`.
     """
     presentation: Deck = deck_at(reflowing)
     page.add_style_tag(content=SLOW)

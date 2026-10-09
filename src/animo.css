@@ -137,8 +137,8 @@ body {
   window size.
   Sizing rather than scaling leaves both `translate` and `scale` free on this element.
   The runtime writes a pan as its `translate`, and nothing writes its `scale`.
-  It holds one frame, and that frame holds the body of the slide with an epoch stack in every
-  region whose content changes.
+  The canvas holds one frame, and that frame holds the body of the slide with an epoch stack
+  in every region whose content changes.
   The blend that crossfades two renderings of a stack is confined inside the frame rather
   than by this element. See the rules on the frame and on the stacks below.
 */
@@ -213,8 +213,9 @@ body {
   The renderings are groups placed at one point of the region's footprint in the slide's
   single frame, so that typst's deduplicator, whose scope is the frame, defines each glyph
   they share once between them. See *Findings*.
-  Visibility rather than display, because it hides the ink without taking the layout away,
-  so a group in a rendering that is not shown still reports the geometry a morph reads.
+  The renderings are hidden with visibility rather than display, because visibility hides
+  the ink without taking the layout away, so a group in a rendering that is not shown still
+  reports the geometry a morph reads.
 */
 .animo-canvas [data-typst-label^="animo-epoch-"] {
   visibility: hidden;
@@ -252,7 +253,8 @@ body {
   A number finer than a slide number is made of these renderings, because one frame covers
   every state of a slide, so the value cannot be ink chosen when the frame is rendered and
   every value is rendered instead.
-  Opacity rather than visibility, because a stack in a region sits inside an epoch rendering,
+  The renderings are hidden with opacity rather than visibility,
+  because a stack in a region sits inside an epoch rendering,
   and a rendering that is not being shown is hidden with `visibility`, which a descendant may
   take back.
   A rendering that took its visibility back would then paint out of an epoch rendering nobody

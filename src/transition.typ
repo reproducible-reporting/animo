@@ -17,8 +17,8 @@
 
 // A transition as the value its function returns.
 //
-// A one-element array rather than a bare dictionary, for the reason `sub` gives:
-// a code block joins arrays and merges dictionaries, so a transition written at the top of
+// The value is a one-element array rather than a bare dictionary, for the reason `sub` gives.
+// A code block joins arrays and merges dictionaries, so a transition written at the top of
 // a timeline would merge with nothing and fail to join with the `sub` calls beside it.
 // `args` holds the parameters as the JSON values the runtime reads.
 #let transition-value(name, args) = (

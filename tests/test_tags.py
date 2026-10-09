@@ -8,8 +8,8 @@ which is the claim the wrapping decision exists for.
 
 The wrapper a tag chose and the display state it applied are both readable with `query`,
 because a tag emits a labelled wrapper holding `move(scale(..))` holding a wrapper.
-So the whole path from the timeline through the resolver and the provider to the wrapper
-is assertable without exporting anything, which is what tier 1 is for.
+The whole path from the timeline through the resolver and the provider to the wrapper is
+therefore assertable without exporting anything, which is what tier 1 is for.
 
 The wrapping decision is the part worth the most attention here.
 It is a measurement rather than an inspection of element kinds, and the axis it decides is
@@ -90,7 +90,7 @@ def test_wrap_auto_measures_whether_the_body_breaks_the_line(typst: TypstRunner,
     """`wrap: auto` picks the hugging wrapper for inline content and the filling one else.
 
     A `figure` and a block equation are the cases that say why the filling wrapper is a
-    `block(width: 100%)` rather than a `block`: a wrapper at its natural width hugs, and
+    `block(width: 100%)` rather than a `block`, because a wrapper at its natural width hugs, and
     hugging left-aligns what the container was centring.
     """
     source = deck(f'slide[#tag("t", {body})]') + check(
@@ -319,7 +319,8 @@ def test_a_deck_that_wraps_slide_in_its_own_function_still_reaches_its_tags(
 
     A recurring element is a `#place` inside a wrapper around `#slide`, which is animo's
     answer to headers and footers, so the plan may not depend on where `#slide` is called
-    from. It does not: the view is provided lexically to the body it was given.
+    from.
+    It does not, because the view is provided lexically to the body it was given.
     """
     animation = '{ import anim: *\n  sub(move("t", dx: 1cm)) }'
     source = deck(
@@ -468,8 +469,9 @@ def test_a_label_of_the_documents_own_is_not_a_tag_site(typst: TypstRunner):
 def test_a_move_relative_to_a_tag_the_slide_does_not_have_is_refused(typst: TypstRunner):
     """The same refusal a `pan(relto:)` raises, and the message names the primitive.
 
-    It is the same mistake for the same reason: a misspelt name is the likely cause, and a
-    silent fallback would leave the element where it was in both targets.
+    It is the same mistake for the same reason.
+    A misspelt name is the likely cause,
+    and a silent fallback would leave the element where it was in both targets.
     """
     animation = timeline('sub(move("here", relto: "nowhere"))')
     source = deck(f'slide(animation: {animation})[#tag("here")[here]]')
@@ -514,9 +516,10 @@ def test_an_anchor_inside_a_transformed_tag_is_refused(typst: TypstRunner, step,
     An anchor is the corner the body gave a tag, and a `move` or a `scale` on a tag around
     it moves that corner. The presentation and the browser still read an untransformed
     layout, the first from its own first page and the second from the slide before anything
-    is written on it, while a handout reads whichever page it keeps. So the three would
-    disagree, which is what the refusal is for, and `move("outer", relto: "inner")` would
-    not even converge: the anchor it reads is one its own translation moves.
+    is written on it, while a handout reads whichever page it keeps.
+    The three would therefore disagree, which is what the refusal is for,
+    and `move("outer", relto: "inner")` would not even converge,
+    because the anchor it reads is one its own translation moves.
 
     Refused in every output type and for every way of reading the anchor, because a refusal
     that depended on the mode compiled would be worse than the disagreement it prevents.

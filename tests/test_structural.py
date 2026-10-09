@@ -336,7 +336,8 @@ def test_hiding_and_removing_reserve_the_same_footprint(typst: TypstRunner):
     """Inside a tag's own box the two cannot be told apart, which the manual says.
 
     `h` starts hidden, because `reveal` is the first thing said about it, and is removed
-    later; `r` starts removed, because `reset` is the first thing said about it. Both
+    later.
+    `r` starts removed, because `reset` is the first thing said about it. Both
     therefore hold the same text in some states and nothing in others.
     """
     animation = timeline('sub(reveal("h"), reset("r"))', 'sub(remove("h"))')

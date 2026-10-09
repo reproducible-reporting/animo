@@ -28,8 +28,8 @@ def labels(markup: str) -> list[str]:
 def test_a_draw_command_is_an_array_of_closures(typst: TypstRunner):
     """`grid(..)` is a value, built where it is written, and not content.
 
-    Which means it carries no marker, so a tag around it reaches no view and could never
-    resolve its content for an epoch. The geometry-emitting and the state-changing commands
+    A draw command therefore carries no marker, so a tag around it reaches no view and could
+    never resolve its content for an epoch. The geometry-emitting and the state-changing commands
     have the same shape, so neither is a special case of the other.
     """
     package = require(typst, CETZ)
@@ -79,8 +79,8 @@ def test_a_show_rule_outside_a_canvas_reaches_a_content_element_inside_it(
     A `content()` element holds real content, laid out with the show rules in force where
     the canvas sits, so the mechanism that hands a tag its slide's view reaches into a
     canvas as it reaches anywhere else.
-    The replacement carries a label of its own, which is what says the rule really fired:
-    the marker's own label reaches no group, and the replacement's does.
+    The replacement carries a label of its own, which is what says the rule really fired.
+    The marker's own label reaches no group, and the replacement's does.
     """
     package = require(typst, CETZ)
     markup = typst.svg(

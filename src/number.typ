@@ -8,9 +8,10 @@
 //
 // A subslide number differs between the states of one slide, and the cost model decides how
 // it is rendered.
-// The HTML target renders one frame per epoch, and a frame covers every state that shares
-// its content, so a number baked into that frame would be one number for a run of
-// subslides, and rendering one frame per state is what the design refuses.
+// The HTML target lays out one rendering per epoch, and a rendering covers every state that
+// shares its content.
+// A number baked into a rendering would therefore be one number for a run of subslides,
+// and laying out one rendering per state is what the design refuses.
 //
 // A subslide number uses the mechanism the rest of the package rests on.
 // Typst renders every value, and the browser chooses which of them is shown.
@@ -18,10 +19,10 @@
 // the kind `subslide`, and the runtime shows the rendering of the state it is on.
 // `stack.typ` says how a stack agrees with the paged outputs.
 //
-// The stack is one rendering per state wherever it sits, so an overlay is the place to put
-// it.
-// An overlay is one frame per slide, where the body is one frame per epoch, so a number in
-// the body is the same content multiplied by the number of epochs.
+// The stack holds one rendering per state wherever it sits, so an overlay is the place to
+// put it.
+// An overlay is one rendering per slide, while a region in the body is one rendering per
+// epoch, so a stack in a region is the same content multiplied by the number of epochs.
 
 #import "plan.typ": ask-stack-view, inside
 #import "site.typ": describe
@@ -85,8 +86,9 @@
   range(states).map(state => {
     let value = f(subslide-info(state, handouts, base, total))
     // `none` is a rendering that lays nothing out, which is what an `if` with no `else`
-    // returns: a number worth showing on one subslide is often not worth showing on
-    // another, and writing that should not need an empty content block.
+    // returns.
+    // A number worth showing on one subslide is often not worth showing on another,
+    // and writing that should not need an empty content block.
     assert(
       value == none or type(value) == content,
       message: "a per-subslide callback returns content or none, got "
@@ -100,8 +102,10 @@
 
 // What container the renderings of a stack become, as `tag` decides it for a tag site.
 //
-// The axis is hugging versus filling, and `auto` measures the first rendering rather than
-// inspecting it, for the reason `wrap: auto` measures. A stack that fills is what a
+// The choice is between a stack that hugs and a stack that fills,
+// and `auto` measures the first rendering rather than inspecting it,
+// for the reason `wrap: auto` measures.
+// A stack that fills is what a
 // progress bar needs, because a rendering that states a ratio has nothing else to be a
 // ratio of, and a stack that hugs is what a number in a line of text needs.
 //

@@ -4,8 +4,9 @@
 
 A tag site emits two nested wrappers around a `move` around a `scale` around the body.
 Whether that structure can be read back from the label that names it decides how much of
-animo is assertable without exporting anything: if it can, the display state a state
-actually applied is a compile-time assertion rather than a raster comparison.
+animo is assertable without exporting anything.
+If it can, the display state a state actually applied is a compile-time assertion rather
+than a raster comparison.
 
 These probes build the structure by hand, with no animo in sight, and pin the two field
 values that are easy to guess wrong along with the per-page occurrence rule.
@@ -92,8 +93,8 @@ def test_an_unset_stroke_on_a_box_reads_back_as_an_empty_dictionary(typst: Typst
 def test_query_returns_one_occurrence_per_page(typst: TypstRunner):
     """Content laid out on several pages is several elements, in page order.
 
-    This is what makes the whole timeline readable from one compilation:
-    the presentation renders one page per state, so the n-th occurrence of a label is its
+    This is what makes the whole timeline readable from one compilation,
+    because the presentation renders one page per state, so the n-th occurrence of a label is its
     rendering in state n.
     """
     typst.ok(

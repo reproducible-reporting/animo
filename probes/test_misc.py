@@ -73,7 +73,7 @@ def test_a_document_without_pages_becomes_one_blank_default_page(typst: TypstRun
 def test_a_code_block_joins_array_returning_calls(typst: TypstRunner):
     """This is what makes `animation: { sub(..) sub(..) }` a list of steps.
 
-    No accumulator, no side effects, and an empty call yields an empty step.
+    There is no accumulator and no side effect, and an empty call yields an empty step.
     """
     typst.ok(
         TOY
@@ -113,7 +113,7 @@ def test_all_three_usage_forms_work(typst: TypstRunner):
 
 
 def test_the_block_scoped_import_does_not_leak(typst: TypstRunner):
-    """Inside the block the primitives win; outside it the built-ins are untouched.
+    """Inside the block the primitives win, and outside it the built-ins are untouched.
 
     This is the whole reason the timeline vocabulary is imported inside the animation
     argument rather than at the top of the file.
@@ -157,7 +157,7 @@ def test_an_unknown_primitive_silently_falls_through_to_the_standard_library(
 
 
 def test_the_package_name_is_still_free():
-    """Recorded as unprobeable rather than faked.
+    """This is recorded as unprobeable rather than faked.
 
     `packages/preview/animo` returned 404 on Typst Universe when the design was written,
     which is why the name was chosen.

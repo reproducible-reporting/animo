@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """What every deck under `examples/` has to have in common.
 
-The decks are the unit of documentation: a page shows one by including the file,
-so a reader who copies one has to get the same result as the reader who copied another.
+The decks are the unit of documentation, because a page shows one by including the file.
+A reader who copies one deck therefore has to get the same result as the reader who copied
+another.
 That needs a shared shape and nothing but the fonts typst embeds.
-`plan.py` already compiles each of them to all three output types,
+`tools/build_examples.py` already compiles each of them to all three output types,
 so a broken example fails there.
 These tests are about the agreement between the outputs.
 """

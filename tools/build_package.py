@@ -4,7 +4,7 @@
 """Build the subtree that would be copied into the `typst/packages` repository.
 
 Some choices are hard-coded in this script to comply with the requirements of that repository.
-This is not meant to be pretty, elegent, nor reusable code.
+This is not meant to be pretty, elegant or reusable code.
 """
 
 import shutil

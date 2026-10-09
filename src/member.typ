@@ -8,14 +8,15 @@
 // Every tag site and every region reports itself where it is laid out, and the reports are
 // read back with `query` after the slide.
 //
-// What a boundary crosses follows from those reports and from the epoch it starts:
-// the outermost regions that hold the tags the boundary changes.
+// A boundary crosses the outermost regions that hold the tags the boundary changes,
+// which follow from those reports and from the epoch the boundary starts.
 // The HTML target places an epoch stack in every outermost region and none in the regions
 // inside one, so such a region crosses a boundary as a whole, with everything inside it.
 // The reports serve the refusals that are made after the slide.
 // The browser finds the stacks a boundary crosses by itself, from the names of the tags laid
-// out in them, except for a tag that becomes no group: the plan names the region of such a
-// tag, from the reports, because nothing in the output does.
+// out in them.
+// The exception is a tag that becomes no group, whose region the plan names from the
+// reports, because nothing in the output names it.
 
 #import "transition.typ": written
 
@@ -88,8 +89,9 @@
 //
 // Every tag whose content changes sits in a region, because a tag that has no box and that
 // no region holds is refused where it is written.
-// The answer is only as complete as `members`: a tag reports from the renderings it is laid
-// out in, so a tag that only a later epoch lays out is known once that epoch is rendered.
+// The answer is only as complete as `members`, because a tag reports from the renderings it
+// is laid out in.
+// A tag that only a later epoch lays out is therefore known once that epoch is rendered.
 #let changed-members(epochs, epoch, members) = {
   let parents = region-parents(members)
   let changed = epochs.at(epoch).changed

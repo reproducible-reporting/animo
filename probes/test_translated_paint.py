@@ -119,8 +119,8 @@ def test_a_translated_group_carries_its_own_clip(typst: TypstRunner, open_page):
 def test_a_translated_child_stays_under_its_ancestors_clip(typst: TypstRunner, open_page):
     """A clip above the moved element stays where it is and cuts the element off.
 
-    So two copies of a letter under two clips at two places are not drawn alike while they
-    move, and the morph keeps such a pair apart.
+    Two copies of a letter under two clips at two places are therefore not drawn alike while
+    they move, and the morph keeps such a pair apart.
     """
     page = opened(typst, open_page, "ancestor.html")
     page.evaluate(

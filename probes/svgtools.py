@@ -4,8 +4,8 @@
 
 Several probes are about what is *inside* a labelled group,
 which nesting makes awkward to express as a pattern.
-The SVG itself is well-formed XML, so it parses;
-the HTML around it is not, so the fragments are cut out first.
+The SVG itself is well-formed XML, so it parses.
+The HTML around it is not, so the fragments are cut out first.
 """
 
 import re
@@ -20,7 +20,7 @@ SVG = "{http://www.w3.org/2000/svg}"
 def svg_fragments(markup: str) -> list[str]:
     """Every `<svg>..</svg>` fragment of a document, in document order.
 
-    An SVG export is one fragment; an HTML export is one per `html.frame`.
+    An SVG export is one fragment, and an HTML export is one per `html.frame`.
     """
     return re.findall(r"<svg\b.*?</svg>", markup, re.S)
 

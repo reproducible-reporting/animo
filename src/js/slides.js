@@ -78,9 +78,9 @@ function readSlide(element) {
     // `morph.js` keeps.
     morphed: new Map(),
     // Which state this slide is showing, or `null` while it has never been rendered.
-    // Its own rather than the deck's position, because a backward step that walks back
-    // over a join leaves one slide and rewinds another, and the state it rewinds from is
-    // the one this slide was left at.
+    // This is the slide's own state rather than the deck's position, because a backward step
+    // that walks back over a join leaves one slide and rewinds another, and the state it
+    // rewinds from is the one this slide was left at.
     shown: null,
   };
 }

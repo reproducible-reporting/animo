@@ -32,8 +32,8 @@ def three_slides(typst: TypstRunner):
 def test_a_slide_is_a_viewport_holding_a_canvas_holding_one_frame(open_page, three_slides):
     """The shape the body of a slide is laid out in, whatever the epochs.
 
-    One frame per slide, always: an epoch stack is a group inside it, which is what shares
-    the glyph definitions of its renderings. These slides change no content, so they hold no
+    A slide always has one frame, and an epoch stack is a group inside it, which is what
+    shares the glyph definitions of its renderings. These slides change no content, so they hold no
     stack at all.
     """
     page = open_page(three_slides)
@@ -53,7 +53,8 @@ def test_the_viewport_clips_and_fills_the_window_at_the_deck_aspect_ratio(
     """A deck that does not fit the window is not a presentation.
 
     The window is set to the deck's own aspect ratio, so the viewport has to be the
-    whole of it: any letterboxing here would be a scaling bug rather than a choice.
+    whole of it.
+    Any letterboxing here would be a scaling bug rather than a choice.
     """
     page.set_viewport_size({"width": 1280, "height": 720})
     open_page(three_slides)
@@ -160,7 +161,7 @@ TEMPO_PROPERTIES = """() => {
 
 
 def test_the_deck_writes_its_tempo_into_the_stylesheet(page, open_page, typst: TypstRunner):
-    """The three arguments are what an author writes; the properties are what the runtime reads.
+    """The arguments are what an author writes, and the properties are what the runtime reads.
 
     The values are asserted as the browser computes them rather than as they are spelled in
     the page, because that is the form the runtime asks for at every step.
@@ -179,7 +180,8 @@ def test_reduced_motion_outranks_a_deck_that_asked_for_motion(page, open_page, t
     """The deck writes its `:root` block after animo's stylesheet, so order cannot decide this.
 
     The reduced-motion query carries `!important` for that reason, and this is the test
-    that says so: without it a later `:root` block could set the property back, and a reader
+    that says so.
+    Without `!important` a later `:root` block could set the property back, and a reader
     who asked for less motion would get the deck's answer instead of theirs.
     The deck's durations stay as stated, because they are defaults that a duration written
     in the timeline overrides, so the query sets a property of its own.
@@ -250,8 +252,8 @@ def test_only_the_current_slide_paints(page, deck_at, three_slides):
 def test_a_deck_lays_out_two_slides_at_a_time_and_no_more(page, deck_at, three_slides):
     """The cost of the crossfade, which is what keeps a long deck cheap to open.
 
-    A deep link snaps, so it lays out the one slide it lands on; a step crossfades, so it
-    lays out the slide it came from as well and no third one.
+    A deep link snaps, so it lays out the one slide it lands on.
+    A step crossfades, so it lays out the slide it came from as well and no third one.
     """
     laid_out = """() => Array.from(
         document.querySelectorAll('.animo-slide'),
@@ -315,15 +317,15 @@ def test_a_colour_overlay_becomes_css_on_a_layer_of_its_own(open_page, typst: Ty
     """An overlay colour cannot be the container's background, which is behind the canvas.
 
     It is ink over the slide, so it gets an element of its own in front of the canvas,
-    and only its alpha makes it useful: a dimming tint is the case it exists for.
+    and only its alpha makes it useful, because a dimming tint is the case it exists for.
     """
     source = deck('slide(overlay: rgb("#0000ff80"))[body]')
     page = open_page(typst.html(source, name="tint.html"))
     computed = page.evaluate(
         "() => getComputedStyle(document.querySelector('.animo-overlay')).backgroundColor"
     )
-    # The components rather than the string: an engine is free to spell the alpha of
-    # `#0000ff80` as either 0.5 or 0.502, and both did.
+    # The components are compared rather than the string, because an engine is free to spell
+    # the alpha of `#0000ff80` as either 0.5 or 0.502, and both did.
     found = re.fullmatch(r"rgba\((\d+), (\d+), (\d+), ([\d.]+)\)", computed)
     assert found is not None, computed
     assert tuple(int(found[axis]) for axis in (1, 2, 3)) == (0, 0, 255)
@@ -333,8 +335,9 @@ def test_a_colour_overlay_becomes_css_on_a_layer_of_its_own(open_page, typst: Ty
 def test_an_opaque_colour_overlay_covers_the_body_in_the_browser(open_page, typst: TypstRunner):
     """The declaration is on an element in front of the canvas, and this is what that means.
 
-    A background of the same colour is the control: it sits on the slide container, which
-    is behind the canvas, so the body stays visible there.
+    A background of the same colour is the control.
+    It sits on the slide container, which is behind the canvas, so the body stays visible
+    there.
     """
     body = '[#place(dx: 2cm, dy: 2cm, rect(width: 2cm, height: 2cm, fill: rgb("#ff0000")))]'
     shots = {}

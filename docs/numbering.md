@@ -31,9 +31,9 @@ and it is up to you how to use these functions to format and position (sub)slide
 
 ## The Slide Number
 
-`numbered:` on `#slide` decides whether a slide is **counted**.
+The `numbered:` argument of `#slide` decides whether a slide is **counted**.
+Whether and where a number is shown is up to the deck.
 A title or section slide is typically `numbered: false`.
-It says nothing about whether a number is shown.
 
 `slide-number()` and `slide-count()` read that counter.
 Both are context functions and hand back plain integers,
@@ -63,8 +63,8 @@ so the position in the deck, as referenced by the URL, is counted separately ove
 
 A subslide number is a callback rather than a counter.
 The HTML output renders one rendering per [epoch](structural.md#epochs),
-and a rendering covers every state that shares its content,
-so a number written into it would be one number for a whole run of subslides.
+and a rendering covers every state that shares its content.
+A number written into a rendering would therefore stay the same over a whole run of subslides.
 
 `per-subslide` lays its callback out **once per subslide**,
 stacks the renderings in a container the size of the largest of them,
@@ -82,8 +82,8 @@ The callback receives the **subslide info**, one dictionary listed in the
 the fragment is an address, while the number is what the audience reads on the slide.
 `step` and `steps` count every subslide of every slide, unnumbered slides included,
 because they measure the talk rather than its numbering.
-They are named for the presenter's steps, and a step is the transition from one subslide to the
-next, so `steps` counts subslides rather than transitions.
+Despite their names, `step` and `steps` count subslides.
+The presenter takes `steps - 1` steps to get from the first subslide of the talk to the last.
 
 A callback may return `none`, which lays nothing out for that subslide.
 This writes a number only where it carries information:
@@ -94,8 +94,8 @@ This writes a number only where it carries information:
 
 ## A Progress Bar
 
-`step` and `steps` are what an indicator spanning the whole talk is measured against,
-and the callback returns content, so the indicator can be anything typst draws.
+An indicator spanning the whole talk is measured against `step` and `steps`.
+The callback returns content, so the indicator can be anything typst draws.
 
 ```typst
 #per-subslide(
@@ -108,7 +108,7 @@ A rendering that states a ratio needs a container width to be a ratio of,
 and only a filling container has one.
 The `rect` above is block-level, so `auto` chooses the filling block as well,
 and `wrap: block` states the requirement rather than changing the outcome.
-The argument is needed for a rendering that is inline and states a ratio,
+The `wrap: block` argument is needed for a rendering that is inline and states a ratio,
 such as a bar drawn as `box(width: 100% * f, ..)`.
 A stack of inline renderings measures them unbounded, where a `100%` width resolves to zero,
 so such a bar lays out with no width at all.
@@ -118,11 +118,12 @@ so such a bar lays out with no width at all.
 Animo has no header or footer machinery, so a recurring element is a wrapper around
 `#slide` that fills one of the two [outer layers](slides.md#backgrounds-and-overlays).
 
-**Put it in the overlay.**
-An overlay is one rendering per slide, where a region in the body is one rendering per
-*epoch*, so a stack of one rendering per subslide is paid for once in an overlay and once per
-epoch in a region. The overlay also belongs to the viewport, so a [pan](viewport.md) leaves it
-where it is, where a footer placed in the body travels with the canvas.
+**Put the number in the overlay.**
+An overlay is one rendering per slide, while a region in the body is one rendering per *epoch*.
+A stack of one rendering per subslide is therefore paid for once in an overlay,
+and once per epoch in a region.
+The overlay also belongs to the viewport, so a [pan](viewport.md) leaves the number in place,
+while a footer placed in the body travels with the canvas.
 
 ## What a Handout Shows
 
@@ -140,8 +141,8 @@ as [`init(handout: ..)` and `sub(handout: ..)`](continuous.md#selecting-states-f
 decide it.
 It has the same value in all three output types, so a presentation can show which of its
 subslides the audience will find in the handout.
-Combined with [`output-type()`](outputs.md#content-per-output-type),
-the mark is left out of the handout itself, where every page would carry it:
+With [`output-type()`](outputs.md#content-per-output-type),
+the mark can be left out of the handout itself, where every page would carry the mark:
 
 ```typst
 #let handout-mark = place(top + right, per-subslide(it => context {
@@ -152,7 +153,7 @@ the mark is left out of the handout itself, where every page would carry it:
 ## What This Costs
 
 A stack is one rendering per subslide,
-so it is the only construct in Animo whose cost grows with a slide's states rather than
+so the stack is the only construct in Animo whose cost grows with a slide's states rather than
 with its epochs.
-For a number that is a few glyphs it is a few percent of a deck.
+For a number of a few glyphs, the stacks cost a few percent of the deck.
 See [What a Number Costs](performance.md#what-a-number-costs) for empirical tests.

@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Panning: the viewport moving over a canvas larger than itself, in all three tiers.
 
-`pan` is the slide primitive, so what it changes is not a tag but where the slide's
-viewport sits on its canvas.
+`pan` is the slide primitive, so what it changes is where the slide's viewport sits on its
+canvas rather than a tag.
 That position is resolved three times over: by the resolver, as an anchor and an offset per
 axis; by typst on paper, which reads the anchor off a marker placed in the tag's wrapper;
 and by the browser, which reads it off the origin of the tag's group.
@@ -243,8 +243,9 @@ def test_content_beyond_the_viewport_never_reaches_another_page(paged: PagedRunn
 def test_the_handout_shows_the_viewport_of_each_state_it_keeps(paged: PagedRunner):
     """A handout page is the presentation page of the same state, pan included.
 
-    This is the decision for a panned slide: nothing outside the kept viewports reaches the
-    handout, and `handout: true` is how a panned-away view is kept.
+    This is the decision for a panned slide.
+    Nothing outside the kept viewports reaches the handout,
+    and `handout: true` is how a panned-away view is kept.
     """
     source = paged.typst.source(
         panned(far(), 'sub(handout: true, pan(relto: "far"))', "sub(pan(x: 0cm, y: 0cm))")
@@ -259,7 +260,8 @@ def test_the_handout_shows_the_viewport_of_each_state_it_keeps(paged: PagedRunne
 def test_both_layers_stay_with_the_viewport_while_the_canvas_pans(paged: PagedRunner):
     """Both belong to the viewport, so a pan moves the canvas between them.
 
-    The body is the control: the red square is off the page in state 0 and on it in state 1,
+    The body is the control.
+    The red square is off the page in state 0 and on it in state 1,
     so the two layers holding still is a fact about them and not about the pan.
     """
     source = panned(
@@ -380,7 +382,7 @@ def test_an_inline_tag_is_anchored_at_its_corner_in_the_browser(deck_at, typst: 
 def test_a_layer_stays_put_while_the_canvas_pans(deck_at, typst: TypstRunner, layer):
     """Each layer is a frame of the viewport, beside the canvas rather than inside it.
 
-    The frame count is what says that: a layer inside the canvas would be a second frame
+    The frame count says so, because a layer inside the canvas would be a second frame
     there, and it would then be panned along with the epoch renderings.
     """
     source = panned(

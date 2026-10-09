@@ -10,8 +10,8 @@ The slide that holds the first definition is `display: none` unless it is one of
 slides the runtime lays out, so the fill of a later slide is dropped and its clip path is
 not applied.
 
-The documents here are built by hand, in the shape of the page animo emits:
-the first `<svg>` defines a gradient and a clip path, and the second one references them.
+The documents here are built by hand, in the shape of the page animo emits.
+The first `<svg>` defines a gradient and a clip path, and the second one references them.
 The control has the first `<svg>` displayed, which is what makes the claim meaningful.
 The repair is an always rendered `<svg>` that comes first in the document and holds copies,
 which is what the runtime builds at load.

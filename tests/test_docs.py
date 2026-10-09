@@ -7,7 +7,7 @@ The site serves two readers and the split between their guides erodes one conven
 pointer at a time, so the rule about which way a link may point is a test.
 The reference is written by hand, because nothing reads a `//` comment, so the test suite
 is what keeps a new primitive from shipping undocumented.
-And the example table is written twice, in `README.md` and on the front page of the site,
+The example table is also written twice, in `README.md` and on the front page of the site,
 because the version inside it belongs to `snipwise` and a snippet cannot hold a snippet.
 """
 
@@ -49,7 +49,7 @@ FRONT_DOOR = "index.md"
 LINK = re.compile(r"\[[^\]]*\]\(([^)\s]+)")
 
 # The public names of `src/lib.typ` and `src/anim.typ`, as the reference has to spell them.
-# A `#let` at the start of a line is a definition; a name starting with an underscore or
+# A `#let` at the start of a line is a definition, and a name starting with an underscore or
 # holding a hyphen that the module does not export is not in the import lists below.
 DEFINITION = re.compile(r"(?m)^#let ([a-z][a-z0-9-]*)\s*[=(]")
 

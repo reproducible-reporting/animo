@@ -8,7 +8,7 @@ which is what the automatic canvas actually needs.
 A show rule returns content and not a value, so the numbers travel as `metadata` and come
 back through `query`, and the rule may not disturb the layout it is watching.
 
-Both halves are load-bearing: without the first there is no canvas at all,
+Both halves are needed, because without the first there is no canvas at all,
 and without the second every slide with a placement inside a paragraph lays out wrongly.
 """
 
@@ -64,9 +64,10 @@ def test_a_layout_block_inside_the_rule_does_disturb_the_layout(typst: TypstRunn
     """`layout(size => ..)` would reveal the placement's own container, and cannot be used.
 
     It is the one way to tell a top-level placement from one nested in a box, which is
-    the known limit of the automatic canvas. It is block-level, so it breaks the
-    paragraph the placement sits in: measured on typst 0.15.0, the same body comes out
-    76.89pt tall without the rule and 103.29pt with it.
+    the known limit of the automatic canvas.
+    `layout` is block-level, so it breaks the paragraph the placement sits in.
+    Measured on typst 0.15.0, the same body comes out 76.89pt tall without the rule and
+    103.29pt with it.
     Recorded as a probe rather than as a comment, because it looks like the obvious fix
     and is not, and the next reader will reach for it again.
     """
@@ -133,8 +134,8 @@ def test_the_recording_is_queryable_from_inside_an_html_frame(typst: TypstRunner
 def test_a_block_sized_from_its_own_query_converges(typst: TypstRunner):
     """The canvas depends on the layout of the very block it sizes, and typst resolves it.
 
-    The first pass records nothing and the block comes out at its floor;
-    the introspection loop then runs the document again with the placements in reach.
+    The first pass records nothing and the block comes out at its floor,
+    and the introspection loop then runs the document again with the placements in reach.
     It terminates because the body is laid out at a width that does not depend on the
     answer, so the second pass sees exactly what the first one recorded.
     The claim is checked on the emitted frame rather than with an assertion inside the
@@ -216,7 +217,7 @@ def test_a_nested_show_place_rule_does_not_suppress_the_rule_around_it(typst: Ty
 
     Measured on typst 0.15.0. A rendering that is only measured produces no queryable
     metadata, so animo wants the recording rule to pass over it, and a no-op rule inside
-    that rendering does not achieve it: the outer rule still sees both placements.
+    that rendering does not achieve it, because the outer rule still sees both placements.
     """
     typst.ok(
         NESTED.replace("INNER", "show place: it => it").replace("EXPECTED", '("none", "none")')

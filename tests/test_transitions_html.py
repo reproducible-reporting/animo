@@ -4,15 +4,17 @@
 
 A boundary crossfades the two slide containers or cuts between them, and the `init` of the
 slide a forward step *enters* is what decides which, in both directions.
-The deck below is what makes that sharp: slide 2 cuts and slide 3 crossfades, so the two
-boundaries around slide 2 behave differently and neither can be explained by the
-direction the presenter happens to be walking in.
+The deck below makes that sharp.
+Slide 2 cuts and slide 3 crossfades, so the two boundaries around slide 2 behave
+differently and neither can be explained by the direction the presenter happens to be
+walking in.
 
 The crossfade itself is measured rather than raced, by pausing what is in flight and
 stating the moment, exactly as the epoch crossfade is in `test_epochs_html.py`.
 The two slides carry different background colours, because that is the case a plain
-opacity crossfade gets wrong: two opaque grounds dip to something darker than either at
-the midpoint, where `plus-lighter` sums them to the average.
+opacity crossfade gets wrong.
+Two opaque grounds dip to something darker than either at the midpoint,
+while `plus-lighter` sums them to the average.
 """
 
 import numpy as np
@@ -79,9 +81,9 @@ def flight(presentation: Deck) -> list[float]:
 def test_a_step_into_a_crossfading_slide_animates(page, deck_at, three_slides):
     """The default, and the two containers are what it addresses.
 
-    Two animations and no more: the slide being entered and the slide being left, each
-    driving nothing but `opacity`, which is what makes the two halves add rather than
-    one of them cover the other.
+    There are two animations and no more, one for the slide being entered and one for the
+    slide being left, each driving nothing but `opacity`, which is what makes the two halves
+    add rather than one of them cover the other.
     """
     presentation: Deck = deck_at(three_slides).goto(2)
     page.add_style_tag(content=SLOW)
@@ -120,10 +122,10 @@ def test_a_boundary_takes_the_setting_of_the_slide_a_forward_step_enters(
 
     Slide 2 cuts and slide 3 crossfades, so the boundary below slide 2 cuts and the one
     above it crossfades. Walking backwards over each of them has to do the same thing as
-    walking forwards did, which is what makes a boundary reversible: were each direction
-    to take the setting of whichever slide it happens to enter, stepping back from 3 to 2
-    would cut and stepping back from 2 to 1 would crossfade, which is the opposite of
-    both assertions below.
+    walking forwards did, which is what makes a boundary reversible.
+    Were each direction to take the setting of whichever slide it happens to enter,
+    stepping back from 3 to 2 would cut and stepping back from 2 to 1 would crossfade,
+    which is the opposite of both assertions below.
     """
     presentation: Deck = deck_at(three_slides).goto(3)
     page.add_style_tag(content=SLOW)
@@ -233,8 +235,8 @@ def test_the_midpoint_of_a_boundary_is_the_sum_of_the_two_slides(
     The two slides carry opaque grounds of different colours, so a plain opacity
     crossfade would put the deck's own black surround through the half-transparent pair
     and land the midpoint far below the average of the two. The assertion is on the whole
-    slide rather than on a band of it, because a slide boundary scopes nothing: the whole
-    container is the unit.
+    slide rather than on a band of it, because a slide boundary scopes nothing.
+    The whole container is the unit.
     """
     presentation: Deck = deck_at(three_slides).goto(2)
     page.add_style_tag(content=SLOW)

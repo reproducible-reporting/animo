@@ -4,9 +4,10 @@
 
 The recorded numbers under `benchmarks/results/` are seconds and bytes, and seconds belong
 to a machine rather than to a repository, so nothing here asserts on them.
-What does belong here is the cost model those numbers are divided by: how many times animo
-asks typst to lay a deck out. That count follows from the timeline alone, is the same on
-every machine, and is exactly what would change if a refactoring made animo slower.
+What does belong here is the cost model those numbers are divided by,
+which is how many times animo asks typst to lay a deck out.
+That count follows from the timeline alone, is the same on every machine,
+and is exactly what would change if a refactoring made animo slower.
 
 The benchmark decks themselves are compiled here as well, without timing anything, so that
 a change to the package breaks in the test suite rather than the next time somebody runs
@@ -71,8 +72,8 @@ def renderings_per_slide(markup: str) -> list[int]:
     A rendering is a labelled group inside the slide's canvas element. The body of a slide
     is laid out once, and every region whose content changes holds one rendering per epoch,
     all of them in the slide's one frame. Counting the labels rather than the frames is what
-    keeps this a reading of the cost model: the frames are what the merge changed, and the
-    renderings are what the model is about.
+    keeps this a reading of the cost model, because the frames are what the merge changed,
+    and the renderings are what the model is about.
     """
     canvases = re.findall(r'<div class="animo-canvas"[^>]*>(.*?)</div>', markup, re.S)
     return [len(re.findall(r'data-typst-label="animo-epoch-\d+"', canvas)) for canvas in canvases]

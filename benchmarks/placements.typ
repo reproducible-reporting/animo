@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // The placement benchmark deck: one slide covered in placed marks,
-// in the four shapes that say what the automatic canvas costs.
+// in the variants that say what the automatic canvas costs.
 //
 // The canvas of a slide is the union of its body and of every `#place`d element on it,
 // and animo computes that union only on a slide whose timeline pans.

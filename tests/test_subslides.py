@@ -6,8 +6,8 @@ The presentation renders one page per state and applies the display state with t
 `move`, `scale` and `hide`. Two claims are being made about those pages, and pixels are the
 only honest way to check either.
 The first is that the display state lands where the timeline said it should.
-The second is the invariant of the whole design: nothing moves between two states except
-what the timeline moved, down to the pixel, outside the box of the tag it addressed.
+The second is the invariant of the whole design, which is that nothing moves between two
+states except what the timeline moved, down to the pixel, outside the box of the tag it addressed.
 
 The marks are filled squares at stated offsets rather than glyphs, because a square's
 corners are a number that can be asserted, and one pixel is one typst point here.
@@ -127,8 +127,9 @@ def test_a_state_can_be_taken_out_of_the_handout_and_others_put_in(paged: PagedR
 def test_the_init_flag_hands_out_the_initial_state(paged: PagedRunner):
     """The page the handout keeps is the state the body declared, and not the final one.
 
-    This is the case the argument exists for: a timeline that restores what the body hides
-    leaves a final state on which the slide makes no point.
+    This is the case the argument exists for.
+    A timeline that restores what the body hides leaves a final state on which the slide
+    makes no point.
     """
     animation = timeline("init(handout: true)", 'sub(move("m", dx: 3cm))')
     source = paged.typst.source(deck(f"slide(animation: {animation})[{mark('m', '0cm', '0cm')}]"))
@@ -254,8 +255,8 @@ def test_an_absolute_move_puts_the_corner_at_a_point_on_the_canvas(paged: PagedR
 def test_an_absolute_move_is_idempotent(paged: PagedRunner):
     """A tag's anchor excludes its own display state, so saying it twice says it once.
 
-    This is what makes the absolute form usable at all: a step can restate where something
-    belongs without having to know what the steps before it did to it.
+    This is what makes the absolute form usable at all, because a step can restate where
+    something belongs without having to know what the steps before it did to it.
     """
     animation = timeline('sub(move("m", x: 4cm, y: 3cm))', 'sub(move("m", x: 4cm, y: 3cm))')
     body = f"slide(animation: {animation})[{mark('m', '1cm', '2cm')}]"
@@ -289,7 +290,8 @@ def test_a_relative_move_does_not_move_what_is_relative_to_it(paged: PagedRunner
     """`move("m", relto: "g")` reads where the body put `g`, not where a step took it.
 
     The two steps are in one timeline rather than in two decks, so the claim is about one
-    rendering: whatever order the operations resolve in, the anchor is the same number.
+    rendering.
+    Whatever order the operations resolve in, the anchor is the same number.
     """
     green = (
         '#place(dx: 8cm, dy: 3cm, tag("g", wrap: box, '
@@ -368,7 +370,7 @@ def test_a_hidden_tag_holds_its_place_in_the_flow(paged: PagedRunner):
     """A tag the timeline reveals starts hidden, and hidden keeps the space.
 
     The red mark sits in the flow below the tagged green one, so it is what says whether
-    the space was reserved: it may not move when the green one appears.
+    the space was reserved, and it may not move when the green one appears.
     """
     animation = timeline('sub(reveal("t"))')
     body = (

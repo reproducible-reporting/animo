@@ -154,8 +154,9 @@ def test_a_tag_inside_a_region_reserves_no_footprint_of_its_own(typst: TypstRunn
 def test_removed_frees_its_space_inside_a_region_and_hidden_does_not(typst: TypstRunner):
     """What follows a removed tag sits higher until `reset` brings the tag in.
 
-    One timeline gives the two tags their two initial states: `r` starts removed because
-    `reset` is the first thing said about it, and `h` starts hidden because `reveal` is.
+    One timeline gives the two tags their two initial states.
+    `r` starts removed because `reset` is the first thing said about it,
+    and `h` starts hidden because `reveal` is.
     """
     animation = timeline('sub(reset("r"), reveal("h"))')
     tagged = '#tag("{}", wrap: block, rect(height: 1cm))'
@@ -304,7 +305,7 @@ def test_a_region_around_something_that_is_not_content_is_refused(typst: TypstRu
 
 
 def test_a_structural_step_on_a_region_name_is_refused(typst: TypstRunner):
-    """A region's name is for the continuous primitives; its content is changed through tags."""
+    """A region's name serves the continuous primitives, and tags change its content."""
     animation = timeline('sub(replace("r")[new])')
     typst.fails(deck(f'slide(animation: {animation})[#region(name: "r")[old]]'), "names a region")
 

@@ -6,16 +6,17 @@ Every epoch frame carries its own glyph definitions, and the repeats are the lar
 an animo page. Whether they can be dropped is two questions, and the probes here answer
 both in the order the answers matter.
 
-The browser half is the mechanism: a `<use>` resolves the first matching id in the
-document, whatever inline `<svg>` that id sits in, so a page whose repeats are gone renders
-as the page that carried them.
+The browser half is the mechanism.
+A `<use>` resolves the first matching id in the document, whatever inline `<svg>` that id
+sits in, so a page whose repeats are gone renders as the page that carried them.
 
 The typst half is what makes the mechanism unreachable from a package. A frame is content
 until the document is encoded, and a text node is escaped, so nothing animo writes can be
 markup and nothing it holds is the markup a frame became.
 
-What is reachable is the last probe: the deduplicator is per frame, so several renderings
-laid out in *one* frame share one set of definitions, and each of them is still the
+What is reachable is the last probe.
+The deduplicator is per frame, so several renderings laid out in *one* frame share one set
+of definitions, and each of them is still the
 labelled group the runtime addresses.
 """
 
@@ -34,7 +35,8 @@ SENTENCE = (
 )
 
 # The second frame is the one that is shown, because it is the one whose definitions the
-# hoisting drops: what it renders is what an earlier frame defined.
+# hoisting drops.
+# What it renders is what an earlier frame defined.
 SHOW_LAST = ".stack > svg:not(:last-child) { visibility: hidden; }\n"
 
 

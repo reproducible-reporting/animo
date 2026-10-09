@@ -58,8 +58,8 @@
 #let render(name, body, wrapper, view) = {
   let changing = varies(view.epochs, name)
   // The view of content that is not laid out the same in every epoch.
-  // `base` is the view the content sits under, which for a wrapped tag site is one the
-  // enclosing tags of the site include the tag itself.
+  // `base` is the view the content sits under, which for a wrapped tag site is a view in
+  // which the enclosing tags include the tag itself.
   let changeable(base, region) = (..base, region: (..region, stable: false))
   if wrapper == none {
     if name in view.continuous {

@@ -47,8 +47,8 @@ function hoistPaintServers() {
   document.body.prepend(holder);
 }
 
-// Before any slide is read, and while every slide is still `display: none`, so that no
-// frame is ever painted with a missing gradient.
+// The paint servers are hoisted before any slide is read, and while every slide is still
+// `display: none`, so that no frame is ever painted with a missing gradient.
 hoistPaintServers();
 
 for (const element of document.querySelectorAll("[data-animo-slide]")) {

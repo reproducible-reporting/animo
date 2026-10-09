@@ -6,10 +6,11 @@ The height of the box a slide body is laid out in is decided by this behaviour.
 A body whose flow is taller than the viewport is what `pan` is for,
 and it only reaches the content below the fold if that content was laid out there at all.
 
-The trap is that prose and blocks part ways: a paragraph runs past the bottom edge and keeps
-its line spacing, while every block that does not fit is painted at the edge, on top of the
-previous one. A slide of running text therefore pans correctly and the same slide with its
-steps in blocks comes out as a pile, which is why this is a probe and not a comment.
+The trap is that prose and blocks part ways.
+A paragraph runs past the bottom edge and keeps its line spacing,
+while every block that does not fit is painted at the edge, on top of the previous one.
+A slide of running text therefore pans correctly and the same slide with its steps in blocks
+comes out as a pile, which is why this is a probe and not a comment.
 """
 
 from harness import TypstRunner
@@ -82,8 +83,9 @@ def test_a_paragraph_runs_past_the_bottom_edge_instead(typst: TypstRunner):
     """The contrast that makes the stacking easy to miss.
 
     The same container, filled with running text rather than with blocks, lays every line out
-    where it belongs and simply paints past its own bottom edge: measured on typst 0.15.0, the
-    end of a paragraph that is 100 pt of container tall sits at 333.58 pt.
+    where it belongs and simply paints past its own bottom edge.
+    Measured on typst 0.15.0, the end of a paragraph that is 100 pt of container tall sits at
+    333.58 pt.
     """
     source = (
         PAGE

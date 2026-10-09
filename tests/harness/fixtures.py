@@ -28,7 +28,8 @@ os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", str(ROOT / ".venv" / "playwrig
 
 # The browser engines the HTML tier runs in.
 # Three rendering engines rather than one, because a deck that only works in chromium is
-# not a presentation format: the CSS animo emits has to be the CSS all of them agree on.
+# not a presentation format.
+# The CSS animo emits has to be the CSS all of them agree on.
 #
 # The two required ones run wherever playwright runs, so a launch failure there is a
 # broken bootstrap and an error.
@@ -142,8 +143,8 @@ def playwright_instance():
 def browser(playwright_instance, browser_name, request):
     """Tier 3: one of the bundled browsers, launched once per engine for the whole run.
 
-    An engine that has to run and cannot fails rather than skips: `./setup.sh` downloads
-    them all, and a suite that is green because its browser tier never ran is the failure
+    An engine that has to run and cannot fails rather than skips, because `./setup.sh`
+    downloads them all, and a suite that is green because its browser tier never ran is the failure
     that rule hides.
     An optional engine that this machine cannot launch skips instead, loudly, naming what
     the platform is missing, because the alternative is asking every contributor for a
@@ -168,7 +169,7 @@ def browser(playwright_instance, browser_name, request):
                 f"`playwright install {browser_name}` with PLAYWRIGHT_BROWSERS_PATH "
                 f"pointing at .venv/playwright does it unconditionally.\n{exc}"
             ) from exc
-        # Short on purpose: this reason is printed once per test in the tier.
+        # The reason is short, because it is printed once per test in the tier.
         # `--browser webkit` is the way to see playwright's own diagnosis, because naming
         # the engine makes it required and the branch above reports the failure in full.
         pytest.skip(
@@ -215,11 +216,13 @@ def timed_deck_at(page):
 
     A `wait:` is the one timer the runtime sets, and a `setTimeout` is exactly what the
     animation harness cannot scrub, so a test states how much time passes instead of
-    racing it: `Deck.run_for` fires the timers that are due and nothing else.
+    racing it.
+    `Deck.run_for` fires the timers that are due and nothing else.
     The clock is installed before the page is loaded, because the runtime arms its first
     timer on the first paint.
-    Only `setTimeout` and the clocks beside it are faked; the document timeline is the
-    browser's own, so motion still runs in real time and is still scrubbable.
+    Only `setTimeout` and the clocks beside it are faked.
+    The document timeline is the browser's own,
+    so motion still runs in real time and is still scrubbable.
     `requestAnimationFrame` is faked with the timers and stops firing, so `Deck.flight`,
     which waits for a frame, cannot be used on a deck opened here. See *Findings*.
     """
@@ -227,8 +230,8 @@ def timed_deck_at(page):
     def opener(path: Path) -> Deck:
         page.clock.install(time=0)
         # A minute ahead of where the clock was installed, because an installed clock is
-        # still running and cannot be paused in its own past: the two calls take real
-        # milliseconds, and a loaded machine takes more of them.
+        # still running and cannot be paused in its own past.
+        # The two calls take real milliseconds, and a loaded machine takes more of them.
         # Nothing is loaded yet, so the jump has no timer to fire.
         page.clock.pause_at(60_000)
         open_local(page, path)

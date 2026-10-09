@@ -11,10 +11,12 @@
 // many tags the region holds.
 //
 // The HTML target lays the body of a slide out once, so a region there is where the epochs
-// of the slide differ: it places an epoch stack in its footprint, one rendering per epoch,
+// of the slide differ.
+// Such a region places an epoch stack in its footprint, one rendering per epoch,
 // and the browser shows one of them at a time.
-// Only a region that sits in no other region does, because the renderings of a stack are laid
-// out once per epoch already, and a region inside one lays out the epoch of its rendering.
+// Only a region that sits in no other region places a stack,
+// because the renderings of a stack are laid out once per epoch already,
+// and a region inside one lays out the epoch of its rendering.
 // A page lays out the epoch of its own state, so a region on paper lays out that epoch alone.
 //
 // A region between paragraphs is shaped by `block-region` below, which receives one
@@ -132,7 +134,8 @@
 //
 // The renderings of a stack are laid out one after the other, and a region inside them has to
 // take the number it takes on paper, where one rendering is laid out, and count once.
-// So a region inside a stack counts on this counter, which every rendering sets back to zero,
+// A region inside a stack therefore counts on this counter,
+// which every rendering sets back to zero,
 // and its number is that of the region holding the stack plus this count.
 // Only the first rendering steps `region-counter` as well, which leaves it where a single
 // rendering would, for the regions after the stack.

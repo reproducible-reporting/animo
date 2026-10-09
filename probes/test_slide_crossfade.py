@@ -28,13 +28,14 @@ from harness import TypstRunner, screenshot
 from htmldoc import document
 
 # Two slides of different opaque grounds, which is the case a crossfade gets wrong when it
-# covers rather than adds: at the midpoint a plain opacity crossfade lands well below the
-# average of the two, because the surround shows through the half-transparent pair.
+# covers rather than adds.
+# At the midpoint a plain opacity crossfade lands well below the average of the two,
+# because the surround shows through the half-transparent pair.
 GROUNDS = ("#204080", "#a06020")
 
-# An isolating parent and its two slides, which stand for animo's stage and its slides: the
-# slides stacked in one grid cell of the parent, each a positioned box with a ground and an
-# inline SVG of typst ink.
+# An isolating parent and its two slides, which stand for animo's stage and its slides.
+# The slides are stacked in one grid cell of the parent, each a positioned box with a ground
+# and an inline SVG of typst ink.
 # The surround is a parameter, because where it sits is half of what is probed.
 DECK_CSS = """\
 html, body {{ margin: 0; padding: 0; background: {page}; }}
@@ -115,9 +116,10 @@ def halves(typst: TypstRunner, open_page, name: str, **ground) -> np.ndarray:
 def test_a_plain_crossfade_of_two_slides_dips(typst: TypstRunner, open_page):
     """The reason `plus-lighter` is not a nicety here either.
 
-    Two opaque grounds at half opacity do not come to their average: each is composited
-    over what is behind it, so the surround shows through both and the midpoint lands far
-    below either slide. Asserted for every engine rather than tabulated per engine,
+    Two opaque grounds at half opacity do not come to their average, because each is
+    composited over what is behind it, so the surround shows through both and the midpoint
+    lands far below either slide.
+    This is asserted for every engine rather than tabulated per engine,
     because an engine that does not dip here would mean something about `opacity` changed.
     """
     average = halves(typst, open_page, "plain")

@@ -8,8 +8,10 @@
 // The deck's tempo is three arguments here as well, because the runtime reads a custom
 // property and an author writes typst.
 //
-// A show rule rather than a call, because it receives the whole document, so it can carry
-// the HTML shell and the stylesheet in the HTML target and leave the paged targets alone.
+// The deck is a show rule rather than a call, because a show rule receives the whole
+// document.
+// The deck can therefore carry the HTML shell and the stylesheet in the HTML target,
+// and leave the paged targets alone.
 // The shape reaches the slides through a state rather than through an argument,
 // because the slides are already content by the time the rule runs.
 
@@ -19,7 +21,7 @@
 #import "transition.typ": check-slide-transition, crossfade
 
 // The shape a deck has when its show rule is not told otherwise.
-// Stated once, because the show rule's own arguments default to it as well.
+// The shape is stated once, because the show rule's own arguments default to it as well.
 #let deck-defaults = (width: 16cm, height: 9cm, margin: 1cm)
 
 // The shape of the deck, as a dictionary with `width`, `height` and `margin`.
@@ -28,8 +30,9 @@
 
 // Which paged output is being compiled.
 //
-// The HTML target is detected with `target()`; the paged modes are selected explicitly
-// with `--input animo=presentation`, and default to the handout.
+// The HTML target is detected with `target()`.
+// The paged modes are selected explicitly with `--input animo=presentation`,
+// and default to the handout.
 #let paged-mode() = {
   let mode = sys.inputs.at("animo", default: "handout")
   assert(
@@ -92,18 +95,19 @@
 
 // The timing functions a deck may name, as the CSS keywords they already are.
 //
-// A list rather than any string the author writes.
+// The timing functions are a fixed list rather than any string the author writes.
 // An easing the browser rejects throws when the first step runs, which happens during the
 // presentation, so the name is checked at compile time.
 #let easings = ("linear", "ease", "ease-in", "ease-out", "ease-in-out")
 
 // One of the deck's durations as the CSS time it becomes.
 //
-// `which` names the argument in the diagnosis, and the rule is the one every other time an
-// author writes follows, so `primitive-duration: -1` and `delay: -1` are refused in the same
-// words.
-// Seconds are the author's unit everywhere in animo; the `s` is added here because a
-// custom property read as a CSS `<time>` carries a unit and a bare number is not one.
+// `which` names the argument in the diagnosis.
+// The rule is the one that every other time an author writes follows,
+// so `primitive-duration: -1` and `delay: -1` are refused in the same words.
+// Seconds are the author's unit everywhere in animo.
+// The `s` is added here because a custom property read as a CSS `<time>` carries a unit,
+// and a bare number has none.
 // The digits are cut for the same reason `pt-of` cuts them.
 #let css-seconds(which, value) = {
   let seconds = check-seconds("animo", which, value)
@@ -146,8 +150,8 @@
 // The custom properties a deck writes for itself: its geometry, and its tempo.
 //
 // The viewport is the slide's visible box, as large as the window allows at the deck's
-// aspect ratio, and `--animo-unit` is that width divided by the slide width in points:
-// one typst point, as a CSS length, at whatever size the window currently has.
+// aspect ratio, and `--animo-unit` is that width divided by the slide width in points,
+// which is one typst point as a CSS length, at whatever size the window currently has.
 // Dividing a length by a *number* is arithmetic every engine supports, so this resolves the
 // pt of a frame against the px of a window without the runtime having to measure anything or
 // listen for a resize.
@@ -184,8 +188,9 @@
 //
 // The page is one self contained file, so the script cannot import its parts.
 // The files are concatenated and share one module scope, which is why the order is stated
-// here: a file may use at load time only what an earlier file defines, and only `boot.js`
-// calls into the other files at load time.
+// here.
+// A file may use at load time only what an earlier file defines,
+// and only `boot.js` calls into the other files at load time.
 // Function declarations are hoisted, so only a top level `const` needs that care.
 #let runtime-files = (
   "slides",
@@ -208,9 +213,9 @@
 // Content as the plain text it reads as, for an element of the head that takes text only.
 //
 // Typst writes its own `<title>` from the plain text of `document(title:)`, and a deck builds
-// its head itself, so this does what typst does there: it keeps the text and drops the
-// markup around it, and an element that holds no text, such as an image, contributes
-// nothing.
+// its head itself, so this function does what typst does there.
+// It keeps the text and drops the markup around it,
+// and an element that holds no text, such as an image, contributes nothing.
 #let plain-text(value) = {
   if value == none {
     ""
@@ -236,9 +241,9 @@
 // The elements of the head that say what the page is, from typst's own settings.
 //
 // These are the ones typst writes into a head it builds itself: a title, a description, the
-// authors and the keywords, each from `document`. A deck builds its head itself, so it
-// writes them here, and an author states them once, with `set document(..)`, as for any
-// other typst document.
+// authors and the keywords, each from `document`.
+// A deck builds its head itself, so the deck writes them here,
+// and an author states them once, with `set document(..)`, as for any other typst document.
 //
 // Must be called in a context.
 #let head-metadata() = {
@@ -327,11 +332,11 @@
     message: "the margin leaves no room for the body of a slide",
   )
   let shape = (width: width, height: height, margin: margin)
-  // Checked in every target, although only the HTML one has a clock to measure it on,
-  // so that a deck that compiles to a PDF compiles to a presentation as well.
+  // The tempo is checked in every target, although only the HTML one has a clock to measure
+  // it on, so that a deck that compiles to a PDF compiles to a presentation as well.
   let timing = deck-timing(primitive-duration, transition-duration, easing)
-  // The transition of every slide whose `init` names none, checked in every target for the
-  // reason the tempo is.
+  // The transition of every slide whose `init` names none is checked in every target,
+  // for the reason the tempo is.
   // Its duration is `transition-duration:` above, because a transition says nothing about
   // time.
   let own = check-slide-transition("animo", "transition", transition)
@@ -345,7 +350,7 @@
     } else {
       deck-shape.update(shape)
       body
-      // After the slides, because it counts what they contributed.
+      // The check comes after the slides, because it counts what they contributed.
       if paged-mode() == "handout" {
         context check-handout-pages()
       }

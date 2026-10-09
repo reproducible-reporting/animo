@@ -3,17 +3,21 @@
 # SPDX-License-Identifier: Apache-2.0
 """Measure what a morph costs in the browser, which is where its cost is paid.
 
-Two things are measured, in every engine `setup.sh` installs.
-The step: a slide whose paragraph of about 500 or about 3000 letters reflows when a clause
-is inserted at its start, so that nearly every letter moves, and a slide whose cetz plot of
-1000 marks changes its axis range, so that every mark moves. The time is that of the key
-press, which plans and applies the whole step in one task, and the frames that follow say
-whether the browser keeps up with the animations it was given.
-The diff: `commonSubsequence` from `src/js/morph.js` on two lists of 3000 glyph names that
-differ in a growing number of places, which is what the bound `MORPH_DIFFERENCES` is read
-from.
-The alignment: `alignPaths` from `src/js/paths.js` on two closed paths of 100 and of 1000
-segments each, which is what a shape morph adds to the step for each pair it carries.
+The following is measured in every engine `setup.sh` installs.
+
+- The step is measured on a slide whose paragraph of about 500 or about 3000 letters
+  reflows when a clause is inserted at its start, so that nearly every letter moves,
+  and on a slide whose cetz plot of 1000 marks changes its axis range,
+  so that every mark moves.
+  The time is that of the key press, which plans and applies the whole step in one task,
+  and the frames that follow say whether the browser keeps up with the animations it was
+  given.
+- The diff is `commonSubsequence` from `src/js/morph.js`, run on two lists of 3000 glyph
+  names that differ in a growing number of places.
+  The bound `MORPH_DIFFERENCES` is read from this measurement.
+- The alignment is `alignPaths` from `src/js/paths.js`, run on two closed paths of 100 and
+  of 1000 segments each.
+  This is what a shape morph adds to the step for each pair it carries.
 
 The result is printed, and written as JSON when `--output` names a file.
 """

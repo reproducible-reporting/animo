@@ -3,8 +3,10 @@
 """Tier 3: the epoch stacks of a slide, and the boundary between two of their renderings.
 
 A slide is one frame holding one rendering of its body, and every region whose content
-changes holds an epoch stack in its footprint: one rendering of the region per content
-state, placed at one point, of which one is shown. This is where the two invariants that
+changes holds an epoch stack in its footprint.
+The stack holds one rendering of the region per content state, placed at one point, of which
+one is shown.
+This is where the two invariants that
 the whole region design rests on are either true or not, and both are comparisons within
 one page load, so neither needs a stored image:
 
@@ -14,8 +16,8 @@ one page load, so neither needs a stored image:
 
 The second one is asserted at a stated moment rather than at whatever point a transition
 happened to have reached, by pausing what is in flight, which is also how the crossfade's
-own arithmetic is measured: the midpoint of an exact crossfade is the average of the two
-renderings it runs between.
+own arithmetic is measured.
+The midpoint of an exact crossfade is the average of the two renderings it runs between.
 """
 
 import numpy as np
@@ -54,8 +56,8 @@ ROUNDING = 3
 # per engine, as a deviation out of 255 and a number of pixels allowed to exceed the rounding
 # above.
 #
-# Exact is the claim, and chromium 151 and firefox 153 meet it to within that rounding: two
-# half-opacity layers add back to one opaque layer through `plus-lighter`.
+# Exact is the claim, and chromium 151 and firefox 153 meet it to within that rounding.
+# Two half-opacity layers add back to one opaque layer through `plus-lighter`.
 # The exactness of the blend itself is measured by the probe for *Crossfading epoch frames*,
 # on rasters with no animation running in them.
 # Playwright's webkit 26.5 does not meet it, and its allowance is the one that probe
@@ -299,8 +301,9 @@ def test_it_is_still_identical_outside_the_region_mid_crossfade(page, deck_at, r
 
     The outgoing rendering is scoped down to the region it is handing over, so it paints
     nothing anywhere else and the pixels outside are the incoming one's own, exactly.
-    This and the test above are what chain the claim together: the two epochs agree
-    outside the region at rest, and the step between them moves nothing outside it either.
+    This test and the one above chain the claim together.
+    The two epochs agree outside the region at rest, and the step between them moves nothing
+    outside it either.
     """
     presentation: Deck = deck_at(reflowing)
     page.add_style_tag(content=SLOW)
@@ -378,8 +381,8 @@ def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
 ):
     """The two layers are siblings of the canvas, so neither joins the blend inside it.
 
-    Both halves of the region invariant are asserted again with them present: nothing
-    outside the region moves while the step is in flight, and inside it the midpoint is
+    Both halves of the region invariant are asserted again with them present.
+    Nothing outside the region moves while the step is in flight, and inside it the midpoint is
     still the exact sum of the two renderings rather than a washed-out quarter grey.
     The overlay's own ink is checked first, so that neither claim can hold because the
     layers are not there.
@@ -420,9 +423,11 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
     """Two renderings of identical content look like one, which is two claims at once.
 
     Stacking them puts every label of the slide in the DOM twice, and a browser resolves a
-    `<use>` to the first matching id; that is harmless only because typst's def ids are
-    content hashes, so equal ids mean equal content. And the `plus-lighter` the stylesheet
-    puts on the renderings has to be the identity while one of them is showing on its own.
+    `<use>` to the first matching id.
+    That is harmless only because typst's def ids are content hashes, so equal ids mean equal
+    content.
+    The `plus-lighter` the stylesheet puts on the renderings also has to be the identity
+    while one of them is showing on its own.
     Both are asserted against a control deck of one epoch with the same body, which is the
     deck that carries no blend at all, since it has no epoch stack.
     """
@@ -437,8 +442,8 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
     assert single.frames.count() == 0
     control = screenshot(single.current)
     # One rendering added to a transparent backdrop is that rendering, to within the
-    # rounding the finding on *Crossfading epoch frames* allows `plus-lighter`: firefox 153
-    # lands a single pixel of an antialiased glyph edge one step off.
+    # rounding the finding on *Crossfading epoch frames* allows `plus-lighter`.
+    # Firefox 153 lands a single pixel of an antialiased glyph edge one step off.
     deviation, pixels = REST[browser_name]
     for which, shot in (("first", first), ("second", second)):
         difference = abs(shot.astype(int) - control.astype(int)).max(axis=2)
@@ -457,8 +462,8 @@ def test_the_blend_does_not_reach_the_ground_the_slide_is_painted_on(deck_at, ty
     """The containment the canvas is isolated for, now that the blend is on a group.
 
     `plus-lighter` on the epoch renderings adds them to their backdrop, and the opaque
-    white of the slide container must not be in it: an opaque mark on the canvas would
-    then be summed with white and come out white, which is what this reads.
+    white of the slide container must not be in it, because an opaque mark on the canvas
+    would then be summed with white and come out white, which is what this reads.
     The ink around the region must not be in it either, which the containment tests of the
     region read.
     How far a group's blend reaches without the isolation differs between the engines,
@@ -470,7 +475,8 @@ def test_the_blend_does_not_reach_the_ground_the_slide_is_painted_on(deck_at, ty
     assert presentation.frames.count() == 2
     shot = screenshot(presentation.current)
     # The deck is 16 by 9 cm with a 1 cm margin, so the mark spans 1 cm to 3 cm on both
-    # axes; this is inside it whatever the window the screenshot was taken at.
+    # axes, and the point read here is inside it whatever the window the screenshot was
+    # taken at.
     rows, columns = shot.shape[:2]
     mark = tuple(int(value) for value in shot[int(0.22 * rows), int(0.12 * columns)])
     assert mark == (255, 0, 0), f"the blend summed the slide ground into the canvas: {mark}"

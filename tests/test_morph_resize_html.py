@@ -213,8 +213,8 @@ def test_two_quick_steps_resize_nothing_abruptly(page, deck_at, shapes):
     assert presentation.page.evaluate("() => document.getAnimations().length") == 0
 
 
-# Two rectangles of one structure in two places of a region whose words are matched: one is
-# removed before the words and the other added after them, so they are in two hunks.
+# Two rectangles of one structure in two places of a region whose words are matched.
+# One is removed before the words and the other added after them, so they are in two hunks.
 # A circle is added beside the second, so that the tag holds two shapes after the step and
 # does not pair the two rectangles as a shape morph.
 HUNKS = """

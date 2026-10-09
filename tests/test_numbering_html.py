@@ -2,9 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tier 3: which rendering of a stack the browser shows.
 
-This is the tier the whole construct exists for. One frame covers a run of states, so a
-value finer than a slide number cannot be chosen when the frame is rendered: typst renders
-one value per state and the runtime shows the one belonging to the position it is on.
+This is the tier the whole construct exists for.
+One rendering covers a run of states, so a value finer than a slide number cannot be chosen
+when the rendering is laid out.
+Typst renders one value per state, and the runtime shows the one belonging to the position
+it is on.
 
 Every assertion here is about which rendering is opaque, read per state off the computed
 style, because that is the choice the runtime makes. What the rendering says is tier 1's
@@ -92,9 +94,9 @@ def test_a_stack_in_the_body_paints_only_the_rendering_of_the_state(deck_at, typ
     """A stack in an epoch rendering nobody is watching may not paint through it.
 
     A rendering that is not the one being shown is hidden with `visibility`, which a
-    descendant may take back, so the renderings are chosen with `opacity` instead: one at
-    opacity 1 inside a hidden rendering stays hidden, where one that took its visibility back
-    would paint out of a rendering the slide is not showing.
+    descendant may take back, so the renderings are chosen with `opacity` instead.
+    A rendering at opacity 1 inside a hidden rendering stays hidden, while one that took its
+    visibility back would paint out of a rendering the slide is not showing.
     The stack is in a region whose content changes, so each epoch rendering holds one.
     """
     source = deck(

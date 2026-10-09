@@ -52,7 +52,7 @@ Inside it, typst lays each epoch out as if nothing else existed:
 line breaks change, a removed tag frees its space, and the paragraphs after it move.
 Outside it, nothing moves, down to the pixel.
 
-A tag inside a region reserves no box of its own, which is what lets the region reflow around it.
+A tag inside a region reserves no box of its own, so the region can reflow around the tag.
 So inside a region `remove` and `reset` can really free space (or restore it).
 In contrast, `hide` and `reveal` primitives preserve the space that was initially reserved.
 
@@ -92,9 +92,9 @@ since a measured footprint fits every state anyway.
 A region inside a region is itself a fixed footprint,
 so a change inside the inner one reflows only the inner one.
 Each region measures each epoch once, however deeply they nest.
-In the browser the outer region crosses a step as a whole, with the regions inside it,
-so two operations of one step that change two regions inside one region
-have to agree about their timing and their transition, as two inside one region do.
+In the browser the outermost region crosses a step as a whole, together with the regions inside it.
+Two operations of one step that change two inner regions of the same outer region
+therefore have to agree about their timing and their transition.
 
 `region(name: "box")` makes the footprint a site the timeline can address,
 like a tag of that name: `move`, `scale`, `reveal`, `hide` and `pan(relto: "box")` act on
@@ -122,22 +122,23 @@ and go wrong where the container takes the width of its content.
 | the middle of a paragraph                               | **breaks the paragraph** in two around it          |
 | math, a cetz canvas                                     | does not belong there; use a [bare tag](tags.md)   |
 
-Animo cannot detect the rows in bold, because typst tells a region the same width in each
-of them that it tells a region in a container that really is that wide.
+Animo cannot detect the cases in bold.
+In each of them, typst reports the same width to the region
+as it would report in a container that really is that wide.
 A region that is too wide reserves the wrong room silently, so give it a `width:` there.
 
 A cetz canvas takes draw commands rather than content, so a region goes around the canvas
 and not inside it.
 What the region then holds is the canvas as a whole, with
 [tags on its `content()` elements](tags.md#where-a-tag-may-sit),
-and a change of one of them redraws the whole figure inside the region's footprint.
-It is the only way a cetz figure changes size on a slide,
-and it is also the most expensive construct in an Animo deck.
+and a change of one of those tags redraws the whole figure inside the region's footprint.
+A region around a canvas is the only way a cetz figure can change size on a slide.
+It is also the most expensive construct in an Animo deck.
 See [Performance](performance.md#what-costs-and-what-to-do-about-it) for the numbers.
 
 A region outside a `#slide` is refused, and so is one around something that is not content.
 
 ## What Is Not Here Yet
 
-A region that pushes its surroundings around rather than keeping its footprint.
-It needs an animated transition to look right.
+A region that pushes its surroundings around, rather than keeping its footprint, is not available.
+Such a region needs an animated transition to look right.

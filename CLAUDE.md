@@ -112,11 +112,13 @@ neither in their UTF-8 glyph form nor in ASCII form.
 Subclauses should be made explicit (e.g. "which", "because", "that")
 or split into separate sentences.
 
-A colon or a comma is not a substitute for a dash.
+A colon or a comma used in place of a dash reads the same way.
 "A subslide overwrites what it addresses: `reveal` and `hide` overwrite each other"
 joins a claim to its elaboration in the way a dash would,
-and so does an apposition such as "`pan.typ`, a canvas two screens wide".
-Write the second part as its own sentence.
+and so can an apposition such as "`pan.typ`, a canvas two screens wide".
+Such an elaboration usually reads better as a relative clause,
+as in "`pan.typ`, which is a canvas two screens wide",
+or as a sentence of its own that names its subject again.
 A colon is for introducing a list, a table, a code block or a quoted term.
 
 ### One Term per Concept
@@ -126,6 +128,7 @@ and [docs/reference.md](docs/reference.md) define.
 A concept that has a name there is called by that name everywhere,
 and a synonym is never introduced for variety.
 A reader who meets two words assumes there are two things.
+Repeating the term in the next sentence is fine, and usually clearer than a pronoun.
 
 A word already taken by one concept is not reused for another.
 A *subslide* is a state of a slide, and a *step* is what the presenter does to reach the next one,
@@ -166,7 +169,11 @@ Prose here is written for a reader who is looking for a fact,
 not for one whose attention has to be held.
 Name the subject, state the fact, and end the sentence when the fact is complete.
 
-Habits to avoid:
+The habits below tend to make prose harder to read.
+They are points to check when rereading a draft.
+When avoiding one of them makes a sentence harder to follow, the more readable sentence wins.
+
+Habits to watch for:
 
 - **A superlative used as a hook,**
   as in "the slowest thing the suite does" or "the one construct that is genuinely expensive".
@@ -181,7 +188,17 @@ Habits to avoid:
 - **A value judgement standing in for the fact,**
   as in "worse than a red one" instead of saying what actually goes wrong.
 - **A bare identifier as the subject,** as in "`clip` defaults to `true`".
-  Name what the identifier is: "The `clip` argument defaults to `true`".
+  Naming what the identifier is helps a reader who has not met it yet,
+  as in "The `clip` argument defaults to `true`".
+  Once a paragraph has introduced the identifier, the bare identifier is enough.
+- **A pronoun far from what it refers to.**
+  When another noun stands between "it" and the noun it refers to,
+  or when the referent sits in an earlier sentence without being its subject,
+  repeat the noun instead.
+  Repeating a term is always allowed, also in consecutive sentences.
+  In "A colour fills the viewport. As a background it is the page fill on paper.",
+  the word "it" first reads as "the background".
+  The preferred form is "A colour used as a background is the page fill on paper."
 - **A count used as a name,** as in "The Four Primitives"
   or "`pan` is the fifth continuous primitive".
   Name the category instead, because a count goes stale when the set changes

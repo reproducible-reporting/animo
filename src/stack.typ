@@ -43,8 +43,8 @@
 // How wide inline content is, and how far it reaches above and below its baseline.
 //
 // `measure` reports a height and no baseline, so the descent is read off a line that holds
-// the content beside a zero-width pole taller than it: such a line is as tall as the pole plus
-// the content's descent.
+// the content beside a zero-width pole taller than the content.
+// Such a line is as tall as the pole plus the content's descent.
 //
 // The content is measured inside a box, because a rendering carries the display state of
 // its epoch and a `move` is block-level.

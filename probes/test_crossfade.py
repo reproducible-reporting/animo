@@ -4,7 +4,8 @@
 
 Two epoch frames stacked in one grid cell, at the midpoint of a transition,
 compared against the single frame at full opacity.
-A plain opacity crossfade washes the whole slide out; `mix-blend-mode: plus-lighter` does not.
+A plain opacity crossfade washes the whole slide out, and `mix-blend-mode: plus-lighter` does
+not.
 
 What is probed here is the *whole-frame* crossfade, which is what the finding measured.
 The region-scoped variant that *Architecture* prescribes is still an open question,
@@ -98,8 +99,8 @@ def test_the_two_epochs_differ_only_inside_the_region(typst: TypstRunner, open_p
 def test_a_plain_opacity_crossfade_washes_out_the_whole_slide(typst: TypstRunner, open_page):
     """The reason `plus-lighter` is not a nicety.
 
-    Two identical layers at half opacity do not add up to one opaque layer:
-    black text over white comes out at about a quarter grey at the midpoint.
+    Two identical layers at half opacity do not add up to one opaque layer,
+    and black text over white comes out at about a quarter grey at the midpoint.
     """
     page, reference = shot(typst, open_page, ONLY_FIRST, "reference.html")
     band = region_band(page)
@@ -117,7 +118,8 @@ def test_a_plain_opacity_crossfade_washes_out_the_whole_slide(typst: TypstRunner
 # out of 255 and a count of pixels allowed to exceed one.
 #
 # Exact is the claim, and all three engines meet it bit for bit with the frame isolating, as
-# `STACK_CSS` writes it: two layers at half opacity add back to one opaque layer.
+# `STACK_CSS` writes it.
+# Two layers at half opacity then add back to one opaque layer.
 # Playwright's webkit 26.5 drifted by up to 42 out of 255 on ten antialiased glyph edges
 # while the isolation sat on the stack instead, which is the subject of the reach probe at
 # the end of this module.
@@ -148,8 +150,8 @@ def test_plus_lighter_keeps_the_midpoint_exact(typst: TypstRunner, open_page, br
 def test_the_same_two_epochs_agree_on_paper(typst: TypstRunner, paged: PagedRunner):
     """The paged half of the same invariant, which needs no browser at all.
 
-    The two epochs are laid out on two pages; everything outside the region band
-    has to come out pixel-identical.
+    The two epochs are laid out on two pages,
+    and everything outside the region band has to come out pixel-identical.
     """
     body = "#set page(width: 280pt, height: 160pt, margin: 20pt)\n" + "#pagebreak()\n".join(
         f"#box(width: 240pt)[\n"
@@ -172,9 +174,9 @@ def test_the_same_two_epochs_agree_on_paper(typst: TypstRunner, paged: PagedRunn
 # *Architecture* scopes the crossfade to the region, so the two halves that have to add up
 # are two `<g data-typst-label="region">` elements in two *different* inline SVGs.
 # The two probes below differ only in which element carries `mix-blend-mode`, and both are
-# given two frames of identical content, which makes the question sharp: two half-opacity
-# copies of the same ink add back to exactly that ink when the blend reaches across the
-# frames, and wash out when it does not.
+# given two frames of identical content, which makes the question sharp.
+# Two half-opacity copies of the same ink add back to exactly that ink when the blend reaches
+# across the frames, and wash out when it does not.
 
 SAME = (EPOCHS[0], EPOCHS[0])
 
@@ -187,8 +189,8 @@ ON_GROUPS = """\
 """
 
 # The blend on the frames, with the outgoing frame scoped down to the region by visibility.
-# `visibility` rather than `opacity` or `display`: a descendant can take it back, while the
-# frame stays laid out and makes no stacking context of its own.
+# The scoping uses `visibility` rather than `opacity` or `display`, because a descendant can
+# take it back, while the frame stays laid out and makes no stacking context of its own.
 ON_FRAMES = """\
 .stack > * { mix-blend-mode: plus-lighter; }
 .stack > *:nth-child(2) { visibility: hidden; }
@@ -242,8 +244,9 @@ def deviation(reference, image) -> tuple[int, int]:
 def test_a_group_blends_with_ink_in_its_own_frame(typst: TypstRunner, open_page, browser_name):
     """Two half-opacity groups over each other in one frame add back to one opaque copy.
 
-    This is the control for the probe below: `plus-lighter` on a `<g>` is not inert,
-    and what the next probe measures is the reach of the blend and not the blend itself.
+    This is the control for the probe below.
+    It shows that `plus-lighter` on a `<g>` is not inert,
+    so what the next probe measures is the reach of the blend and not the blend itself.
     """
     shots = {}
     for what, css in (("blended", WITHIN), ("one", WITHIN_ONE)):
@@ -267,12 +270,14 @@ def test_a_group_does_not_blend_with_ink_in_another_frame(typst: TypstRunner, op
     as the probe above measures without any blend at all.
 
     This is the measurement the design was decided on, when a slide was one frame per
-    epoch. It is recorded as what it is and not as a rule about where a backdrop stops:
-    the probe below measures a handwritten stack where chromium 151 does add the frame
+    epoch.
+    It is recorded as what it is and not as a rule about where a backdrop stops.
+    The probe below measures a handwritten stack where chromium 151 does add the frame
     below, so the boundary is not the inline SVG in every engine or every structure.
     Both engines agree here, which is why this is asserted for every engine rather than
-    tabulated per engine: an engine that starts blending across the frames reopens a design
-    decision and should say so by failing.
+    tabulated per engine.
+    An engine that starts blending across the frames reopens a design decision and should
+    say so by failing.
     """
     _, one_copy = twice(typst, open_page, ONLY_FIRST, "one-copy.html")
     _, on_groups = twice(typst, open_page, ON_GROUPS, "on-groups.html")
@@ -284,8 +289,9 @@ def test_a_group_does_not_blend_with_ink_in_another_frame(typst: TypstRunner, op
 
 # The two shapes the scoped crossfade has been built on, and what each engine does with
 # them. A slide holds one frame with a rendering per epoch, so the renderings are the groups
-# the blend sits on; it held one frame per epoch before that, and the earlier shape is kept
-# here because the engines do not answer the two alike.
+# the blend sits on.
+# A slide held one frame per epoch before that, and the earlier shape is kept here because
+# the engines do not answer the two alike.
 SUMS = "the two halves add back to one opaque copy"
 WASHES = "the two halves stay at half, which is a plain crossfade"
 SHAPES = {
@@ -299,9 +305,9 @@ SHAPES = {
 # Webkit 26.5 rasterises a blended group into a buffer whose bounds it rounds, and the bottom
 # row of the region comes back white where the single copy has the antialiasing of the glyphs
 # below their baseline: 95 pixels along that one row, by up to 128/255.
-# The halves are summed, and the pixel count is what says so: a wash-out moves the glyph cores
-# across the whole band, which is what this probe measures on the frames shape, where webkit
-# moves 473 pixels over twelve rows instead of 95 over one.
+# The halves are summed, and the pixel count is what says so.
+# A wash-out moves the glyph cores across the whole band, which is what this probe measures
+# on the frames shape, where webkit moves 473 pixels over twelve rows instead of 95 over one.
 SUMMED = {"chromium": (1, 0), "firefox": (2, 2), "webkit": (128, 128)}
 
 
@@ -344,9 +350,9 @@ def test_whether_a_scoped_blend_sums_depends_on_the_shape_and_the_engine(
     Which element carries the blend decides whether webkit 26.5 sums the halves at all.
     On the epoch renderings of one frame, which is what a slide holds, all three engines sum
     them. On one frame per epoch, which is the shape a slide had before, webkit leaves the
-    glyph cores of the whole region at half, which is the plain opacity crossfade. So the
-    merged frame is what makes the crossfade work in webkit, and a blend on the frames is not
-    a fallback it could return to. Measured on 2026-09-17.
+    glyph cores of the whole region at half, which is the plain opacity crossfade.
+    The merged frame is therefore what makes the crossfade work in webkit,
+    and a blend on the frames is not a fallback it could return to. Measured on 2026-09-17.
     """
     if shape == "the frames":
         _, reference = twice(typst, open_page, ONLY_FIRST, "one-copy2.html")
@@ -377,8 +383,9 @@ def test_whether_a_scoped_blend_sums_depends_on_the_shape_and_the_engine(
 #
 # The probe above answers it for typst's own output, where chromium and firefox contain the
 # blend. These answer it for a handwritten stack of the same shape, where the three engines
-# do not agree: the mark is dark red over dark green, so a blend that reaches the green comes
-# back with green in it and one that does not stays pure red.
+# do not agree.
+# The mark is dark red over dark green, so a blend that reaches the green comes back with
+# green in it and one that does not stays pure red.
 #
 # The frame's own isolation is taken off for these, because the question is where a blend
 # stops when no frame confines it, and `STACK_CSS` writes the rule that confines it.
@@ -393,15 +400,16 @@ ON_PAGE = "body { background: #004000; }\n" + BLENDED
 ON_PAGE_WITHOUT_ISOLATION = ".stack { isolation: auto; }\n" + ON_PAGE
 
 # What each engine was measured to do, as the pixel under the mark.
-# Dark red alone means the blend stopped before whatever was put under the mark's own frame;
-# red plus green means that ground was summed into it.
+# Dark red alone means the blend stopped before whatever was put under the mark's own frame,
+# and red plus green means that ground was summed into it.
 CONTAINED = (0x40, 0x00, 0x00)
 REACHED = (0x40, 0x40, 0x00)
 
 # The ground under the mark's own frame, and what each engine does with it.
-# The last row is the control for the one above it: with the isolation taken off the stack,
-# chromium reaches the page, which is what says its answer in the third row is the isolation
-# working rather than a boundary it would have stopped at anyway.
+# The last row is the control for the one above it.
+# With the isolation taken off the stack, chromium reaches the page, which is what says its
+# answer in the third row is the isolation working rather than a boundary it would have
+# stopped at anyway.
 REACH = {
     "the element the svg is painted on": {
         "chromium": REACHED,
@@ -446,10 +454,11 @@ def test_how_far_a_groups_blend_reaches_past_its_frame_differs_by_engine(
     Firefox 153 stops a group's blend at the root of the inline SVG, whatever is under it.
     Chromium 151 sums both the ground and a frame below into it, and stops at the element
     that carries `isolation: isolate`.
-    Playwright's webkit 26.5 stops at none of the three: a group's blend reaches the page
-    behind the isolating element, and taking that isolation off changes nothing there.
+    Playwright's webkit 26.5 stops at none of the three.
+    In webkit a group's blend reaches the page behind the isolating element,
+    and taking that isolation off changes nothing there.
 
-    So an isolating ancestor written in HTML does not confine a blend that sits on a group
+    An isolating ancestor written in HTML therefore does not confine a blend that sits on a group
     inside an inline SVG in every engine, and the probe below says where one that does
     belongs. Measured on 2026-09-15, and on 2026-09-17 for webkit.
     """

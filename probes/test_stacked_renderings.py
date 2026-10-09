@@ -7,8 +7,9 @@ is shown. Which property shows it is not a free choice, because a rendering in t
 sits inside an epoch frame, and a frame that is not being shown is `visibility: hidden`.
 
 `visibility` is inherited and a descendant may take it back, which is exactly what the
-region crossfade relies on. The same property therefore cannot select a rendering: one that
-took its visibility back would paint out of a frame the slide is not showing. `opacity` does
+region crossfade relies on.
+The same property therefore cannot select a rendering, because a rendering that took its
+visibility back would paint out of a frame the slide is not showing. `opacity` does
 not compose that way, and that asymmetry is what these probes pin.
 """
 

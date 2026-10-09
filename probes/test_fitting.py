@@ -4,9 +4,11 @@
 
 The finding is a negative and a positive.
 A length divided by a length is not arithmetic every engine has, so the fit may not be
-written that way; a length divided by a *number* is, so it can.
+written that way.
+A length divided by a *number* is arithmetic every engine has, so the fit can be written
+that way.
 
-Nothing here compiles a typst document: the claim is about CSS alone.
+Nothing here compiles a typst document, because the claim is about CSS alone.
 """
 
 import pytest
@@ -42,8 +44,8 @@ html, body {{ margin: 0; padding: 0; }}
 # Chromium 151 computes it, as CSS Values 4 type checking says it should, and so does
 # playwright's webkit 26.5, measured in a container because no webkit build runs on every
 # contributor's distribution. Firefox 153 is the one that does not parse it at all, and it
-# drops the entire declaration the division sits in, which is a silent failure: the canvas
-# then renders unscaled in the top-left corner of the window.
+# drops the entire declaration the division sits in, which is a silent failure.
+# The canvas then renders unscaled in the top-left corner of the window.
 # A changed value here is a finding that changed, not a probe that needs fixing.
 DIVIDES_LENGTHS = {"chromium": True, "firefox": False, "webkit": True}
 

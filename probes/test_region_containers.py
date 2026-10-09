@@ -4,8 +4,8 @@
 
 A region at `width: auto` is as wide as `layout(size => ..)` says its container is,
 and it measures its epochs at that width.
-Where the answer is the width the author sees, the footprint is right;
-where it is wider, the region silently reserves the wrong amount of space.
+Where the answer is the width the author sees, the footprint is right,
+and where it is wider, the region silently reserves the wrong amount of space.
 These probes pin down which containers are which, what an unbounded `measure` reports,
 what `align` does to an inherited alignment, and that a counter numbers regions the same way
 in every rendering and in both targets.

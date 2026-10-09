@@ -4,7 +4,8 @@
 
 The resolver is the cheapest part of animo to get wrong without noticing, because a
 display state that accumulates incorrectly is a slide that looks plausible and is off by
-half a centimetre. So the assertions are on the resolved structure and on nothing else:
+half a centimetre.
+The assertions are therefore on the resolved structure and on nothing else:
 the state count, the per-state display state, and the flags each state carries.
 
 `replace` and `apply` will carry content and functions, which do not compare usefully,
@@ -640,7 +641,7 @@ def test_two_wrappers_in_one_step_are_two_wrappers_in_two_steps(typst: TypstRunn
 
 
 def test_operations_on_one_tag_in_one_step_apply_in_the_order_written(typst: TypstRunner):
-    """So a step that restyles and then resets ends at the body, and the reverse does not."""
+    """A step that restyles and then resets ends at the body, and the reverse does not."""
     typst.ok(
         resolved(
             'sub(apply("a", emph), reset("a"))\nsub(reset("b"), apply("b", emph))',

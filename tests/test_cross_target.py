@@ -24,17 +24,18 @@ from harness import Deck, TypstRunner, screenshot
 WINDOW = {"width": 908, "height": 511}
 
 # The floor of this measurement is two pixels of the raster the edge is read out of,
-# and the two axes do not share it: the handout page is 454 by 255 pixels at 72 ppi,
+# and the two axes do not share it.
+# The handout page is 454 by 255 pixels at 72 ppi,
 # so a pixel is 0.0022 of the slide across and 0.0039 down, while the screenshot is twice
 # that in each direction.
 #
 # Two pixels rather than one, for two reasons that each cost up to one.
 # An edge quantised into a raster lands on a pixel boundary, so the same edge read out of
 # two rasters of different resolution differs by up to a pixel of the coarser one.
-# And the box is the extent of the *exact* mark colour, so a row of edge pixels that a
+# The box is also the extent of the *exact* mark colour, so a row of edge pixels that a
 # renderer antialiases is not counted at all.
-# Neither is a layout difference, and a real one is far larger: a lost margin would be
-# 0.11 of the slide and the `em` sizing bug of *Findings* was 0.08.
+# Neither is a layout difference, and a real one is far larger.
+# A lost margin would be 0.11 of the slide, and the `em` sizing bug of *Findings* was 0.08.
 #
 # Measured on typst 0.15.0, chromium 151 and firefox 153, the largest disagreement is one
 # pixel of the coarser raster. The only place the two engines differ from each other is
@@ -167,7 +168,8 @@ def test_a_panned_state_shows_the_same_part_of_the_canvas_in_both_targets(
 # The tag sites a `relto` may name, one slide each, with something before the tag so that
 # its anchor is not the body origin. Every kind of place a tag can sit is here, because the
 # two targets read an anchor differently and a kind that one of them reads wrong is the
-# failure this measures: typst records a tag in the middle of a line at the line's baseline.
+# failure this measures.
+# Typst records a tag in the middle of a line at the line's baseline.
 RELTO_SITES = {
     "placed": '#place(dx: 7cm, dy: 3cm, tag("a", wrap: box, rect(width: 1cm, height: 1cm)))',
     "inline phrase": 'A few words and #tag("a")[a tagged phrase] in a paragraph.',
@@ -182,9 +184,10 @@ RELTO_SITES = {
 }
 
 # How far the two targets may disagree about where a `relto` puts the viewport, in points.
-# Measured on typst 0.15.0 over these sites, at windows 1280 and 640 pixels wide: at most
-# 0.001 pt in chromium 151 and 0.005 pt in firefox 153, which is the rounding of the two
-# boxes the browser's pan is read off. The disagreement this guards against is a box height,
+# Measured on typst 0.15.0 over these sites, at windows 1280 and 640 pixels wide, the
+# disagreement is at most 0.001 pt in chromium 151 and 0.005 pt in firefox 153,
+# which is the rounding of the two boxes the browser's pan is read off.
+# The disagreement this guards against is a box height,
 # which is what reading typst's own position of a tag in the middle of a line would cost.
 RELTO_TOLERANCE = 0.05
 
@@ -226,20 +229,22 @@ def test_relto_resolves_to_the_same_anchor_in_both_targets(deck_at, typst: Typst
 # How far the two targets may disagree about how far a `move` translates a tag, in points.
 # A move reads two anchors and subtracts them, so the rounding of a `relto` enters twice,
 # and one of the two is the anchor of the tag being transformed, which is the case an inline
-# tag site makes awkward: the wrapper's own position is the line's baseline.
-# Measured on typst 0.15.0 over the sites below, at windows 1280 and 640 pixels wide: at
-# most 0.0005 pt in chromium 151 and in firefox 153, over every kind of site. That is ten
-# times closer than the `relto` figure above, because the browser's own translation is read
-# here where a pan is read off two boxes. The same allowance is kept all the same, since the
-# disagreement this guards against is a box height either way.
+# tag site makes awkward, because the wrapper's own position is the line's baseline.
+# Measured on typst 0.15.0 over the sites below, at windows 1280 and 640 pixels wide, the
+# disagreement is at most 0.0005 pt in chromium 151 and in firefox 153, over every kind of
+# site.
+# That is ten times closer than the `relto` figure above, because the browser's own
+# translation is read here where a pan is read off two boxes.
+# The same allowance is kept all the same, since the disagreement this guards against is a
+# box height either way.
 MOVE_TOLERANCE = RELTO_TOLERANCE
 
 
 def test_a_move_resolves_to_the_same_translation_in_both_targets(deck_at, typst: TypstRunner):
     """A move subtracts two anchors, so a target that reads either one wrong lands elsewhere.
 
-    The browser's own translation is read rather than the geometry it produces: it is the
-    number the runtime computed, in the user units of the frame, which are typst points,
+    The browser's own translation is read rather than the geometry it produces, because it
+    is the number the runtime computed, in the user units of the frame, which are typst points,
     so the comparison is between the two resolutions and not between two measurements.
     Paper publishes its own beside the pans it resolved.
     """

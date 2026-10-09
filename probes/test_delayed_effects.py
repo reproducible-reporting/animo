@@ -5,13 +5,15 @@
 An effect with a delay has a phase before it runs, and what the element shows during that
 phase is decided by the fill mode alone. With `fill: none` the element shows whatever the
 style underneath says, which for a runtime that writes the state it is arriving at as
-inline style is the state at the *end* of the animation: the element jumps ahead, waits
-there, and then jumps back to where it started to animate forwards again.
+inline style is the state at the *end* of the animation.
+The element jumps ahead, waits there, and then jumps back to where it started to animate
+forwards again.
 
 `fill: backwards` is what holds the first keyframe instead, and it is what animo writes on
-every delayed effect. The second half of this module is why it can be written
-unconditionally: an animation that fills backwards is still dropped when it finishes, so
-"nothing is in flight" stays a question the page can answer.
+every delayed effect.
+The second half of this module is why it can be written unconditionally.
+An animation that fills backwards is still dropped when it finishes,
+so "nothing is in flight" stays a question the page can answer.
 """
 
 import pytest
@@ -29,8 +31,8 @@ PAGE = """<!doctype html>
 <div id="target" style="width: 50px; height: 50px; background: red; opacity: 1"></div>"""
 
 # The JavaScript below is full of braces,
-# so percent formatting is what keeps it readable as JavaScript:
-# an f-string or `str.format` would have to double every one of them.
+# so percent formatting is what keeps it readable as JavaScript,
+# because an f-string or `str.format` would have to double every one of them.
 DURING_THE_DELAY = """fill => {
     const target = document.getElementById("target");
     const animation = target.animate(
@@ -67,9 +69,9 @@ def target(page):
 def test_the_fill_mode_alone_decides_what_a_delay_shows(target, fill, shown, browser_name):
     """The finding itself, over the three fill modes that can be written.
 
-    The comparison is not vacuous: the element's own style says `1` and the first keyframe
-    says `0`, so the two answers are the two ends of the animation and neither can be
-    reached by accident.
+    The comparison is not vacuous, because the element's own style says `1` and the first
+    keyframe says `0`, so the two answers are the two ends of the animation and neither can
+    be reached by accident.
     """
     assert target.evaluate(DURING_THE_DELAY, fill) == shown, (
         f"{browser_name} shows {fill!r} differently during the delay of an effect"

@@ -9,11 +9,11 @@
 // so that adding an animation step cannot reflow a paragraph,
 // and so that the three output types and all of a slide's states lay out the same.
 //
-// The axis that decides the wrapper is hugging versus filling.
+// What decides the wrapper is whether it hugs its content or fills its container.
 // A `box` and a `block` render identically for content that already sits between paragraph
 // breaks, while a wrapper at `width: auto` left-aligns whatever the container was centring,
 // so the two candidates are `box` and `block(width: 100%)`.
-// See *Findings* in the design document.
+// See *Findings*.
 
 #import "site.typ": at-rest, describe, displayed
 

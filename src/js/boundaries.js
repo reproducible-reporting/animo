@@ -4,8 +4,9 @@
 // How a step crosses a boundary, of an epoch inside a slide and of a slide inside the deck.
 //
 // A slide is one `html.frame` holding one rendering of its body, and every region whose
-// content changes holds an epoch stack in its footprint: one rendering of the region per
-// content state, of which one is shown at a time. A step that stays inside an epoch touches
+// content changes holds an epoch stack in its footprint.
+// The stack holds one rendering of the region per content state, of which one is shown at a
+// time. A step that stays inside an epoch touches
 // only the display state of the renderings already shown. A step that crosses a boundary
 // carries the stacks that hold what changed from the outgoing rendering to the incoming one,
 // which is what `transitions` below does, and every other stack shows the rendering of the
@@ -20,22 +21,25 @@
 /**
  * How a step carries an epoch stack from the outgoing rendering to the incoming one.
  *
- * One entry per transition, and the plan names the one each stack takes: the record of a
- * stack that a boundary crosses has an optional `transition`, the name of an entry here, and
- * an optional `args`, which is handed to the transition as part of the record. A stack with
+ * There is one entry per transition, and the plan names the one each stack takes.
+ * The record of a stack that a boundary crosses has an optional `transition`, which is the
+ * name of an entry here, and an optional `args`, which is handed to the transition as part
+ * of the record. A stack with
  * no `transition` crossfades, so a plan that names none is the plan of a deck in which every
  * boundary crossfades.
  *
  * `planEpoch` has already planned the state at rest of every rendering of the stack when a
- * transition runs: the rendering being entered shown and opaque, and every other rendering
- * hidden and transparent. A transition plans effects for the renderings it carries in place
+ * transition runs.
+ * The rendering being entered is shown and opaque, and every other rendering is hidden and
+ * transparent. A transition plans effects for the renderings it carries in place
  * of those, and an effect it plans replaces the one at rest for the same element and
  * property.
  *
  * Each transition is handed the effects of the step being planned, the slide, the stack, the
  * epoch a step leaves and the one it enters, the record of the stack, how the step moves and
- * how long it lasts when it is running backwards, and takes what it needs of that: the
- * crossfade below needs no `from`, where the morph reads the outgoing rendering's geometry.
+ * how long it lasts when it is running backwards, and takes what it needs of that.
+ * The crossfade below needs no `from`, while the morph reads the outgoing rendering's
+ * geometry.
  * It runs in the phase that reads and writes nothing, so any geometry it reads is the
  * geometry of the page before the step.
  *
@@ -55,14 +59,15 @@ const transitions = {
    * leaving. A boundary crossed while an earlier one is still running finds two of them
    * painting the region, which is what a long `duration:` on a `replace` makes easy to reach
    * and what a `wait:` shorter than a step or a presenter clicking twice reaches as well.
-   * Fading all of them out on the new boundary's clock is what keeps the sum at one: the
-   * outgoing renderings leave under one easing while the incoming one arrives under its
-   * complement, whatever they were showing when it began. A rendering that is hidden has
+   * Fading all of them out on the new boundary's clock keeps the sum at one.
+   * The outgoing renderings leave under one easing while the incoming one arrives under its
+   * complement, whatever they were showing when the boundary began. A rendering that is hidden has
    * nothing to hand over and stays hidden where it is.
    *
-   * A delayed crossfade starts late and a long one takes long, which is what holds the
-   * boundary open: an outgoing rendering stays visible for the whole of the delay and the
-   * whole of the duration.
+   * A delayed crossfade starts late and a long one takes long, and either holds the boundary
+   * open.
+   * An outgoing rendering stays visible for the whole of the delay and the whole of the
+   * duration.
    */
   crossfade(effects, slide, { stack, to, record, options, mirror }) {
     const timing = scheduled(options, record.timing, mirror);
@@ -107,14 +112,16 @@ function transitionOf(name) {
 /**
  * How a step gets from one slide to the next.
  *
- * A table of its own rather than an entry in the one above, because the two are handed
- * different things and neither could use the other's. An epoch transition is given the
- * renderings of one region, inside a slide that it holds still; a slide transition is given
- * two containers and has nothing to hold still, since the two slides share nothing. One
+ * This is a table of its own rather than an entry in the one above, because the two are
+ * handed different things and neither could use the other's.
+ * An epoch transition is given the renderings of one region, inside a slide that it holds
+ * still.
+ * A slide transition is given two containers and has nothing to hold still, since the two
+ * slides share nothing. One
  * table would take the union of both and every entry would ignore half of it.
  *
- * A slide transition is a function of the boundary's owner, the slide with the higher
- * number, and of a progress `p` that is 0 where the owner is not there yet and 1 where it
+ * A slide transition is a function of the boundary's owner, which is the slide with the
+ * higher number, and of a progress `p` that is 0 where the owner is not there yet and 1 where it
  * is. `at(p, args)` gives the display state of the owner and of the other slide at one of
  * those two ends, and `planSlides` animates from what each container is showing into the
  * end a step is heading for. A forward step heads for 1 and a backward step for 0, so a
@@ -267,8 +274,9 @@ function boundaryTiming(transition) {
 /**
  * Plan every slide container of the deck, and the boundary a step crosses between two.
  *
- * Every slide is planned at rest first: the slide being shown opaque, every other one
- * transparent, and none of them moved, clipped or blended by a transition. A slide that
+ * Every slide is planned at rest first.
+ * At rest, the slide being shown is opaque, every other one is transparent, and none of them
+ * is moved, clipped or blended by a transition. A slide that
  * becomes the one being entered therefore always starts from a state this function wrote.
  * The two slides a boundary crosses are then planned by its transition, in place of their
  * state at rest, and the properties of theirs that their transition does not name move to
@@ -281,8 +289,9 @@ function boundaryTiming(transition) {
  *
  * Each container animates from what it is showing, so an interrupted boundary continues
  * from where it is and stepping back undoes it. The exception is a slide in `fresh`, which
- * had no layout before this step and shows nothing worth continuing from: it starts at the
- * far end of the transition instead, which for a push is outside the stage.
+ * had no layout before this step and shows nothing worth continuing from.
+ * Such a slide starts at the far end of the transition instead, which for a push is outside
+ * the stage.
  *
  * The transition's blend stays on the two slides after the boundary has been crossed, for as
  * long as the slide being left keeps its layout. A slide that a cover or a wipe has covered
@@ -389,8 +398,8 @@ function differs(stack, epoch) {
  * hands over none, which is what a deep link and a clamped fragment get.
  *
  * A step over more than one boundary drops the timings of the operations that opened them,
- * as it drops the schedules of the steps it walked over: those steps are ones the deck ran
- * through, and the one clock left is this step's own. A stack that two of the boundaries
+ * as it drops the schedules of the steps it walked over, because those steps are ones the
+ * deck ran through, and the one clock left is this step's own. A stack that two of the boundaries
  * change takes the record of the first.
  */
 function planBoundary(effects, slide, { index, from, options, mirror }) {
@@ -425,8 +434,9 @@ function planBoundary(effects, slide, { index, from, options, mirror }) {
       }
     }
   }
-  // Before the transitions, so that a morph of this step that matches an element again plans
-  // its route in place of where an earlier morph was taking it.
+  // The earlier morphs are settled before the transitions, so that a morph of this step that
+  // matches an element again plans its route in place of where an earlier morph was taking
+  // it.
   settleMorphs(effects, slide, to, carried, options, mirror);
   return carried;
 }
@@ -435,8 +445,9 @@ function planBoundary(effects, slide, { index, from, options, mirror }) {
  * Plan the rendering of an epoch stack that a state belongs to, which is how an epoch stack
  * is planned for a state.
  *
- * Which rendering is shown is decided here, for every transition alike: the one of the epoch
- * the state belongs to is shown and opaque, and every other one is hidden and transparent.
+ * Which rendering is shown is decided here, for every transition alike.
+ * The rendering of the epoch the state belongs to is shown and opaque,
+ * and every other one is hidden and transparent.
  * That is the state at rest, and a stack that the step carries across a boundary is then
  * planned by the transition its record names, in place of its state at rest. One boundary
  * may therefore carry one stack with one transition and another stack with another.

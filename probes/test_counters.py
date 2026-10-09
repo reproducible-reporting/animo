@@ -62,7 +62,7 @@ def test_a_counter_may_be_read_while_content_is_being_measured(typst: TypstRunne
     """A footprint measurement is where a number in a stack is read from.
 
     The value is the enclosing context's, which is what a number constant over a slide
-    wants and what a value varying per epoch may not be built on: *Providing a value down
-    the tree* is that other half.
+    wants and what a value varying per epoch may not be built on.
+    *Providing a value down the tree* is that other half.
     """
     typst.ok(PAGE + COUNTED + '#context {\n  let _ = measure([#check("a measurement")])\n}\n')

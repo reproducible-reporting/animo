@@ -4,7 +4,8 @@
 
 Every one of them is a style element and one or more `html.frame`s,
 which is the shape of the HTML output animo will emit.
-None of them import animo: a probe reports on typst and on chromium, never on the package.
+None of them import animo, because a probe reports on typst and on a browser, never on the
+package.
 """
 
 import textwrap

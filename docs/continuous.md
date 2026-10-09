@@ -106,8 +106,8 @@ A tag whose first display operation is `reveal` starts hidden instead
 Starting hidden and being hidden by `hide` are the same state,
 reached differently in the two targets.
 On paper an invisible element is typst's own `hide()`, laid out and not drawn.
-The browser needs ink it can bring back, so the HTML output renders the element normally
-and the runtime hides it with `opacity: 0`.
+The HTML output renders the element normally, and the runtime hides it with `opacity: 0`,
+so that a later `reveal` can show it again.
 The text of a hidden element is therefore in the HTML file,
 where a reader who searches the page can find it.
 Do not use a hidden element for contents that should be kept secret without any trace in the output.
@@ -122,9 +122,9 @@ Do not use a hidden element for contents that should be kept secret without any 
 | `dx`, `dy` | displacement relative to the current position    |
 | `relto`    | names the tag that is the anchor for `x` and `y` |
 
-The **anchor** is the canvas origin, or with `relto` the tag of that name,
-and what lands on it is the moved element's own anchor,
-which is the **top-left corner of its wrapper** as the body laid it out.
+The **anchor** is the canvas origin, or the tag that `relto` names.
+The moved element is placed with its own anchor on that anchor.
+The anchor of an element is the **top-left corner of its wrapper**, as the body laid it out.
 
 ```typst
 animation: {
@@ -142,14 +142,14 @@ Idem for `y` and `dy`.
 
 Three consequences follow from the anchor being the corner the *body* gave the tag.
 
-- **It excludes the tag's own display state**, so it means the same in every state.
+- **The anchor ignores the tag's own display state**, so it means the same in every state.
   An absolute move is idempotent, and `move("b", relto: "a")` is unaffected by whatever
   moved `a`.
 - **A name with several sites moves as one.**
   The first site lands on the target and every other site takes the same translation.
 - **An anchor is a layout corner and a scale is about a centre**,
   so an element that is both moved and scaled lands its *unscaled* corner on the target.
-  The exact form there is a `dx`/`dy` shift.
+  To place the scaled corner exactly, add a `dx`/`dy` shift.
 
 See [What `relto` Reads](viewport.md#what-relto-reads) for more details.
 
@@ -211,8 +211,8 @@ written on, so a build that runs over two slides keeps its motion and the slide 
 together.
 
 **One gap takes one number.**
-A gap that both its neighbours time is refused, and the message names them both,
-across a slide boundary as well.
+A gap that is timed by both of the subslides around it is refused,
+also across a slide boundary, and the message names both subslides.
 Which of the two to use depends on which subslide the statement is about:
 `init(wait: 0)` on a slide says that this slide needs no click,
 and `hold: 0` on the subslide before says that the deck does not stop there.
@@ -249,9 +249,9 @@ the three lines above leave in the order `third`, `second`, `first`,
 which is the order the audience saw them arrive, backwards.
 Every operation keeps its own duration; only the moment it starts at is turned around.
 
-The number `auto` stands for is the deck's [`primitive-duration`](presenting.md#motion),
-so a deck that sets the global `primitive-duration` reaches every primitive with the default
-and leaves alone the ones that asked for something else.
+Because `auto` stands for the deck's [`primitive-duration`](presenting.md#motion),
+setting `primitive-duration` on the deck changes every primitive that uses the default,
+and leaves alone the primitives that state a duration of their own.
 This holds for a `primitive-duration` of zero as well,
 in which case only the primitives that state a duration of their own move.
 
@@ -263,8 +263,7 @@ short, and an interrupted subslide continues from where it was paused.
 
 The handout shows one page per slide, and `handout:` says which state that is.
 
-- `handout: auto`, the default, asks for a page at the **final state** of the slide and at
-  no other, which is the page the handout shows anyway.
+- `handout: auto` is the default, and gives a page only to the **final state** of the slide.
 - `handout: true` adds a page at that state.
 - `handout: false` takes one away, including the final state.
 
@@ -281,8 +280,8 @@ The initial state has no `sub` of its own, so its flag is written on `init`:
 ]
 ```
 
-The reason to state any of this is that an animation can destroy content, which
-[Structural Animations](structural.md#selecting-states-for-handouts) picks up.
+These flags matter because a structural primitive can destroy content.
+See [Structural Animations](structural.md#selecting-states-for-handouts) for that case.
 
 A deck in which every state declines its page would leave the handout with no page at all.
 Animo refuses that deck rather than letting typst emit a blank page of its own.

@@ -50,11 +50,11 @@ What brings the rest of the canvas into view is `pan`.
 
 ## Panning
 
-`pan` is a special case of a continuous animation primitive.
+The `pan` primitive is a special case of a continuous animation primitive.
 It addresses no tag, and moves the viewport over the canvas.
 Positive values move the viewport right and down, so the content moves left and up.
 
-It says where the viewport goes in two ways, and each axis takes one of them:
+A `pan` states where the viewport goes in one of two ways, chosen separately for each axis:
 
 | Argument             | The viewport goes                                     |
 | -------------------- | ----------------------------------------------------- |
@@ -66,8 +66,8 @@ It says where the viewport goes in two ways, and each axis takes one of them:
 [`move`](continuous.md#where-move-puts-things) reads the same table one layer in:
 it puts the *element* where `pan` would put the viewport's own corner.
 
-The **anchor** is the canvas origin, or with `relto` the tag of that name,
-placed where the body of a fresh slide starts, which is at the deck's margin.
+The **anchor** is the canvas origin, or the tag that `relto` names.
+Either one is placed where the body of a fresh slide starts, which is at the deck's margin.
 So `pan(relto: "details")` shows the tag the way a new slide would show its first line,
 and `pan(x: 0cm, y: 0cm)` goes back to where the slide started.
 
@@ -98,32 +98,33 @@ corner.
 The anchor of a tag is the **top-left corner of its wrapper**, as the body laid it out.
 The same mechanism serves both `pan` and `move`:
 
-- It is the corner of the box around the tag, not of its ink.
+- The anchor is the corner of the box around the tag, not of its ink.
   A tagged phrase is anchored at the top of its line, not at the top of its letters.
-- The tag's own `move` and `scale` do not enter it,
+- The tag's own `move` and `scale` do not change its anchor,
   so an anchor means the same in every state.
 - Where one name tags several places, the first one in the body is the anchor.
 
-Three things are refused rather than resolved, each because a deck would otherwise get a
-subslide that means one thing on paper and another on screen.
+The cases below are refused rather than resolved,
+because each would give the deck a subslide that means one thing on paper and another on screen.
 
 - A `relto` that **names no tag of the slide**, since it is almost certainly a misspelt
   name. A tag of that name on another slide does not count.
 - A `relto` to a tag with **`wrap: none`**, because such a tag has no box to have a corner.
 - An anchor read **inside a tag the timeline moves or scales**.
-  A transform around a tag moves the very corner the anchor is,
-  so the anchor would stop being the corner the body gave it.
-  Read the anchor of the outer tag instead, or take the inner one out of it.
+  A transform of the outer tag also moves the corner of the inner tag,
+  so the anchor of the inner tag would no longer be the corner that the body gave it.
+  Use the anchor of the outer tag instead, or move the inner tag out of the outer one.
   Nesting itself is fine, and so is a tag inside one that is merely revealed or hidden.
 
 ## How Large the Canvas Is
 
-`canvas: auto`, the default, sizes the canvas to the content of a slide whose timeline pans:
-the union of the body's in-flow extent and the extent of every `#place`d element,
+The `canvas` argument defaults to `auto`,
+which sizes the canvas of a slide whose timeline pans to the content of that slide.
+That size is the union of the body's in-flow extent and the extent of every `#place`d element,
 clamped to at least the viewport.
-So a slide that places nothing outside the viewport has a canvas equal to its viewport,
-and a slide whose body is simply longer than its viewport gets a taller canvas that `pan`
-reaches the rest of.
+A slide that places nothing outside the viewport therefore has a canvas equal to its viewport.
+A slide whose body is simply longer than its viewport gets a taller canvas,
+and a `pan` brings the rest of the body into view.
 Nothing has to be placed for that to work.
 
 A slide with no `pan` in its timeline just draws inside the viewport, without any canvas at all, lowering the cost of a slide that does not need to pan.
@@ -171,9 +172,9 @@ window size.
 
 **The handout does not show the canvas.**
 A handout page is the viewport of one state.
-By default that is the last state of the slide, so a slide that pans away from something
-and never comes back leaves it out of the handout.
-Keep a view with `handout: true` on the subslide that shows it:
+By default that is the last state of the slide.
+Content that a slide pans away from, and never back to, is therefore missing from the handout.
+Keep such content in the handout with `handout: true` on the subslide that shows it:
 
 ```typst
 sub(handout: true, pan(relto: "details"))

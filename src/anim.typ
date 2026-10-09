@@ -29,7 +29,7 @@
 // Every kind of operation a step may hold.
 #let op-kinds = continuous-kinds + slide-kinds + structural-kinds
 
-// Check that a tag name is one.
+// Check that a value is a valid tag name.
 //
 // A primitive addresses a tag and nothing else, so this is about a tag's name.
 // The name a site declares is checked by `check-name` in `site.typ`, which also keeps it
@@ -116,8 +116,9 @@
 // When one operation happens within its step and how long it then takes, as the record
 // that travels to the browser.
 //
-// A record rather than two arguments, because the Web Animations API takes a delay and a
-// duration in one object, and because a boundary compares the pair rather than one of them.
+// The timing is a record rather than two arguments, because the Web Animations API takes a
+// delay and a duration in one object, and because a boundary compares the pair rather than
+// one of them.
 #let timing-of(kind, delay, duration) = (
   delay: check-seconds(kind, "delay", delay),
   duration: check-duration(kind, duration),
@@ -125,9 +126,10 @@
 
 // Check the two ways of saying where something goes, which `move` and `pan` share.
 //
-// Each axis takes one of them: `x` and `y` put it at a distance from an anchor, `dx` and
-// `dy` shift it from wherever it already is, and the two on one axis are refused because
-// they are measured from different places.
+// Each axis takes one of the two ways.
+// `x` and `y` put the subject at a distance from an anchor,
+// and `dx` and `dy` shift the subject from wherever it already is.
+// Both ways on one axis are refused, because they are measured from different places.
 // A call that says none of the five would leave its subject where it is, which is a step
 // the author did not mean to write.
 #let check-position(kind, subject, x, y, dx, dy, relto) = {
@@ -149,7 +151,7 @@
     )
   }
   for (axis, value) in (("x", x), ("y", y), ("dx", dx), ("dy", dy)) {
-    // Checked for the message; the value itself is kept as it was written.
+    // The value is checked for the message, and kept as it was written.
     if value != none { let _ = check-length(kind, axis, value) }
   }
   assert(
@@ -168,13 +170,13 @@
   )
 }
 
-// Continuous primitives: they change how already-rendered content is displayed.
+// The continuous primitives change how already-rendered content is displayed.
 
 // Every primitive takes `delay:`, which holds it back within the step it is in, and
 // `duration:`, which says how long it then takes.
-// Each becomes the Web Animations API effect's own delay and duration in the browser, so
-// the step keeps one clock, and both say nothing in the paged outputs, which have no clock
-// to measure on.
+// In the browser, the two become the delay and the duration of the Web Animations API effect,
+// so the step keeps one clock.
+// Both say nothing in the paged outputs, which have no clock to measure on.
 
 /// Fade a tag in. A tag whose first display operation is `reveal` starts hidden, and keeps
 /// its space while it is.
@@ -205,14 +207,16 @@
 
 // Move an element, saying where it goes in the two ways `pan` says it, one per axis.
 //
-// `x` and `y` put the element's own anchor at a distance from another anchor, which is the
-// canvas origin or, with `relto`, the named tag; `dx` and `dy` shift it from wherever it
-// already is. An axis the call says nothing about stays where it is, unless `relto` asks
-// for the tag, in which case that axis goes to the anchor as well.
+// `x` and `y` put the element's own anchor at a distance from another anchor,
+// which is the canvas origin or, with `relto`, the named tag.
+// `dx` and `dy` shift the element from wherever it already is.
+// An axis the call says nothing about stays where it is, unless `relto` asks for the tag,
+// in which case that axis goes to the anchor as well.
 //
-// The anchor of a tag is the corner of its wrapper as the body laid it out, so it excludes
-// the tag's own display state: an absolute `move` is idempotent, and a `move(relto: ..)` is
-// unaffected by whatever moved the tag it is relative to.
+// The anchor of a tag is the corner of its wrapper as the body laid it out,
+// so the anchor excludes the tag's own display state.
+// An absolute `move` is therefore idempotent,
+// and a `move(relto: ..)` is unaffected by whatever moved the tag it is relative to.
 /// Move a tag, per axis to a position with `x` and `y` or by an offset with `dx` and `dy`.
 ///
 /// - name (str): The name of the tag.
@@ -252,9 +256,10 @@
 
 // Scale an element about its own centre, isotropically with `f` or per axis with `fx`/`fy`.
 //
-// The factor is *set* rather than multiplied into what is already there, so a factor can be
-// read on its own: `scale("a", f: 1)` restores the element whatever came before it, and
-// successive growth is the product, which is a multiplication written once.
+// The factor is *set* rather than multiplied into what is already there,
+// so a factor can be read on its own.
+// `scale("a", f: 1)` restores the element whatever came before it,
+// and successive growth is the product, which is a multiplication written once.
 // An axis the call does not mention keeps the factor it had.
 //
 // `f` together with either of the others is refused rather than resolved by a precedence
@@ -293,9 +298,10 @@
 
 // The slide primitive, which addresses the viewport rather than a tag.
 //
-// Each axis is resolved on its own, which is what lets one call mix the two ways of saying
-// where the viewport goes:
-// `x` puts it at a distance from an anchor, and `dx` moves it from wherever it already is.
+// Each axis is resolved on its own, so one call can mix the two ways of saying where the
+// viewport goes.
+// `x` puts the viewport at a distance from an anchor,
+// and `dx` moves the viewport from wherever it already is.
 // The anchor is the tag named by `relto`, placed where the body of a fresh slide starts,
 // or the canvas origin when there is no `relto`.
 // An axis given neither stays where it is, unless `relto` asks for the tag,
@@ -335,7 +341,7 @@
   )
 }
 
-// Structural primitives: they change what typst has to lay out, and so start a new epoch.
+// The structural primitives change what typst has to lay out, and so start a new epoch.
 //
 // The content state of a tag is two slots that do not know about each other:
 // what is laid out (the body, a replacement, or nothing) and the wrappers around it.
@@ -343,15 +349,16 @@
 // and so wraps whatever the first holds, including a later replacement,
 // and `reset` sets both back to the body as written.
 
-// On a structural operation a delay holds back the transition of the region it changes and
-// a duration says how long that transition takes, and the epoch boundary lasts until the
-// last of them has finished.
+// On a structural operation, a delay holds back the transition of the region the operation
+// changes, and a duration says how long that transition takes.
+// The epoch boundary lasts until the last of these transitions has finished.
 // A duration of zero is a hard cut of the region.
 //
-// `transition:` says how the region it changes crosses the boundary: `auto` is the
-// crossfade, and a transition function names one (see `transition.typ`).
-// It is an argument of the operation rather than of `sub`, so that one step can carry one
-// region with one transition and another region with another.
+// The `transition:` argument says how the region that the operation changes crosses the
+// boundary.
+// `auto` is the crossfade, and a transition function names one (see `transition.typ`).
+// `transition:` is an argument of the operation rather than of `sub`, so that one step can
+// carry one region with one transition and another region with another.
 
 /// Lay out `body` at the tag instead of what is there, keeping the wrappers `apply` put
 /// around it. The region around the tag is redrawn.
@@ -397,8 +404,8 @@
   transition: check-region-transition("remove", transition),
 )
 
-// Named style properties are refused rather than guessed at:
-// animo does not inspect content, so it cannot know which `set` rule a property belongs to.
+// Named style properties are refused rather than guessed at, because animo does not
+// inspect content and therefore cannot know which `set` rule a property belongs to.
 /// Wrap what is laid out at the tag in each function, the last one outermost.
 ///
 /// - name (str): The name of the tag.
@@ -541,7 +548,7 @@
 
 // `sub(..ops)` groups the operations that happen together in one subslide step.
 //
-// It returns a one-element array, never a bare dictionary,
+// `sub` returns a one-element array, never a bare dictionary,
 // because a code block joins arrays and *merges* dictionaries,
 // so a timeline of bare dictionaries would silently collapse into one step.
 //
@@ -649,7 +656,7 @@
   )
 }
 
-// Check that a timeline is one, and hand back its `init` and its steps.
+// Check that a value is a valid timeline, and hand back its `init` and its steps.
 //
 // The `animation` argument is a code block of an optional `init(..)` call followed by
 // `sub(..)` calls, which joins into an array.
@@ -658,7 +665,7 @@
 // written.
 #let check-timeline(animation) = {
   if animation == none {
-    // A code block that joined nothing, which is a timeline with no steps.
+    // A code block that joined nothing is a timeline with no steps.
     return (init: no-init, steps: ())
   }
   if (

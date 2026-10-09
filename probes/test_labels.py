@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Probes for *Element identity in the output: `data-typst-label`*.
 
-The keystone of the whole design.
+The whole design rests on this finding.
 Labelled content appears in SVG output as `<g data-typst-label="name">`,
 and only for labelled `box` and `block` elements.
 If any of this stops holding, animo has no handle on anything.
@@ -32,8 +32,8 @@ def test_a_label_on_anything_else_emits_nothing(typst: TypstRunner):
 
     In typst 0.15.0 the attribute has exactly one emission site, `crates/typst-svg/src/lib.rs`,
     and it fires for `group.label` alone.
-    That source-tree fact is not observable, but its consequence is:
-    a label on a `rect` or on a text span produces no group at all.
+    That source-tree fact is not observable, but its consequence is.
+    A label on a `rect` or on a text span produces no group at all.
     This is what decides that `tag` has to wrap its body.
     """
     markup = typst.svg(
@@ -64,7 +64,7 @@ def test_it_works_inside_math_when_the_label_is_attached_in_markup(typst: TypstR
     """Inside math, the label has to be attached within a markup block.
 
     This is narrower than *Findings* states.
-    In markup, `#box(body)#label(name)` attaches; inside math it does not,
+    In markup, `#box(body)#label(name)` attaches, but inside math it does not,
     and the label renders as literal math content, exactly like the `<name>` form.
     The form that does work is a markup block around the pair,
     which is what a `tag` function returns anyway.

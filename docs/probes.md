@@ -13,9 +13,10 @@ SPDX-License-Identifier: Apache-2.0
 # Behaviour Probes
 
 Animo rests on some twenty verified behaviours of typst 0.15.0 and of the browsers it
-targets. They are recorded in *Findings*, the document beside the design that
-[Developing Animo](development.md) points at, and any of them could change under the
-package.
+targets.
+These behaviours are recorded in *Findings*,
+which is the document beside the design that [Developing Animo](development.md) points at.
+Any of them could change under the package.
 
 A **probe** asserts such a behaviour itself, rather than a feature that happens to depend on it.
 The difference is what a failure says.
@@ -28,8 +29,8 @@ So a probe:
 
 - asserts one entry of *Findings*, and names that entry in its module docstring;
 - is **independent of every Animo feature**, and imports nothing from `src/`;
-- states, where the claim is a comparison, why the comparison is not vacuous,
-  which is a probe of its own often enough to be worth the habit.
+- states, where the claim is a comparison, why the comparison is not vacuous.
+  That check is often enough a probe of its own to be worth the habit.
 
 Probes live in `probes/` and run in the same three tiers as the feature tests,
 through the same fixtures. See [Testing](testing.md) for the tiers.
@@ -55,7 +56,7 @@ It is never fixed by relaxing the probe.
    A finding is a point-in-time claim, and it is written as one.
 1. Update the probe in the same commit, or retire it when the behaviour it guarded is gone.
    A retired probe is deleted together with its finding, not left skipped.
-1. Check what else rested on it.
+1. Check what else rested on the finding.
    Every entry in *Findings* supports some part of the design,
    and the design document says which part.
 
@@ -78,9 +79,9 @@ Turning one into a probe is the same four steps every time.
 Two rules of thumb are worth stating.
 Prefer an assertion inside the document (`#assert`) over one in Python,
 because it fails where the behaviour is.
-Also prefer a cross-check within one run over a hardcoded number:
-the probe for `measure` agreeing between the two targets takes the number out of the HTML
-compilation and hands it to the paged one through `--input`,
+Also prefer a cross-check within one run over a hardcoded number.
+For example, the probe for `measure` agreeing between the two targets
+takes the number out of the HTML compilation and hands it to the paged one through `--input`,
 so a change in font metrics cannot make it pass for the wrong reason.
 
 ## An Engine Answer Comes From That Engine
@@ -110,21 +111,21 @@ engines that were measured, is a claim; an invented number is not.
 Some entries are not observable behaviour, and they are recorded as such rather than faked.
 
 - **The single `data-typst-label` emission site in `typst-svg`.**
-  A fact about the source tree rather than about the binary.
+  This is a fact about the source tree rather than about the binary.
   Its consequence is probed instead:
   a label on a `rect` or on a text span emits nothing.
 - **The stability history of the attribute**, its pull request and changelog entry.
-  A fact about the project's history.
+  This is a fact about the project's history.
 - **Autoplay blocked until a user gesture.**
   Playwright's headless chromium does not apply chromium's gate,
   over `file://` or over `http://`, with the relaxing flag removed and the gate asked for.
   A probe here would assert the opposite of the finding.
-  Skipped, with the measurement that shows why.
+  The probe is skipped, with the measurement that shows why.
 - **The base64 encoder's memory and time per megabyte**,
   and the memoisation of the encoding across recompiles.
   Both are benchmarks rather than behaviours, and belong in `benchmarks/`.
 - **What keeping every slide laid out costs.**
-  The measurement that decided how a slide the runtime is not using is hidden.
+  This measurement decided how the runtime hides a slide that it is not using.
   It is a cost rather than a behaviour, and a probe on it would assert a wall clock.
 - **`animo` being unused on Typst Universe.**
   It needs the network and a third party's repository,

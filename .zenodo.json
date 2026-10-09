@@ -3,7 +3,7 @@
   "title": "Animo",
   "version": "0.1.1",
   "publication_date": "2026-09-16",
-  "description": "Animo builds both dynamic HTML and static PDF presentations using typst.",
+  "description": "Animo builds dynamic HTML and static PDF presentations using typst from a single source.",
   "creators": [
     {
       "name": "Verstraelen, Toon",
@@ -24,6 +24,7 @@
     "beamer",
     "handout",
     "HTML",
+    "morph",
     "presentation",
     "reproducibility",
     "reproducible research",

@@ -9,7 +9,7 @@ a group in the frame. These probes assert the three behaviours that make those t
 - Typst records a box that sits on a line at the line's baseline, not at its corner,
   in the middle of the line and at the start of a paragraph alike,
   while the same box as the only content of a placement is recorded at its corner.
-  So an element's own position does not say where it starts.
+  An element's own position therefore does not say where it starts.
 - A zero-size marker placed at `top + left` inside the box is recorded at the box's corner,
   wherever the box sits, and it changes no pixel of the page.
 - That corner is the origin of the box's labelled group in the SVG of an `html.frame`.
@@ -83,8 +83,8 @@ def test_a_box_that_opens_its_paragraph_is_located_at_the_baseline_too(typst: Ty
 def test_a_box_that_is_all_a_placement_holds_is_located_at_its_corner(typst: TypstRunner):
     """The same box, placed on its own, is recorded at its corner after all.
 
-    So no correction by the box's own height recovers the corner from the position:
-    whether one applies depends on what the box happens to sit in.
+    No correction by the box's own height therefore recovers the corner from the position,
+    because whether one applies depends on what the box happens to sit in.
     """
     typst.ok(
         sites()

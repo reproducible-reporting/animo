@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 // SPDX-License-Identifier: Apache-2.0
 
-// What every addressable site shares: a tag, and a region with a name.
+// What every addressable site shares, where a site is a tag or a region with a name.
 //
 // Both put the display state of the rendering they are part of on their content with
 // typst's own elements, between the two nested slots that make them a group in the output.
@@ -29,7 +29,7 @@
 // for its own introspection.
 #let reserved = "animo-"
 
-// Check the name of a site: a string, and one that stays out of animo's own label namespace.
+// Check that the name of a site is a string that stays out of animo's own label namespace.
 //
 // `what` names the site in the diagnosis, such as "a tag" or "a region".
 #let check-name(what, name) = {
@@ -49,18 +49,19 @@
   )
 }
 
-// What a site shows when nothing has addressed it: where the body put it, at its own size.
+// What a site shows when nothing has addressed it, which is the site where the body put it,
+// at its own size.
 //
 // The view hands a tag site two lengths rather than the anchor and the offset the resolver
 // keeps, because only the rendering knows where an anchor is.
 // A site the timeline never addressed is absent from the view and takes this state.
 #let at-rest = (x: 0pt, y: 0pt, scale: (x: 1.0, y: 1.0), hidden: false)
 
-// What a site is in one rendering: the display state its name has in that state.
+// What a site is in one rendering, which is the display state its name has in that state.
 //
 // A name the timeline never addressed is absent from the state and is at rest.
-// So is every name in the HTML target, where a frame covers a whole run of states and the
-// browser owns the display state.
+// Every name is at rest in the HTML target as well, where one frame covers every state of
+// the slide and the browser owns the display state.
 #let display-of(name, view) = {
   if view.state == none { at-rest } else {
     view.display.at(name, default: at-rest)
@@ -80,7 +81,7 @@
   // `move` is outside `scale` because CSS composes its individual properties
   // in that order, and the paged output has to agree with the browser.
   //
-  // One factor per axis, because CSS `scale` takes two values.
+  // There is one factor per axis, because CSS `scale` takes two values.
   // Typst's `scale` sets the factors it is given and leaves the other axis alone,
   // so the two axes stay independent.
   scale(

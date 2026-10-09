@@ -8,9 +8,9 @@ look cheap, and a finding that quietly stops holding makes a plan quietly wrong.
 
 The clip is a half-second sine wave, generated here rather than stored,
 so the repository carries no media asset.
-That is a deliberate narrowing: the finding measured an Opus file,
-and what is reproduced is the mechanism (a `data:` URI decodes and reports its own length),
-not the codec.
+This narrows the finding deliberately.
+The finding measured an Opus file, and what is reproduced is the mechanism
+(a `data:` URI decodes and reports its own length) rather than the codec.
 """
 
 import base64
@@ -86,7 +86,7 @@ def test_a_data_uri_clip_decodes_and_reports_its_length(typst: TypstRunner, open
 
 
 def test_autoplay_is_gated_on_a_user_gesture():
-    """Recorded as unprobeable rather than faked.
+    """This is recorded as unprobeable rather than faked.
 
     The finding is that `play()` rejects with `NotAllowedError` until the user has
     interacted with the document, which is why a self-playing deck needs one click.

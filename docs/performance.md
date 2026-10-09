@@ -38,24 +38,26 @@ A `background:` or an `overlay:` that is content is rendered **once** beside the
 whatever the output type and however many epochs the slide has.
 
 On top of that, **every region lays its body out once per epoch to measure it**,
-so that it can reserve the largest.
+so that the region can reserve the largest of those layouts.
 A region with an explicit `height` measures nothing,
 and a slide with one epoch measures nothing either.
 
 Two limits on this count keep the cost affordable:
 
-- it is not per state. A run of `reveal`, `move` and `scale` operations shares one rendering,
+- The count does not grow per state.
+  A run of `reveal`, `move` and `scale` operations shares one rendering,
   so a slide with eight continuous subslides and no content change is exactly as cheap in the
   browser as a slide with none;
-- it is not a product over tags. Regions nest as fixed footprints rather than as states,
+- The count is not a product over tags.
+  Regions nest as fixed footprints rather than as states,
   so four tags over three epochs cost three renderings each and not eighty-one.
 
 ## The Measured Numbers
 
 [`examples/tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/tour.typ)
 is the deck these numbers were measured on.
-It stood at 16 slides, 48 states and 20 epoch renderings when they were taken,
-on a 12th Gen Intel Core i7-1260P with typst 0.15.0 in September 2026.
+When the numbers were taken, the deck had 16 slides, 48 states and 20 epoch renderings.
+They were measured on a 12th Gen Intel Core i7-1260P with typst 0.15.0 in September 2026.
 
 The compiler is the release `setup.sh` installs.
 For linux that is the static musl binary typst publishes,
@@ -140,12 +142,14 @@ either way. There, `remove` costs a rendering without any benefit.
 
 **A region measures every epoch, so regions and epochs multiply.**
 Two regions over four epochs is eight measurements per rendering of the slide, not two.
-It is linear in each, which keeps it affordable, but the cost is the product of the two.
+The cost grows linearly with each of the two, which keeps it affordable,
+but it is the product of the two.
 
 **Give a region a `height` when you know it.**
 A region with an explicit height measures nothing at all.
 On a deck of twelve slides with two regions over four epochs,
-that is 1.02 s against 0.53 s for the HTML output: nearly half the cost of the deck.
+giving the regions a height brought the HTML output from 1.02 s down to 0.53 s.
+The measurements were nearly half the cost of that deck.
 The drawback is that a state taller than the height is clipped.
 
 **A cetz canvas inside a region is the expensive case.**
@@ -227,7 +231,7 @@ That is a reason to use `handout: false` where it applies, not to avoid subslide
 ## What a Content Layer Costs
 
 A `background:` or an `overlay:` that is content is one more inline SVG per slide.
-A colour is not: it is one CSS declaration, with no measurable cost.
+A colour is one CSS declaration, with no measurable cost.
 
 Measured on the controlled deck of twelve slides, with an overlay of one line of 9 pt text
 and a rule, which is typical of a running title or a talk name:
@@ -235,15 +239,15 @@ and a rule, which is typical of a running title or a talk name:
 and under 2 ms of compile time per slide,
 which is at the limit of what this benchmark resolves.
 
-A layer costs page weight rather than seconds, unlike a region,
-and its cost is the weight of what it holds:
-a full-page image in a background costs the weight of that image, once per slide.
+Unlike a region, a layer costs page weight rather than seconds.
+That weight is the weight of what the layer holds,
+so a full-page image in a background costs the weight of that image, once per slide.
 Use a colour where a colour suffices.
 
 ## What a Number Costs
 
 A [`per-subslide`](numbering.md) holds one rendering per subslide, of which the browser
-shows one, so it is the only construct whose cost grows with a slide's *states*.
+shows one, so `per-subslide` is the only construct whose cost grows with a slide's *states*.
 
 Measured on the controlled deck at its realistic point, twelve slides of seven subslides
 over three epochs, with a slide number and a subslide number in the overlay:
@@ -254,7 +258,7 @@ over three epochs, with a slide number and a subslide number in the overlay:
 | gzipped      | 341 KiB          | 366 KiB       | 7%     |
 | compile time | 0.38 s           | 0.40 s        | 7%     |
 
-Put it in the **overlay** and not in the body.
+Put the number in the **overlay** and not in the body.
 An overlay is one rendering per slide where a region is one rendering per epoch,
 so the same stack in a region is its epoch count times the numbers above.
 
@@ -290,7 +294,7 @@ and about 60 ms at 1600.
 
 A shape morph adds the alignment of its two outlines to the key press,
 which `benchmarks/morph.py` measures on two closed outlines that share no vertex.
-It takes 3 ms in chromium and 4 ms in firefox for 100 segments each,
+The alignment takes 3 ms in chromium and 4 ms in firefox for 100 segments each,
 and 8 ms and 11 ms for 1000 segments each.
 A tag holds one shape morph, so a step pays this once per tag that changes its shape.
 
@@ -298,8 +302,8 @@ A tag holds one shape morph, so a step pays this once per tag that changes its s
 
 The HTML deck is one self-contained file: a stylesheet, a runtime, and one inline SVG per
 slide, holding the body once and one rendering per epoch of every region whose content
-changes. It grows with epochs and with the size of the regions that change, and not with
-states.
+changes.
+The file grows with epochs and with the size of the regions that change, and not with states.
 
 The tour is 1.37 MB, which gzip takes to **262 KiB**, a factor of five.
 Every extra epoch on a slide adds about 35 KiB, or 3 KiB once compressed,

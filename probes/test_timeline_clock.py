@@ -7,9 +7,9 @@ browser that has nothing to draw draws nothing. A page that has sat still theref
 a time from the past, and an animation handed that time as its `startTime` is already
 partway through, or over, before it is first drawn.
 
-The behaviour animo relies on instead is the one it gets by saying nothing: an animation
-created without a start time is pending until the next frame, and every animation created
-in the same task is started at that frame with the same time.
+The behaviour animo relies on instead is the one it gets by saying nothing.
+An animation created without a start time is pending until the next frame,
+and every animation created in the same task is started at that frame with the same time.
 """
 
 import pytest
@@ -93,8 +93,9 @@ def test_an_animation_the_browser_schedules_begins_at_its_beginning(measured):
 def test_a_start_time_from_the_document_timeline_can_lie_in_the_past(measured, browser_name):
     """The finding itself, in the two halves that matter.
 
-    The first half is the mechanism and holds in every engine: an animation stamped with
-    the timeline's current time begins exactly as far in as that time lags real time.
+    The first half is the mechanism and holds in every engine.
+    An animation stamped with the timeline's current time begins exactly as far in as that
+    time lags real time.
     The second half is how large that lag gets. The engines differ in that number.
     """
     behind = measured["stamped"] - measured["scheduled"]

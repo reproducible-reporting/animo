@@ -51,7 +51,7 @@ since a cold package cache is an accident of the machine rather than a failure o
 
 ## Tier 1: Plan Resolution
 
-A document full of `#assert`, compiled and exported nowhere.
+A tier-1 test compiles a document full of `#assert` and exports it nowhere.
 Per-state content and display state, epoch boundaries, epoch counts
 and the footprint chosen for each region are asserted here.
 The documents are compiled for real, so footprints come from real `layout` and `measure` calls,
@@ -75,8 +75,8 @@ def test_a_mistyped_primitive_is_refused(typst):
 ```
 
 `typst.fails` with no message asserts only that the compilation failed,
-which is almost never what a test means:
-a document may fail for a reason that has nothing to do with the claim.
+which is almost never what a test means,
+because a document may fail for a reason that has nothing to do with the claim.
 
 `typst.warns(body, message)` is the third form, for behaviour the compiler
 merely complains about, and `html=True` on any of the three
@@ -111,8 +111,8 @@ Every comparison helper reports *where* two rasters differ, not only that they d
 | `difference_box(a, b)`                | the smallest box containing every differing pixel       |
 | `difference_report(a, b)`             | how many pixels, by how much, and within which box      |
 
-The third one is the shape the region design is tested with,
-and a failure that said only `False` would be unreadable.
+The region design is tested with `assert_identical_outside`,
+where a failure that said only `False` would not show where the slide changed.
 
 The few assertions that are about the PDF *writer* rather than about the layout
 render the real PDF with `pdf_pages`, which uses `pypdfium2`,
@@ -122,13 +122,13 @@ the same engine chromium renders PDFs with.
 
 `playwright` drives the browsers it bundles, which keeps the pixels identical
 on every machine. `./setup.sh` downloads them into `.venv/playwright`,
-and a missing browser is an error rather than a skip:
-a suite that passes while a third of its tests are skipped
+and a missing browser is an error rather than a skip,
+because a suite that passes while a third of its tests are skipped
 does not show whether those tests would pass.
 
 **Every test of this tier runs in chromium, firefox and webkit.**
-A deck has to work in all three engines, and they disagree on more than pixels:
-firefox does not implement `calc(<length> / <length>)` at all
+A deck has to work in all three engines, and they disagree on more than pixels.
+For example, firefox does not implement `calc(<length> / <length>)` at all
 and drops the declaration it appears in, silently,
 while webkit's `plus-lighter` crossfade is not pixel-exact.
 The engine is a fixture, so a failure names it and `-k firefox` selects one of them.
@@ -178,8 +178,8 @@ What that error says depends on why the engine is unavailable.
 On debian or ubuntu without the system packages, it is playwright's missing-library box,
 and `playwright install-deps webkit` is the fix.
 On a platform `./setup.sh` skipped, it is `Executable doesn't exist`,
-because there is no local build to launch:
-run `playwright install webkit` first if you want the launch error itself.
+because there is no local build to launch.
+Run `playwright install webkit` first to see the launch error itself.
 
 To run webkit by hand where there is no build for it,
 mount the working tree into an ubuntu container at the same absolute path,
@@ -214,14 +214,14 @@ def test_a_tag_outside_a_region_does_not_move_between_epochs(open_page, page):
 ```
 
 That geometry is read with `getBBox()` and `getScreenCTM()`, never with
-`getBoundingClientRect()`, which is not the same box in every engine:
-on a labelled group chromium reports the tight box and firefox one inflated
-to roughly the width of the whole frame.
-`harness.MEASURE` is the one expression that does it, and both `Deck.rects`
+`getBoundingClientRect()`, which is not the same box in every engine.
+On a labelled group chromium reports the tight box,
+and firefox reports a box inflated to roughly the width of the whole frame.
+`harness.MEASURE` is the one expression that reads the geometry, and both `Deck.rects`
 and the probes' own `measuring.rects` go through it.
 
 Tests deep-link to a state instead of clicking their way to it.
-That is a contract with the runtime, spelled out in `harness.browser.Deck`:
+Deep-linking relies on a contract with the runtime, spelled out in `harness.browser.Deck`:
 
 - the current position lives in `location.hash` as `#<slide>.<state>`,
   is restored on load and followed on `hashchange`,
@@ -240,9 +240,9 @@ A `wait:` or a `hold:` is a `setTimeout` in the runtime,
 and pausing an animation does not reach a `setTimeout`,
 so the `timed_deck_at` fixture stops the page's clock before the deck is loaded
 and `Deck.run_for` states how much time passes.
-The document timeline is untouched by that, so the motion a timed step starts still runs in
-real time and is still read by scrubbing it, which keeps the runtime free of a test seam it
-would not otherwise have.
+Stopping the page's clock leaves the document timeline untouched,
+so the motion that a timed step starts still runs in real time and is read by scrubbing it.
+The runtime therefore needs no test seam of its own.
 
 Two invariants are cheap to check here and worth checking directly,
 because the region design rests on them:
@@ -259,8 +259,8 @@ two epochs of the same slide, the same label in two frames,
 a band that may change against a background that may not.
 Those are unaffected by a glyph rasterisation change in a new typst release; a stored image is not.
 
-When a picture is the only statement that can be made, the `references` fixture stores one,
-beside the module that uses it, and it has to say why:
+When a picture is the only statement that can be made, the `references` fixture stores one
+beside the module that uses it, and the test has to give the reason:
 
 ```python
 def test_something_only_a_picture_can_state(references, paged):
@@ -276,7 +276,7 @@ and compared on decoded arrays, so the storage format never enters an assertion.
 WebP defaults to lossy, in `Pillow` as in `playwright`'s own `type="webp"`,
 which is why the conversion is explicit.
 
-Regenerating them is one command:
+Regenerating the stored references is one command:
 
 ```bash
 pytest --update-references
@@ -289,7 +289,7 @@ with that command in the message, so a new reference is reviewed before it is tr
 
 Every compilation goes through the same helper and passes `--ignore-system-fonts`,
 so tests and examples use only the fonts typst embeds.
-No font files are vendored: they would collide with the 1 MB limit of
+No font files are vendored, because they would collide with the 1 MB limit of
 `check-added-large-files` for no gain.
 
 A generated document has to be written inside the repository,
