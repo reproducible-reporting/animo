@@ -10,11 +10,11 @@
 // and what gives the two paged outputs their page size.
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-// Style inline code
-#let bgrb = rgb("#ddeeff")
+// Style inline code, on a pale tint of the teal of the logo
+#let pale = rgb("#008ba8").lighten(88%)
 #show raw.where(block: false): it => highlight(
-  fill: bgrb,
-  stroke: bgrb + 0.1cm,
+  fill: pale,
+  stroke: pale + 0.1cm,
   radius: 0.1cm,
   it,
 )

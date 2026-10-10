@@ -62,8 +62,8 @@ const NOT_INK = new Set([
  * The attributes of a `<path>` that shape its ink, apart from its `d`.
  *
  * The stroke width is among them because a route does not scale a stroke, and the fill rule
- * because two copies under two rules cover two areas. The colours are not, because two copies
- * of different colours sum to their interpolation (see *Findings*).
+ * because two copies under two rules cover two areas. The colors are not, because two copies
+ * of different colors sum to their interpolation (see *Findings*).
  */
 const PATH_SHAPE = [
   "fill-rule",
@@ -436,7 +436,7 @@ function ink(region, claimed) {
  * Typst writes a glyph as a `<use>` of a definition named by a hash of its outline, a shape as
  * a `<path>` whose `d` starts at a local origin, and an image as an `<image>` without a
  * position, so in each case the place is in a transform and the key leaves it out.
- * The colours are left out of every key. See *Findings*.
+ * The colors are left out of every key. See *Findings*.
  */
 function inkKey(element) {
   if (element.localName === "use") {

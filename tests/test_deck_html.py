@@ -89,7 +89,7 @@ def test_a_canvas_larger_than_the_viewport_scales_with_it(page, open_page, typst
             return canvas.getBoundingClientRect().width / slide.getBoundingClientRect().width;
         }"""
     )
-    # One centimetre of margin, thirty of offset and the width of the word "far".
+    # One centimeter of margin, thirty of offset and the width of the word "far".
     assert ratio > 31 / 16
     assert ratio < 32 / 16
 
@@ -297,7 +297,7 @@ def test_stepping_leaves_no_history_behind(page, open_page, three_slides):
     assert page.evaluate("() => history.length") == before
 
 
-def test_a_colour_background_becomes_css_on_the_slide(open_page, typst: TypstRunner):
+def test_a_color_background_becomes_css_on_the_slide(open_page, typst: TypstRunner):
     """`set page` is ignored in the HTML target, so the background has to be CSS.
 
     It sits on the viewport element, which is the slide's visible box,
@@ -313,8 +313,8 @@ def test_a_colour_background_becomes_css_on_the_slide(open_page, typst: TypstRun
     )
 
 
-def test_a_colour_overlay_becomes_css_on_a_layer_of_its_own(open_page, typst: TypstRunner):
-    """An overlay colour cannot be the container's background, which is behind the canvas.
+def test_a_color_overlay_becomes_css_on_a_layer_of_its_own(open_page, typst: TypstRunner):
+    """An overlay color cannot be the container's background, which is behind the canvas.
 
     It is ink over the slide, so it gets a separate element in front of the canvas,
     and only its alpha makes it useful, because a dimming tint is the case it exists for.
@@ -332,10 +332,10 @@ def test_a_colour_overlay_becomes_css_on_a_layer_of_its_own(open_page, typst: Ty
     assert float(found[4]) == pytest.approx(0x80 / 255, abs=0.01)
 
 
-def test_an_opaque_colour_overlay_covers_the_body_in_the_browser(open_page, typst: TypstRunner):
+def test_an_opaque_color_overlay_covers_the_body_in_the_browser(open_page, typst: TypstRunner):
     """The declaration is on an element in front of the canvas, and this is what that means.
 
-    A background of the same colour is the control.
+    A background of the same color is the control.
     It sits on the slide container, which is behind the canvas, so the body stays visible
     there.
     """
@@ -436,7 +436,7 @@ PAINT_SERVERS = tuple(
     for word in ("One", "Two", "Three")
 )
 
-# At 1280 by 720 a centimetre of this 16 by 9 centimetre deck is 80 pixels.
+# At 1280 by 720 a centimeter of this 16 by 9 centimeter deck is 80 pixels.
 WINDOW = {"width": 1280, "height": 720}
 
 
@@ -468,7 +468,7 @@ def test_the_first_slide_draws_its_paint_servers(page, open_page, paint_deck):
     """The control: what a slide that draws them looks like, so the other tests can compare.
 
     The background is not white, the two ends of the gradient differ, and the clip leaves
-    the two centimetre square of the box and not the six centimetre square of its content.
+    the two centimeter square of the box and not the six centimeter square of its content.
     """
     page.set_viewport_size(WINDOW)
     open_page(paint_deck)

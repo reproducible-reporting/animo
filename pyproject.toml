@@ -8,7 +8,7 @@
 [project]
 name = "animo"
 version = "0.1.1"
-description = "Animo builds dynamic HTML and static PDF presentations using typst from a single source."
+description = "Build dynamic HTML and static PDF presentations using typst from a single source."
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.14"
@@ -25,23 +25,23 @@ python-downloads = "auto"
 # What the test suite needs, and nothing more, so that a continuous integration job
 # running only the tests does not build `pre-commit` or `zensical`.
 tests = [
-    "attrs>=25.0.0",
+    "attrs>=26.1.0",
     # A static ffmpeg binary, for the one probe that has to read a recorded video back.
     # What a browser draws while an animation runs cannot be screenshotted: the capture
     # repaints the page and the behaviour under test disappears. See *Findings*.
-    "imageio-ffmpeg>=0.5.0",
-    "numpy>=2.0.0",
-    "pillow>=11.0.0",
+    "imageio-ffmpeg>=0.6.0",
+    "numpy>=2.5.3",
+    "pillow>=12.3.0",
     # The bundled browsers keep the pixels identical on every machine,
     # and the browser tier runs in each of them.
     # `setup.sh` downloads them into `.venv/playwright`.
-    "playwright>=1.50.0",
+    "playwright>=1.63.0",
     # The few assertions that are about the PDF writer rather than about the layout.
     # It is the same engine chromium renders PDFs with, and it ships self-contained wheels.
-    "pypdfium2>=4.30.0",
-    "pytest>=8.0.0",
-    "pytest-timeout>=2.3.1",
-    "pytest-xdist>=3.6.1",
+    "pypdfium2>=5.14.0",
+    "pytest>=9.1.1",
+    "pytest-timeout>=2.4.0",
+    "pytest-xdist>=3.8.0",
     "snipwise>=1.1.0",
 ]
 docs = [
@@ -49,12 +49,12 @@ docs = [
     # and every release is a `0.0.x`, so a range pins nothing.
     # The exact version is what keeps a documentation build from breaking
     # without a change in this repository.
-    "zensical==0.0.61",
+    "zensical==0.0.69",
 ]
 dev = [
     { include-group = "tests" },
     { include-group = "docs" },
-    "pre-commit>=4.6.0",
+    "pre-commit>=4.6.2",
     "reuse>=6.2.0",
 ]
 

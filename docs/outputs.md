@@ -1,7 +1,7 @@
 ---
 description: >-
   The three output types of one source file, the command lines that produce them,
-  and why the file format is not one of them.
+  and the file formats that the static output types export to.
 ---
 
 <!--
@@ -16,7 +16,7 @@ The example deck for this page is
 ([HTML](https://reproducible-reporting.github.io/animo/examples/tour.html){ target="\_blank" rel="noopener" },
 [PDF presentation](https://reproducible-reporting.github.io/animo/examples/tour-presentation.pdf),
 [PDF handouts](https://reproducible-reporting.github.io/animo/examples/tour-handouts.pdf)).
-It is compiled to every output type from one source file as follows:
+The commands below compile a deck in `talk.typ` to each output type:
 
 ```bash
 # HTML presentation
@@ -25,13 +25,18 @@ typst compile --format html --features html talk.typ talk.html
 # Static presentation (one page per subslide)
 typst compile --input animo=presentation talk.typ talk-presentation.pdf
 
-# Static handouts (final state per slide), the default for paged output
+# Static handouts (final state per slide), the default when --input animo= is absent
 typst compile talk.typ talk-handout.pdf
 ```
 
-A mistyped mode raises an error instead of silently producing a handout.
-Add `--ignore-system-fonts` to make a rendering reproducible between machines.
-Examples bundled with Animo use only the fonts that typst embeds.
+The value of `--input animo=` selects a static output type,
+and it is either `presentation` or `handout`.
+Any other value raises an error, so a typo never produces handouts without a warning.
+
+By default, typst also uses the fonts installed on the machine, and these differ between machines.
+Add `--ignore-system-fonts` to make typst use only the fonts it embeds,
+so that every machine renders the deck identically.
+The examples bundled with Animo use only these embedded fonts.
 
 | Output type         | What it shows                                        |
 | ------------------- | ---------------------------------------------------- |
@@ -39,29 +44,34 @@ Examples bundled with Animo use only the fonts that typst embeds.
 | Static presentation | one page per subslide, for a venue without a browser |
 | Static handouts     | one page per slide, for printing or distributing     |
 
-A slide with no `sub` call has one state, so it is one page in both static output types.
-The two stop being the same as soon as a slide has subslides:
-the presentation gets a page per subslide, and the handout keeps the states that
-[asked for one](continuous.md#selecting-states-for-handouts).
+A slide without `sub` calls has a single state, so it takes one page in both static output types.
+A slide with subslides takes one page per subslide in the static presentation.
+In the static handouts, the same slide takes one page for its final state
+and one for each state that has `handout: true`.
+See [The `handout` Flag](handouts.md#the-handout-flag) for the details.
 
-Every page is a viewport, so a slide that pans shows a different part of its canvas on each
-page, and the handout shows no more of the canvas than the states it keeps.
+Each page shows only the part of the canvas that is inside the viewport in that state.
+A slide that pans therefore shows a different part of its canvas on each page.
+The handout pages show only the parts of the canvas that are in view in the states they keep.
 
-Everything about time is **absent rather than approximated** in both static types.
-A page has no clock, so [`wait:`, `hold:`, `delay:` and `duration:`](continuous.md#timing)
-say nothing there, and neither does a [transition](slides.md#slide-transitions).
-A deck that plays itself in a browser is the same pages on paper as a deck that waits for a
-presenter, to the pixel.
+Both static output types **ignore all timing**, because a page cannot change over time.
+Typst writes the same pages with or without the arguments
+[`wait:`, `hold:`, `delay:` and `duration:`](continuous.md#timing)
+and the [slide transitions](slides.md#slide-transitions).
+For example, a deck that plays itself in a browser and a deck that waits for the presenter
+produce identical pages, if they differ only in these arguments.
 
 ## Content per Output Type
 
 `output-type()` returns the output type being compiled:
 `"html"` for the HTML presentation, `"presentation"` for the static presentation
 and `"handout"` for the static handouts.
-The paged strings are the values of `--input animo=`.
-The `output-type()` function is a context function.
-It gives the same answer in a slide's body, in its layers and outside every slide,
-so a deck can show content in some output types only:
+The last two strings are the values that `--input animo=` accepts.
+Because `output-type()` is a context function, a call to it has to be inside `context`.
+`output-type()` returns the same value in a slide's body, in its overlay and background,
+and outside every slide.
+A deck can therefore show content in some output types only.
+The hint below appears only in the HTML presentation:
 
 ```typst
 #let hint = context if output-type() == "html" {
@@ -69,16 +79,17 @@ so a deck can show content in some output types only:
 }
 ```
 
-The `target()` function of typst cannot make this distinction inside a slide.
-The HTML output lays a slide out inside an `html.frame`, where `target()` returns `"paged"`.
+The `target()` function of typst cannot replace `output-type()` inside a slide.
+In the HTML presentation, Animo lays out each slide inside an `html.frame`,
+and inside such a frame `target()` returns `"paged"`.
 
-## The File Format Is Not an Output Type
+## File Formats of the Static Output Types
 
-A static output type is a paged *mode*, and it says which pages exist.
-The file format is the `--format` flag of typst, and it says how those pages are written.
-The two are independent, so either static type exports to PDF, SVG or PNG.
-SVG is suited to embedding a page in another document,
-and PNG serves consumers that need a raster image.
+A static output type is a paged *mode*, which decides which pages the document contains.
+The `--format` flag of typst decides the file format in which typst writes those pages.
+The two choices are independent, so either static output type exports to PDF, SVG or PNG.
+SVG suits embedding a page in another document,
+and PNG suits a program that accepts only raster images.
 
 ```bash
 # The handout pages as SVG, one file per page
@@ -91,6 +102,9 @@ typst compile -f svg --input animo=presentation talk.typ 'talk-presentation-{p}.
 typst compile -f png --ppi 300 talk.typ 'talk-handout-{p}.png'
 ```
 
-Multi-page SVG and PNG export fails without a page number template in the output path,
-which is why those command lines carry one and the PDF ones do not.
-`{p}` is the page number and `{0p}` is the same number padded to the page count.
+Typst writes each page of an SVG or PNG export to a separate file.
+The output path of such an export therefore contains a page number template,
+and typst refuses to export more than one page without it.
+A PDF file holds all pages, so its output path has no template.
+In the template, `{p}` is the page number.
+`{0p}` is the same number, padded with zeros to the number of digits in the page count.

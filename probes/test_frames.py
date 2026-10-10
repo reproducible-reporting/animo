@@ -45,7 +45,7 @@ def test_set_page_inside_a_frame_is_an_error(typst: TypstRunner):
 
 
 def test_set_page_at_document_level_is_ignored_in_html(typst: TypstRunner):
-    """Slide size, background colour and background image have to be emitted as CSS.
+    """Slide size, background color and background image have to be emitted as CSS.
 
     This is the document-level half of the previous probe,
     and it is a warning rather than an error, so a deck that sets a page silently loses it.

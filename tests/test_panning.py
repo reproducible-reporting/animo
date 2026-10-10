@@ -16,7 +16,7 @@ import pytest
 from decks import deck
 from harness import Deck, PagedRunner, TypstRunner, assert_identical, screenshot
 
-# One centimetre in typst points, which is one pixel at the default raster resolution.
+# One centimeter in typst points, which is one pixel at the default raster resolution.
 CM = 28.3465
 
 # A `relto` puts the tag it pans to at the deck's margin.
@@ -211,7 +211,7 @@ def test_a_relto_to_a_tag_without_a_wrapper_is_refused(typst: TypstRunner):
 
 
 def color_box(page: np.ndarray, color=RED, tol: int = 8) -> tuple[int, int, int, int] | None:
-    """The bounding box `(x0, y0, x1, y1)` of the pixels of approximately this colour."""
+    """The bounding box `(x0, y0, x1, y1)` of the pixels of approximately this color."""
     near = np.abs(page.astype(np.int16) - np.array(color, dtype=np.int16)).max(axis=2)
     found = near <= tol
     if not found.any():
@@ -292,7 +292,7 @@ def beyond(typst: TypstRunner):
 
 
 def assert_pan(presentation: Deck, x: float, y: float):
-    """Assert the pan the browser shows, in centimetres of the slide."""
+    """Assert the pan the browser shows, in centis of the slide."""
     got = presentation.pan
     assert got == pytest.approx((x * CM, y * CM), abs=TOLERANCE), (
         f"panned to {got[0] / CM:.3f} cm, {got[1] / CM:.3f} cm"

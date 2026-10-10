@@ -151,6 +151,6 @@ def test_a_translated_shape_carries_its_gradient(typst: TypstRunner, open_page):
     selector = "path[stroke]"
     clip = page.evaluate(BOX, selector)
     before, after = moved(page, selector, clip)
-    colours = len(np.unique(before.reshape(-1, 3), axis=0))
-    assert colours > 20, "the rectangle does not show a gradient"
+    colors = len(np.unique(before.reshape(-1, 3), axis=0))
+    assert colors > 20, "the rectangle does not show a gradient"
     assert largest(before, after) <= 2

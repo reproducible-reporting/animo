@@ -56,7 +56,16 @@
 // The view hands a tag site two lengths rather than the anchor and the offset the resolver
 // keeps, because only the rendering knows where an anchor is.
 // A site the timeline never addressed is absent from the view and takes this state.
-#let at-rest = (x: 0pt, y: 0pt, scale: (x: 1.0, y: 1.0), hidden: false)
+//
+// `placed` says, per axis, whether a `move` has put the tag at a position with `x`, `y` or
+// `relto`, which decides the point a `scale` grows the tag about. See `displayed`.
+#let at-rest = (
+  x: 0pt,
+  y: 0pt,
+  placed: (x: false, y: false),
+  scale: (x: 1.0, y: 1.0),
+  hidden: false,
+)
 
 // What a site is in one rendering, which is the display state its name has in that state.
 //
@@ -85,9 +94,17 @@
   // There is one factor per axis, because CSS `scale` takes two values.
   // Typst's `scale` sets the factors it is given and leaves the other axis alone,
   // so the two axes stay independent.
+  //
+  // An axis on which the tag was placed grows from the anchor, so that the corner the
+  // timeline put on a target stays there at any factor.
+  // Any other axis grows about the centre, which leaves the tag where it is.
   scale(
     x: current.scale.x * 100%,
     y: current.scale.y * 100%,
+    origin: (
+      (if current.placed.x { left } else { center })
+        + (if current.placed.y { top } else { horizon })
+    ),
     reflow: false,
     if current.hidden { hide(payload) } else { payload },
   ),

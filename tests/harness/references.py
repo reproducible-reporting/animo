@@ -54,7 +54,7 @@ class Reference:
             produced in the same run. A stored image has to justify itself;
             this argument is where it does.
         tol
-            The tolerance per colour channel.
+            The tolerance per color channel.
             Zero is the default, because both sides are rendered by the pinned typst
             and the bundled chromium.
         """

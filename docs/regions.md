@@ -12,16 +12,18 @@ SPDX-License-Identifier: Apache-2.0
 # Regions
 
 The example deck for this page is
-[`content.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/content.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/content.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/content-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/content-handouts.pdf)).
-It illustrates a region reflowing around a change.
+[`regions.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/regions.typ)
+([HTML](https://reproducible-reporting.github.io/animo/examples/regions.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/examples/regions-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/examples/regions-handouts.pdf)).
+It shows a region that reflows when its content changes,
+ways to reduce the empty room that a region reserves,
+nested and named regions, regions inside containers, and a region around a cetz canvas.
 
-A region is an area whose inside is laid out afresh whenever its content changes,
-while the room it takes on the slide never changes.
-Inside a region, [content that changes](structural.md) may push its surroundings
-around.
+A region is an area of a slide that typst lays out again whenever the content inside it changes.
+The room that the region takes on the slide stays the same.
+Inside a region, [content that changes](structural.md) can move the content after it,
+such as the paragraphs that follow.
 
 ```typst
 #slide(
@@ -44,72 +46,115 @@ around.
 
 ## The Fixed Footprint
 
-A region lays its body out once for every [epoch](structural.md#epochs) of the slide and
-reserves the largest of those layouts: the width of its container, and the height of its
-tallest epoch at that width.
-That rectangle is its **footprint**, and it is the same in every state.
-Inside it, typst lays each epoch out as if nothing else existed:
-line breaks change, a removed tag frees its space, and the paragraphs after it move.
-Outside it, nothing moves, down to the pixel.
+Typst lays out the body of a region once for every [epoch](structural.md#epochs) of the slide.
+The region then reserves a rectangle that fits all of these layouts.
+This rectangle is as wide as the container of the region,
+and as tall as the tallest of the layouts at that width.
+The rectangle is the **footprint** of the region, and it is the same in every state of the slide.
 
-A tag inside a region reserves no separate box, so the region can reflow around the tag.
-So inside a region `remove` and `reset` can really free space (or restore it).
-In contrast, `hide` and `reveal` primitives preserve the space that was initially reserved.
+Inside the footprint, typst lays out each epoch separately.
+The line breaks can differ from one epoch to the next.
+A removed tag frees its space, and the paragraphs after the removed tag move up.
+Outside the footprint, every element stays at the same position, to the pixel.
+
+Outside a region, a tag whose content changes reserves a box that fits the content of every epoch,
+as [Box Reserved by a Changing Tag](structural.md#box-reserved-by-a-changing-tag) explains.
+Inside a region, the tag reserves no box of its own, so typst can reflow the content around the tag.
+As a result, `remove` frees the space of a tag inside a region,
+and a later `reset` takes that space again.
+The `hide` and `reveal` primitives change only the visibility of a tag,
+so the space of a hidden tag stays reserved.
 
 The footprint is fixed for three reasons, in decreasing order of importance.
 
 1. **Continuous animations keep their meaning.**
-   A tag moved by 2 cm is still 2 cm from where it was laid out after a content change.
-   If the slide reflowed, every `move`, `scale` and `pan` in flight would jump at once.
-1. **The crossfade between two contents stays invisible everywhere else**,
-   because the new rendering is identical outside the region.
+   A `move` of 2 cm shifts a tag 2 cm away from the position where typst laid the tag out.
+   Outside a region, that position stays the same when content changes,
+   so the tag stays 2 cm away from it.
+   If the whole slide reflowed instead, the positions that `move`, `scale` and `pan` start from
+   would shift, and every element they act on would jump at the content change.
+1. **A content change crossfades only the region.**
+   In the HTML presentation, the browser crossfades between two renderings of the region.
+   Everything outside the region is identical in both epochs, so it stays still on screen.
 1. **All three output types lay out alike**, so one source file can produce all of them.
 
 ## The Price, and the Remedies
 
-A region reserves room for its largest content,
-so a region whose first content is short and whose last content is tall shows an empty gap
-in its early states.
-That is the cost of the three properties above, and three remedies are available:
+A region reserves room for its largest content.
+When the first content of a region is short and its last content is tall,
+the region shows an empty gap in its early states.
+That gap is the cost of the three properties above.
+The following remedies reduce the gap or move it:
 
-- **`align`** says where a smaller state sits in the footprint.
-  `align: bottom` puts a short first state against whatever follows the region,
-  which moves the gap above it, where it usually reads as spacing.
-- **Split the region** into several smaller ones,
-  so that each reserves only the room its content needs.
-- **Give a size.** `height: 3cm` reserves exactly that, and a state that needs more is
-  clipped, so check every subslide. A region with a given height also measures nothing at all,
-  which is the cheapest form of a region.
+- **Align the content.**
+  The `align` argument places a state that is smaller than the footprint inside the footprint.
+  With `align: bottom`, a short first state sits directly above the content after the region.
+  The gap then appears above the state, where it usually looks like ordinary spacing.
+- **Give a size.**
+  A region with `height: 3cm` reserves exactly 3 cm and clips a state that is taller,
+  so check every subslide for clipped content.
+  A region with a given height also skips the measurement of its epochs,
+  so it compiles faster than a region that measures them.
+- **Merge regions** whose contents are tallest in different epochs.
+  Two separate regions together reserve the sum of their tallest epochs.
+  One region around both contents reserves only the height of the epoch
+  in which the two contents together are tallest, and that height is less than the sum.
+  In the merged region, a change of one content moves the other content.
 
-`width` and `height` arguments take a length or a ratio of the container.
-The `align` argument defaults to `top`, which has no horizontal part,
-so a region inside `#set align(center)` keeps its content centred.
-The `clip` argument defaults to `true` as soon as a size is given and to `false` otherwise,
-since a measured footprint fits every state anyway.
+Splitting a region into several smaller regions has a different effect.
+A change inside one of the smaller regions reflows only that region,
+and the content of the other regions stays where it is.
+Splitting does not reduce the room that is reserved,
+because each smaller region reserves the room of its tallest epoch.
+Together, the smaller regions reserve at least as much as one region around all of them.
+
+The `width` and `height` arguments take a length or a ratio of the size of the container.
+The `align` argument defaults to `top`.
+This alignment sets only the vertical position,
+so a region inside `#set align(center)` still centres its content horizontally.
+The `clip` argument defaults to `true` when a width or height is given, and to `false` otherwise.
+A region without a given size needs no clipping, because its measured footprint fits every state.
 
 ## Nesting and Names
 
-A region inside a region is itself a fixed footprint,
-so a change inside the inner one reflows only the inner one.
-Each region measures each epoch once, however deeply they nest.
-In the browser the outermost region crosses a step as a whole, together with the regions inside it.
-Two operations of one step that change two inner regions of the same outer region
-therefore have to agree about their timing and their transition.
+A region inside another region also has a fixed footprint,
+so a change inside the inner region reflows only the inner region.
+Each region measures its body once for every epoch.
+The footprint of the inner region is the same in every epoch,
+so the outer region needs no extra measurements for the states of the inner region.
 
-`region(name: "box")` makes the footprint a site the timeline can address,
-like a tag of that name: `move`, `scale`, `reveal`, `hide` and `pan(relto: "box")` act on
-the whole of it. An unnamed region is invisible to the timeline, and still crossfades.
-The structural primitives address the content inside a region through its tags,
-so `replace("box")` on a region's name is refused.
+Typst needs one extra pass of layout for every level of nesting, and stops after five passes.
+As a result, regions nest at most three deep.
+In the static presentation and the static handouts,
+regions nest at most two deep on a slide where a `move` has a `relto` argument,
+because typst needs another pass to read the position of the tag that `relto` names.
+In the HTML presentation, the browser reads that position, so the limit stays at three.
+Tags do not count toward this depth.
+When regions nest deeper, typst warns that the document did not converge within five attempts.
 
-`animo-` is a reserved prefix, and a tag or region named with it is refused,
-because Animo labels what it emits for itself that way.
+In the HTML presentation, the browser animates the outermost region as one unit
+when a step changes content inside that region, including content in the regions nested in it.
+Suppose that one step changes content in two inner regions of the same outer region.
+The two operations then need the same timing and the same transition,
+and typst refuses them otherwise.
+
+A region with a name, as in `region(name: "box")`, can be addressed by the timeline
+like a tag with that name.
+The primitives `move`, `scale`, `reveal` and `hide` then act on the whole footprint,
+and `pan(relto: "box")` brings the footprint into view.
+The timeline cannot address a region without a name,
+but the browser still crossfades such a region when its content changes.
+The structural primitives change the content of a region through the tags inside the region,
+so typst refuses `replace("box")` on the name of a region.
+
+`animo-` is a reserved prefix, and typst refuses a tag or region whose name starts with it,
+because Animo uses that prefix for the labels of the elements it generates.
 
 ## Where a Region Cannot Go
 
-A region is a block, and it takes its width from its container.
-That makes it work where the width of the container does not depend on its content,
-and go wrong where the container takes the width of its content.
+A region is a block, so it takes its width from its container.
+A region therefore gets the right width in a container whose width does not depend on its content.
+In a container that takes the width of its content, the region gets the wrong width.
 
 | Container                                               | A region there                                     |
 | ------------------------------------------------------- | -------------------------------------------------- |
@@ -122,23 +167,21 @@ and go wrong where the container takes the width of its content.
 | the middle of a paragraph                               | **breaks the paragraph** in two around it          |
 | math, a cetz canvas                                     | does not belong there; use a [bare tag](tags.md)   |
 
-Animo cannot detect the cases in bold.
-In each of them, typst reports the same width to the region
-as it would report in a container that really is that wide.
-A region that is too wide reserves the wrong room silently, so give it a `width:` there.
+Animo cannot detect the cases in bold, so it gives no warning for them.
+In the cases that take the whole body width,
+typst reports the width of the slide body to the region,
+exactly as it does in a container that really is that wide.
+Such a region reserves the wrong room unless you give it a `width:` argument.
 
 A cetz canvas takes draw commands rather than content, so a region goes around the canvas
 and not inside it.
-What the region then holds is the canvas as a whole, with
-[tags on its `content()` elements](tags.md#where-a-tag-may-sit),
-and a change of one of those tags redraws the whole figure inside the region's footprint.
+The region then holds the whole canvas,
+and the tags sit on the `content()` elements of the canvas
+(see [Where a Tag May Sit](tags.md#where-a-tag-may-sit)).
+When the content of one of those tags changes,
+typst redraws the whole figure inside the footprint of the region.
 A region around a canvas is the only way a cetz figure can change size on a slide.
 It is also the most expensive construct in an Animo deck.
 See [Performance](performance.md#what-costs-and-what-to-do-about-it) for the numbers.
 
-A region outside a `#slide` is refused, and so is one around something that is not content.
-
-## What Is Not Here Yet
-
-A region that pushes its surroundings around, rather than keeping its footprint, is not available.
-Such a region needs an animated transition to look right.
+Typst refuses a region outside a `#slide`, and a region whose body is not content.

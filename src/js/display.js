@@ -8,6 +8,9 @@
 /** The canvas origin, which is the anchor a position with no `relto` is measured from. */
 const ORIGIN = { x: 0, y: 0 };
 
+/** The values an engine computes for the `scale` of an element at its unscaled size. */
+const UNSCALED = new Set(["none", "1", "1 1"]);
+
 /**
  * Where one position puts what it addresses, in typst points.
  *
@@ -62,18 +65,47 @@ function declarations(slide, name, display) {
 }
 
 /**
- * The declarations that centre the transforms of one slot on the box of the element.
+ * The declarations that make a `scale` grow one slot about the point typst's `scale` grows it
+ * about on paper.
  *
- * Without this a `scale` grows the element about the origin of the whole frame and moves it
- * far across the slide. Both declarations are planned here, on the one element the runtime
- * transforms, and never as a rule in the stylesheet.
+ * That point is the centre of the box typst laid out on an axis the tag was not placed on,
+ * and the start of that box on an axis it was placed on with `x`, `y` or `relto`,
+ * so that the corner the timeline put on a target stays there at any factor.
+ * An axis whose anchor is the tag itself was never placed, whatever `dx` or `dy` shifted it.
+ *
+ * The box is the one typst laid out, and the ink of the slot need not fill it.
+ * Its far corner is the origin of the `animo-corner` marker that typst places beside the slot.
+ * The slot carries no transform attribute, so its box starts at the origin of the group the
+ * two share, and under `transform-box: view-box` an origin in `px` is a point of the user space
+ * of that group.
+ * `fill-box` would measure the box of the ink instead, and firefox reads that
+ * ink without the transform attributes of the elements inside the slot. See *Findings*.
+ *
+ * Without an origin a `scale` grows the slot about its top-left corner.
+ * Both declarations are planned here, on the one element the runtime transforms,
+ * and never as a rule in the stylesheet.
  * The declarations re-anchor the `transform` attribute of the element as much as the
  * properties beside it, so a selector broad enough to reach a group typst positioned
  * displaces that group, silently and with no transform property set at all.
  * A labelled group is not always a tag site, because a region's footprint carries a label
  * too, and its children are the region's content. See *Findings*.
  */
-const CENTRED = { "transform-box": "fill-box", "transform-origin": "center" };
+function growth(slot, name, display) {
+  const placed = (which) => display[which] !== undefined && display[which].relto !== name;
+  const marker = slot.parentNode.querySelector(':scope > [data-typst-label="animo-corner"]');
+  const corner = marker?.transform.baseVal.consolidate()?.matrix;
+  if (corner === undefined || corner === null) {
+    // Typst places a marker beside every slot, so this is a page edited by hand,
+    // and the slot grows about a point of the box of its ink.
+    const at = (which) => (placed(which) ? "0%" : "50%");
+    return { "transform-box": "fill-box", "transform-origin": `${at("x")} ${at("y")}` };
+  }
+  const at = (which, far) => (placed(which) ? 0 : far / 2);
+  return {
+    "transform-box": "view-box",
+    "transform-origin": `${at("x", corner.e)}px ${at("y", corner.f)}px`,
+  };
+}
 
 /**
  * The tags whose anchor this slide's plan asks for, as a set of names.
@@ -266,7 +298,23 @@ function planState(
             scale: scheduled(options, own.scale, mirror),
           };
     for (const element of slide.slots.get(name) ?? []) {
-      plan(effects, element, CENTRED);
+      const { "transform-box": box, "transform-origin": point } = growth(element, name, display);
+      plan(effects, element, { "transform-box": box });
+      // The origin changes with the placement, which only a `move` changes, so it travels
+      // on the timing of the `translate` beside it, and the corner of a scaled tag goes
+      // to its target without a jump.
+      // An origin makes no difference to an element at its unscaled size, so such an
+      // element takes the new origin at once, and the corner of a tag that the same step
+      // places and scales goes to its target in a straight line.
+      // An element that has no origin yet takes the first one without travelling as well,
+      // because the origin it computes until then is no point the audience saw.
+      const travels =
+        timed !== null &&
+        element.style.transformOrigin !== "" &&
+        !UNSCALED.has(getComputedStyle(element).scale);
+      plan(effects, element, { "transform-origin": point }, travels
+        ? { "transform-origin": timed.translate }
+        : null);
       plan(effects, element, declarations(slide, name, display), timed);
     }
   }

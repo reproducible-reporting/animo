@@ -2,19 +2,21 @@
 # SPDX-License-Identifier: Apache-2.0
 """What the documentation site has to hold, whatever anybody writes into it.
 
-Three things are asserted rather than reviewed.
+The things below are asserted rather than reviewed.
 The site serves two readers and the split between their guides erodes one convenient
 pointer at a time, so the rule about which way a link may point is a test.
 The reference is written by hand, because nothing reads a `//` comment, so the test suite
 is what keeps a new primitive from shipping undocumented.
 The example table is also written twice, in `README.md` and on the front page of the site,
 because the version inside it belongs to `snipwise` and a snippet cannot hold a snippet.
+The background of the social cards is committed as an SVG compiled from a typst source,
+because zensical renders the cards without typst, and that SVG can fall behind its source.
 """
 
 import re
 
 import pytest
-from harness import ROOT
+from harness import ROOT, compile_typst, example_decks
 
 DOCS = ROOT / "docs"
 
@@ -28,7 +30,9 @@ AUTHOR_GUIDE = (
     "structural.md",
     "viewport.md",
     "regions.md",
+    "morphs.md",
     "numbering.md",
+    "handouts.md",
     "outputs.md",
     "presenting.md",
     "performance.md",
@@ -180,7 +184,7 @@ def table_of(path):
 def test_every_example_is_in_the_table():
     """A deck that the build compiles and that nothing points at is a deck nobody reads."""
     rows = "\n".join(table_of(ROOT / "README.md"))
-    for path in sorted((ROOT / "examples").glob("*.typ")):
+    for path in example_decks():
         assert f"`{path.name}`" in rows, f"{path.name} is not in the example table"
 
 
@@ -193,7 +197,7 @@ def test_every_row_has_its_three_links(kind):
         "handout": "/examples/{stem}-handouts.pdf",
     }[kind]
     rows = table_of(ROOT / "README.md")[2:]
-    stems = sorted(path.stem for path in (ROOT / "examples").glob("*.typ"))
+    stems = sorted(path.stem for path in example_decks())
     assert len(rows) == len(stems)
     for row in rows:
         stem = re.search(r"`([a-z]+)\.typ`", row).group(1)
@@ -207,6 +211,15 @@ def test_every_link_target_exists_after_a_full_build(kind):
     if not published.is_dir():
         pytest.skip("run tools/build_examples.py first")
     suffix = {"deck": ".html", "handout": "-handouts.pdf", "presentation": "-presentation.pdf"}
-    for path in sorted((ROOT / "examples").glob("*.typ")):
+    for path in example_decks():
         target = published / f"{path.stem}{suffix[kind]}"
         assert target.is_file(), f"{target} is missing"
+
+
+def test_social_card_matches_its_source(scratch):
+    """The committed card background is what its typst source compiles to."""
+    source = ROOT / "logo" / "social-card.typ"
+    compiled = compile_typst(source, scratch / "social-card.svg").check().output
+    assert compiled.read_text() == source.with_suffix(".svg").read_text(), (
+        "recompile logo/social-card.svg, as logo/social-card.typ explains"
+    )

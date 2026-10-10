@@ -339,7 +339,7 @@ length of a boundary.
 With the surround written on the element that carries `isolation: isolate`, a white
 surround is added to both halves and takes the midpoint 239/255 away from the average of the
 two slides.
-With the same colour written on the page instead, the midpoint is exact.
+With the same color written on the page instead, the midpoint is exact.
 A black surround hides the mistake completely, because black adds nothing,
 which is why this was found by reasoning rather than by inspection.
 Animo therefore writes its surround on
@@ -644,7 +644,7 @@ This matters because stacking several frames in one document puts duplicate ids 
 
 - A glyph's id does not depend on its fill, which is an attribute of the `<use>` element.
   The letter `A` at 11 pt has one id in black, in red and under a gradient, and another id
-  each at 22 pt and in bold. This is what lets a morph match a glyph whose colour changes
+  each at 22 pt and in bold. This is what lets a morph match a glyph whose color changes
   (*Resolved Design Decisions*).
 
 - Equal ids therefore always mean equal content. Browsers resolve `<use xlink:href="#g..">`
@@ -823,8 +823,8 @@ Measured in chromium on real typst output, on a labelled group that carries this
 | `opacity: 0.35`                                                     | works; typst emits no group-level opacity or style, so opacity is entirely free |
 | `translate: 50px 0`                                                 | composes, so the element moves and typst's `transform` attribute stays intact   |
 | `transform: translate(50px,0)`                                      | **clobbers** typst's translate (y jumped 49.2 → 8.0, losing the offset)         |
-| `scale: 2` (default `transform-box: view-box`)                      | scales about the SVG viewBox origin, displacing the element (y 49.2 → 90.5)     |
-| `scale: 2` + `transform-box: fill-box` + `transform-origin: center` | scales about the centre of the element, in place                                |
+| `scale: 2` (default `transform-box: view-box`)                      | scales about the corner of the group around it, displacing the element          |
+| `scale: 2` + `transform-box: fill-box` + `transform-origin: center` | scales about the centre of the ink of the element, in place                     |
 | all three together                                                  | compose correctly                                                               |
 | `transform-box: fill-box` + `transform-origin: center`, alone       | **displaces** a group that carries a `matrix(1 0 0 -1 ..)` written by typst     |
 
@@ -854,8 +854,10 @@ and the displacement differs per run, because each run has a different fill box.
 
 Consequently, Animo uses the individual `translate`/`scale` properties
 and never the `transform` shorthand.
-It sets `transform-box: fill-box` for scaling, and only on an element that Animo built as a
-slot.
+It sets `transform-box` and `transform-origin` for scaling only on an element that Animo built
+as a slot.
+The values it sets are `view-box` and the centre of the box typst laid out,
+because the centre of the ink is a different point (see *The centre a scale is about*).
 A stray `transform` in user CSS will silently break positioning, and so will a
 stylesheet rule broad enough to reach a group typst positioned.
 
@@ -867,6 +869,9 @@ reports, so doubling an 11-pixel line moves the line by that much,
 while chromium moves it by under a tenth of a pixel.
 That is invisible in a transition, and it is why the probe for this row allows a
 pixel rather than half of one.
+The probe measures a line of text, whose glyph runs carry their position in a `matrix`.
+On a path that carries a `translate`, firefox is off by far more than a pixel,
+which *The centre a scale is about* records.
 
 CSS lengths inside a group are in **user units (pt), scaled by the SVG's rendered size**.
 At the test slide scale, 50 user units measure 72.7 px.
@@ -892,6 +897,68 @@ like rather than where it lands:
   and nothing about the picture changes at that moment.
   This was measured with an animation that holds one value from beginning to end,
   so that nothing but the path through the engine differs.
+
+## The centre a scale is about
+
+A `scale` has to grow the same box about the same point on paper and in the browser,
+or a scaled tag lands in two places.
+Measured on typst 0.15.0, chromium 151, firefox 153 and webkit 26.5,
+on a box 200 by 20 points whose ink is a 20 point square at its right end,
+in the user space of the group around the box, whose origin is the corner of the box:
+
+| Scale by a factor of two                                                        | Grows the box about                      |
+| ------------------------------------------------------------------------------- | ---------------------------------------- |
+| typst `scale(200%, reflow: false, ..)`                                          | the centre of the box, x = 100           |
+| typst `scale(200%, origin: left + horizon, ..)`                                 | the point (0, 10)                        |
+| typst `scale(200%, origin: center + top, ..)`                                   | the point (100, 0)                       |
+| `fill-box`, `transform-origin: center`                                          | the centre of the ink, x = 150           |
+| the same, in firefox                                                            | x = 10, the path without its `translate` |
+| `view-box`, `transform-origin: 100px 10px`                                      | the point (100, 10)                      |
+| `view-box`, no `transform-origin`                                               | the point (0, 0), the corner of the box  |
+| `view-box`, `transform-origin` animated from `100px 10px` to `0px 0px`, halfway | the point (50, 5)                        |
+
+Chromium and webkit take the centre of the ink under `fill-box`, and firefox does not.
+The rows under `view-box` hold in all three engines,
+except that the row without a `transform-origin` was measured in chromium and firefox only.
+
+The `origin` of typst's `scale` takes one alignment per axis,
+and each axis grows from the start of the box or about its centre independently of the other.
+An animated `transform-origin` in `px` interpolates each length on its own,
+so a group whose origin travels while its factor holds still moves in a straight line.
+The animation was paused at an explicit `currentTime` through the Web Animations API.
+
+The box of the ink is the box that `getBBox` reports.
+It differs from the box typst laid out wherever the ink does not fill that box.
+A body narrower than the filling block around it is one case, and a box with an inset another.
+Text is a third, because its glyphs need not fill the box between the top edge and the
+baseline.
+The box of the ink also includes the transforms of the elements inside the group,
+so a tag inside the scaled one that has moved drags the centre of the ink along.
+Typst writes the position of a path inside its group as a `translate` on the path,
+and firefox resolves `fill-box` without that `translate`,
+so a firefox `fill-box` can lie far outside the ink.
+
+An origin in `px` under `view-box` is a point of the user space of the parent of the group,
+whatever translates the ancestors of that parent carry,
+and it is the same point in the three engines.
+The browser only needs to know where the centre of the box typst laid out lies in that space.
+
+A zero-size labelled `box` placed at `bottom + right` inside a box or a filling block
+is emitted as an empty group, `<g transform="translate(w h)" data-typst-label="..">`,
+that is a direct child of the group of the box that holds it.
+Its origin is the far corner of that box, to 0.01 pt,
+for a box, for a filling block whose height its content decides,
+and for a filling block that a `move` lays out in a paragraph.
+
+Animo places such a marker, labelled `animo-corner`, beside every slot in the HTML target.
+The slot carries no transform attribute (see *Cross-frame geometry is readable, so morphing
+is possible*), so its box starts at the origin of the group it shares with the marker.
+The runtime sets `transform-box: view-box` on the slot,
+with `transform-origin` at half the translate of the marker,
+or at 0 on an axis that a `move` placed, where the paged outputs pass the start of that axis
+as the `origin` of typst's `scale`.
+The paged outputs and the browser then put a scaled tag in the same place,
+to a pixel of the handout raster, which `tests/test_cross_target.py` measures.
 
 ## A keyframe property that does not change suppresses the ones that do
 
@@ -1038,10 +1105,10 @@ attributes:
 - `fill` interpolates smoothly: driving it with a paused Web Animations API animation gives
   `rgb(128, 0, 0)` at the midpoint of a black-to-red transition.
 
-A colour-only primitive is therefore possible, and must target descendants explicitly.
+A color-only primitive is therefore possible, and must target descendants explicitly.
 Anything beyond fill (weight, size, spacing, strokes, images) is out of reach of CSS,
 and has to go through a re-rendered epoch.
-This puts `apply` in the structural class, and leaves a colour-only primitive for a later
+This puts `apply` in the structural class, and leaves a color-only primitive for a later
 release.
 
 ## Cross-frame geometry is readable, so morphing is possible
@@ -1159,7 +1226,7 @@ in the SVG that typst 0.15.0 writes for an `html.frame`.
   so a numerator that grows gives the bar another `d`.
 - The paint is in attributes beside the `d`: `fill`, `fill-rule`, `stroke`, `stroke-width`,
   `stroke-linecap`, `stroke-linejoin` and `stroke-miterlimit`.
-  Recolouring a shape changes `fill` or `stroke` and leaves the `d` alone.
+  Recoloring a shape changes `fill` or `stroke` and leaves the `d` alone.
   The `fill-rule` of the shapes that typst writes is `nonzero`, and a `curve` with
   `fill-rule: "even-odd"` writes `evenodd`.
 - An image is an `<image xlink:href="data:image/png;base64,.." width=".." height=".." preserveAspectRatio="none"/>` without `x` and `y`, so its place is the transform above it.
@@ -1219,7 +1286,7 @@ The results are the same in chromium 151, firefox 153 and webkit 26.5.
   and not the box, moves the content out of the clip, which hides the part that has left it.
   The same content drawn without the clip does reach below it.
 - **A gradient moves with its shape.** A rectangle with a gradient fill translated on its own
-  `<path>` arrives with the same colours, to within 2/255, also when the gradient is defined
+  `<path>` arrives with the same colors, to within 2/255, also when the gradient is defined
   in another `<svg>`. `userSpaceOnUse` is the user space of the element that references the
   gradient, which the `translate` moves.
 
@@ -1305,6 +1372,49 @@ about a `hidden:` argument of `tag`. Animo no longer has that argument, nor that
 a tag's initial state is read from its timeline.
 A diagnostic that depends on `query` is therefore either a value that Animo resolves,
 or a refusal raised in a block that emits nothing it reads.
+
+## Nested context blocks can cost a pass of layout per level
+
+Measured on typst 0.15.0, in plain typst documents and on nested regions in Animo.
+
+Typst stops after five passes of layout and warns that the document did not converge within
+five attempts.
+A pattern that makes each level of nested `context` blocks settle one pass after the level around
+it therefore limits how deeply such levels can nest.
+Two such patterns were found, and each has a form that costs nothing.
+
+**A check in the block that holds the next level.**
+A site that checks a `state.get()` in the `context` block that also emits its marker
+delays every site inside that marker by one pass.
+A state read in the first pass gives the initial value, so the check fails,
+and the failure empties the block, as *A panic that depends on `query` can be swallowed* records.
+The level inside is therefore laid out a pass later, and each level costs one pass.
+Four levels converge.
+Five levels are refused although every site is inside the state it checks,
+because the check of the innermost site still fails in the last pass,
+and typst reports that failure beside the convergence warning.
+The same check in a separate `context` block beside the marker converges eight levels deep,
+and still refuses a site that is outside for good.
+
+**A closure that captures a counter value of the level around it.**
+A level reads its number from a counter in a `context` block and passes it to the level inside.
+When the `context` block of the inner level captures that number in its closure,
+the inner level settles one pass after the outer one.
+Five levels converge and six do not.
+The same number emitted as `metadata` beside the block, outside its closure,
+converges eight levels deep, so the pass is caused by the capture
+and not by content that depends on the number.
+
+**In Animo.**
+The check of `ask` that a site is inside a slide is a separate block beside the marker,
+for the first reason.
+A region builds its key from `region-counter` and passes it to its body in the view,
+and the context blocks of a region inside it capture that view,
+so each level of regions costs a pass for the second reason.
+Three nested regions converge in all three output types and four do not.
+On paper, a slide with three nested regions and a `move` with `relto` anywhere on it does not
+converge either, because reading an anchor costs a further pass.
+A tag captures no number, and five nested tags converge.
 
 ## Introspection: positions
 
@@ -1509,6 +1619,8 @@ wrapping replacement and a short line again) and one footprint in all three rend
 The tags in the body resolve their content behind nested `context` reads,
 including a tag inside a tag, a tag removed in one epoch and a region inside a region,
 in the paged and the HTML target alike, with no convergence warning in either.
+How deeply regions can nest is limited by passes of layout,
+which *Nested context blocks can cost a pass of layout per level* records.
 
 The channel is also **layout-neutral to the pixel**, which is what lets a tag that emits no
 wrapper hand its body back untouched. A body routed through `context`, `metadata` and the show
@@ -1714,7 +1826,7 @@ Measured on typst 0.15.0.
   written there cannot learn from `target()` that the document is compiled to HTML. A state
   updated outside the frame reads the same inside it, which is how `output-type()` answers there.
 - `set page(...)` is **ignored** in HTML export at document level (typst warns) and is an
-  error inside `html.frame`. Slide size, background colour and background image must be
+  error inside `html.frame`. Slide size, background color and background image must be
   emitted as CSS for the HTML target, and the slide itself is a sized `block`.
 - HTML export still requires `--features html` in typst 0.15.0 and prints an
   "under active development and incomplete" warning.

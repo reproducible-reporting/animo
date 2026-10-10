@@ -2,7 +2,7 @@
 description: >-
   The structural primitives replace, remove, apply and reset:
   content that changes along the timeline, how the primitives compose,
-  the epochs they introduce, and what the handout keeps of them.
+  and the epochs they introduce.
 ---
 
 <!--
@@ -13,22 +13,23 @@ SPDX-License-Identifier: Apache-2.0
 # Structural Animations
 
 The example deck for this page is
-[`content.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/content.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/content.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/content-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/content-handouts.pdf)).
-It illustrates the four structural animation primitives, `replace`, `remove`, `apply` and `reset`, with and without a region.
+[`structural.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/structural.typ)
+([HTML](https://reproducible-reporting.github.io/animo/examples/structural.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/examples/structural-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/examples/structural-handouts.pdf)).
+It shows each structural primitive, how the primitives compose on one tag,
+how they divide a slide into epochs, and the box that a tag reserves for changing content.
 
 The [continuous primitives](continuous.md) change how content is shown.
-The four on this page change the content itself:
-what typst lays out at a tag site, and how it is styled.
+The structural primitives on this page change the content itself.
+They decide what typst lays out at a tag site and how typst styles that content.
 
 ```typst
 #slide(
   animation: {
     import anim: *
     sub(apply("claim", text.with(fill: red)))
-    sub(handout: true, replace("claim")[
+    sub(replace("claim")[
       Actually the opposite holds. \
       Let's fill another line to make this replacement long enough to wrap.
     ])
@@ -48,61 +49,67 @@ what typst lays out at a tag site, and how it is styled.
 | `replace(name, body)` | lay out `body` at the tag site instead of what is there   |
 | `remove(name)`        | lay out nothing at the tag site                           |
 | `apply(name, ..fns)`  | wrap the content in each function, the last one outermost |
-| `reset(name)`         | back to the body as written, with every wrapper dropped   |
+| `reset(name)`         | lay out the body as written, without any wrapper          |
 
 The `apply` primitive takes **functions only**, such as `text.with(fill: red)`, `emph`,
-or one of your own.
+or any custom function you provide.
 Named style properties, as in `apply("x", fill: red)`, are refused.
-Animo does not look inside content, so it cannot know which `set` rule a property belongs to.
-Wrapping with `text.with(..)` leaves no room for ambiguity.
+Animo does not look inside content, so Animo cannot know which `set` rule a property belongs to.
+A function such as `text.with(fill: red)` states the element that the property belongs to.
 
 Two patterns come up often:
 
-- **Inserting** content that is not in the body is `replace` on an empty tag:
-  `#tag("slot")[]` in the body, and `replace("slot")[..]` in the timeline.
-- Content that **is** in the body but starts out absent is a plain `#tag` the timeline resets.
-  Because the first content primitive on that tag is `reset`, the tag starts removed,
-  and the subslide holding the `reset` brings the content in.
+- To **insert** content that is not in the body,
+  put a tag with an empty body, such as `#tag("slot")[]`, in the body of the slide.
+  Then fill the tag with `replace("slot")[..]` in the timeline.
+- To **bring in** content that is in the body,
+  tag the content as usual and call `reset` on the tag in the subslide where it should appear.
+  A tag whose first structural primitive is `reset`
+  [starts removed](tags.md#initial-state-of-tagged-content),
+  so the content is absent until that subslide.
 
 ## How They Compose
 
-A tag's content has two parts the primitives set independently:
-**what is laid out**, which is the body, a replacement or nothing,
-and **the wrappers around it**.
+The content of a tag has two parts, and the primitives set each part separately.
+The first part is **what is laid out** (the body, a replacement or nothing).
+The second part is **the wrappers** that `apply` puts around it.
 
 - `replace` and `remove` set what is laid out, and keep the wrappers.
-- `apply` adds wrappers, around whatever is laid out now or later.
-- `reset` sets both: the body, and no wrappers.
-- None of the four touches the display state,
-  so a moved, scaled or hidden tag stays that way.
-- Operations are applied in the order they are written,
-  within one `sub` as well as across several.
+- `apply` adds wrappers, which stay around whatever is laid out now or later.
+- `reset` sets both parts, so the body is laid out again without any wrapper.
+- None of the structural primitives changes the [display state](continuous.md),
+  so a tag that was moved, scaled or hidden stays moved, scaled or hidden.
+- Animo applies the primitives in the order they are written,
+  both within one `sub` call and across several `sub` calls.
 
-Stepping through one tag makes the rules concrete:
+The table below follows one tag through a timeline.
+The first row is the body of the slide, and each further row is one subslide.
 
-| Step                                | Laid out at the tag site                 |
-| ----------------------------------- | ---------------------------------------- |
-| the body `#tag("x")[B]`             | B                                        |
-| `sub(apply("x", emph))`             | B, emphasised                            |
-| `sub(replace("x")[R])`              | R, emphasised: the wrapper stays         |
-| `sub(apply("x", strong))`           | R, emphasised and then strong            |
-| `sub(remove("x"))`                  | nothing, while the two wrappers are kept |
-| `sub(replace("x")[S])`              | S, emphasised and then strong            |
-| `sub(reset("x"))`                   | B, as the body declares it               |
-| `sub(apply("x", emph), reset("x"))` | B: the reset comes second                |
+| Code                                | Laid out at the tag site                       |
+| ----------------------------------- | ---------------------------------------------- |
+| the body `#tag("x")[B]`             | B                                              |
+| `sub(apply("x", emph))`             | B, emphasised                                  |
+| `sub(replace("x")[R])`              | R, emphasised, because the wrapper stays       |
+| `sub(apply("x", strong))`           | R, emphasised and then strong                  |
+| `sub(remove("x"))`                  | nothing, but the two wrappers are kept         |
+| `sub(replace("x")[S])`              | S, emphasised and then strong                  |
+| `sub(reset("x"))`                   | B, without wrappers                            |
+| `sub(apply("x", emph), reset("x"))` | B, because the `reset` comes after the `apply` |
 
-A subslide may change a tag's content and move it at the same time:
-`sub(replace("eq")[..], move("eq", dx: 1cm))` lays the replacement out a centimetre to the
-right, in the rendering that leaves as well as in the one that arrives.
-The two renderings stay aligned, so the change reads as one movement.
+One subslide can change the content of a tag and also move the tag.
+For example, `sub(replace("eq")[..], move("eq", dx: 1cm))` replaces the content of `eq`
+and moves the tag one centimeter to the right.
+While the old content fades out and the replacement fades in,
+both of them move to the right together, so the audience sees a single movement.
 
-Where one name tags several sites, every site receives the same replacement and the same
-wrappers.
+When one name tags several sites,
+every site of that name gets the same replacement and the same wrappers.
 
 ## Epochs
 
-An **epoch** is a run of consecutive states in which no content changes,
-and a new one begins at every subslide that holds at least one of the four primitives.
+An **epoch** is a run of consecutive states of a slide in which typst lays out the same content.
+A new epoch begins at every subslide that contains at least one structural primitive.
+The slide starts in epoch 0.
 
 ```typst
 animation: {
@@ -114,227 +121,114 @@ animation: {
 }
 ```
 
-Epochs determine what a content change costs.
-Typst lays the slide out again for every epoch,
-while the states inside one epoch differ only in how the same layout is shown.
-A slide with no structural operation has one epoch and costs nothing extra.
+The number of epochs determines what content changes cost,
+because typst lays out the slide once for every epoch.
+The states inside one epoch share that layout,
+and differ only in how they show it, such as visibility, position and scale.
+A slide without structural primitives has a single epoch, so typst lays it out only once.
 See [Performance](performance.md) for the numbers.
 
 ## Box Reserved by a Changing Tag
 
-The rest of the slide does not move when a tag's content changes,
-because the tag reserves room for the largest content it holds in any epoch,
-separately for the width and the height, and lays each epoch out inside that box.
-A tag whose content never changes reserves nothing and lays out exactly as before.
+A tag whose content changes reserves a box that is large enough for the content of every epoch.
+Animo takes the largest width and the largest height separately,
+and lays out the content of each epoch inside that box.
+Because the box has the same size in every epoch,
+the rest of the slide stays where it is when the content of the tag changes.
+A tag whose content never changes reserves no box, and typst lays out its content at its natural
+size.
 
-- A tag **between paragraphs** fills the width of its container
-  and is as tall as its tallest epoch at that width.
-  A replacement that wraps onto more lines reflows inside that height.
-- A tag **on a line** is as wide as its widest epoch,
-  and reserves the tallest reach above the baseline and the deepest below it,
-  so the line it sits on stays where it is.
-  Content on a line cannot wrap to fit the box: a longer replacement runs on past its edge.
-  Inline tag sites are for short content.
+- A tag **between paragraphs** fills the width of its container.
+  The height of the tag is the height of its tallest content, laid out at that width.
+  A replacement that needs more lines wraps inside that height.
+- A tag **on a line** is as wide as its widest content.
+  Its box reaches as far above the baseline as the tallest content,
+  and as far below the baseline as the deepest content,
+  so the line around the tag stays where it is.
+  Content on a line never wraps inside the box,
+  so a long replacement stays on one line and can run past the edge of its container.
+  Use a tag on a line only for short content.
 
-A paragraph of one line is **on a line** as far as a tag can tell,
-because [`wrap: auto`](tags.md#what-auto-measures) measures whether the body breaks
-the line it is put in. So a tag around a short paragraph whose replacement is meant to wrap
-needs `wrap: block`, as the example at the top of this page has.
+Under [`wrap: auto`](tags.md#what-auto-measures),
+a tag whose body is a single paragraph of text counts as a tag **on a line**.
+The reason is that `wrap: auto` checks whether the body breaks the line it is put in,
+and a paragraph of text does not break that line.
+When the replacement of such a tag should wrap, give the tag `wrap: block`,
+as the example at the top of this page does.
 
-The reserved room has a cost: a tag whose first content is short and whose last content is
-long shows a gap in its early states.
+The reserved box shows empty space while the content is smaller than the box.
+For example, a tag whose first content is short and whose last content is long
+shows a gap in its early states.
 
-Inside the box that a tag reserves, starting removed and starting hidden look the same,
-because the box keeps the room either way, and `remove` frees no space that `hide` would not.
-The `remove` primitive is meant for a [region](regions.md),
-where the content that follows takes up the freed space.
+Because the box keeps its size in every epoch, a removed tag takes as much space as a hidden tag.
+Outside a region, `remove` therefore frees no more space than `hide`.
+The `remove` primitive is meant for a tag inside a [region](regions.md),
+where the content that follows the removed tag fills the freed space.
 
-A `wrap: none` tag has no box to reserve room with,
-so its content may only change inside a [region](regions.md),
-which lays out its content again around the change.
-A structural primitive on a `wrap: none` tag that no region holds is refused,
-in every output type, with a message that names the two ways out:
-a wrapper, as in `wrap: auto`, `box` or `block`, or a region around the tag.
+A tag with `wrap: none` has no container, so the tag cannot reserve a box.
+A structural primitive may change such a tag only inside a [region](regions.md),
+because the region lays out all of its content again around the change.
+Animo refuses a structural primitive on a `wrap: none` tag outside a region,
+in every output type.
+The error message names the two fixes:
+give the tag a wrapper (`wrap: auto`, `box` or `block`), or put a region around the tag.
 
 ## What a Structural Step Looks Like
 
-A structural step is a **dissolve, not motion**:
-the outgoing content fades out where the incoming content fades in,
-and neither travels to meet the other.
-Nothing outside the changed area moves at all.
+In the HTML presentation, a step to a subslide with a structural primitive is a **dissolve**.
+The outgoing content fades out while the incoming content fades in,
+and each version stays at its own position.
+Nothing outside the changed area moves.
 
-A `replace` reads well this way, because the two texts are unrelated
-and the dissolve reads as a change from one statement to another.
-Content that merely *shifts* reads badly:
-two copies of the same words a few pixels apart are a smear rather than a movement.
-A small edit near the start of a long paragraph is the case to avoid,
-since everything after the edit moves a little and ghosts against itself.
+A dissolve suits a `replace` whose new text is unrelated to the old text,
+because the audience sees one statement turn into another.
+A dissolve does not suit content that only *shifts*.
+During the dissolve, two copies of the same words appear a few pixels apart,
+which looks like a smear rather than a movement.
+A typical case is a small edit near the start of a long paragraph.
+All text after the edit shifts a little,
+so the old and the new copy of that text overlap with a small offset.
 
-There are two ways to avoid such a smear.
-Name the [morph](#morphing-what-shifts) on the primitive, which moves what shifts instead of
-dissolving it.
-Or put a [region](regions.md) around what is replaced wholesale,
-and keep out of it whatever only shifts as a consequence:
+There are two ways to avoid such a smear:
+
+- Name the [morph](morphs.md) transition on the primitive.
+  A morph moves the content that shifts instead of dissolving it.
+- Put a [region](regions.md) around the content that is replaced as a whole,
+  and keep the content that only shifts outside that region.
+
+The example below shows the second way:
 
 ```typst
-#region(
-  import anim: *
-  sub(reveal("claim"))
+#slide(
+  animation: {
+    import anim: *
+    sub(replace("claim")[A claim long enough to make the rest of the paragraph reflow.])
+  },
 )[
-  #tag("claim")[A short claim.]
-  Everything in this region will be redrawn as a whole,
-  meaning that the paragraph will reflow.
-]
+  #region[
+    #tag("claim")[A short claim.]
+    The rest of this paragraph reflows around the replacement,
+    so the whole region takes part in the dissolve.
+  ]
 
-Text that should not be dragged into the crossfade.
+  This paragraph is outside the region, so it stays out of the dissolve.
+]
 ```
 
-Stepping backwards returns exactly the earlier rendering,
-and a deep link into a later epoch shows that epoch without animating into it.
+When the presenter steps backwards, the HTML presentation shows exactly the earlier rendering.
+A [deep link](presenting.md#the-position-is-in-the-url) to a subslide in a later epoch
+shows that epoch at once, without a dissolve.
 
-The dissolve takes the `delay:` and the `duration:` of the primitive that changes the region.
-The duration is the deck's `primitive-duration` unless the primitive states one.
-A `duration:` of zero swaps the content at once, which is a hard cut of the region:
+The dissolve starts after the `delay:` of the structural primitive and lasts for its `duration:`.
+When the primitive has no `duration:` argument,
+the dissolve lasts for the `primitive-duration` of the deck.
+A `duration:` of zero swaps the content at once (a hard cut):
 
 ```typst
 sub(replace("claim", duration: 0)[The second answer.])
 ```
 
-The dissolve is the `crossfade()` [transition](reference.md#transitions),
-which the `transition:` argument of the four primitives may also name explicitly.
-The transitions that move a whole slide, such as a push, are refused there.
-
-## Morphing What Shifts
-
-The example deck for this section is
-[`morph.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/morph.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/morph.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/morph-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/morph-handouts.pdf)).
-It shows a paragraph that reflows, a paragraph whose shapes move with its words,
-a crossfade and a morph of the same change side by side, an equation that grows,
-a box that grows around its words, and shapes that change their outline.
-
-The `morph()` transition moves content that both versions of a region share
-from its old place to its new place, and fades only what differs between the versions:
-
-```typst
-#slide(animation: {
-  import anim: *
-  sub(replace("aside", transition: morph())[and a clause inserted near the start])
-})[
-  #region[
-    The quick brown fox #tag("aside", wrap: none)[] jumps over the lazy dog,
-    and every word after the insertion moves to its new place.
-  ]
-]
-```
-
-What the morph moves is decided by what the two versions show.
-
-- **Letters** are matched by their shape, in reading order, so a paragraph that reflows needs
-  no tags. A letter that changes colour moves and changes colour on the way.
-  A letter that changes size or weight has another shape, so it fades out where it was and
-  in where it lands.
-- **Shapes and images** are matched by their geometry, in reading order together with the
-  letters, so a box beside a word moves with the word.
-  A rectangle, a circle, a line, a fraction bar or a mark of a plot is matched when its
-  outline and its stroke width are the same in both versions, and an image when it is the
-  same image at the same size.
-  A shape that changes colour moves and changes colour on the way.
-- **A shape that changes size** is resized on the way when it keeps its outline's kind:
-  the bar of a fraction whose numerator grows widens, a box grows around its words,
-  and a circle becomes an ellipse.
-  The two shapes are paired when typst draws them with the same commands, which is the case
-  for two rectangles, two rectangles with rounded corners, two ellipses or two lines,
-  and when they have the same stroke apart from its width, which changes on the way.
-  The corners of a rounded rectangle keep their shape, and their radius changes to the new
-  one with the size.
-  A shape is resized only into one that sits between the same two matched neighbours,
-  such as the letters on either side of it, and inside the same tags.
-  So a box removed in one place is not resized into a box added in another,
-  and a tag around one of two shapes keeps them apart.
-- **A shape that changes its outline** turns into the other shape on the way
-  when a tag holds the shape, the primitive changes that tag,
-  and in each version the tag holds exactly one shape that is not matched otherwise.
-  On `#tag("s")[#square(size: 2cm)]`, the primitive
-  `replace("s", transition: morph())[#circle(radius: 1cm)]` turns the square into the circle.
-  A star becomes a pentagon, a rectangle gets rounded corners,
-  an arrow folds onto a line, and the hole of a ring closes.
-  A filled shape and a stroked one change their outline while the fill fades out and the
-  stroke fades in.
-  A tag that holds two such shapes in either version gives no clue which becomes which,
-  so its shapes fade.
-- **A tag** moves as one, which is how to carry a figure or a drawing as a whole.
-  Two sites of one name are paired in the order they appear.
-  A tag that the primitive itself changes is not carried as one,
-  and neither is a tag around it,
-  because the content of such tags differs between the versions.
-  The content they hold is matched instead.
-- **Everything else** fades out and in where it is, as in a crossfade.
-  That includes an image that changes size, and a shape whose outline changes its kind
-  outside a tag that holds it alone, such as the rectangles of a paragraph that get rounded
-  corners.
-
-A box with `clip: true` hides what lies outside its edges,
-and the morph does not move those edges along with what it moves inside the box.
-So the content of a clipped box is matched only when the box is at the same place in both
-versions, and it fades when the box moves.
-A tag around the clipped box carries the box and its content as one.
-
-A plot draws its marks as equal shapes, and equal shapes are paired in the order the plot
-draws them.
-When a point is added at the start of the data, each mark therefore moves to the place of
-the next point rather than staying where it is.
-
-The morph takes the `delay:` and `duration:` of the primitive, as the crossfade does.
-A `duration:` of zero is a hard cut, stepping backwards plays the morph backwards,
-and a deep link shows the state without motion.
-Two operations that change one region at one boundary name the same transition,
-so the morph is written on each of them:
-
-```typst
-sub(
-  replace("aside", transition: morph())[and a clause],
-  apply("word", text.with(fill: red), transition: morph()),
-)
-```
-
-The morph moves content and never scales it.
-A resize differs from scaling because it changes the outline of a shape
-and keeps the width of its stroke.
-Webkit does not animate the outline of a shape.
-In webkit the morph therefore fades a shape that changes size or outline, as a crossfade does,
-and moves everything else.
-A letter is not a shape in this sense, so a letter does not turn into another letter.
-A letter drawn as a shape, with typst's `curve` or with cetz, turns into another shape
-like any other.
-A region whose letters differ in more than 400 places matches none of them and crossfades
-them, because the matching would take too long.
-A morph of a few hundred letters costs a step a few tens of milliseconds;
-see [Performance](performance.md#what-a-morph-costs) for the numbers.
-`init` and the deck's `transition:` refuse `morph()`, because a morph carries a region
-across a boundary inside a slide.
-The paged outputs show one state per page and nothing between two pages,
-so a morph changes nothing there.
-
-## Selecting States for Handouts
-
-`replace` and `remove` **destroy** what they replace or remove,
-so a slide whose content changes loses its earlier content in the handout,
-which shows one state per slide.
-`sub(handout: true, ..)` is the only way to keep an earlier state:
-
-```typst
-sub(handout: true, replace("claim")[The first answer.])
-sub(replace("claim")[The final answer.])
-```
-
-This handout has two pages for the slide, one per answer.
-
-The initial content of a slide is destroyed the same way.
-The initial state has no `sub` to carry the flag, so the flag is written on `init`.
-That is the case to watch for whenever a timeline **restores** what the body hides or
-removes, because the handout then shows the completed slide and not the initial state the
-timeline filled in.
-See [Continuous Animations](continuous.md#selecting-states-for-handouts) for the flag itself.
+The dissolve is the `crossfade()` [transition](reference.md#transitions).
+The `transition:` argument of a structural primitive uses `crossfade()` by default,
+and also accepts `morph()`.
+Animo refuses a transition that moves a whole slide, such as a push, in this argument.

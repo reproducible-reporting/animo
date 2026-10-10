@@ -4,7 +4,7 @@
 
 The canvas is the interesting value here.
 It cannot come from typst's own `auto` sizing, so animo computes it, and a computation
-that is wrong by a centimetre is invisible in a rendering and obvious in a number.
+that is wrong by a centimeter is invisible in a rendering and obvious in a number.
 Every slide publishes the canvas it settled on as metadata, which is the only channel
 that reaches the paged and the HTML target alike.
 """
@@ -15,8 +15,8 @@ import pytest
 from decks import PREAMBLE, deck
 from harness import TypstRunner
 
-# One centimetre of tolerance would hide every mistake worth catching,
-# so the assertions are on hundredths of a centimetre and the text extents are measured,
+# One centimeter of tolerance would hide every mistake worth catching,
+# so the assertions are on hundredths of a centimeter and the text extents are measured,
 # never guessed.
 CHECK = """
 #context {
@@ -30,7 +30,7 @@ CHECK = """
 # A timeline that pans, which is what makes a slide record its placements.
 # The canvas is read by `pan` and by nothing else, so a slide whose timeline never pans
 # takes the viewport clamped to its body box and records nothing.
-# One centimetre, because how far it pans decides nothing here.
+# One centimeter, because how far it pans decides nothing here.
 PANS = "animation: {import anim: *\nsub(pan(dx: 1cm))}, "
 
 
@@ -516,7 +516,7 @@ CORNER = "#place(bottom + right, dx: -1cm, dy: -1cm, box(width: 2cm, height: 1cm
 
 
 @pytest.mark.parametrize("which", ["background", "overlay"])
-def test_a_layer_that_is_neither_a_colour_nor_content_is_refused(typst: TypstRunner, which):
+def test_a_layer_that_is_neither_a_color_nor_content_is_refused(typst: TypstRunner, which):
     """A gradient is a page fill on paper and nothing at all in the browser.
 
     Refusing it keeps the two targets identical, and the message says the form that
@@ -524,7 +524,7 @@ def test_a_layer_that_is_neither_a_colour_nor_content_is_refused(typst: TypstRun
     """
     typst.fails(
         deck(f"slide({which}: gradient.linear(red, blue))[body]"),
-        f"{which} takes a colour or content",
+        f"{which} takes a color or content",
     )
 
 

@@ -16,140 +16,167 @@ The example deck for this page is
 ([HTML](https://reproducible-reporting.github.io/animo/examples/tour.html){ target="\_blank" rel="noopener" },
 [PDF presentation](https://reproducible-reporting.github.io/animo/examples/tour-presentation.pdf),
 [PDF handouts](https://reproducible-reporting.github.io/animo/examples/tour-handouts.pdf)).
-It is a deck to step through.
+Its HTML version lets you try the keys on this page,
+and its slide *Timer controls (in HTML)* plays part of itself.
 
 The HTML presentation is one self-contained file.
-Open it in a browser, step through it, and close it again:
-there is nothing to install and no server to run.
-A full-screen browser is all the presentation software you need:
-open the URL, press `F11` or `Cmd+Ctrl+F`, and you're ready to go.
+Presenting it needs no installation and no server.
+To present, open the file in a browser and switch the browser to full screen,
+with `F11`, or with `Cmd+Ctrl+F` on macOS.
 
 ## The Keys
 
-| Key                                                     | Does                    |
-| ------------------------------------------------------- | ----------------------- |
-| `→`, `↓`, `Page Down`, `Space`, `Enter`, `n`, any click | one step forward        |
-| `←`, `↑`, `Page Up`, `Backspace`, `p`                   | one step backward       |
-| `Home`, `End`                                           | the first, the last     |
-| `Space`, while a deck is playing itself or paused       | stop and start the deck |
+| Key                                                     | Action                   |
+| ------------------------------------------------------- | ------------------------ |
+| `→`, `↓`, `Page Down`, `Space`, `Enter`, `n`, any click | one step forward         |
+| `←`, `↑`, `Page Up`, `Backspace`, `p`                   | one step backward        |
+| `Home`                                                  | go to the first subslide |
+| `End`                                                   | go to the last subslide  |
+| `Space`, while a deck is playing itself or stopped      | stop or start the deck   |
 
-A step goes to the next **subslide**, not to the next slide:
-a slide with three `sub` calls takes four steps to get through.
-Stepping past the last subslide of a slide goes to the next slide,
-and stepping back before the first one goes to the previous slide's last subslide.
-A remote that sends a click or an arrow key therefore works without configuration.
+Each step goes to the next **subslide**.
+A slide with three `sub` calls has four subslides,
+because the initial state of the slide comes before the first `sub`.
+Going from the previous slide to the last of these four subslides therefore takes four steps.
+One step forward from the last subslide of a slide enters the next slide.
+One step back from the first subslide of a slide returns to the last subslide of the previous slide.
+Because a click and the arrow keys both step through the deck,
+a presentation remote that sends either one works without configuration.
 
-The deck fills the browser window at the aspect ratio of the deck,
-and a length inside a slide stays a typst length at any window size:
-`move("a", dx: 2cm)` moves the element two centimetres of the slide.
+The deck is as large as the browser window allows at the aspect ratio of the deck.
+All lengths inside a slide scale with the deck.
+For example, `move("a", dx: 2cm)` moves the element by one eighth of the slide width
+in a deck that is 16cm wide, whatever the size of the window.
 
 ## A Deck That Plays Itself
 
-A deck whose gaps state a [`wait:` or a `hold:`](continuous.md#timing) advances on its own,
-from the first paint onwards.
-Even then, the presenter can fully control the deck:
+A `wait:` or a `hold:` on a subslide sets a timer on a [gap](continuous.md#timing)
+between two subslides.
+When the timer runs out, the deck goes to the next subslide without a key press.
+Timers already run on the first subslide that the browser shows.
+The presenter keeps full control of such a deck:
 
-- **A forward step cancels the pending timer** and starts a new timer from the state it lands
-  on, so stepping ahead of the clock is never a race against the clock.
-- **A backward step lands on the nearest earlier state the deck rests at.**
-  A `hold: 0`, or a `wait: 0` on the next subslide, joins two states without a stop.
-  Nobody sees the first of the two at rest,
-  so one press forward runs through the whole join and one press back returns over all of it,
-  also across a slide boundary.
-  A state inside a join stays reachable by a [deep link](#the-position-is-in-the-url) and by
-  stepping forward while the clock is stopped.
-  Writing `hold: 0.001` instead of `hold: 0` makes the deck stop at that state after all.
-- **A backward step also turns the clock around.**
-  The deck then plays itself backwards over the gaps that it played forwards,
-  and comes to rest at the state where the presenter last pressed a key.
-  A run of timed gaps therefore takes one press back, just as it took one press forward.
+- **A forward step cancels the pending timer.**
+  When the gap after the new subslide has a `wait:` or a `hold:`, its timer starts.
+  The presenter can therefore step ahead of a timer at any moment,
+  and the deck never advances twice because a timer ran out just after a key press.
+- **A backward step skips the subslides that the deck passes through without stopping.**
+  A gap of zero seconds is written as `hold: 0`, or as `wait: 0` on the next subslide.
+  The deck leaves the subslide before such a gap at the moment it arrives there,
+  so the audience never sees that subslide at rest.
+  One step forward runs straight through such subslides,
+  and one step back skips them in the same way.
+  This also holds when the gap of zero lies between two slides.
+  A skipped subslide can still be opened with a [deep link](#the-position-is-in-the-url),
+  or reached by stepping forward while the deck is stopped.
+  Only a gap of exactly zero is skipped,
+  so a backward step does land on a subslide with `hold: 0.001`.
+- **A backward step also makes the deck play itself backwards.**
+  The deck then goes back through the gaps that have a timer, one gap at a time.
   Each gap lasts as long in both directions,
-  so a state inside such a run is shown as long on the way back as on the way forward.
-  A backward key pressed while the deck travels back is one more step back.
-  A deck that times every one of its gaps travels back to its first state and stops there,
-  because there is no earlier state and the gap of the first state would carry the deck
+  so the deck plays a run of timed gaps backwards as it played them forwards.
+  The deck stops at the subslide that the presenter's last forward step brought up,
+  because the gap before that subslide waits for the presenter.
+  A run of timed gaps therefore takes one press back, just as it took one press forward.
+  Pressing a backward key while the deck plays backwards goes back one more step.
+  In a deck where every gap has a timer, playing backwards stops at the first subslide of the deck.
+  The deck stops there because there is no earlier subslide,
+  and because the timer of the gap after the first subslide would otherwise carry the deck
   forward again.
-  A forward step or `Space` starts the clock again.
+  A forward step or `Space` makes the deck play itself again.
 - **`Space` stops and starts the deck**, the way it stops and starts a video.
-  Stopping freezes both the clock and any motion in flight.
-  Resuming continues the pending wait instead of restarting it,
-  and the deck carries on in the direction it was going.
-  On a deck that has no clock to stop, `Space` is a forward key,
-  so a remote that sends `Space` still works.
-  A deck stopped with `Space` stays stopped while the presenter steps through it,
-  so stepping through a paused deck does not start its clock again.
-- **A deep link starts a new timer from where it lands**,
-  so a fragment into an autoplaying deck resumes the playback from there.
+  Stopping the deck freezes both the pending timer and any animation that is running.
+  When the deck starts again, the timer continues with the time it had left,
+  and the deck continues in the direction it was going.
+  While the deck is neither playing itself nor stopped,
+  `Space` steps forward, so a remote that sends `Space` also works.
+  A deck stopped with `Space` stays stopped while the presenter steps through it.
+- **A deep link starts the timer of the gap after the subslide it opens.**
+  A deck opened from a link with a fragment (the part of the URL after `#`)
+  therefore plays itself from that subslide onwards.
 
-The URL fragment holds only the position and not whether the deck is paused,
-so a deck restored from a fragment comes back running.
+The fragment records the position in the deck and not whether the deck was stopped.
+A deck that is reloaded or opened from a link therefore plays itself again,
+also when the presenter had stopped it with `Space`.
 
 ## The Position Is in the URL
 
-The current position lives in the URL fragment as `#<slide>.<state>`,
-counting slides from one and states from zero,
+The URL of the deck ends in a fragment of the form `#<slide>.<state>`,
+which records the current position.
+Slides are numbered from one and the subslides within a slide from zero,
 so `#3.2` is the third subslide of slide 3.
-The fragment is kept up to date while stepping, and read back on load.
+Animo updates the fragment at every step,
+and opens the deck at the position in the fragment when the page loads.
 
-Opening a fragment **snaps** to that position instead of animating into it,
-so a deep link into the middle of a talk shows the picture and not the transition.
-The same holds for the first paint, for `Home` and `End`, and for any jump that is not a
-step between two neighbouring states.
+A link with a fragment opens the deck directly at that position, without any animation.
+The deck is then said to **snap** to that position.
+A deep link into the middle of a talk therefore shows the subslide at rest,
+without the motion that leads up to it.
+The deck also snaps when the browser first shows it, when the presenter presses `Home` or `End`,
+and on any other jump that is not a step.
 
-The fragment is written with `history.replaceState`, so stepping leaves no browser history
-behind. The back button leaves the deck rather than walking back one subslide at a time.
+Animo writes the fragment with `history.replaceState`,
+which adds no entry to the browser history.
+The back button of the browser therefore leaves the deck,
+instead of going back one subslide at a time.
 
 ## Motion
 
-Three arguments of the deck's show rule say how long the deck's motion takes:
+Three arguments of the show rule (the `#show: animo.with(..)` line of the deck)
+set the duration and the easing of the motion in the deck:
 
-| Argument              | Default         | Times                              |
-| --------------------- | --------------- | ---------------------------------- |
-| `primitive-duration`  | `0.4`           | one animation primitive            |
-| `transition-duration` | `0.4`           | the transition into the next slide |
-| `easing`              | `"ease-in-out"` | both                               |
+| Argument              | Default         | Applies to                     |
+| --------------------- | --------------- | ------------------------------ |
+| `primitive-duration`  | `0.4`           | each animation primitive       |
+| `transition-duration` | `0.4`           | the transition into each slide |
+| `easing`              | `"ease-in-out"` | both                           |
 
-Both durations are numbers of seconds, like every other time in a deck,
-and `easing` is one of `"linear"`, `"ease"`, `"ease-in"`, `"ease-out"` and `"ease-in-out"`,
-listed in [Reference](reference.md#animo).
-A name outside that list is refused when the deck is compiled.
+Both durations are numbers of seconds, like every other time in a deck.
+`easing` takes one of the names `"linear"`, `"ease"`, `"ease-in"`, `"ease-out"` and
+`"ease-in-out"`, which [Reference](reference.md#animo) also lists.
+Animo refuses any other name with a compile error.
 
-`primitive-duration` is the duration of any animation primitive that states no `duration:`,
-so restating it in the show rule changes the tempo of the whole deck
-and leaves the primitives that stated a duration alone.
-A step lasts as long as its slowest primitive, and a `delay:` pushes that out further.
+`primitive-duration` is the duration of every animation primitive without a `duration:` argument.
+Changing `primitive-duration` in the show rule therefore changes the tempo of the whole deck.
+A primitive with a `duration:` argument keeps that duration.
+A step lasts until the last of its primitives has finished,
+counting the `delay:` of each primitive.
 
-`transition-duration` is how long the transition into a slide takes.
-A slide whose [`init`](slides.md#slide-transitions) states a `duration:` takes that
-instead.
-How long a slide stands is decided by the presenter and by the timeline.
+`transition-duration` is the duration of the transition into a slide,
+unless the [`init`](slides.md#slide-transitions) call of that slide has a `duration:` argument.
+The time a slide stays on screen depends on when the presenter steps on,
+and on the `wait:` and `hold:` arguments in its timeline.
 
-Both durations are defaults.
-A duration of zero means that kind of motion lands without animating,
-unless a primitive or an `init` states a duration,
-so hard cuts between slides, with the subslides still moving, are written as:
+A duration of zero makes the motion jump to its end without animating.
+Both durations in the show rule are defaults,
+so a primitive or an `init` call with a `duration:` argument still animates.
+For example, the following show rule gives a deck hard cuts between slides,
+while the primitives inside each slide still animate:
 
 ```typst
 #show: animo.with(transition-duration: 0)
 ```
 
-A slide of that deck that names a transition in its `init` and states no `duration:` is
-entered with a cut, and [Slide Transitions](slides.md#default-transition-of-the-deck) shows how to
-push one slide in anyway.
+In that deck, a slide whose `init` names a transition, such as `anim.push()`,
+is also entered with a hard cut, unless the `init` call has a `duration:` argument as well.
+See [Default Transition of the Deck](slides.md#default-transition-of-the-deck) for an example.
 
-A reader whose browser asks for reduced motion gets no motion at all,
-whatever the deck, a primitive or an `init` states.
+Some readers set their operating system or browser to ask for reduced motion.
+For such a reader, the deck shows no motion at all,
+whatever durations the deck, its primitives and its `init` calls set.
 Every step then snaps into place, as a deep link does.
 
 ## Live Preview
 
-Typst serves the HTML and reloads the browser itself, so Animo ships nothing for this:
+For a live preview while you edit, `typst watch` serves the HTML presentation
+and reloads the page in the browser after each change.
+Animo therefore provides no separate tool for this:
 
 ```bash
-typst watch --format html --features html --open talk.typ talk.html
+typst watch --format html --features html --open talk.typ
 ```
 
-Every successful recompile pushes a reload to the connected browsers.
-The reload is a plain `location.reload()`, so the URL survives it, fragment included,
-and the deck comes back **on the same subslide**, without replaying its animation.
-Editing the slide that is on screen is therefore a loop of two steps, save and look.
+After each successful compilation, typst tells every connected browser to reload the page.
+The browser reloads with `location.reload()`, which keeps the URL, including the fragment.
+The deck therefore comes back **on the same subslide**, and snaps there without an animation.
+After you save the file, the browser shows the edited subslide without any key press.

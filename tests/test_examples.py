@@ -6,6 +6,8 @@ The decks are the unit of documentation, because a page shows one by including t
 A reader who copies one deck therefore has to get the same result as the reader who copied
 another.
 That needs a shared shape and nothing but the fonts typst embeds.
+A deck that imports `examples/_common.typ` needs that file beside it,
+which is why the shared file imports the published package as well.
 `tools/build_examples.py` already compiles each of them to all three output types,
 so a broken example fails there.
 These tests are about the agreement between the outputs.
@@ -14,12 +16,12 @@ These tests are about the agreement between the outputs.
 import re
 
 import pytest
-from harness import ROOT, manifest
+from harness import ROOT, example_decks, manifest
 
 # The deck's shape, as `examples/tour.typ` declares it.
 SHAPE = "animo.with(width: 16cm, height: 9cm, margin: 1cm)"
 
-PATHS = sorted((ROOT / "examples").glob("*.typ"))
+PATHS = example_decks()
 
 
 def test_there_are_examples():
@@ -43,7 +45,11 @@ def test_example_leaves_the_fonts_alone(path):
     assert re.search(r"\bfont\s*:", path.read_text()) is None
 
 
-@pytest.mark.parametrize("path", PATHS, ids=lambda path: path.name)
+# Every `.typ` file under `examples/`, which adds the files that several decks import.
+SOURCES = sorted((ROOT / "examples").glob("*.typ"))
+
+
+@pytest.mark.parametrize("path", SOURCES, ids=lambda path: path.name)
 def test_example_imports_the_published_package(path):
     """A reader copies an example and compiles it unchanged, so the import is the real one."""
     version = manifest()["version"]

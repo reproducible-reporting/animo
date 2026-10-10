@@ -12,6 +12,7 @@ The content a state lays out is recognised by `metadata` markers inside it,
 and the corner of a tag site by the anchor marker animo places there on paper.
 """
 
+import pytest
 from decks import deck
 from harness import (
     Box,
@@ -221,6 +222,70 @@ def test_a_slide_with_one_epoch_measures_no_region(typst: TypstRunner):
     typst.ok(source, **PRESENTATION)
 
 
+def test_a_placement_in_nested_regions_compiles_without_warnings(typst: TypstRunner):
+    """Both regions measure the placements inside the inner one, which label each once.
+
+    The anchor marker of the tag on paper and the `#place` of the author are both placements.
+    """
+    animation = timeline('sub(reset("t"))')
+    body = '#region[A #region[B #tag("t")[C] #place(dx: 1cm)[P]]]'
+    source = deck(f"slide(animation: {animation})[{body}]")
+    for mode in ("handout", "presentation"):
+        result = typst.ok(source, sysinp={"animo": mode})
+        assert result.stderr.strip() == "", result.report()
+
+
+# Sites three deep, as `(body, steps)`: regions alone, and regions with tags around them,
+# inside them, in the content of a `replace`, and as the anchor of a `relto`.
+THREE_DEEP = {
+    "regions": (
+        '#region[A #region[B #region[D #tag("inner")[C]]]]',
+        ('sub(reset("inner"))',),
+    ),
+    "tag-around": (
+        '#tag("w")[#region[A #region[B #tag("inner")[C]]]]',
+        ('sub(reset("inner"))',),
+    ),
+    "replaced": (
+        '#region[A #tag("slot", wrap: block)[]]',
+        ('sub(replace("slot")[#region[#tag("deep")[d]]])', 'sub(replace("deep")[d2])'),
+    ),
+    "relto": (
+        '#tag("x")[X] #region[A #region[B #tag("inner")[C]]]',
+        ('sub(move("x", relto: "inner"))', 'sub(reset("inner"))'),
+    ),
+}
+
+
+@pytest.mark.parametrize(("body", "steps"), THREE_DEEP.values(), ids=THREE_DEEP.keys())
+def test_sites_nested_three_deep_converge(typst: TypstRunner, body: str, steps: tuple[str]):
+    """Three nested sites converge in every output type.
+
+    Every level of nesting costs a pass of introspection, and typst allows five.
+    """
+    source = deck(f"slide(animation: {timeline(*steps)})[{body}]")
+    for target in ({"sysinp": {"animo": "handout"}}, PRESENTATION, {"html": True}):
+        result = typst.ok(source, **target)
+        assert "did not converge" not in result.stderr, result.report()
+
+
+def test_a_move_with_relto_limits_regions_to_two_deep_on_paper(typst: TypstRunner):
+    """Three nested regions and a `move` with `relto` converge only in the HTML target.
+
+    On paper, typst reads the anchor of a `relto` from a marker, which costs a further pass.
+    The browser reads that anchor in the HTML target, so typst spends no pass on it.
+    The anchor sits outside the regions, so the extra pass comes from the read alone.
+    """
+    body = '#tag("x")[X] #tag("y")[Y] #region[A #region[B #region[D #tag("inner")[C]]]]'
+    steps = ('sub(move("x", relto: "y"))', 'sub(reset("inner"))')
+    source = deck(f"slide(animation: {timeline(*steps)})[{body}]")
+    for target in ({"sysinp": {"animo": "handout"}}, PRESENTATION):
+        result = typst.compile(source, **target)
+        assert "did not converge" in result.stderr, result.report()
+    result = typst.ok(source, html=True)
+    assert "did not converge" not in result.stderr, result.report()
+
+
 # Which regions a content change crosses: the outermost region around what it changes.
 
 CHANGES = timeline(
@@ -390,7 +455,7 @@ def test_a_region_with_a_height_clips_what_does_not_fit(paged: PagedRunner):
 
 
 def test_a_named_region_moves_as_a_whole(paged: PagedRunner):
-    """The footprint and everything in it, a centimetre to the right."""
+    """The footprint and everything in it, a centimeter to the right."""
     animation = timeline('sub(move("r", dx: 1cm))')
     body = f'#region(name: "r")[#{colored("#ff0000", "2cm", "1cm")}]'
     pages = paged.png(deck(f"slide(animation: {animation})[{body}]"), mode="presentation")

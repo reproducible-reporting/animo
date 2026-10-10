@@ -155,9 +155,19 @@
 //
 // `anchor` is content that takes no room, put first inside the outer slot, so that it
 // shares the slot's top-left corner without being moved by the display state of the tag.
-#let slots(name, wrapper, payload, anchor: none, display: at-rest) = {
+// `corner` takes no room either, and goes last, so that the inner slot stays the first group
+// inside the outer one.
+#let slots(
+  name,
+  wrapper,
+  payload,
+  anchor: none,
+  corner: none,
+  display: at-rest,
+) = {
   [#outer-of(name, wrapper)({
       anchor
       displayed(display, wrapper(payload))
+      corner
     })#label(name)]
 }

@@ -172,8 +172,8 @@
 
 // Split one of the two outer layers into the two things it can be.
 //
-// A colour and content are drawn by different means, and the difference is worth keeping
-// rather than resolving a colour to a filled rectangle, because a colour is one declaration
+// A color and content are drawn by different means, and the difference is worth keeping
+// rather than resolving a color to a filled rectangle, because a color is one declaration
 // where content is a whole rendering.
 // Content is also the only form an image can take, since typst has no image page fill.
 // A gradient or a tiling is refused rather than silently dropped in one of the targets,
@@ -194,7 +194,7 @@
   } else {
     panic(
       which
-        + " takes a colour or content, got "
+        + " takes a color or content, got "
         + describe(value)
         + "; wrap a gradient or a tiling in a `rect` of the slide size to use it",
     )
@@ -224,11 +224,11 @@
   refuse(which, index, stack-view, ink),
 )
 
-// A colour overlay, as the paged outputs draw it.
+// A color overlay, as the paged outputs draw it.
 //
-// A background colour is the `fill` of the page, which is behind everything, and an overlay
-// colour is ink over the slide, so it is a separate layer.
-// Only an alpha channel makes an overlay colour useful,
+// A background color is the `fill` of the page, which is behind everything, and an overlay
+// color is ink over the slide, so it is a separate layer.
+// Only an alpha channel makes an overlay color useful,
 // and a dimming tint is the case it exists for.
 //
 // Every visual field of the rectangle is stated, so that a `set rect(..)` in the deck
@@ -529,8 +529,8 @@
           // The overlay comes last, so that it paints last.
           // The three layers are positioned siblings without a z-index,
           // and such elements paint in document order.
-          // A colour overlay is one declaration on this element rather than a frame of its
-          // own, while a colour background is a declaration on the slide container.
+          // A color overlay is one declaration on this element rather than a frame of its
+          // own, while a color background is a declaration on the slide container.
           // The container is behind the canvas, and an overlay has to be in front of it.
           if front-fill != none or over != none {
             html.elem(

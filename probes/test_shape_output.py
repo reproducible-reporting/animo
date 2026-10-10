@@ -18,7 +18,7 @@ from PIL import Image
 SVG = "{http://www.w3.org/2000/svg}"
 XLINK = "{http://www.w3.org/1999/xlink}"
 
-# Two copies of each shape at two places, one of them recoloured, an image twice, a
+# Two copies of each shape at two places, one of them recolored, an image twice, a
 # fraction, a clipped box and a gradient fill.
 BODY = """\
 #html.frame(block(width: 300pt, height: 200pt, {
@@ -69,7 +69,7 @@ def test_every_path_starts_at_its_own_origin(frame):
 def test_two_copies_of_a_shape_at_two_places_have_one_d(frame):
     """The rectangles, circles, lines and polygons each come in pairs of one `d`.
 
-    Recolouring one of a pair changes its `fill` or `stroke` and leaves its `d` alone.
+    Recoloring one of a pair changes its `fill` or `stroke` and leaves its `d` alone.
     """
     shapes = {}
     for path in drawn(frame, "path"):

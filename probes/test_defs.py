@@ -61,7 +61,7 @@ def test_a_glyph_has_one_id_whatever_its_fill(typst: TypstRunner):
     """The fill is an attribute of the `<use>`, so it does not enter the glyph's hash.
 
     A size and a weight do, because they change the outline. This is what lets a morph match a
-    glyph whose colour changes and refuse one whose size changes.
+    glyph whose color changes and refuse one whose size changes.
     """
     markup = typst.html(
         "#html.frame[A #text(fill: red)[A] #text(fill: gradient.linear(red, blue))[A]"

@@ -13,22 +13,26 @@ SPDX-License-Identifier: Apache-2.0
 # The Viewport
 
 The example deck for this page is
-[`pan.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/pan.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/pan.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/pan-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/pan-handouts.pdf)).
-It shows a canvas two screens wide.
+[`viewport.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/viewport.typ)
+([HTML](https://reproducible-reporting.github.io/animo/examples/viewport.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/examples/viewport-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/examples/viewport-handouts.pdf)).
+It shows a canvas two screens wide, a body longer than the viewport,
+a pan past the edge of the canvas, a background and an overlay that stay in place during a pan,
+and a canvas with an explicit size.
 
 A slide has two rectangles.
-The **viewport** is what the audience sees: one HTML slide container, one page.
-It is the size of the deck, and it clips.
+The **viewport** is what the audience sees,
+which is a slide container in the browser and a page in the static outputs.
+The viewport has the slide size that the `width` and `height` arguments of `animo` set,
+and it clips everything outside it.
 The **canvas** is what the body is laid out on.
 It is at least as large as the viewport and may be larger.
 
 Content on the canvas but outside the viewport is **clipped, never carried over** to a next
 slide or a next page.
 A slide is a fixed rectangle, so there is no next page for it to flow onto.
-What brings the rest of the canvas into view is `pan`.
+The `pan` primitive brings the rest of the canvas into view.
 
 ```typst
 #slide(
@@ -50,132 +54,155 @@ What brings the rest of the canvas into view is `pan`.
 
 ## Panning
 
-The `pan` primitive is a special case of a continuous animation primitive.
-It addresses no tag, and moves the viewport over the canvas.
+The `pan` primitive is a continuous animation primitive, like `move` and `scale`,
+but it addresses no tag.
+Instead, `pan` moves the viewport over the canvas.
 Positive values move the viewport right and down, so the content moves left and up.
 
-A `pan` states where the viewport goes in one of two ways, chosen separately for each axis:
+The **anchor** of a `pan` is the canvas origin,
+or the anchor of the tag that `relto` names (see [What `relto` Reads](#what-relto-reads)).
+A `pan` to the anchor puts the anchor at the margin of the viewport,
+which is where the body of a new slide starts.
+`pan(relto: "details")` therefore shows the tag where a new slide would show its first line,
+and `pan(x: 0cm, y: 0cm)` returns the viewport to its position at the start of the slide.
 
-| Argument             | The viewport goes                                     |
-| -------------------- | ----------------------------------------------------- |
-| `x`, `y`             | to that distance from the anchor                      |
-| `dx`, `dy`           | that far from wherever it already is                  |
-| `relto`              | names the tag that is the anchor                      |
-| neither, on one axis | nowhere on that axis, unless `relto` asks for the tag |
+A `pan` sets the position of the viewport in one of two ways,
+and it chooses between them separately for the x and y directions:
 
-[`move`](continuous.md#where-move-puts-things) reads the same table one layer in:
-it puts the *element* where `pan` would put the corner of the viewport.
+| Argument   | Effect                                                          |
+| ---------- | --------------------------------------------------------------- |
+| `x`, `y`   | puts the viewport at that distance from the anchor              |
+| `dx`, `dy` | moves the viewport over that distance from its current position |
+| `relto`    | names the tag whose anchor `x` and `y` are measured from        |
 
-The **anchor** is the canvas origin, or the tag that `relto` names.
-Either one is placed where the body of a fresh slide starts, which is at the deck's margin.
-So `pan(relto: "details")` shows the tag the way a new slide would show its first line,
-and `pan(x: 0cm, y: 0cm)` goes back to where the slide started.
+When a `pan` has neither `x` nor `dx`, the viewport keeps its horizontal position,
+unless the `pan` has a `relto`.
+With a `relto`, the viewport goes to the anchor in that direction.
+The same holds for `y`, `dy` and the vertical position.
+The [`move`](continuous.md#where-move-puts-things) primitive takes the same arguments
+and puts a tagged element where `pan` would put the viewport.
 
-The two ways combine, one per axis:
+One `pan` can use a different way for each direction:
 
 ```typst
 animation: {
   import anim: *
   sub(pan(relto: "details"))           // bring the tag into view
   sub(pan(dy: 4cm))                    // scroll down, and stay on the tag horizontally
-  sub(pan(relto: "summary", x: -1cm))  // the next tag, with a centimetre to its left
+  sub(pan(relto: "summary", x: -1cm))  // the next tag, with a centimeter to its left
   sub(pan(x: 0cm, dy: -2cm))           // back to the left edge, and up a little
 }
 ```
 
-`x` and `dx` on the same axis are refused, since they are measured from different places.
-Idem for `y` and `dy`.
-A pan is state, like everything else on the timeline:
-it holds until the next `pan`, and stepping back undoes it.
+Animo refuses a `pan` that combines `x` with `dx`, or `y` with `dy`,
+because the two offsets of such a pair are measured from different places.
 
-The viewport is **not clamped** to the canvas.
-A pan that reaches past the edge of the canvas shows the slide's background there,
-which is also how a slide brings a tag to the middle of the viewport rather than to its
-corner.
+The position of the viewport is part of the state of the slide,
+like everything else that the timeline sets.
+The viewport stays where a `pan` puts it until the next `pan`,
+and stepping back to an earlier subslide restores the earlier position of the viewport.
+
+The viewport can move **past the edge of the canvas**.
+Where the viewport extends beyond the canvas, it shows the background of the slide.
+A `pan` can therefore bring a tag near the edge of the canvas to the middle of the viewport,
+rather than only to its top-left corner.
 
 ### What `relto` Reads
 
-The anchor of a tag is the **top-left corner of its wrapper**, as the body laid it out.
-The same mechanism serves both `pan` and `move`:
+The anchor of a tag is the **top-left corner of its wrapper**,
+at the place where the body laid the tag out.
+`pan` and `move` read the anchor in the same way, which has the following consequences:
 
-- The anchor is the corner of the box around the tag, not of its ink.
-  A tagged phrase is anchored at the top of its line, not at the top of its letters.
-- A `move` or a `scale` of the anchored tag does not change the anchor,
-  so an anchor means the same in every state.
-- Where one name tags several places, the first one in the body is the anchor.
+- The anchor is a corner of the wrapper, and the wrapper can extend beyond the visible glyphs.
+  A tagged phrase in a paragraph is anchored at the top of its line,
+  rather than at the top of its letters.
+- A `move` or a `scale` of a tag leaves the anchor of that tag unchanged,
+  so the anchor is the same in every state.
+- When one name tags several sites, the anchor is the anchor of the first site in the body.
 
-The cases below are refused rather than resolved,
-because each would give the deck a subslide that means one thing on paper and another on screen.
+Animo refuses each of the cases below,
+because each of them would produce a subslide that looks different on paper and in the browser.
 
-- A `relto` that **names no tag of the slide**, since it is almost certainly a misspelt
-  name. A tag of that name on another slide does not count.
-- A `relto` to a tag with **`wrap: none`**, because such a tag has no box to have a corner.
-- An anchor read **inside a tag the timeline moves or scales**.
-  A transform of the outer tag also moves the corner of the inner tag,
-  so the anchor of the inner tag would no longer be the corner that the body gave it.
-  Use the anchor of the outer tag instead, or move the inner tag out of the outer one.
-  Nesting itself is fine, and so is a tag inside one that is merely revealed or hidden.
+- A `relto` that **names no tag on the same slide**, which is almost certainly a misspelt name.
+  A tag with that name on another slide is ignored.
+- A `relto` to a tag with **`wrap: none`**,
+  because such a tag has no wrapper and therefore no corner to serve as its anchor.
+- A `relto` or a `move` that addresses a tag **nested inside a tag that the timeline moves or
+  scales**.
+  A `move` or a `scale` of the outer tag also shifts the corner of the inner tag,
+  so that corner is no longer where the body laid the inner tag out.
+  Use the anchor of the outer tag instead, or take the inner tag out of the outer one in the body.
+  Nested tags are allowed in all other cases.
+  For example, an inner tag keeps its anchor when the outer tag is only revealed or hidden.
 
 ## How Large the Canvas Is
 
-The `canvas` argument defaults to `auto`,
-which sizes the canvas of a slide whose timeline pans to the content of that slide.
-That size is the union of the body's in-flow extent and the extent of every `#place`d element,
-clamped to at least the viewport.
-A slide that places nothing outside the viewport therefore has a canvas equal to its viewport.
+The `canvas` argument of `slide` defaults to `auto`.
+When the timeline of a slide contains a `pan`, `auto` sizes the canvas to fit the content of the
+slide.
+Animo computes that size as the smallest rectangle that holds two things:
+the regular content of the body (its **flow**) and every element placed with `#place`.
+When that rectangle is smaller than the viewport, Animo enlarges it to the viewport.
+A slide whose content fits inside the viewport therefore has a canvas equal to its viewport.
 A slide whose body is simply longer than its viewport gets a taller canvas,
 and a `pan` brings the rest of the body into view.
 Nothing has to be placed for that to work.
 
-A slide with no `pan` in its timeline just draws inside the viewport, without any canvas at all, lowering the cost of a slide that does not need to pan.
-See [Performance](performance.md) for what that costs when a slide does pan.
+When the timeline of a slide contains no `pan`, Animo skips the computation of the canvas size,
+because no subslide can show the part of the canvas outside the viewport.
+The slide then draws its body directly inside the viewport,
+which makes a slide that does not pan cheaper to compile.
+See [Performance](performance.md) for the cost of a slide that does pan.
 
-Neither the `background:` nor the `overlay:` enters the extent,
-whatever either of them holds,
-so a full-bleed image in the background cannot make the body pannable by accident.
+The `background:` and `overlay:` arguments of `slide` never count toward the canvas size,
+whatever content they hold.
+A full-bleed image in the background therefore cannot enlarge the canvas by accident.
 
-The union is computed from content alone rather than from positions, which do not exist in
-the HTML target, so the canvas comes out the same in the browser and on paper.
-It is exact for a placement written directly in the slide body, with a body that has an
-intrinsic size. Everywhere else it is an approximation:
+Animo computes the canvas size from the placed content and its offsets,
+without asking typst where that content ended up,
+because typst cannot report positions when it compiles to HTML.
+The computation is therefore the same in the browser and on paper, and so is the canvas.
+The computed size is exact for a `#place` written directly in the slide body,
+provided that the placed content has a fixed size.
+In the cases below, the computed size is an approximation.
+A container in the table is any element that holds the `#place`, such as a `box` or a grid cell.
 
-| Written                                    | Counted                                                      |
-| ------------------------------------------ | ------------------------------------------------------------ |
-| `#place` nested in another container       | from the canvas origin, so short by where the container sits |
-| an alignment inside such a container       | against the body, which is wider, so too large               |
-| a ratio-sized body, as `rect(width: 100%)` | as nothing at all, wherever it is written                    |
+| Placement                                         | How Animo counts it                         |
+| ------------------------------------------------- | ------------------------------------------- |
+| `#place` in a container                           | from the canvas origin, so too small        |
+| an alignment in a container                       | against the slide body, so too large        |
+| content with a ratio size, as `rect(width: 100%)` | not at all, also directly in the slide body |
 
-None of the three has to be anticipated.
-A canvas that comes out too large has no cost unless something pans onto the empty part of
-it, and one that comes out too small becomes apparent the first time a pan goes nowhere.
-`canvas: (width: .., height: ..)` states the canvas explicitly and is the escape hatch for
-all three. An explicit canvas is still clamped to at least the viewport.
+You do not need to check for these cases in advance.
+A canvas that is too large costs nothing, unless a `pan` moves the viewport onto its empty part.
+A canvas that is too small becomes apparent the first time a `pan` fails to bring the expected
+content into view.
+In either case, `canvas: (width: .., height: ..)` sets the size of the canvas explicitly.
+Animo enlarges an explicit canvas to the viewport when it is smaller than the viewport.
 
-A body that runs off the viewport is laid out in a box as tall as its flow,
-and that box is what a `#place` inside it resolves against.
-On such a slide `place(bottom + right)` means the bottom right of the whole flow rather
-than of the first screenful, so a mark that belongs on the first screenful needs an
-explicit `dy:`.
+Animo lays out the body of a slide in a box as tall as the area inside the margins,
+or as tall as the flow of the body when the flow is taller.
+A `#place` in the body aligns its content against that box.
+When the flow runs past the bottom of the viewport,
+`place(bottom + right)` therefore puts its content at the bottom right of the whole flow,
+rather than at the bottom right of the first screenful.
+To put a mark at the bottom of the first screenful, place it from the top with an explicit `dy:`.
 
 ## What Panning Means in Each Output
 
-| Output type         | A pan is                                                    |
-| ------------------- | ----------------------------------------------------------- |
-| HTML presentation   | a `translate` of the canvas, animated like every other step |
-| Static presentation | a page per state, each showing its part of the canvas       |
-| Static handouts     | the viewport of each state the handout keeps                |
+| Output type         | How a `pan` appears                                                        |
+| ------------------- | -------------------------------------------------------------------------- |
+| HTML presentation   | an animated `translate` of the canvas, like every other step               |
+| Static presentation | a separate page for each subslide, showing the canvas through the viewport |
+| Static handouts     | a page showing the viewport of each subslide that the handout keeps        |
 
-In the browser the pan moves the element holding the whole rendering of the slide,
-so everything on the canvas moves together and nothing on it moves relative to anything
-else. A pan is a percentage of the canvas, so it stays the same part of the slide at any
-window size.
+In the browser, a `pan` moves the HTML element that holds the whole canvas,
+so all content on the canvas moves together.
+The background and the overlay stay in place, because they belong to the viewport.
+Animo expresses the `translate` as a percentage of the canvas size,
+so the viewport shows the same part of the canvas at any window size.
 
-**The handout does not show the canvas.**
-A handout page is the viewport of one state.
-By default that is the last state of the slide.
-Content that a slide pans away from, and never back to, is therefore missing from the handout.
-Keep such content in the handout with `handout: true` on the subslide that shows it:
-
-```typst
-sub(handout: true, pan(relto: "details"))
-```
+A handout page shows the viewport in one state of the slide, which is by default the final state.
+When the timeline pans away from some content and never pans back,
+that content is therefore missing from the handout.
+See [Handouts](handouts.md#content-missing-from-the-final-state) for how to keep it.

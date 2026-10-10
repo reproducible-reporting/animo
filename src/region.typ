@@ -141,6 +141,10 @@
 // rendering would, for the regions after the stack.
 // Every update of both counters is a constant or a step and none is a value read back from a
 // counter, so the numbers settle in one pass of layout whatever the number of regions.
+// The key built from a number goes into the view a region hands its body, however,
+// and the context blocks of a region inside it capture that view,
+// so every level of nesting costs a pass of layout (see *Findings*).
+// Measured on typst 0.15.0, three nested regions converge and four do not.
 #let stacked-counter = counter("animo-region-stacked")
 
 // The label that the group of an unnamed region carries in the output.
@@ -319,7 +323,7 @@
   // A size that is given is a size that a state can exceed, so clipping matters there.
   // A measured footprint fits every state by construction.
   let clip = if clip == auto { width != auto or height != auto } else { clip }
-  context ask(what, view => render(
+  ask(what, view => render(
     body,
     width,
     height,

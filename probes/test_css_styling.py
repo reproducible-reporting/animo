@@ -5,7 +5,7 @@
 Typst writes `fill` as a presentation attribute on every glyph.
 A CSS rule on the glyphs outranks it, a rule on their group does not,
 and that asymmetry is what puts `apply` in the structural class
-and leaves a colour-only primitive for a later release.
+and leaves a color-only primitive for a later release.
 """
 
 import pytest
@@ -37,7 +37,7 @@ def test_a_rule_on_the_group_does_not_reach_the_glyphs(typst: TypstRunner, open_
 
 
 def test_fill_interpolates_smoothly(typst: TypstRunner, open_page):
-    """A colour-only primitive would be free, if it targets descendants explicitly."""
+    """A color-only primitive would be free, if it targets descendants explicitly."""
     page = open_page(typst.html(document(FRAME)))
     midpoint = page.evaluate(
         """() => {
@@ -72,7 +72,7 @@ def test_stacking_order_is_fixed_at_compile_time(typst: TypstRunner, open_page):
 """
     path = typst.html(document(body, '[data-typst-label="under"] { z-index: 10; }'))
     page = open_page(path)
-    colour = page.evaluate(
+    color = page.evaluate(
         """() => {
             const over = document.querySelector('[data-typst-label="over"]');
             const r = over.getBoundingClientRect();
@@ -80,7 +80,7 @@ def test_stacking_order_is_fixed_at_compile_time(typst: TypstRunner, open_page):
             return hit.closest("[data-typst-label]").dataset.typstLabel;
         }"""
     )
-    assert colour == "over", "z-index reordered the SVG children, which it is not supposed to do"
+    assert color == "over", "z-index reordered the SVG children, which it is not supposed to do"
 
 
 @pytest.mark.parametrize("selector", ['[data-typst-label="x"] use', '[data-typst-label="x"] > g'])

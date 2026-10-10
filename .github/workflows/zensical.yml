@@ -22,6 +22,7 @@ on:
       # and compiling them is what `src/` reaches this workflow through.
       - docs/**
       - examples/**
+      - logo/**
       - src/**
       - tools/**
       - typst.toml

@@ -11,7 +11,7 @@ Both are asserted in both targets, because one number serving all three output t
 what the whole construct is for. The HTML target is the one where the value cannot be
 chosen when the frame is rendered, so it is the one that has to agree by construction.
 
-The paged tier asserts which rendering a page shows, and does so in colour rather than in
+The paged tier asserts which rendering a page shows, and does so in color rather than in
 glyphs.
 What is being checked is that a page carries the rendering of the state it shows,
 and a filled square says that where a rasterised numeral would need to be read.
@@ -251,21 +251,21 @@ def test_a_tag_in_a_layer_is_still_refused(typst: TypstRunner, html):
 
 # Which rendering a page shows.
 
-# One colour per subslide, so that a page says which state it is without being read.
+# One color per subslide, so that a page says which state it is without being read.
 # They are primaries, because a rasteriser has to agree about them exactly.
 SWATCHES = ("#ff0000", "#00ff00", "#0000ff")
 
-# The stack the paged tests place in the overlay: a filled square in the state's colour.
+# The stack the paged tests place in the overlay: a filled square in the state's color.
 # It goes in the overlay because that is where a shown number belongs, and because the
 # overlay is the layer the paged outputs place once per page.
 SWATCH = (
     "per-subslide(it => rect(width: 1cm, height: 1cm, "
-    "fill: rgb((" + ", ".join(f'"{colour}"' for colour in SWATCHES) + ").at(it.number - 1))))"
+    "fill: rgb((" + ", ".join(f'"{color}"' for color in SWATCHES) + ").at(it.number - 1))))"
 )
 
 
 def swatched(*steps: str, **arguments: str) -> str:
-    """A one-slide deck whose overlay carries the colour of the state being shown."""
+    """A one-slide deck whose overlay carries the color of the state being shown."""
     timeline = "{ import anim: *\n" + "\n".join(steps) + " }"
     extra = "".join(f", {key}: {value}" for key, value in arguments.items())
     return deck(
@@ -275,18 +275,18 @@ def swatched(*steps: str, **arguments: str) -> str:
 
 
 def swatch_of(page: np.ndarray) -> tuple[int, int, int]:
-    """The colour of the square the overlay places in the top left corner of a page."""
+    """The color of the square the overlay places in the top left corner of a page."""
     return tuple(int(value) for value in page[14, 14])
 
 
-def rgb(colour: str) -> tuple[int, int, int]:
-    """A hexadecimal colour as the triple a raster holds."""
-    return tuple(int(colour[index : index + 2], 16) for index in (1, 3, 5))
+def rgb(color: str) -> tuple[int, int, int]:
+    """A hexadecimal color as the triple a raster holds."""
+    return tuple(int(color[index : index + 2], 16) for index in (1, 3, 5))
 
 
-def box_of(page: np.ndarray, colour: tuple[int, int, int]) -> tuple[int, int, int, int] | None:
-    """Where a raster holds this exact colour, as `(x0, y0, x1, y1)`, or `None`."""
-    found = (page == np.array(colour, dtype=np.uint8)).all(axis=2)
+def box_of(page: np.ndarray, color: tuple[int, int, int]) -> tuple[int, int, int, int] | None:
+    """Where a raster holds this exact color, as `(x0, y0, x1, y1)`, or `None`."""
+    found = (page == np.array(color, dtype=np.uint8)).all(axis=2)
     if not found.any():
         return None
     rows = np.flatnonzero(found.any(axis=1))
@@ -298,7 +298,7 @@ def test_the_presentation_shows_the_rendering_of_the_state_of_each_page(paged: P
     """One page per state, each carrying the rendering built for that state and no other."""
     pages = paged.png(swatched("sub()", "sub()"), mode="presentation")
     assert len(pages) == 3
-    assert [swatch_of(page) for page in pages] == [rgb(colour) for colour in SWATCHES]
+    assert [swatch_of(page) for page in pages] == [rgb(color) for color in SWATCHES]
 
 
 def test_the_handout_shows_the_rendering_of_the_state_it_kept(paged: PagedRunner):

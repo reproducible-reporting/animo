@@ -19,12 +19,12 @@ import pytest
 from decks import deck
 from harness import Deck, TypstRunner, assert_identical, screenshot
 
-# One centimetre in typst points, which is the user unit of a frame's SVG.
+# One centimeter in typst points, which is the user unit of a frame's SVG.
 CM = 28.3465
 
 # How far a measured displacement may be from the length the source states, in CSS pixels.
 # The floor is the rounding of a transform in the browser, and a real error is far larger,
-# because the smallest length a timeline states here is a centimetre, which is 28 points.
+# because the smallest length a timeline states here is a centimeter, which is 28 points.
 TOLERANCE = 0.5
 
 # How long a presenter leaves the deck alone before stepping, in milliseconds.
@@ -41,19 +41,13 @@ PAUSE = 500
 # and the allowance stays far below that.
 SLACK = 50
 
-# How far the centre of a group may move under a scale about its centre.
-# Zero is the claim. Firefox 153 resolves `fill-box` to a box whose centre sits about
-# 0.7 CSS pixels from the one `getBBox` reports, which is invisible in a transition.
-# See *Findings*, where the probe for that row allows the same.
-CENTRE_TOLERANCE = 1.0
-
 
 def mark(name: str, dx: str = "0cm", dy: str = "0cm", size: str = "2cm", **arguments) -> str:
     """A tagged filled square, placed at an offset from the body origin.
 
     A square rather than a glyph, because the claim is about where content lands and a
     square's corners are a number. The tag hugs, so the geometry of the square is the
-    geometry of the tag site and an assertion can be written in centimetres from the source.
+    geometry of the tag site and an assertion can be written in centis from the source.
     """
     extra = "".join(f", {key}: {value}" for key, value in arguments.items())
     return (
@@ -113,9 +107,10 @@ def test_moves_accumulate_and_a_scale_multiplies(deck_at, moving):
 
 
 def test_scale_grows_the_element_about_its_own_centre(deck_at, typst: TypstRunner):
-    """`transform-box: fill-box` with a centred origin, which is what keeps a scale in place.
+    """A scale grows the box typst laid out about its centre, which keeps the square in place.
 
-    Centres are also what a future morph pairs on, for the same reason.
+    The square fills its box, so the centre of its ink is the centre of the box.
+    A body whose ink does not fill its box is compared against paper in `test_cross_target.py`.
     """
     presentation: Deck = deck_at(
         animated(typst, mark("m", dx="4cm", dy="2cm"), 'sub(scale("m", f: 2))')
@@ -123,8 +118,85 @@ def test_scale_grows_the_element_about_its_own_centre(deck_at, typst: TypstRunne
     before = presentation.rects("m")[0]
     after = presentation.goto(1, 1).rects("m")[0]
     assert after.width == pytest.approx(2 * before.width, abs=TOLERANCE)
-    assert after.center[0] == pytest.approx(before.center[0], abs=CENTRE_TOLERANCE)
-    assert after.center[1] == pytest.approx(before.center[1], abs=CENTRE_TOLERANCE)
+    assert after.center[0] == pytest.approx(before.center[0], abs=TOLERANCE)
+    assert after.center[1] == pytest.approx(before.center[1], abs=TOLERANCE)
+
+
+def placed(typst: TypstRunner, *steps: str):
+    """A square and a dashed target, with a timeline that places the square on the target."""
+    target = mark("t", dx="8cm", dy="3cm", size="1cm")
+    return animated(typst, mark("m", dx="1cm", dy="1cm") + "\n  " + target, *steps)
+
+
+def test_a_placed_and_scaled_element_lands_its_scaled_corner(deck_at, typst: TypstRunner):
+    """A tag placed with `relto` grows from its anchor, so its painted corner is the target."""
+    presentation: Deck = deck_at(placed(typst, 'sub(move("m", relto: "t"), scale("m", f: 2))'))
+    target = presentation.rects("t")[0]
+    before = presentation.rects("m")[0]
+    after = presentation.goto(1, 1).rects("m")[0]
+    assert after.width == pytest.approx(2 * before.width, abs=TOLERANCE)
+    assert after.x == pytest.approx(target.x, abs=TOLERANCE)
+    assert after.y == pytest.approx(target.y, abs=TOLERANCE)
+
+
+def test_a_scale_after_a_placement_keeps_the_corner_on_the_target(deck_at, typst: TypstRunner):
+    """The point a placed tag grows from is its anchor in every later state."""
+    presentation: Deck = deck_at(
+        placed(typst, 'sub(move("m", relto: "t"))', 'sub(scale("m", f: 2))')
+    )
+    target = presentation.rects("t")[0]
+    after = presentation.goto(1, 2).rects("m")[0]
+    assert after.x == pytest.approx(target.x, abs=TOLERANCE)
+    assert after.y == pytest.approx(target.y, abs=TOLERANCE)
+
+
+def test_a_scaled_element_goes_to_its_target_without_a_jump(page, deck_at, typst: TypstRunner):
+    """The origin travels with the move, so the painted corner goes in a straight line.
+
+    The square is doubled about its centre before it is placed, and the step that places it
+    also moves the point it grows from to its anchor.
+    The factor holds still during that step, so the corner is halfway to the target halfway
+    through it, and where it was at the start.
+    """
+    presentation: Deck = deck_at(
+        placed(typst, 'sub(scale("m", f: 2))', 'sub(move("m", relto: "t"))')
+    )
+    page.add_style_tag(
+        content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }"
+    )
+    target = presentation.rects("t")[0]
+    start = presentation.goto(1, 1).rects("m")[0]
+    presentation.press("ArrowRight").scrub(0)
+    assert presentation.rects("m")[0].x == pytest.approx(start.x, abs=TOLERANCE)
+    presentation.scrub(2000)
+    middle = presentation.rects("m")[0]
+    assert middle.x == pytest.approx((start.x + target.x) / 2, abs=TOLERANCE)
+    assert middle.y == pytest.approx((start.y + target.y) / 2, abs=TOLERANCE)
+    presentation.scrub(4000)
+    end = presentation.rects("m")[0]
+    assert end.x == pytest.approx(target.x, abs=TOLERANCE)
+    assert end.y == pytest.approx(target.y, abs=TOLERANCE)
+
+
+def test_a_step_that_places_and_scales_takes_the_corner_in_a_straight_line(
+    page, deck_at, typst: TypstRunner
+):
+    """An unscaled tag takes the origin of its placement at once, so its corner goes straight.
+
+    An origin that travelled from the centre while the factor grows from 1 would bend the
+    route of the corner away from the target by up to an eighth of the growth.
+    """
+    presentation: Deck = deck_at(placed(typst, 'sub(move("m", relto: "t"), scale("m", f: 2))'))
+    page.add_style_tag(
+        content=":root { --animo-primitive-duration: 4000ms; --animo-easing: linear }"
+    )
+    target = presentation.rects("t")[0]
+    start = presentation.rects("m")[0]
+    presentation.press("ArrowRight").scrub(2000)
+    middle = presentation.rects("m")[0]
+    assert middle.x == pytest.approx((start.x + target.x) / 2, abs=TOLERANCE)
+    assert middle.y == pytest.approx((start.y + target.y) / 2, abs=TOLERANCE)
+    assert middle.width == pytest.approx(1.5 * start.width, abs=TOLERANCE)
 
 
 def test_an_absolute_move_puts_the_corner_at_a_point_on_the_canvas(deck_at, typst: TypstRunner):

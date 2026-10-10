@@ -18,12 +18,12 @@ import pytest
 from decks import deck
 from harness import Deck, TypstRunner, screenshot
 
-# One colour per subslide, so that a rendering can be found in a screenshot.
+# One color per subslide, so that a rendering can be found in a screenshot.
 SWATCHES = ("#ff0000", "#00ff00", "#0000ff")
 
 SWATCH = (
     "per-subslide(it => rect(width: 1cm, height: 1cm, "
-    "fill: rgb((" + ", ".join(f'"{colour}"' for colour in SWATCHES) + ").at(it.number - 1))))"
+    "fill: rgb((" + ", ".join(f'"{color}"' for color in SWATCHES) + ").at(it.number - 1))))"
 )
 
 
@@ -113,8 +113,8 @@ def test_a_stack_in_the_body_paints_only_the_rendering_of_the_state(deck_at, typ
         presentation.goto(1, state).settle()
         assert presentation.subslides == shown(state)
         pixels = screenshot(presentation.current)
-        for index, colour in enumerate(SWATCHES):
-            wanted = np.array([int(colour[at : at + 2], 16) for at in (1, 3, 5)], dtype=np.uint8)
+        for index, color in enumerate(SWATCHES):
+            wanted = np.array([int(color[at : at + 2], 16) for at in (1, 3, 5)], dtype=np.uint8)
             found = bool((pixels == wanted).all(axis=2).any())
             assert found == (index == state), (
                 f"subslide {state + 1} paints the rendering of subslide {index + 1}"

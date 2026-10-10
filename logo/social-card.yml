@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+# SPDX-License-Identifier: Apache-2.0
+
+# The layout of the social cards of the documentation site,
+# which `zensical.toml` selects as `cards_layout`.
+# It follows the structure of the default layout of the social plugin.
+# The image comes from `social-card.typ`, and this layout adds the text in the font of the site.
+# The card of the home page also serves as the social preview of the GitHub repository.
+
+definitions:
+  - &site_name >-
+    {%- if not page.is_homepage -%}
+      {{ config.site_name }}
+    {%- endif -%}
+  # The navigation calls the home page "Home", which is no title for the project.
+  - &page_title >-
+    {%- if not page.is_homepage -%}
+      {{ page.meta.get("title", page.title) }}
+    {%- else -%}
+      {{ config.site_name }}
+    {%- endif -%}
+  - &page_title_with_site_name >-
+    {%- if not page.is_homepage -%}
+      {{ page.meta.get("title", page.title) }} - {{ config.site_name }}
+    {%- else -%}
+      {{ config.site_name }}
+    {%- endif -%}
+  - &page_description >-
+    {{ page.meta.get("description", config.site_description) | x }}
+
+tags:
+  og:type: website
+  og:title: *page_title_with_site_name
+  og:description: *page_description
+  og:image: "{{ image.url }}"
+  og:image:type: "{{ image.type }}"
+  og:image:width: "{{ image.width }}"
+  og:image:height: "{{ image.height }}"
+  og:url: "{{ page.canonical_url }}"
+  twitter:card: summary_large_image
+  twitter:title: *page_title_with_site_name
+  twitter:description: *page_description
+  twitter:image: "{{ image.url }}"
+
+size: { width: 1280, height: 640 }
+layers:
+  - background:
+      image: logo/social-card.svg
+  - size: { width: 540, height: 48 }
+    offset: { x: 64, y: 64 }
+    typography:
+      content: *site_name
+      color: "#e6eef0"
+      font:
+        family: Inter
+        style: Bold
+  # The title stays left of the motion trail in the image.
+  - size: { width: 540, height: 300 }
+    offset: { x: 62, y: 150 }
+    typography:
+      content: *page_title
+      align: start
+      color: "#008ba8"
+      line:
+        amount: 3
+        height: 1.25
+      font:
+        family: Inter
+        style: Bold
+  # The description runs below the logo, so it can use the full width.
+  - size: { width: 1152, height: 72 }
+    offset: { x: 64, y: 512 }
+    typography:
+      content: *page_description
+      align: start
+      color: "#b8c7cc"
+      line:
+        amount: 2
+        height: 1.5
+      font:
+        family: Inter
+        style: Regular

@@ -4,7 +4,7 @@
 
 The resolver is the cheapest part of animo to get wrong without noticing, because a
 display state that accumulates incorrectly is a slide that looks plausible and is off by
-half a centimetre.
+half a centimeter.
 The assertions are therefore on the resolved structure and on nothing else:
 the state count, the per-state display state, and the flags each state carries.
 

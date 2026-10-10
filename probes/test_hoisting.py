@@ -158,7 +158,7 @@ def test_a_rendering_inside_a_merged_frame_is_addressed_as_a_frame_is(
     groups of one frame and so are ink beside each other (see the crossfade finding).
     The sum lands on the isolated backdrop of the frame, which `STACK_CSS` writes, because a
     group's blend reaches the page in webkit 26.5 when no frame confines it.
-    Measured in each engine, on the two opaque colours below.
+    Measured in each engine, on the two opaque colors below.
     """
     scoped = STACK_CSS + '[data-typst-label="animo-epoch-1"] { visibility: hidden; }\n'
     page = open_page(typst.html(document(MERGED, scoped)))
@@ -168,5 +168,5 @@ def test_a_rendering_inside_a_merged_frame_is_addressed_as_a_frame_is(
         '[data-typst-label^="animo-epoch-"] { mix-blend-mode: plus-lighter; opacity: 0.5; }\n'
     )
     page = open_page(typst.html(document(MERGED, blended), name="blended.html"))
-    # Half of each colour, added: the midpoint of the crossfade, with nothing dipping.
+    # Half of each color, added: the midpoint of the crossfade, with nothing dipping.
     assert tuple(screenshot(page)[10, 10]) == (0x40, 0x40, 0x40)

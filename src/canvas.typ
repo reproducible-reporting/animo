@@ -68,8 +68,13 @@
 //
 // A label on an element changes no layout, so a rendering measures the same with it as
 // without it.
+// A region inside a region measures inside the measurement of the outer one, so the outer
+// rule is handed a placement that the inner rule labelled already, and passes it on as it is,
+// because typst warns about content that is labelled twice.
 #let unrecorded(body) = {
-  show place: it => [#it#unrecorded-label]
+  show place: it => if it.at("label", default: none) == unrecorded-label {
+    it
+  } else { [#it#unrecorded-label] }
   body
 }
 
@@ -254,6 +259,21 @@
   corner: true,
 ))
 
+// The far corner of the box a `scale` grows, for the HTML target.
+//
+// Typst's `scale` grows its body about the centre of the box typst laid out,
+// while the browser has only the ink of a group to go by, and the ink need not fill the box.
+// A zero-size labelled box placed at `bottom + right` becomes a group whose origin is the
+// far corner of the box that holds it, so the browser reads the size of the box off it and
+// scales about the same centre as paper does.
+// The marker is a sibling of the slot whose box it marks, so a transform on the slot does not
+// move it. See *Findings*.
+#let corner-label = label("animo-corner")
+#let corner-marker = place(bottom + right, [#box(
+    width: 0pt,
+    height: 0pt,
+  )#corner-label])
+
 // The report of every tag site of one slide, as `(slide:, name:, within:, corner:)`.
 //
 // One label serves the whole document and the slide index in the value does the scoping,
@@ -340,13 +360,16 @@
 // the timeline states, so a tag the timeline never moved is left exactly where the body put
 // it.
 // The position of such a tag is its anchor at offset zero, and the two terms cancel.
+//
+// An axis whose anchor is the tag itself was never placed, whatever `dx` or `dy` shifted it.
 #let paged-display(display, anchors) = {
   let resolved = (:)
   for (name, current) in display {
-    resolved.insert(
-      name,
-      (:..current, ..resolve-position(current, name, anchors)),
-    )
+    resolved.insert(name, (
+      ..current,
+      ..resolve-position(current, name, anchors),
+      placed: (x: current.x.relto != name, y: current.y.relto != name),
+    ))
   }
   resolved
 }

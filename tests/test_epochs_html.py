@@ -452,7 +452,7 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
         assert int((difference > 1).sum()) <= pixels, report
 
 
-# A mark of an exact colour on the canvas, at the top left of the body, which is one deck
+# A mark of an exact color on the canvas, at the top left of the body, which is one deck
 # margin in from the corner of the viewport. A blend that reached the white
 # ground of the slide would sum the two and take the mark to white.
 GROUND = '#place(top + left, rect(width: 2cm, height: 2cm, fill: rgb("#ff0000")))\n\n  ' + REFLOWING

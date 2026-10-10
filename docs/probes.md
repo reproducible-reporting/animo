@@ -156,6 +156,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | SVG `<defs>` ids are content hashes                                          | `test_defs.py`, `test_hidden_defs.py`          |
 | Hoisting shared `<defs>`: sound in the browser, not in typst                 | `test_hoisting.py`                             |
 | CSS animation of typst SVG groups                                            | `test_css_transforms.py`                       |
+| The centre a scale is about                                                  | `test_scale_origin.py`                         |
 | A keyframe property that does not change suppresses others                   | `test_frame_drawing.py`                        |
 | A delayed effect does not hold its first keyframe                            | `test_delayed_effects.py`                      |
 | The document timeline is not a clock                                         | `test_timeline_clock.py`                       |
@@ -168,6 +169,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | A `translate` carries an element's clip and gradient, not an ancestor's clip | `test_translated_paint.py`                     |
 | `hide()` cannot be undone in the browser                                     | `test_hide.py`                                 |
 | A panic that depends on `query` can be swallowed                             | `test_convergence.py`                          |
+| Nested context blocks can cost a pass of layout per level                    | `test_nesting_depth.py`                        |
 | Introspection: positions                                                     | `test_introspection.py`                        |
 | Introspection: the corner of an element, in both targets                     | `test_anchors.py`                              |
 | Introspection: the fields of a nested structure                              | `test_element_fields.py`                       |

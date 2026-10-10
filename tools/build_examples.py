@@ -102,7 +102,11 @@ def main() -> int:
         help="the decks to compile, defaulting to every deck under examples/",
     )
     args = parser.parse_args()
-    sources = args.sources or sorted((ROOT / "examples").glob("*.typ"))
+    # A file whose name starts with an underscore holds what several decks import,
+    # such as `examples/_common.typ`, and is not a deck itself.
+    sources = args.sources or sorted(
+        path for path in (ROOT / "examples").glob("*.typ") if not path.name.startswith("_")
+    )
     if not sources:
         print("no example decks found", file=sys.stderr)
         return 1

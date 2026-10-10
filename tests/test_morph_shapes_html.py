@@ -19,7 +19,7 @@ from test_morph_html import CLOSE, MIDPOINT, SLOW, STILL, animated, resting
 # A paragraph that reflows behind a clause inserted at its start, with a box beside a word,
 # an image, a fraction, a clipped box and a clipped box in a tag in it, all of which move.
 # A second region holds a clipped box that stays where it is while what it holds moves inside
-# it, and the tags whose content changes: a rectangle that changes colour, one whose stroke
+# it, and the tags whose content changes: a rectangle that changes color, one whose stroke
 # changes width, and a fraction whose numerator grows.
 SHAPES = """
   #region(name: "r")[
@@ -65,7 +65,7 @@ def shapes(typst: TypstRunner):
 
 
 # Where every path and image of a region is displayed, per epoch rendering of the slide shown,
-# as `[kind, key, x, y]` in CSS pixels. The key is what a morph compares, without the colour.
+# as `[kind, key, x, y]` in CSS pixels. The key is what a morph compares, without the color.
 INK = (
     """label => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
@@ -173,8 +173,8 @@ def midway(page, deck_at, shapes) -> Deck:
     return presentation.press("ArrowRight").scrub(MIDPOINT)
 
 
-def test_a_recoloured_rectangle_is_a_match(midway):
-    """The colour is not part of the key, and the pair sums to the interpolated colour."""
+def test_a_recolored_rectangle_is_a_match(midway):
+    """The color is not part of the key, and the pair sums to the interpolated color."""
     assert moving(midway, "c", "path")[:2] == [[True], [True]]
 
 

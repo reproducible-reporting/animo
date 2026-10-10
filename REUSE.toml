@@ -15,6 +15,7 @@ path = [
     ".typst-packages/preview/animo/**",
     "benchmarks/results/**",
     "uv.lock",
+    "logo/*.svg"
 ]
 SPDX-FileCopyrightText = "2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>"
 SPDX-License-Identifier = "Apache-2.0"

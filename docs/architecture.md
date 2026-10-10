@@ -139,17 +139,36 @@ Typst reads the same corner on paper, off a zero-size marker that each tag site 
 its outer slot.
 The two measurements agree to within a thousandth of a point.
 
+A `scale` grows a tag about the centre of the box typst laid out, which the ink need not fill.
+Typst's `scale` does that on paper.
+In the HTML target, each slot has a zero-size marker labelled `animo-corner` beside it,
+at the far corner of its box, because the browser has no other access to that box.
+The runtime writes `transform-box: view-box` on the slot,
+with a `transform-origin` at half the translate of the marker.
+With `transform-box: fill-box`, the browser would grow the slot about the centre of its ink
+instead, and a scaled tag would land elsewhere than on paper.
+
+On an axis that a `move` placed with `x`, `y` or `relto`, a tag grows from the start of its box
+instead, which is the `origin` of typst's `scale` on paper and a `transform-origin` of 0 on
+that axis in the browser.
+The origin changes only when a `move` changes the placement,
+so the runtime animates `transform-origin` on the timing of that `translate`.
+A tag that was scaled before it was placed then reaches its target in a straight line,
+without a jump at the start of the step.
+A tag at its unscaled size takes the new origin at once, because an origin makes no difference
+to it, so the corner of a tag that one step places and scales also goes in a straight line.
+
 ## What a Step Animates
 
 Stepping to the next subslide animates every tag the step changed,
 from what it was showing to what the new state says, and stepping back animates it back.
 
-| Primitive        | What the browser animates                                 |
-| ---------------- | --------------------------------------------------------- |
-| `reveal`, `hide` | `opacity` between 0 and 1                                 |
-| `move`           | the CSS `translate` property                              |
-| `scale`          | the CSS `scale` property, about the centre of the element |
-| `pan`            | the CSS `translate` property of the canvas                |
+| Primitive        | What the browser animates                                                   |
+| ---------------- | --------------------------------------------------------------------------- |
+| `reveal`, `hide` | `opacity` between 0 and 1                                                   |
+| `move`           | the CSS `translate` property, and `transform-origin` when it places the tag |
+| `scale`          | the CSS `scale` property                                                    |
+| `pan`            | the CSS `translate` property of the canvas                                  |
 
 A step across a slide boundary animates too, but it moves nothing:
 it crossfades the two containers.
@@ -200,7 +219,7 @@ Two things make the containment exact:
 - `mix-blend-mode: plus-lighter` on the renderings makes the two halves add, and
   `isolation: isolate` on the group that holds them keeps the sum inside the stack.
   Without the isolation, chromium 151 and webkit 26.5 add the two halves to the ink under the
-  region as well, and black text takes the colour of what is behind it.
+  region as well, and black text takes the color of what is behind it.
   The frame isolates too, which keeps the blend off the page behind the slide.
 
 A stack crosses a boundary when the boundary changes a tag it holds,
@@ -275,9 +294,9 @@ Then the ink is matched.
 The ink is every `<use>`, `<path>` and `<image>` element outside every matched group,
 in document order and outside every `<defs>`, `<clipPath>` and glyph `<symbol>`.
 The ink is paired by `commonSubsequence`, a diff of the Myers kind over one key per element.
-`inkKey` writes the key from what the element draws apart from its place and its colour.
+`inkKey` writes the key from what the element draws apart from its place and its color.
 For a glyph that is the `href`.
-For a path it is the `d` and the stroke attributes other than the colour,
+For a path it is the `d` and the stroke attributes other than the color,
 because typst writes every shape from a local origin and puts its place in a `transform`.
 For an image it is the `href`, the `width` and the `height`.
 `clipsAbove` appends the clips between the element and its region, each with its place on
@@ -380,7 +399,7 @@ A surround written on the stage would therefore be summed into both slides,
 so the surround sits on `body` instead.
 
 A push and a cover animate `translate` and a wipe animates an `inset` as `clip-path`.
-These three overlap two opaque slides, which would add to a third colour under
+These three overlap two opaque slides, which would add to a third color under
 `plus-lighter`, so they set `mix-blend-mode: normal` on both containers for the boundary.
 The blend stays until the deck moves again,
 because the slide being left is still laid out under the owner when a cover or a wipe ends.
@@ -464,8 +483,10 @@ The one timer the runtime does set is a gap's `wait:` or `hold:`.
 This timer is armed whenever a position is entered, whatever entered it,
 and cleared whenever another position is entered,
 so a presenter stepping by hand never races a clock that is still counting.
-A backward step arms the same gap the other way, so a deck travels back over the gaps it
-travelled forward over and comes to rest where it would wait for the presenter.
+A backward step arms the gap before the state it lands on, which is the gap the next backward
+step crosses.
+A deck therefore travels back over the gaps it travelled forward over, each on its own length,
+and comes to rest on the first state after a gap that waits for the presenter.
 It is also the one step that can land further back than one state, since a gap of zero is a
 join the deck ran through and a backward step walks back over the whole of it.
 When a join ran out of a slide, a backward step over that join walks back into the slide

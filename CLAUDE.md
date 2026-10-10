@@ -52,6 +52,12 @@ When a finding contradicts one of them, say so and ask.
 - Every example, snippet and test document imports `@preview/animo:0.1.1`,
   never a relative path, so that a reader can copy any of them and compile it unchanged.
   Only the internal tests import `/src/lib.typ`.
+  An example deck may also import an auxiliary file from `examples/`,
+  such as `_common.typ`, which holds what several decks share.
+  The name of an auxiliary file starts with an underscore, so that `tools/build_examples.py`
+  and the tests do not treat it as a deck.
+  An auxiliary file imports the published package as well,
+  so that a reader who copies a deck together with its auxiliary files compiles it unchanged.
 - Rendering has to be reproducible between a contributor's machine and CI,
   so every compilation uses `--ignore-system-fonts` and only the fonts typst embeds.
   No font files are vendored.
@@ -85,6 +91,70 @@ The `scratch` fixture in `tests/conftest.py` is that directory.
 
 ## Coding Conventions
 
+### Prose That Reads on the First Pass
+
+A reader who is new to Animo should understand each sentence on the first reading.
+This is the main criterion for all prose in this repository,
+and the other prose rules in this file yield to it.
+A clear sentence is often longer than a dense one, and the clear sentence is preferred.
+
+- **Make something concrete the subject, with a concrete verb.**
+  The reader, the presenter, Animo, typst, a browser, a page and a file can act.
+  A state, a flag or a timeline rarely should.
+  "Animo adds a handout page for each subslide with `handout: true`"
+  is easier to follow than "the flag keeps the state".
+  Where a mechanism exists, describe the mechanism rather than a metaphor for it.
+- **Give a noun at most one relative clause.**
+  When a second one is needed, split the sentence.
+  Keep chains of "of" short as well.
+  "The slide's final state" reads more easily than "the final state of the timeline of the slide".
+- **Introduce a term or an identifier at its first use on a page.**
+  Say what the identifier is, as in "The `clip` argument defaults to `true`".
+  A short gloss in parentheses is fine, as in "the default page (the final state of the slide)".
+- **Give the reason** with "because" when the reader would otherwise ask why.
+  When a fact follows from two others, state the intermediate one.
+- **Say what is there.**
+  Prefer "visible" and "hidden" over "no longer shows" and "lacks",
+  and state a rule in its positive form rather than as a list of what does not happen.
+- **Name the quantity,** as in "needs an extra page" rather than "needs more".
+- **Keep the items of a list parallel,** so that all of them are things or all are actions.
+- **Repeat a noun rather than use a distant pronoun.**
+  When another noun stands between "it" and the noun it refers to,
+  or when the referent was not the subject of the previous sentence, repeat the noun.
+  Repeating a term is always allowed, also in consecutive sentences.
+
+After drafting, reread each sentence as a newcomer would.
+A sentence that has to be read twice is rewritten, usually as two sentences.
+
+Each example below pairs a sentence that takes effort to read with the preferred phrasing.
+
+- Hard to read:
+  "It shows the default page of a slide, content that the final state of a slide no longer shows,
+  and a slide left out of the handout."
+  Preferred:
+  "It shows the default handout of a slide (its final state),
+  examples requiring additional intermediate handout pages
+  because some content is no longer visible in the final state,
+  and a slide left out of the handout."
+- Hard to read:
+  "A state is kept by the flag of the subslide that brings it about,
+  and not by the flag of the subslide that later takes its content away."
+  Preferred:
+  "The `handout:` argument of a `sub` call decides whether the handout gets a page
+  for the subslide that this call creates.
+  To keep content that a later subslide removes, set `handout: true` on the `sub` call before it."
+- Hard to read:
+  "A timeline that reveals or resets content that the body hides or removes ends in a state
+  where that content is shown."
+  Preferred:
+  "Some slides start with hidden content and reveal it later.
+  At the end of the timeline, that content is visible."
+- Hard to read:
+  "A color fills the viewport. As a background it is the page fill on paper."
+  (The word "it" first reads as "the background".)
+  Preferred:
+  "A color used as a background is the page fill on paper."
+
 ### Semantic Line Breaks
 
 All English text in this repository is wrapped using **semantic line breaks**:
@@ -106,20 +176,14 @@ The 100-character line length is a hard cap, not a target to fill.
 
 ### Avoid En and Em Dashes
 
-Write sentences without en or em dashes.
-They should never be used in any prose (code comments, Markdown, ...),
-neither in their UTF-8 glyph form nor in ASCII form.
-Subclauses should be made explicit (e.g. "which", "because", "that")
-or split into separate sentences.
-
-A colon or a comma used in place of a dash reads the same way.
-"A subslide overwrites what it addresses: `reveal` and `hide` overwrite each other"
-joins a claim to its elaboration in the way a dash would,
-and so can an apposition such as "`pan.typ`, a canvas two screens wide".
-Such an elaboration usually reads better as a relative clause,
-as in "`pan.typ`, which is a canvas two screens wide",
-or as a separate sentence that names its subject again.
-A colon is for introducing a list, a table, a code block or a quoted term.
+Write sentences without en or em dashes, neither as UTF-8 glyphs nor in ASCII form.
+This holds for all prose, including code comments.
+A dash usually joins a claim to an elaboration.
+Write the elaboration as a separate sentence,
+as a clause with "which", "because" or "that",
+or as a short gloss in parentheses.
+A colon used in the same way reads like a dash,
+so a colon is kept for introducing a list, a table, a code block or a quoted term.
 
 ### One Term per Concept
 
@@ -134,6 +198,12 @@ A word already taken by one concept is not reused for another.
 A *subslide* is a state of a slide, and a *step* is what the presenter does to reach the next one,
 so a subslide is never called a step.
 A call such as `reveal("a")` or `replace("a")[..]` is a *primitive*.
+
+This rule covers the names of concepts.
+Ordinary verbs and adjectives, such as "visible", "add" or "include", are not vocabulary,
+and a plain word may replace an abstract one.
+One verb is not used with two different subjects in the same sentence,
+as in "It shows content that the final state no longer shows".
 
 When a change of behaviour needs a word the specification does not have,
 the word goes into the specification first, as *Where the Specification Lives* says.
@@ -163,17 +233,12 @@ and only then what follows from it.
 The reader of the Presentation Author Guide is the caller,
 and addressing that reader as "you" is the clearest way to say what they can do.
 
-### Prose Written to Inform
+### Prose Written for Effect
 
 Prose here is written for a reader who is looking for a fact,
 not for one whose attention has to be held.
-Name the subject, state the fact, and end the sentence when the fact is complete.
-
-The habits below tend to make prose harder to read.
+The habits below make a sentence sound better without making it say more.
 They are points to check when rereading a draft.
-When avoiding one of them makes a sentence harder to follow, the more readable sentence wins.
-
-Habits to watch for:
 
 - **A superlative used as a hook,**
   as in "the slowest thing the suite does" or "the one construct that is genuinely expensive".
@@ -183,56 +248,26 @@ Habits to watch for:
   typically introduced by "and that is", "and that is what makes" or "which is where".
 - **A denial followed by a reveal,** as in "X is not Y, it is Z",
   where the plain form says what X is.
-  The same applies across two sentences:
-  a rule is stated in its positive form rather than as a list of what does not happen.
 - **A value judgement standing in for the fact,**
   as in "worse than a red one" instead of saying what actually goes wrong.
-- **A bare identifier as the subject,** as in "`clip` defaults to `true`".
-  Naming what the identifier is helps a reader who has not met it yet,
-  as in "The `clip` argument defaults to `true`".
-  Once a paragraph has introduced the identifier, the bare identifier is enough.
-- **A pronoun far from what it refers to.**
-  When another noun stands between "it" and the noun it refers to,
-  or when the referent sits in an earlier sentence without being its subject,
-  repeat the noun instead.
-  Repeating a term is always allowed, also in consecutive sentences.
-  In "A colour fills the viewport. As a background it is the page fill on paper.",
-  the word "it" first reads as "the background".
-  The preferred form is "A colour used as a background is the page fill on paper."
-  A repeated noun replaces "its own X" with "the X of the noun", not with "the noun's own X".
-- **A possessive with "own" where nothing is contrasted,**
-  as in "the deck's own transition" or "the deck's own `primitive-duration`".
-  The word "own" is needed only when the sentence sets two owners against each other,
-  as in "typst's own `hide`" beside the `hide` primitive of Animo.
-  Otherwise name the relation, as in "the default transition of the deck",
-  or drop the word, as in "the `primitive-duration` of the deck".
-  The same holds for "of its own" and "of their own".
-  "A layer of its own" is "a separate layer",
-  and "an operation that states a `duration:` of its own" is
-  "an operation that states a `duration:`".
-  "Its own X" is usually "its X", as in "about its centre",
-  and "a separate X" where a second one is meant.
-- **A count used as a name,** as in "The Four Primitives"
-  or "`pan` is the fifth continuous primitive".
-  Name the category instead, because a count goes stale when the set changes
-  and the reader has to count to check it.
-  Announcing a count ahead of a list, as in "Three things follow.", says nothing either.
+- **A count used as a name,** as in "The Four Primitives",
+  because a count goes stale when the set changes.
+  Name the category instead.
 - **A document or a tool as the speaker,**
   as in "[Performance](docs/performance.md) has the number".
   A cross reference is written as "See [Performance](docs/performance.md) for the numbers."
-- **A metaphor where the mechanism fits,**
-  as in "the browser needs ink it can bring back" instead of saying that the element is rendered
-  and then hidden with `opacity: 0`.
+- **The word "own" where nothing is contrasted,** as in "the deck's own transition",
+  which is "the deck's transition".
+  The word "own" is needed only when two owners are set against each other,
+  as in "typst's own `hide`" beside the `hide` primitive of Animo.
 - **A sentence without a verb,** as in "One source file, one compile per output type."
-- **A chain of reasoning compressed into a clause.**
-  When a fact follows from two others, state the intermediate one.
 
 Each example below pairs a sentence written for effect with the preferred phrasing.
 
 - Written for effect:
   "Compiling a typst document in a subprocess is the slowest thing the suite does."
   Preferred:
-  "The slowest step in the test suite is the compilation of typst documents in a subprocess."
+  "The slowest part of the test suite is the compilation of typst documents in a subprocess."
 - Written for effect:
   "Animo asks typst to lay a slide out more than once, and that is the whole of what it costs."
   Preferred:
@@ -259,10 +294,6 @@ Each example below pairs a sentence written for effect with the preferred phrasi
   "They do not clip the body and the body does not clip them."
   Preferred:
   "The viewport clips all three layers alike."
-- Written for effect:
-  "A slide whose `init` names no transition takes the deck's own."
-  Preferred:
-  "A slide whose `init` names no transition takes the default transition of the deck."
 
 ### Markdown
 

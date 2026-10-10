@@ -22,7 +22,7 @@
 // inside the box of the tag and nothing around it moves.
 // A tag with no box has no extent to fix, so its content may only change inside a region.
 
-#import "canvas.typ": anchor-marker, site-marker
+#import "canvas.typ": anchor-marker, corner-marker, site-marker
 #import "member.typ": member
 #import "plan.typ": ask, pristine, provide, varies
 #import "region.typ": block-region, footprint-label
@@ -108,6 +108,9 @@
   // The HTML target has no position introspection, and the browser reads the group's
   // origin there instead.
   let anchor = if view.state != none { anchor-marker(view, name) }
+  // The far corner of the box a `scale` grows, which the browser reads to scale about the
+  // centre of that box, as the paged outputs do.
+  let corner = if view.state == none { corner-marker }
 
   if not changing or view.region.explicit {
     // Content that never changes lays out the same by itself, and content inside an explicit
@@ -124,7 +127,14 @@
       let payload = if changing {
         provide(changeable(inside, view.region), payload)
       } else if inside != view { provide(inside, payload) } else { payload }
-      slots(name, wrapper, anchor: anchor, payload, display: current)
+      slots(
+        name,
+        wrapper,
+        anchor: anchor,
+        corner: corner,
+        payload,
+        display: current,
+      )
     }
   } else {
     // The implicit region. Every epoch is laid out with a separate view, so that the tags
@@ -138,7 +148,9 @@
     let rendering(epoch) = {
       let payload = content-of(name, body, view.epochs.at(epoch))
       if payload != none {
-        provide((..nested, epoch: epoch), displayed(current, wrapper(payload)))
+        // The container of a rendering hugs it, so the corner goes beside the rendering.
+        let rendered = displayed(current, wrapper(payload))
+        provide((..nested, epoch: epoch), [#rendered#corner])
       }
     }
     let renderings = range(view.epochs.len()).map(rendering)

@@ -38,7 +38,7 @@ def engine(page):
 
 
 def channels(color: str) -> list[int]:
-    """The channels of a computed `rgb(..)` colour."""
+    """The channels of a computed `rgb(..)` color."""
     return [int(part) for part in color.removeprefix("rgb(").removesuffix(")").split(",")]
 
 

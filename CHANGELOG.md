@@ -41,7 +41,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   The example deck `morph.typ` shows it.
 - Match shapes and images in a morph beside the letters, in reading order.
   A shape is matched when its outline and its stroke width are the same in both versions,
-  whatever its colour, and an image when it is the same image at the same size.
+  whatever its color, and an image when it is the same image at the same size.
   What sits inside a clipped box is matched only when the box stays where it is.
 - Resize a shape in a morph when its size changes and its kind stays, such as the bar of a
   fraction that widens, a box that grows around its words or a circle that becomes an ellipse.
@@ -51,7 +51,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 - Turn a shape into another of a different outline in a morph, such as a square into a circle,
   a star into a pentagon or an arrow into a line, when a tag that the primitive changes holds
   exactly one shape that is not matched otherwise before and after the step.
-  The outline, the colours and the width of the stroke change on the way.
+  The outline, the colors and the width of the stroke change on the way.
   Webkit fades the two shapes instead.
 - Write the `<title>`, the `lang` and the `<meta>` elements of the HTML presentation
   from `set document(..)` and `set text(lang: ..)`.
@@ -64,6 +64,18 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 ### Changes
 
+- A `scale` grows a tag from its anchor on an axis that a `move` placed with `x`, `y` or
+  `relto`, so a tag that is both moved and scaled lands its scaled corner on the target.
+  An axis that was never placed, or only shifted with `dx`/`dy`, still grows about the centre
+  of the box.
+  A deck that added half the growth as a `dx`/`dy` shift to land a scaled corner no longer
+  needs it.
+- Give every page of the Presentation Author Guide an example deck that covers it,
+  using only what that page and the pages before it explain.
+  The decks `motion.typ`, `content.typ` and `pan.typ` are renamed to `continuous.typ`,
+  `structural.typ` and `viewport.typ`, and `slides.typ`, `tags.typ` and `regions.typ` are new.
+- Move the morph from the page Structural Animations to a separate page Morphs after Regions,
+  because most morphs need a region.
 - **Breaking:** remove the `transition:`, `wait:`, `hold:` and `handout:` arguments of `slide`.
   They are written on `init(..)` in the timeline instead,
   as in `#slide(animation: anim.init(anim.push(), wait: 2))[..]`.
@@ -114,6 +126,15 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   The pause key used to pause every animation of the page, including the animations of the author.
 - Choose the transition of a slide boundary from the slide that owns it on a backward step too.
   A step back used to take the transition of the slide it entered.
+- Stop the paged outputs from warning "content labelled multiple times"
+  for a tag or a `#place` in a region inside another region,
+  on a slide with more than one epoch.
+- Let three regions nest, and two regions inside a tag or with a `move` with `relto` on the slide.
+  Such a slide used to fail to converge within the five passes of layout that typst allows.
+- Scale a tag about the centre of its box in the HTML presentation, as the paged outputs do.
+  The browser used to scale about the centre of the ink,
+  so a scaled tag whose ink does not fill its box landed elsewhere than in the handout.
+  Firefox placed that centre outside the ink when a path in the tag carried a `translate`.
 
 ## [0.1.1] - 2026-09-18
 

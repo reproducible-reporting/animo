@@ -56,11 +56,11 @@ Nothing in `pyproject.toml` is ever built or published:
 the `[project]` table only gives `uv` a name and an interpreter floor,
 and the development environment lives in `[dependency-groups]`.
 
-| Group   | Holds                                           |
-| ------- | ----------------------------------------------- |
-| `tests` | `pytest` and its plugins, and nothing more      |
-| `docs`  | `zensical`, pinned below its next minor release |
-| `dev`   | the two above, plus `pre-commit` and `reuse`    |
+| Group   | Holds                                        |
+| ------- | -------------------------------------------- |
+| `tests` | `pytest` and its plugins, and nothing more   |
+| `docs`  | `zensical`, pinned to one exact release      |
+| `dev`   | the two above, plus `pre-commit` and `reuse` |
 
 `uv sync` installs `dev`.
 A continuous integration job that only runs the test suite uses
@@ -144,6 +144,9 @@ The site is two commands, in this order.
 `tools/build_examples.py` compiles every deck under `examples/` to all three output types
 and writes the results into `docs/examples/`, which is a build product in a source tree and
 is covered by `.gitignore`.
+The script skips a file under `examples/` whose name starts with an underscore,
+such as `examples/_common.typ`, because such a file holds what several decks import
+and is not a deck itself.
 `zensical build --strict` then copies them to `site/examples/`, beside the pages that link
 to them.
 Compiling the decks in a script rather than in a task runner keeps the site to two commands.
@@ -153,6 +156,27 @@ every output type.
 The site alone builds without the decks, which is enough for a contributor who only wants
 to read the pages. The links to the decks are absolute, so `--strict` does not chase them;
 the test suite asserts that every one of them has a file after a full build.
+
+Zensical also renders a social card for every page,
+which is the preview image that a link to the page shows on social media and in chat clients.
+The layout of the cards is `logo/social-card.yml`.
+It draws the title and the description of a page in the Inter font,
+which the first build downloads from Google Fonts into `.cache/plugin/social/`.
+The `.cache/` directory is covered by `.gitignore`.
+The image behind the text is `logo/social-card.svg`,
+which typst compiles from `logo/social-card.typ`.
+The SVG is committed, because zensical renders the cards without typst,
+and the test suite fails when the SVG differs from what its source compiles to.
+After changing the source, recompile the SVG from the root of the repository:
+
+```bash
+typst compile --ignore-system-fonts logo/social-card.typ logo/social-card.svg
+```
+
+The card of the home page, `site/assets/images/social/index.png`,
+is also the social preview of the GitHub repository.
+GitHub has no API for the social preview,
+so a maintainer uploads that file by hand under *Settings*, *General*, *Social preview*.
 
 ## Benchmarks
 

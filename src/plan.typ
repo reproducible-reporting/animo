@@ -653,9 +653,13 @@
 // It travels with the marker rather than staying at the call, because `refuse` raises its
 // panic where the provider runs and not where the site asks.
 //
-// Must be called in a context, for the diagnosis above.
+// The check is a separate context block beside the marker,
+// because a check that fails empties the block it is raised in (see *Findings*).
+// A site inside another site fails the check in the first pass it is laid out in,
+// so a check around the marker would delay every site inside it by a pass,
+// and each level of nesting would cost one of the passes that typst allows.
 #let ask(what, f) = {
-  assert(
+  context assert(
     inside.get(),
     message: what
       + " is not inside a #slide, so there is no timeline that could address it",

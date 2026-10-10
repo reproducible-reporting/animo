@@ -249,6 +249,20 @@ function gapAfter(position) {
 }
 
 /**
+ * How long the deck holds a position before travelling back from it, in milliseconds, or
+ * `null` for a presenter click.
+ *
+ * This is the gap that the backward step crosses, which is the gap before the position.
+ * `landing` walks back over the joins on the way, so the gap after the state it lands on is
+ * the one gap of that step that is not a join.
+ * A position with no earlier state to land on has no gap before it.
+ */
+function gapBefore(position) {
+  const target = landing(position);
+  return target === null ? null : gapAfter(target);
+}
+
+/**
  * Where a backward step lands, which is the nearest earlier state the deck would rest at.
  *
  * A gap of zero is a join rather than a stop.
@@ -352,12 +366,14 @@ function schedule(left) {
  * hand is never racing a clock that is still counting and a deep link starts a new timer
  * from where it lands.
  *
- * One gap times the step in both directions, because a gap lies between two states rather
- * than belonging to one of them. A state the deck leaves on its own after a second going
- * forward is a state it leaves on its own after a second coming back, so a state inside a
- * run is shown for as long either way. A state whose gap waits for the presenter arms
- * nothing, and that is where backward travel comes to rest. The deck stops where the
- * presenter would have had to press a key to get past it.
+ * One gap times the step over it in both directions, because a gap lies between two states
+ * rather than belonging to one of them. A gap the deck crosses on its own after a second
+ * going forward is a gap it crosses on its own after a second coming back, so backward travel
+ * plays a run of automatic gaps as the forward run played it, mirrored in time.
+ * Travelling back, the step that is pending is the one over the gap before the position.
+ * A position whose gap before it waits for the presenter arms nothing, and that is where
+ * backward travel comes to rest. The clock never crosses a gap that waits for the presenter,
+ * so the travel ends on the state that the presenter's forward press brought up.
  *
  * The first state of a deck is the other end of that travel and the one place the clock is
  * stopped rather than left unarmed. Nothing earlier is there to travel to, and the gap the
@@ -378,10 +394,12 @@ function arm() {
       holds.add("travel");
     }
   }
-  const gap = gapAfter(current);
+  const gap = direction > 0 ? gapAfter(current) : gapBefore(current);
   if (gap === null) {
     // The deck rests here until a key says otherwise, and `Space` is the forward key where
     // no timer is pending, so the travel that brought it here is over.
+    // A state that backward travel rests on may have a timed gap after it, which stays
+    // unarmed, because the presenter is the one who sets the deck going forward again.
     direction = 1;
     publish();
     return;

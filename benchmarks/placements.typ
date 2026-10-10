@@ -50,8 +50,8 @@
 
 #show: animo.with(..shape)
 
-// The colour of a mark, written once so that the placed marks and the drawn ones are the
-// same ink. A colour name is not shared between typst and SVG, which spell some of them
+// The color of a mark, written once so that the placed marks and the drawn ones are the
+// same ink. A color name is not shared between typst and SVG, which spell some of them
 // differently, so the SVG is given the hexadecimal form of this one.
 #let ink = rgb("#0074d9")
 
@@ -84,7 +84,7 @@
 }
 
 // The same marks as one SVG image, which is a single element wherever it is placed.
-// The `viewBox` is in millimetres of the spread, so the marks land where the placements
+// The `viewBox` is in millis of the spread, so the marks land where the placements
 // put them.
 #let drawing = place(dx: 0cm, dy: 0cm, image(
   bytes({

@@ -40,7 +40,15 @@ from .raster import (
     pdf_pages,
 )
 from .references import Reference
-from .typst import ROOT, TypstResult, TypstRunner, compile_typst, manifest, write_typst
+from .typst import (
+    ROOT,
+    TypstResult,
+    TypstRunner,
+    compile_typst,
+    example_decks,
+    manifest,
+    write_typst,
+)
 
 __all__ = (
     "CETZ",
@@ -64,6 +72,7 @@ __all__ = (
     "difference_box",
     "difference_report",
     "drop_repeated_defs",
+    "example_decks",
     "load_image",
     "manifest",
     "open_local",

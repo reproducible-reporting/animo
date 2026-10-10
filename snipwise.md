@@ -223,7 +223,7 @@ render = "{{ content | unwrap }}"
 ## `tagline`
 
 ```markdown
-Animo builds dynamic HTML and static PDF presentations using [typst](https://typst.app/) from a single source.
+Build dynamic HTML and static PDF presentations using [typst](https://typst.app/) from a single source.
 ```
 
 ## `description`

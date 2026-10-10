@@ -46,7 +46,7 @@ def animated(typst: TypstRunner, body: str, *steps: str, name: str = "deck.html"
     return typst.html(source, name=name)
 
 
-# A paragraph in a region that reflows when a clause is inserted into it, with a recoloured
+# A paragraph in a region that reflows when a clause is inserted into it, with a recolored
 # word, a tag with a separate box that the reflow carries along, and a tag whose content is
 # replaced. The lines outside the region are what the containment is asserted on.
 REFLOWING = """

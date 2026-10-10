@@ -32,7 +32,7 @@ WINDOW = {"width": 908, "height": 511}
 # Two pixels rather than one, for two reasons that each cost up to one.
 # An edge quantised into a raster lands on a pixel boundary, so the same edge read out of
 # two rasters of different resolution differs by up to a pixel of the coarser one.
-# The box is also the extent of the *exact* mark colour, so a row of edge pixels that a
+# The box is also the extent of the *exact* mark color, so a row of edge pixels that a
 # renderer antialiases is not counted at all.
 # Neither is a layout difference, and a real one is far larger.
 # A lost margin would be 0.11 of the slide, and the `em` sizing bug of *Findings* was 0.08.
@@ -44,7 +44,7 @@ WINDOW = {"width": 908, "height": 511}
 
 
 def color_box(image: np.ndarray, hexcolor: str) -> tuple[float, float, float, float]:
-    """The bounding box of one exact colour, as fractions of the image.
+    """The bounding box of one exact color, as fractions of the image.
 
     Returns
     -------
@@ -65,16 +65,16 @@ def color_box(image: np.ndarray, hexcolor: str) -> tuple[float, float, float, fl
     )
 
 
-def centimetres(value: str) -> float:
-    """The number in a typst length literal written in centimetres."""
+def centis(value: str) -> float:
+    """The number in a typst length literal written in centis."""
     return float(value.removesuffix("cm"))
 
 
 def declared_box(dx: str, dy: str) -> tuple[float, float, float, float]:
     """Where a mark should land, from the deck's shape and the offsets in the source."""
-    margin, size = 1.0, centimetres(MARK_SIZE)
-    left = (margin + centimetres(dx)) / 16.0
-    top = (margin + centimetres(dy)) / 9.0
+    margin, size = 1.0, centis(MARK_SIZE)
+    left = (margin + centis(dx)) / 16.0
+    top = (margin + centis(dy)) / 9.0
     return (left, top, left + size / 16.0, top + size / 9.0)
 
 
@@ -158,7 +158,7 @@ def test_a_panned_state_shows_the_same_part_of_the_canvas_in_both_targets(
     browser = screenshot(page.locator(".animo-slide[data-animo-current]"))
     for name, (hexcolor, dx, dy) in marks.items():
         # Panned to green, so every mark lands 17 cm left of and 1 cm above its place.
-        expected = declared_box(f"{centimetres(dx) - 17}cm", f"{centimetres(dy) - 1}cm")
+        expected = declared_box(f"{centis(dx) - 17}cm", f"{centis(dy) - 1}cm")
         for side, image in (("paper", paper), ("browser", browser)):
             assert_boxes_agree(
                 color_box(image, hexcolor), expected, image, f"the {name} mark on {side}"
@@ -278,6 +278,91 @@ def test_a_move_resolves_to_the_same_translation_in_both_targets(deck_at, typst:
         + "\n}\n"
     )
     typst.ok(source.read_text() + check, sysinp=inputs)
+
+
+# Tag sites whose ink does not fill the box typst laid out, each with the subslide that scales
+# it, so that a scale about the centre of the ink lands the red square elsewhere than a scale
+# about the centre of the box does.
+# The paged outputs scale about the box, and so has the browser to.
+# Each entry is the body, the steps of the timeline and the state that is compared.
+RED = 'rect(width: 1cm, height: 1cm, fill: rgb("#ff0000"))'
+SCALE_SITES = {
+    "block with the ink off centre": (
+        f'#tag("a")[#pad(left: 4cm, {RED})]',
+        ('sub(scale("a", f: 1.5))',),
+        1,
+    ),
+    "box with the ink in its lower half": (
+        f'Words #tag("a")[#box(inset: (top: 1cm), {RED})] and words.',
+        ('sub(scale("a", f: 2))',),
+        1,
+    ),
+    "wrap function with an inset on one side": (
+        f'Words #tag("a", wrap: box.with(inset: (left: 2cm)))[#{RED}] and words.',
+        ('sub(scale("a", f: 2))',),
+        1,
+    ),
+    "tag around a tag that moved": (
+        f'#place(dx: 4cm, dy: 3cm, tag("a", wrap: box)[#box({RED})'
+        '#tag("b", wrap: box)[#rect(width: 1cm, height: 1cm)]])',
+        ('sub(move("b", dx: 3cm))', 'sub(scale("a", f: 1.5))'),
+        2,
+    ),
+    "implicit region": (
+        f'Words #tag("a")[#box(inset: (top: 1cm), {RED})] and words.',
+        ('sub(scale("a", f: 2))', f'sub(replace("a")[#box(inset: (left: 2cm), {RED})])'),
+        2,
+    ),
+    # A placed axis grows from the start of the box rather than about its centre.
+    "box placed on both axes": (
+        f'#place(dx: 1cm, dy: 1cm, tag("a", wrap: box)[#box(inset: (top: 1cm), {RED})])',
+        ('sub(move("a", x: 9cm, y: 4cm), scale("a", f: 2))',),
+        1,
+    ),
+    "box placed on one axis, then scaled": (
+        f'#place(dx: 1cm, dy: 3cm, tag("a", wrap: box)[#box(inset: (left: 1cm), {RED})])',
+        ('sub(move("a", x: 9cm))', 'sub(scale("a", fx: 2, fy: 1.5))'),
+        2,
+    ),
+    "box scaled, then placed": (
+        f'#place(dx: 1cm, dy: 1cm, tag("a", wrap: box)[#box(inset: (top: 1cm), {RED})])',
+        ('sub(scale("a", f: 2))', 'sub(move("a", x: 9cm, y: 4cm))'),
+        2,
+    ),
+}
+
+
+def test_a_scaled_tag_lands_in_the_same_place_in_both_targets(page, typst: TypstRunner, paged):
+    """A scale grows the box typst laid out about the same point in both targets.
+
+    That point is the centre of the box, or its start on an axis a `move` placed the tag on.
+
+    The browser reads that box off a marker at its far corner, because the box of the ink of
+    the group is a different rectangle. See *Findings*.
+    """
+    slides = [
+        f"slide(animation: {{ import anim: *\n  {chr(10).join(steps)} }})[\n  {body}\n]"
+        for body, steps, _ in SCALE_SITES.values()
+    ]
+    source = typst.source(deck(*slides))
+    pages = paged.png(source, mode="presentation")
+    page.set_viewport_size(WINDOW)
+    url = typst.html(source, name="scaled.html").resolve().as_uri()
+    first = 0
+    for index, (kind, (_, steps, state)) in enumerate(SCALE_SITES.items(), start=1):
+        paper = pages[first + state]
+        first += 1 + len(steps)
+        page.goto(f"{url}#{index}.{state}")
+        page.wait_for_function(
+            f"() => document.documentElement.dataset.animo === '{index}.{state}'"
+        )
+        browser = screenshot(page.locator(".animo-slide[data-animo-current]"))
+        assert_boxes_agree(
+            color_box(browser, "#ff0000"),
+            color_box(paper, "#ff0000"),
+            paper,
+            f"the scaled {kind} lands elsewhere in the browser than on paper",
+        )
 
 
 def test_the_handout_page_and_the_browser_frame_have_the_same_aspect(rendered):

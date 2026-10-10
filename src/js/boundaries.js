@@ -130,8 +130,8 @@ function transitionOf(name) {
  *
  * `blend` is the `mix-blend-mode` both containers take for the boundary, and the empty
  * string leaves the stylesheet's `plus-lighter`. Two slides that overlap while both are
- * opaque have to cover rather than add, because two opaque grounds of different colours sum
- * to a third colour. A crossfade is the one transition that wants them to add.
+ * opaque have to cover rather than add, because two opaque grounds of different colors sum
+ * to a third color. A crossfade is the one transition that wants them to add.
  *
  * A `direction` is the direction of travel on a forward step, which typst writes as `ltr`,
  * `rtl`, `ttb` or `btt`. Typst states every parameter, its defaults included, so the
@@ -143,7 +143,7 @@ const slideTransitions = {
    *
    * The two add to exactly one opaque slide at every moment through the `plus-lighter` the
    * stylesheet puts on every slide, so nothing dips halfway through, which two slides of
-   * different background colours would otherwise do badly.
+   * different background colors would otherwise do badly.
    */
   crossfade: {
     blend: "",

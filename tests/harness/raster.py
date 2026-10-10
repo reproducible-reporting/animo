@@ -65,7 +65,7 @@ def decode(data: bytes) -> np.ndarray:
 
     Transparency is flattened onto white, as a projector shows a slide with no background.
     Typst writes a page without a fill as a transparent PNG, and dropping the alpha channel
-    would turn that page black, the colour of text, so no comparison could see the text.
+    would turn that page black, the color of text, so no comparison could see the text.
     A slide with a background paints every pixel opaque, which the flattening leaves alone.
     """
     with Image.open(BytesIO(data)) as image:
@@ -80,7 +80,7 @@ def load_image(path: Path) -> np.ndarray:
 
 
 def _deviation(first: np.ndarray, second: np.ndarray) -> np.ndarray:
-    """The per-pixel maximum absolute difference over the colour channels."""
+    """The per-pixel maximum absolute difference over the color channels."""
     if first.shape != second.shape:
         raise AssertionError(f"raster shapes differ: {first.shape} versus {second.shape}")
     return np.abs(first.astype(np.int16) - second.astype(np.int16)).max(axis=2)

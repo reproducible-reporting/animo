@@ -7,7 +7,7 @@ The epoch crossfade blends two inline SVGs inside the canvas, which is a contain
 ground. A slide boundary blends two *HTML* elements that each carry an opaque
 background, inside an element that isolates and is centred on a surround.
 Two things are different there and both are measured here: whether `plus-lighter` still
-sums two opaque grounds to their average, and where the colour of the surround has to sit
+sums two opaque grounds to their average, and where the color of the surround has to sit
 so that it does not join that sum.
 
 The second is the one that cost the time. The ground of the element that isolates a blend
@@ -169,12 +169,12 @@ def test_one_slide_added_to_the_isolated_backdrop_is_that_slide(
 
 @pytest.mark.parametrize("surround", ["#000000", "#ffffff"])
 def test_the_ground_of_the_isolating_element_joins_the_sum(typst: TypstRunner, open_page, surround):
-    """Where the surround's colour has to sit, which is not on the element that isolates.
+    """Where the surround's color has to sit, which is not on the element that isolates.
 
     The same two slides are crossfaded twice, with the surround on the page and with it on
     the deck. On the page it is outside the isolated group and the midpoint is the average
-    of the two slides whatever the colour. On the deck it is inside, and a white surround
-    is added to both halves and blows the midpoint out. Black is the one colour that hides
+    of the two slides whatever the color. On the deck it is inside, and a white surround
+    is added to both halves and blows the midpoint out. Black is the one color that hides
     the mistake, which is why both are probed and why the black case is not the assertion.
     """
     average = halves(typst, open_page, f"ground-{surround[1:]}", page=surround)

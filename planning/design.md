@@ -64,7 +64,7 @@ The initial version has the following (non)features:
   the viewport, and `pan` moves the viewport over the canvas
 - No overflow of content to a next slide.
   Whatever falls outside the viewport is clipped, and `pan` brings the rest of the canvas into view.
-- A **background** and an **overlay** per slide, each either a colour or arbitrary content, both
+- A **background** and an **overlay** per slide, each either a color or arbitrary content, both
   belonging to the viewport, so a `pan` moves the slide under them
 - **Timing**: every primitive may be delayed and given a separate duration.
   The gap before a subslide or a slide may run on a timer rather than wait for a presenter click.
@@ -346,13 +346,13 @@ A slide has three layers, and the author fills the outer two:
 1. the **canvas**, carrying the body, which is what `pan` moves;
 1. the **overlay**, in front of everything.
 
-`background` and `overlay` both take either a **colour** or **content**.
-A colour is emitted as CSS in the HTML target and as a page fill in the paged ones,
+`background` and `overlay` both take either a **color** or **content**.
+A color is emitted as CSS in the HTML target and as a page fill in the paged ones,
 because `set page(..)` is unavailable in HTML (see *Findings*).
 Content is laid out in a box the size of the **viewport**.
 A `#place(bottom + right, ..)` in that content resolves its alignment against this box,
 and an `image(width: 100%, height: 100%)` fills the slide.
-A background that needs both a ground colour and content puts a filled `rect` behind the rest
+A background that needs both a ground color and content puts a filled `rect` behind the rest
 of the content.
 
 A gradient and a tiling are refused rather than accepted as a third form,
@@ -599,6 +599,12 @@ subslides**. It is the unit of reflow and the unit of redrawing.
 - **Regions nest.** An inner region is itself a fixed footprint, so an outer region's layout
   does not depend on the inner region's state. Footprints compose, and states do not multiply
   (see *States and epochs* for why this matters to the cost).
+  Regions nest at most three deep, and at most two deep on paper on a slide with a `move` that
+  has a `relto`.
+  A region passes the key it numbers itself with to the regions inside it,
+  and each level of nesting costs one of the five passes of layout that typst allows
+  (see *Findings*).
+  Tags do not count toward this depth.
 - **A tag that is not inside an explicit region forms an implicit region**, i.e. `#tag("x")[c]`
   behaves as `#region[#tag("x")[c]]`, with an anonymous region so that the tag name stays
   unambiguous.
@@ -682,7 +688,12 @@ reasons, in decreasing order of importance:
 
 The cost is that a region reserves room for its largest state,
 so a slide whose first state is short and whose last state is tall shows a gap at the start.
-The remedies are authorial (choose `align`, split into several regions, give explicit sizes).
+The remedies are authorial (choose `align`, give explicit sizes,
+or put one region around contents that are tallest in different epochs).
+Splitting a region is not among them,
+because each part reserves the room of its tallest epoch,
+and the maximum of a sum never exceeds the sum of the maxima.
+A split makes a change reflow only the part that holds it.
 The alternative semantics is a region that pushes its surroundings around.
 That semantics is deferred rather than impossible.
 
@@ -797,7 +808,7 @@ they are pure CSS on the existing frame, so they animate smoothly and cost nothi
 | `reveal(tag)`                         | make the element visible (fades in, in HTML)                       |
 | `hide(tag)`                           | make the element invisible, keeping its space (fades out, in HTML) |
 | `move(tag, x:, y:, dx:, dy:, relto:)` | translate the element, optionally relative to another tag          |
-| `scale(tag, f:, fx:, fy:)`            | scale the element about its centre                                 |
+| `scale(tag, f:, fx:, fy:)`            | scale the element in place, or from its anchor once it is placed   |
 | `pan(x:, y:, dx:, dy:, relto:)`       | move the viewport over the canvas, optionally relative to a tag    |
 
 The first four are element primitives.
@@ -838,10 +849,11 @@ This definition has the following consequences:
    target and every other site takes the same translation, exactly as `relto` already reads the
    first site. Two sites of one name cannot land on one point without moving independently,
    which the "several places, one tag" rule does not allow.
-1. **An anchor is a layout corner, and a `scale` is about a centre.** An element that is both
-   moved and scaled lands its *unscaled* anchor on the target, and its painted corner sits half
-   the growth further out. Absolute placement of scaled content is therefore approximate by
-   construction, and the exact form is a `dx`/`dy` shift.
+1. **A placed element grows from its anchor.** An axis that `x`, `y` or `relto` placed has an
+   anchor other than the tag itself, and a `scale` grows the element from the start of its box
+   on that axis, so an element that is both moved and scaled lands its *scaled* corner on the
+   target and keeps it there at any later factor.
+   *What `scale` does* states the rule.
 
 A `move` or `pan` relative to a tag the slide does not have is refused,
 because a misspelt name is the likely cause and a silent fallback would hide it.
@@ -900,6 +912,22 @@ its factor, so `scale("a", fx: 2)` after `scale("a", f: 3)` leaves `a` at 2 hori
 vertically. Successive growth is written as the product, so the author multiplies once
 instead of tracking a history across every later subslide.
 
+**A `scale` grows an element in place, unless a `move` placed it.**
+On an axis whose anchor is the tag itself, the element grows about the centre of the box typst
+laid out, in every output type, and not about the centre of the ink.
+That axis is one the timeline never moved, or shifted only with `dx`/`dy`,
+so the element stays where it was.
+On an axis that `x`, `y` or `relto` placed, the element grows from the start of that box,
+which is its anchor, so the corner a `move` put on a target stays there at any factor.
+The placement is a property of the position pair the resolver already keeps,
+so it holds in every later subslide, and a `dx` after an `x` keeps it.
+Each axis decides on its own.
+The point a scale grows about changes only when a `move` changes the placement,
+so the browser animates it on the timing of that `move`,
+and a tag scaled before it is placed reaches its target without a jump.
+A tag at its unscaled size takes the new origin at once instead,
+so the corner of a tag that one step places and scales goes to its target in a straight line.
+
 **Structural primitives** change what typst has to lay out or paint.
 Only typst can render the result,
 so each of them forces a fresh rendering of the slide (an *epoch*, below).
@@ -921,10 +949,10 @@ Notes and consequences:
   Animo does not inspect content,
   so Animo cannot know which `set` rule a bare property belongs to.
   Wrapping with `text.with(..)`, `box.with(..)` or a lambda says it explicitly.
-- `apply` is structural even when the wrapper cannot possibly reflow, as with a colour change.
+- `apply` is structural even when the wrapper cannot possibly reflow, as with a color change.
   The reason is rendering rather than reflow,
   because typst's styling cannot be expressed in CSS in general.
-  The cheap CSS-only special case, a primitive that changes a colour and nothing
+  The cheap CSS-only special case, a primitive that changes a color and nothing
   else, is left for a later release.
 - **`reveal` and `reset` also declare an initial state.** A name whose first display operation
   is `reveal` starts hidden, and one whose first content operation is `reset` starts removed
@@ -1172,15 +1200,26 @@ Animating out of that later state would play, backwards, a step the audience nev
 while the slide is coming up.
 A step that crosses more than one slide boundary snaps as a whole.
 
-**A backward step also turns the clock around.** One gap times the step in both directions,
-because a gap lies between two states rather than belonging to one of them. A state the deck
-leaves on its own after a second going forward is a state it leaves on its own after a second
-coming back, so a state inside a run is shown for as long in either direction. The travel ends at
-the state whose gap waits for the presenter, which is the state the presenter last pressed a key
-at, so a run of automatic gaps costs one press back as it costs one press forward. A backward key
-pressed during the travel is one more step back, as a forward key pressed during autoplay is one
-more step forward, and `Space` stops the deck where it is. A deck that times every one of its gaps
-has no state to end the travel at and travels back to its first state.
+**A backward step also turns the clock around.**
+One gap times the step over it in both directions,
+because a gap lies between two states rather than belonging to one of them.
+Going forward, the deck leaves a state after the gap that follows it.
+Going back, the deck leaves a state after the gap that precedes it,
+because that gap is the one the next backward step crosses.
+A gap the deck crosses on its own after a second going forward is therefore a gap it crosses on
+its own after a second coming back,
+and backward travel plays a run of automatic gaps as the forward run played it, mirrored in time.
+The clock never crosses a gap that waits for the presenter, in either direction.
+The travel therefore ends at the state whose gap before it waits for the presenter,
+which is the state that the presenter's last forward press brought up.
+A run of automatic gaps then costs one press back as it costs one press forward.
+That state may have a timed gap after it, and that gap stays unarmed,
+because the presenter is the one who sets the deck going forward again.
+A backward key pressed during the travel is one more step back,
+as a forward key pressed during autoplay is one more step forward,
+and `Space` stops the deck where it is.
+A deck that times every one of its gaps has no state to end the travel at and travels back to its
+first state.
 
 **The first state of a deck is where backward travel stops rather than turns**,
 because there is nothing earlier to travel to.
@@ -1426,8 +1465,11 @@ Animations are then performed in the browser:
 - `move` animates the CSS `translate` property, computed from the measured anchors as
   *anchor(relto) + offset - anchor(self)*, which is the identity for a tag the timeline has not
   moved
-- `scale` animates the CSS `scale` property, about the centre of the element, with one value for
-  `f` and two for `fx`/`fy`
+- `scale` animates the CSS `scale` property, about the centre of the box typst laid out for the
+  element or from its start on a placed axis, with one value for `f` and two for `fx`/`fy`.
+  The HTML target places a zero-size marker at the far corner of that box,
+  beside the slot, and the runtime reads the centre off it.
+  A `move` that changes the placement animates `transform-origin` with its `translate`
 - `pan` animates `translate` on the canvas element inside the clipping viewport, as a
   percentage of the canvas, which follows the window without being measured
 - a `per-subslide` stack shows the rendering of the state being entered and hides the others,
@@ -1451,8 +1493,8 @@ Animations are then performed in the browser:
   and the incoming element travels from the place of the outgoing one to its place,
   so the two are at one position at every moment.
   Their opacities are those of the crossfade, `1 - t` and `t`, which `plus-lighter` adds to
-  one, so the pair reads as one opaque element on the path and a pair whose colours differ
-  reads as the interpolation of the two colours.
+  one, so the pair reads as one opaque element on the path and a pair whose colors differ
+  reads as the interpolation of the two colors.
   Nothing is cloned and no opacity is touched other than the one the crossfade animates.
   Unmatched content fades out or in where it is.
   The translations are animation effects and never inline style, so a slide at rest carries no
@@ -1476,7 +1518,7 @@ Animations are then performed in the browser:
   A frame nobody is watching has to keep the geometry that the morph reads,
   while such a slide is needed neither for its ink nor for its geometry,
   and laying out every slide of a long deck costs seconds of first paint.
-  The deck's surround is also a colour on the page rather than on the stage,
+  The deck's surround is also a color on the page rather than on the stage,
   because the stage isolates the blend,
   and the background of the stage would otherwise be added into both slides
   (see *Findings* for both)
@@ -1550,8 +1592,10 @@ The HTML presentation rests on the following rules:
 1. Animo must emit **only** the individual transform properties (`translate`, `scale`) and
    never the `transform` shorthand, which would clobber typst's own positioning (see
    *Findings*).
-   `transform-box: fill-box` and `transform-origin: center` make a `scale` grow the element in
-   place, and they fall under a similar prohibition.
+   `transform-box: view-box` and a `transform-origin` at the centre of the box typst laid out,
+   or at its start on a placed axis, make a `scale` grow the element as typst's `scale` does on
+   paper,
+   and they fall under a similar prohibition.
    They also re-anchor the `transform` attribute of the element,
    so on a group that typst positioned they move the group's content (see *Findings*).
    The runtime therefore writes both properties on the slot it is about to transform,
@@ -1690,8 +1734,8 @@ A gap's `wait:` or `hold:` is the only timer the runtime sets.
 That timer is armed when a step is entered,
 and cleared whenever another step is entered, whatever entered it,
 so a presenter stepping by hand is never racing a clock that is still counting.
-A backward step arms the timer in the other direction (see *Timing*),
-so the deck travels back over the gaps it travelled forward over.
+A backward step arms the timer of the gap before the state it lands on (see *Timing*),
+so the deck travels back over the gaps it travelled forward over, each on its own length.
 A backward step is also the one step that may land more than one state back,
 since it walks back over the joins it finds on the way.
 
@@ -1926,6 +1970,9 @@ The last one is needed for a diagnosis.
 be diagnosed at the tag site. That diagnosis cannot come afterwards, because a marker nobody
 replaced is indistinguishable from one that was (measured; see *Findings*), and a tag whose
 marker is never replaced would simply drop its content.
+The check is a separate `context` block beside the marker,
+because a check in the block that holds the marker would delay every site nested inside it
+by a pass of layout (see *Findings*).
 
 Duplicate labels across a document are permitted by typst and cause no error.
 
@@ -2385,6 +2432,36 @@ They are settled, and the evidence is in *Findings*.
   because the element is the one the runtime already holds. They are not tunable the way the
   duration and the easing are, so nothing is lost by taking them out of the stylesheet.
 
+- **About which point does a `scale` grow a tag?** About the centre of the box typst laid out,
+  in every output type, and from the start of that box on an axis a `move` placed.
+  Typst's `scale` grows its body about the centre of the box on paper unless its `origin` says
+  otherwise, and it offers no way to grow about the centre of the ink.
+  The browser first grew a slot about the centre of its ink, with `transform-box: fill-box`,
+  and the two targets then disagreed wherever the ink does not fill the box.
+  A list in a filling block grew about the middle of its text in the browser
+  and about the middle of the slide on paper,
+  and a tag around a moved tag grew about a point that followed the move.
+  Firefox also resolves `fill-box` without the `translate` typst writes on a path,
+  so its centre could lie outside the ink altogether (see *Findings*).
+  The browser has no other access to the box typst laid out,
+  so the HTML target places a zero-size marker labelled `animo-corner` at the far corner of the
+  box of every slot, beside the slot.
+  The runtime then writes `transform-box: view-box` with a `transform-origin` at half the
+  translate of that marker, which is a point of the same user space as the slot's box.
+  The alternative was to keep the centre of the ink and document that the two targets differ.
+  It was rejected because the handout would then not show the slide the audience saw.
+  The centre alone was the earlier answer for a placed tag as well,
+  so a tag that was both moved and scaled landed its unscaled corner on the target,
+  and the author had to add half the growth as a `dx`/`dy` shift.
+  A corner that the timeline put on a target is what the author asked for,
+  and the placement is already in the position pair, so the start of the box costs nothing to
+  find.
+  Growing every tag from its anchor would land a placed tag as well, but would make an
+  emphasis in place grow to the right and down, which is the more common case.
+  Making the target of a `relto` its scaled corner as well was considered and left out,
+  because the anchor of a tag ignores its display state for the reasons under *Animation
+  primitives*.
+
 - **How do CSS-animated typst SVG groups look in motion?** Well enough that nothing about the
   defaults changes.
   Measurements in chromium 151 and firefox 153 (see *Findings*) show the following.
@@ -2626,8 +2703,7 @@ They are settled, and the evidence is in *Findings*.
   `move` differs in only one term, which subtracts the anchor of the moved tag.
   The price is stated in *Animation primitives*.
   A name with several sites lands its first site on the target,
-  and an element that is also scaled lands its unscaled corner, because a scale is about a
-  centre.
+  and an element that is also scaled grows from its anchor, so it lands its scaled corner.
 
 - **Does a scale factor multiply into what is there, or set it?** It sets it.
   Multiplying was the earlier answer, and it makes a factor unreadable in isolation.
@@ -2642,15 +2718,15 @@ They are settled, and the evidence is in *Findings*.
   since a call that gives both says two different things,
   while an axis the call omits keeps whatever factor it had.
 
-- **What may a background hold, and where does an overlay go?** Either may be a colour or
-  arbitrary content, and both belong to the **viewport**. Extending `background` from a colour or
+- **What may a background hold, and where does an overlay go?** Either may be a color or
+  arbitrary content, and both belong to the **viewport**. Extending `background` from a color or
   an image to content costs nothing,
   because *Architecture* rule 5 already had a content background as a
   separate frame beside the canvas, and `overlay` is that same construct one layer up. Making
   them viewport-bound rather than canvas-bound keeps a logo in the same place on screen instead
   of letting it travel with the canvas, keeps a full-bleed image from silently enlarging the
   automatic canvas, and keeps
-  a colour and a content background behaving identically under a `pan`.
+  a color and a content background behaving identically under a `pan`.
   The layers are also rendered **once per slide** rather than per epoch.
   Neither may hold a tag or a region, so neither can depend on an epoch,
   and drawing them once keeps their cost from growing with the epochs.
@@ -2720,11 +2796,11 @@ They are settled, and the evidence is in *Findings*.
   1. An **ink match** pairs the glyphs, shapes and images of the unclaimed content by a longest
      common subsequence of one key per element, taken in document order, so that a box beside
      a word keeps its place among the letters and neither is diffed apart from the other.
-     The key is what the element draws, without its place and without its colour.
+     The key is what the element draws, without its place and without its color.
 
      - A glyph is a `<use>`, and its key is the `href`. Typst names a glyph by a hash of its
        outline at its size, and the fill is an attribute of the `<use>` and not part of the
-       hash, so equal names mean equal shapes whatever their colour (see *Findings*).
+       hash, so equal names mean equal shapes whatever their color (see *Findings*).
        A glyph that changes size or weight gets another name and is not matched, which is
        right for a morph that does not scale.
        Spaces are not elements of typst's output, so a word is carried as its letters.
@@ -2736,8 +2812,8 @@ They are settled, and the evidence is in *Findings*.
      - An image is an `<image>`, and its key is the `href`, which holds the image's data,
        with the `width` and the `height`.
 
-     The colours stay out of every key, `fill` and `stroke` alike, and so does a gradient.
-     Two copies whose colours differ sum to the interpolation of the two colours under the
+     The colors stay out of every key, `fill` and `stroke` alike, and so does a gradient.
+     Two copies whose colors differ sum to the interpolation of the two colors under the
      crossfade's `plus-lighter`, for a stroke and an image as for a glyph, and a gradient moves
      with the shape that uses it (see *Findings*).
      Each distinct key is numbered before the diff, so the diff compares numbers rather than
@@ -2903,10 +2979,13 @@ They are settled, and the evidence is in *Findings*.
 
   **A backward step turns the clock around**, which using the package also showed to be needed.
   A deck that played itself forward over a run of gaps has to come back over the same run,
-  and the state a backward step lands on arms the gap that the step just came over.
+  and the state a backward step lands on arms the gap before it, which is the gap the next
+  backward step crosses.
   The clock therefore
-  steps the deck whichever way it is travelling, and the travel ends where the presenter would
-  have had to press a key. The first state of a deck is the one place the clock is stopped
+  steps the deck whichever way it is travelling, crosses each gap on that gap's length, and
+  never crosses a gap that waits for the presenter.
+  The travel ends on the state that the presenter's last forward press brought up.
+  The first state of a deck is the one place the clock is stopped
   instead, because nothing earlier is there to travel to.
   A forward step and `Space` both restart that clock.
   A pending timer is cleared by any manual step, so autoplay never races the presenter, and the
@@ -3117,7 +3196,7 @@ and the others are still undecided.
   What replaced the stop needs no number.
   **The clock steps the deck whichever way it is travelling**,
   so a run of automatic gaps is crossed back the way it was crossed forward and the travel ends
-  where the presenter would have had to press a key. The cost is that a deck which times every gap
+  at the gap where the presenter had to press a key. The cost is that a deck which times every gap
   travels back to its first state. That is accepted, because such a deck plays itself forward to
   its last state as readily, and `Space` stops it either way.
   The stop remains for the one case that the travel cannot handle,

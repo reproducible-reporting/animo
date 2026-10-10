@@ -133,7 +133,7 @@
   )
 }
 
-// A CSS colour for a typst colour.
+// A CSS color for a typst color.
 #let css-color(value) = value.to-hex()
 
 // A length as a bare number of typst points, written as `pt-of` rounds it.

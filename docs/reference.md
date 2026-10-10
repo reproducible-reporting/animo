@@ -124,8 +124,8 @@ One slide of the deck.
 | `body`       | content                               |         | what is on the slide                        |
 | `animation`  | block of an `init` and of `sub` calls | `()`    | the timeline                                |
 | `canvas`     | `auto` or `(width:, height:)`         | `auto`  | the canvas, sized to the content or stated  |
-| `background` | `none`, colour or content             | `none`  | the layer behind everything                 |
-| `overlay`    | `none`, colour or content             | `none`  | the layer in front of everything            |
+| `background` | `none`, color or content              | `none`  | the layer behind everything                 |
+| `overlay`    | `none`, color or content              | `none`  | the layer in front of everything            |
 | `numbered`   | `bool`                                | `true`  | whether the slide counter counts this slide |
 
 ```typst
@@ -313,7 +313,8 @@ init(push(direction: btt), duration: 0.6, handout: true)
 ```
 
 Taught in [Slides](slides.md#slide-transitions),
-and `wait`, `hold` and `handout` in [Continuous Animations](continuous.md#timing).
+`wait` and `hold` in [Continuous Animations](continuous.md#timing),
+and `handout` in [Handouts](handouts.md).
 
 ### `anim.sub`
 
@@ -335,7 +336,7 @@ about itself.
 sub(wait: 2, handout: true, reveal("a"), move("b", dx: 1cm))
 ```
 
-Taught in [Continuous Animations](continuous.md).
+Taught in [Continuous Animations](continuous.md), and `handout` in [Handouts](handouts.md).
 
 ## Continuous Primitives
 
@@ -404,8 +405,12 @@ Taught in [Continuous Animations](continuous.md#where-move-puts-things).
 scale(name, f: none, fx: none, fy: none, delay: 0, duration: auto)
 ```
 
-Scale the tag about its centre. The factor is set rather than multiplied into what is
-already there, and an axis the call does not mention keeps the factor it had.
+Scale the tag about the centre of the box typst laid out for it, which its ink need not fill.
+On an axis that a [`move`](#animmove) placed with `x`, `y` or `relto`,
+the tag grows from the start of that box instead, so the corner the move placed stays on its
+target.
+The factor is set rather than multiplied into what is already there,
+and an axis the call does not mention keeps the factor it had.
 
 | Argument   | Type            | Default | Meaning                           |
 | ---------- | --------------- | ------- | --------------------------------- |
@@ -559,7 +564,7 @@ across a boundary inside a slide.
 sub(replace("eq", transition: morph())[$ (a + b)^2 = a^2 + 2 a b + b^2 $])
 ```
 
-Taught in [Structural Animations](structural.md#morphing-what-shifts).
+Taught in [Morphs](morphs.md).
 
 ### `anim.push`
 

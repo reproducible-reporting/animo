@@ -157,9 +157,9 @@ body {
   A slide with four epochs still carries one of each.
   The three are positioned elements without a z-index, so they paint in document
   order, which is the order the slide emits them in.
-  A layer that is a colour rather than content needs no frame.
-  The background colour is a declaration on the slide container, which is already behind the
-  canvas, and an overlay colour is one on the element below, which is already in front of it.
+  A layer that is a color rather than content needs no frame.
+  The background color is a declaration on the slide container, which is already behind the
+  canvas, and an overlay color is one on the element below, which is already in front of it.
 */
 .animo-background,
 .animo-overlay {
@@ -231,7 +231,7 @@ body {
   `plus-lighter` sums them there, so the outgoing rendering at `1 - t` and the incoming one
   at `t` come to exactly one opaque region and nothing dips.
   Without the isolation, chromium 151 and webkit 26.5 add the two halves to the ink under the
-  region as well, and black text takes the colour of what is behind it. Firefox 153 needs
+  region as well, and black text takes the color of what is behind it. Firefox 153 needs
   none. `isolation` is the property that forces the group in all three engines, because
   `opacity: 0.999` moves values and `filter: opacity(1)` does nothing in webkit.
   Measured with the stack a few groups deep in the frame.

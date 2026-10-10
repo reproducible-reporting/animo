@@ -231,7 +231,7 @@ That is a reason to use `handout: false` where it applies, not to avoid subslide
 ## What a Content Layer Costs
 
 A `background:` or an `overlay:` that is content is one more inline SVG per slide.
-A colour is one CSS declaration, with no measurable cost.
+A color is one CSS declaration, with no measurable cost.
 
 Measured on the controlled deck of twelve slides, with an overlay of one line of 9 pt text
 and a rule, which is typical of a running title or a talk name:
@@ -242,7 +242,7 @@ which is at the limit of what this benchmark resolves.
 Unlike a region, a layer costs page weight rather than seconds.
 That weight is the weight of what the layer holds,
 so a full-page image in a background costs the weight of that image, once per slide.
-Use a colour where a colour suffices.
+Use a color where a color suffices.
 
 ## What a Number Costs
 
@@ -264,7 +264,7 @@ so the same stack in a region is its epoch count times the numbers above.
 
 ## What a Morph Costs
 
-A [morph](structural.md#morphing-what-shifts) costs nothing at compile time,
+A [morph](morphs.md) costs nothing at compile time,
 because the browser matches the two versions of a region when the step runs.
 Its cost is in the browser, at the key press and in the frames of the motion,
 and it grows with the number of letters and shapes that move.

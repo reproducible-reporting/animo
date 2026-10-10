@@ -12,14 +12,16 @@ SPDX-License-Identifier: Apache-2.0
 # Tags
 
 The example deck for this page is
-[`hello.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/hello.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/hello.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/hello-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/hello-handouts.pdf)).
-It illustrates most concepts explained below with one slide, one tag and one subslide.
+[`tags.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/tags.typ)
+([HTML](https://reproducible-reporting.github.io/animo/examples/tags.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/examples/tags-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/examples/tags-handouts.pdf)).
+It shows the initial states of a tag, one name at several sites, the wrappers that `wrap` chooses,
+and tags inside math, a cetz canvas and a grid cell.
 
 A tag marks a part of a slide and names it.
-The `animation` defines the animation within one slide through _subslides_, which reference the tags by name.
+The `animation` argument of `#slide` defines the animation
+within one slide through _subslides_, which reference the tags by name.
 Each subslide specifies what happens to tagged contents to arrive at a new state.
 
 ```typst
@@ -54,7 +56,7 @@ Anything else starts visible and laid out as you wrote it.
 The same tag name may be used several times within one slide.
 The timeline then addresses all of them together, as if they were one element.
 Every site of one name starts in the same state,
-because that state is a property of the name in the timeline and not of a site.
+because that state is a property of the name in the timeline and not of a single tag site.
 
 The same name in a different slide does not interfere.
 A tag reads the plan of the slide it appears in and of no other,
@@ -133,6 +135,9 @@ A `#box` hugs its body, so `scale` scales about the centre of the body,
 and the `relto:` anchor of `move` and `pan` reads the top-left corner of the body.
 A `#block(width: 100%)` fills its container,
 so those primitives read the centre and the corner of the container instead.
+A list in a filling block therefore scales about the centre of the container,
+even when its items take only the left half of it.
+All three output types scale about the same centre.
 A `#block(width: 100%)` also keeps content centred that its container was centring,
 because a wrapper at `width: auto` left-aligns such content.
 
@@ -228,7 +233,7 @@ frame, outside every group a tag produces, so `move`, `scale`, `pan`, `reveal` a
 such a tag reach the text and leave the fill standing.
 
 When the timeline has to move or hide the filled box itself, put the fill on a block that the
-tag holds. A `block` takes a gradient as readily as a colour:
+tag holds. A `block` takes a gradient as readily as a color:
 
 ```typst
 #grid(

@@ -1,0 +1,30 @@
+/*
+SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
+SPDX-License-Identifier: Apache-2.0
+*/
+
+/*
+The colors of the logo, which every palette in `zensical.toml` selects as `custom`.
+Teal is the primary color and orange the accent color.
+*/
+
+[data-md-color-primary="custom"] {
+  --md-primary-fg-color: #008ba8;
+  --md-primary-fg-color--light: #33a2b9;
+  --md-primary-fg-color--dark: #006f86;
+  --md-primary-bg-color: #ffffff;
+  --md-primary-bg-color--light: #ffffffb3;
+  /* The logo teal has a contrast of 4.0 on white, and body text needs 4.5. */
+  --md-typeset-a-color: #007a94;
+}
+
+[data-md-color-scheme="slate"][data-md-color-primary="custom"] {
+  --md-typeset-a-color: #3bb4ce;
+}
+
+[data-md-color-accent="custom"] {
+  --md-accent-fg-color: #c9600a;
+  --md-accent-fg-color--transparent: #c9600a1a;
+  --md-accent-bg-color: #ffffff;
+  --md-accent-bg-color--light: #ffffffb3;
+}

@@ -4,6 +4,7 @@
 #import "@preview/animo:0.1.1": *
 #import "@preview/oxifmt:1.0.0": strfmt
 #import "@preview/cetz:0.5.2"
+#import "_common.typ": dark, logo, orange, pale, progress-bar, teal
 
 // The deck's shape is written once, as a document-level show rule.
 // It is also what emits the HTML page, its stylesheet and its runtime,
@@ -12,17 +13,15 @@
 
 // Use standard typst machinery to style the deck.
 #show heading: set block(below: 1em)
-#let dark = rgb("#001122")
-#let bgrb = rgb("#ddeeff")
 #show raw.where(block: true): it => block(
-  fill: bgrb,
+  fill: pale,
   inset: 0.3cm,
   radius: 0.1cm,
   it,
 )
 #show raw.where(block: false): it => highlight(
-  fill: bgrb,
-  stroke: bgrb + 0.1cm,
+  fill: pale,
+  stroke: pale + 0.1cm,
   radius: 0.1cm,
   it,
 )
@@ -55,12 +54,14 @@
 
 // Animo has no footer machinery, so a recurring element is a wrapper around `#slide`.
 // Shadowing the name is what keeps the slides below written the way the manual writes
-// them, and the wrapper folds the badge into whatever overlay a slide writes for itself.
+// them, and the wrapper folds the badge and the progress bar of `_common.typ`
+// into whatever overlay a slide writes for itself.
 #let plain-slide = slide
 #let slide(overlay: none, ..arguments) = plain-slide(
   overlay: {
     overlay
     number-badge
+    progress-bar
   },
   ..arguments,
 )
@@ -75,8 +76,17 @@
   #set align(center + horizon)
   #v(0.5fr)
 
-  A short tour of \
-  #text(size: 2em)[*Animo*]
+  // The logo stands beside the two lines of the title and is as tall as both together.
+  #grid(
+    columns: 2,
+    column-gutter: 0.4cm,
+    align: horizon + left,
+    logo(teal, height: 1.6cm),
+    [
+      A short tour of \
+      #text(size: 2em, fill: teal)[*Animo*]
+    ],
+  )
 
   #v(1fr)
 
@@ -102,21 +112,29 @@
   import anim: *
   sub(reveal("disclaimer1"))
   sub(reveal("disclaimer2"))
+  sub(reveal("disclaimer3"))
 })[
   = Disclaimers
 
   #tag("disclaimer1")[
     1. Animo is *experimental* and *work in progress*.
 
-      API stability is not strictly guaranteed before a 1.0 release, but no major breaking changes are planned.
+      API stability is not guaranteed before a 1.0 release.
   ]
   #v(0.5cm)
 
   #tag("disclaimer2")[
     2. Only the smallest examples are explained with source code in the slides.
 
-      The full source code of this deck can be found in `examples/tour.typ`
-      in the Animo Git repository.
+      The full source code is in `examples/tour.typ` in the Animo Git repository.
+  ]
+  #v(0.5cm)
+
+  #tag("disclaimer3")[
+    3. Prefer Firefox or Chrome for full animation support.
+
+      Safari does not animate morphing shape outlines. \
+      Animo will crossfade in Safari instead.
   ]
 ]
 
@@ -218,7 +236,7 @@
 
   #tag("problem", box(
     width: 1fr,
-    fill: bgrb,
+    fill: pale,
     inset: 0.3cm,
     radius: 0.1cm,
   )[
@@ -347,7 +365,7 @@
   #place(center + horizon, dx: 1cm, dy: 3.5cm)[
     #tag("canvas")[
       #rect(
-        fill: color.oklch(80%, 80%, 270deg),
+        fill: teal.lighten(40%),
         width: 12cm,
         height: 12cm,
         inset: 1cm,
@@ -383,7 +401,7 @@
   //
   // A circle grows in place with `scale` and is not replaced by a bigger one.
   // A `replace` crossfades the old circle into the new one, and where the two overlap in
-  // the same colour the outgoing circle stays solid inside the fading incoming one.
+  // the same color the outgoing circle stays solid inside the fading incoming one.
   // The factor is absolute, so each step states the size its circle ends up with.
   for (radius, keep) in ((2.7cm, true), (10cm, false)) {
     sub(
@@ -468,6 +486,11 @@
 // so that they do not fade in over the letters that are still moving.
 #slide(animation: {
   import anim: *
+  sub(reset("sym1", transition: morph()), replace(
+    "sym2",
+    $script(-infinity)$,
+    transition: morph(),
+  ))
   sub(reset("ft", transition: morph()), reveal("ft", delay: 0.4))
 })[
   = Animated Equations
@@ -475,11 +498,11 @@
   #align(horizon)[
     #region[
       $
-        D = 1 / (2 d)
-        #tag("ft", box(fill: yellow, inset: 0.2cm, $lim_(f -> 0)$))
-        integral_(-infinity)^infinity
+        D = 1 / (#tag("sym1", $2$) d)
+        #tag("ft", box(fill: orange.lighten(70%), inset: 0.2cm, $lim_(f -> 0)$))
+        integral_(#tag("sym2", $script(0)$))^infinity
         lr(chevron.l vec(v)(t) dot vec(v)(0) chevron.r, size: #1.5em)
-        #tag("ft", box(fill: yellow, inset: 0.2cm, $e^(i 2 pi f t)$))
+        #tag("ft", box(fill: orange.lighten(70%), inset: 0.2cm, $e^(i 2 pi f t)$))
         thin dif t
       $
     ]
@@ -515,6 +538,52 @@
       })
     ]
   ]
+]
+
+// The Heighway dragon at a given level of recursion, drawn as one `curve`.
+// Each level replaces every segment by two segments at a right angle,
+// which bend to the left and to the right in turn.
+// The two ends of the curve stay where they are at every level, and so does its box,
+// so that a morph from one level to the next changes the outline and moves nothing.
+//
+// A shape morph cuts both outlines at the same fractions of their length.
+// All segments of one level have the same length, so each segment is paired with the two
+// segments that replace it, and the new corner rises out of the middle of the segment.
+#let dragon(level, size: 6.5cm) = {
+  let points = ((0, 0), (1, 0))
+  for _ in range(level) {
+    let next = (points.first(),)
+    for (i, ((px, py), (qx, qy))) in points.windows(2).enumerate() {
+      let side = if calc.even(i) { 1 } else { -1 }
+      let (hx, hy) = ((qx - px) / 2, (qy - py) / 2)
+      next.push((px + hx - side * hy, py + hy + side * hx))
+      next.push((qx, qy))
+    }
+    points = next
+  }
+  // The dragon of every level lies within x from -1/3 to 7/6 and y from -1/3 to 2/3.
+  box(width: 1.5 * size, height: size, place(dx: size / 3, dy: size / 3, curve(
+    stroke: (
+      paint: teal,
+      thickness: 3pt * calc.pow(0.85, level),
+      cap: "round",
+      join: "round",
+    ),
+    curve.move((0pt, 0pt)),
+    ..points.slice(1).map(((x, y)) => curve.line((x * size, y * size))),
+  )))
+}
+
+// Every step replaces the dragon by the next level, so ten steps go from a line to level 10.
+#slide(animation: {
+  import anim: *
+  for level in range(1, 11) {
+    sub(replace("dragon", transition: morph())[#dragon(level)])
+  }
+})[
+  = Here Be (Morphing) Dragons
+
+  #align(center + horizon, tag("dragon", dragon(0)))
 ]
 
 
@@ -578,7 +647,7 @@
     row-gutter: 0.5cm,
     align: center + horizon,
     tag("1", box(
-      fill: bgrb,
+      fill: pale,
       width: 1fr,
       inset: 0.5cm,
       radius: 0.5cm,
@@ -592,7 +661,7 @@
       To be presented with a browser
     ]),
     tag("2", box(
-      fill: bgrb,
+      fill: pale,
       width: 1fr,
       inset: 0.5cm,
       radius: 0.5cm,
@@ -606,7 +675,7 @@
       For a venue without a browser
     ]),
     tag("3", box(
-      fill: bgrb,
+      fill: pale,
       width: 1fr,
       inset: 0.5cm,
       radius: 0.5cm,
@@ -625,6 +694,12 @@
       and can be exported to PDF, SVG or PNG.
     ]),
   )
+
+  // `output-type()` names the output type being compiled, so this line differs between
+  // the three outputs of one source file.
+  #place(bottom + left, context text(size: 0.8em)[
+    This copy of the deck was compiled as #raw(output-type()).
+  ])
 ]
 
 #slide(animation: {

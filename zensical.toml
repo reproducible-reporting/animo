@@ -4,13 +4,15 @@
 [project]
 site_name = "Animo"
 site_url = "https://reproducible-reporting.github.io/animo/"
-site_description = "Animo builds dynamic HTML and static PDF presentations using typst from a single source."
+site_description = "Build dynamic HTML and static PDF presentations using typst from a single source."
 site_author = "Toon Verstraelen"
 copyright = "Copyright &copy; 2026 Toon Verstraelen"
 
 repo_url = "https://github.com/reproducible-reporting/animo"
 repo_name = "reproducible-reporting/animo"
 edit_uri = "edit/main/docs/"
+
+extra_css = ["assets/stylesheets/animo.css"]
 
 nav = [
   { "Home" = "index.md" },
@@ -21,7 +23,9 @@ nav = [
     { "Structural Animations" = "structural.md" },
     { "The Viewport" = "viewport.md" },
     { "Regions" = "regions.md" },
+    { "Morphs" = "morphs.md" },
     { "Numbering" = "numbering.md" },
+    { "Handouts" = "handouts.md" },
     { "Output Types" = "outputs.md" },
     { "Presenting" = "presenting.md" },
     { "Performance" = "performance.md" },
@@ -39,6 +43,10 @@ nav = [
 
 [project.theme]
 language = "en"
+# Both are symlinks into `logo/`, because zensical only serves files under `docs/`.
+# The header is white in light mode, so the logo in it is the teal one.
+logo = "assets/logo.svg"
+favicon = "assets/favicon.svg"
 features = [
   "content.action.edit",
   "content.action.view",
@@ -58,19 +66,26 @@ features = [
 [project.theme.icon]
 repo = "fontawesome/brands/github"
 
+# The custom colors are those of the logo, which `docs/assets/stylesheets/animo.css` defines.
 [[project.theme.palette]]
 media = "(prefers-color-scheme)"
+primary = "custom"
+accent = "custom"
 toggle.icon = "lucide/sun-moon"
 toggle.name = "Switch to light mode"
 
 [[project.theme.palette]]
 media = "(prefers-color-scheme: light)"
+primary = "custom"
+accent = "custom"
 scheme = "default"
 toggle.icon = "lucide/sun"
 toggle.name = "Switch to dark mode"
 
 [[project.theme.palette]]
 media = "(prefers-color-scheme: dark)"
+primary = "custom"
+accent = "custom"
 scheme = "slate"
 toggle.icon = "lucide/moon"
 toggle.name = "Switch to system preference"
@@ -106,3 +121,11 @@ zensical.extensions.macros.on_undefined = "strict"
 
 [project.extra]
 typst_version = "0.15.0"
+
+# Zensical writes a preview image for every page into `site/assets/images/social/`
+# and links it from the page's `og:image` and `twitter:image` meta tags.
+# The card of the home page, `site/assets/images/social/index.png`,
+# is also the social preview of the GitHub repository, which is uploaded by hand.
+[project.plugins.social]
+cards_layout_dir = "logo"
+cards_layout = "social-card"

@@ -32,7 +32,11 @@ from test_subslides import timeline
 SITE = """
 #let moved-of(outer) = {
   let body = outer.body
-  if repr(body.func()) == "sequence" { body.children.last() } else { body }
+  // The `move` sits between the anchor that paper places before it and the corner that the
+  // HTML target places after it.
+  if repr(body.func()) == "sequence" {
+    body.children.find(it => it.func() == move)
+  } else { body }
 }
 #let inner-of(outer) = {
   let shown = moved-of(outer).body.body

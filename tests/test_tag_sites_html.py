@@ -76,9 +76,13 @@ def test_a_wrap_none_tag_emits_no_group_at_all(deck_at, sites):
 
 
 def test_every_tag_site_of_the_three_kinds_has_the_two_nested_slots(open_page, sites):
-    """Boundary state outside, continuous state inside, wherever the tag site sits."""
+    """Boundary state outside, continuous state inside, wherever the tag site sits.
+
+    Beside the inner group sits the marker of the far corner of its box.
+    """
     page = open_page(sites)
     for name in ("b", "lab"):
         groups = page.locator(f'[data-typst-label="{name}"]')
         assert groups.count() == 1, name
-        assert groups.locator(":scope > g").count() == 1, name
+        assert groups.locator(":scope > g:not([data-typst-label])").count() == 1, name
+        assert groups.locator(':scope > [data-typst-label="animo-corner"]').count() == 1, name

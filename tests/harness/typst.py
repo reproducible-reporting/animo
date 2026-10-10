@@ -22,6 +22,7 @@ __all__ = (
     "TypstResult",
     "TypstRunner",
     "compile_typst",
+    "example_decks",
     "manifest",
     "write_typst",
 )
@@ -67,6 +68,16 @@ class TypstResult:
             listing = "\n".join(f"{i:>{width}} | {line}" for i, line in enumerate(lines, 1))
             parts.append(f"--- {self.source.name} ---\n{listing}")
         return "\n".join(parts)
+
+
+def example_decks() -> list[Path]:
+    """The decks under `examples/`, in the order `tools/build_examples.py` compiles them.
+
+    A file whose name starts with an underscore holds what several decks import,
+    such as `examples/_common.typ`, and is not a deck itself.
+    """
+    paths = (ROOT / "examples").glob("*.typ")
+    return sorted(path for path in paths if not path.name.startswith("_"))
 
 
 def manifest() -> dict:

@@ -39,12 +39,15 @@ def test_every_tag_site_is_a_labelled_group_holding_one_group(open_page, animate
     Continuous state belongs to the inner group and boundary state to the labelled outer
     one, because CSS gives an element one `translate` and one `scale` and the two classes
     would otherwise clobber each other.
+    Beside the inner group sits the marker of the far corner of its box, which says where the
+    centre of a `scale` is.
     """
     page = open_page(animated)
     for name in ("first", "second"):
         groups = page.locator(f'[data-typst-label="{name}"]')
         assert groups.count() == 1, name
-        assert groups.locator(":scope > g").count() == 1, name
+        assert groups.locator(":scope > g:not([data-typst-label])").count() == 1, name
+        assert groups.locator(':scope > [data-typst-label="animo-corner"]').count() == 1, name
 
 
 def test_a_slide_carries_one_state_per_subslide_step(open_page, animated):

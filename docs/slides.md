@@ -12,11 +12,11 @@ SPDX-License-Identifier: Apache-2.0
 # Slides
 
 The example deck for this page is
-[`hello.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/hello.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/hello.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/hello-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/hello-handouts.pdf)).
-It illustrates most concepts explained below with one slide, one tag and one subslide.
+[`slides.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/slides.typ)
+([HTML](https://reproducible-reporting.github.io/animo/examples/slides.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/examples/slides-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/examples/slides-handouts.pdf)).
+It shows the margin, backgrounds and overlays of each kind, and every slide transition.
 
 A deck is a document with a show rule at the top and a `#slide` call per slide.
 
@@ -41,7 +41,8 @@ e.g. in the slide background or overlay.
 ## The Deck
 
 The `animo` function is a document show rule,
-and the only place where the shape of a deck is written.
+and the only place where the shape of a deck is written,
+e.g. with `#show: animo.with(...)`.
 Because the show rule receives the whole document, it determines three things at once:
 the page size of the two paged outputs,
 the HTML page with its stylesheet and its runtime,
@@ -63,9 +64,10 @@ even with a poor projector.
 
 ## The Body
 
-The body says what is on the slide.
-The body is laid out on a **canvas**, which is at least as large as the slide and may be larger.
-The slide shows one rectangle of the canvas, which is called the **viewport**.
+The body of a slide is the content block between the square brackets of the `#slide` call,
+e.g. `#slide[ ... ]` and determines what is on the slide.
+This content is laid out on a **canvas**, which is at least as large as the slide and may be larger.
+The output (HTML or PDF) shows one rectangle of the canvas, which is called the **viewport**.
 Content outside the viewport is clipped, and never carried over to a next slide.
 [The Viewport](viewport.md) says how large the canvas is and how to travel over it.
 
@@ -81,7 +83,7 @@ A slide has three layers:
 1. the **canvas**, carrying the body, which is what a [`pan`](viewport.md) moves;
 1. the **overlay**, in front of everything.
 
-The outer two take a colour or content.
+The outer two take a color or content.
 
 ```typst
 #slide(
@@ -92,19 +94,19 @@ The outer two take a colour or content.
 ]
 ```
 
-A **colour** fills the whole viewport.
-A colour used as a background becomes the page fill on paper and a CSS background in the browser.
-A colour used as an overlay is painted over the slide.
-An overlay colour is therefore mostly useful with an alpha channel,
+A **color** fills the whole viewport.
+A color used as a background becomes the page fill on paper and a CSS background in the browser.
+A color used as an overlay is painted over the slide.
+An overlay color is therefore mostly useful with an alpha channel,
 typically to dim the slide with a tint.
 
-Instead of a colour, one may also fill the background and overlay with typst **content**,
+Instead of a color, one may also fill the background and overlay with typst **content**,
 laid out in a box the size of the viewport and clipped to it.
 A `#place` inside the overlay or background resolves against the full viewport without margins,
 so an `image(width: 100%, height: 100%)` fills the viewport entirely.
 
-If you like **a gradient or a tiling**,
-then use a `rect` of the slide size, which is treated as any other content:
+**A gradient or a tiling** are implemented with a `rect` that fills the slide
+and is treated as any other content:
 
 ```typst
 #slide(
@@ -131,7 +133,10 @@ Four rules govern both overlay and background layers.
 
 ## Slide Transitions
 
-A slide says how it is **entered** with `init(..)`, which is the first call of its timeline.
+A slide says how it is **entered** with an optional `init(..)`,
+which must be placed first in the animation block.
+Animo will refuse a slide whose `init` follows a `sub` call.
+
 The `init` call describes the **initial state** of the slide,
 which is the state that the body declares before the first `sub`.
 The `init` call adds no subslide.
@@ -148,7 +153,8 @@ Its first argument is the transition into the slide:
 ]
 ```
 
-A slide with no other use for a timeline writes the call on its own, without the import:
+A slide with no other use for a timeline just uses `init()`
+and can be written compactly without the import and braces:
 
 ```typst
 #slide(animation: anim.init(anim.push()))[
@@ -166,11 +172,14 @@ The `anim` module holds one function per transition:
 | `wipe(direction: ltr)`  | the slide is revealed over the slide before it behind a travelling edge |
 
 The `direction` parameter takes a typst direction:
-`ltr` travels from left to right, `rtl` from right to left,
-`ttb` from top to bottom and `btt` from bottom to top.
+
+- `ltr` travels from left to right,
+- `rtl` from right to left,
+- `ttb` from top to bottom and
+- `btt` from bottom to top.
+
 A push and a cover default to `rtl`, so the slide comes in from the right,
 and a wipe defaults to `ltr`.
-A parameter or a value that a transition does not take is refused when the deck is compiled.
 
 The `duration:` argument of `init` is how long the transition takes, in seconds.
 It defaults to `auto`, which is the deck's
@@ -187,7 +196,7 @@ A duration of zero is a **hard cut**, whatever the transition:
 ]
 ```
 
-The boundary between two slides belongs to the slide with the higher number,
+The boundary between two slides belongs to the later slide,
 so stepping back over it plays the same transition backwards.
 For example, stepping back from a slide that was pushed in from the right
 moves that slide out to the right again and brings the previous slide back from the left.
@@ -198,11 +207,9 @@ The slide being entered is already in its subslide state when it comes into view
 The `init` call also takes `wait:`, `hold:` and `handout:`,
 which mean for the initial state what they mean for a subslide on a `sub`.
 [Continuous Animations](continuous.md#timing) explains the first two,
-and [Selecting States for Handouts](continuous.md#selecting-states-for-handouts) the third.
-The `init` call is written at most once, before the first `sub`,
-and Animo refuses it anywhere else.
+and [Handouts](handouts.md#the-handout-flag) the third.
 
-### Default Transition of the Deck
+## Default Transition of the Deck
 
 A slide whose `init` names no transition takes the default transition of the deck,
 which is the `transition:` argument of the show rule and defaults to `anim.crossfade()`:

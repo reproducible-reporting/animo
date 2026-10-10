@@ -28,7 +28,7 @@ RED = (255, 0, 0)
 
 GREEN = (0, 255, 0)
 
-# One centimetre in typst points, which is one pixel each at the default resolution.
+# One centimeter in typst points, which is one pixel each at the default resolution.
 CM = 28.3465
 
 # The body's origin sits at the deck's margin.
@@ -39,7 +39,7 @@ def mark(name: str, dx: str, dy: str, size: str = "2cm") -> str:
     """A tagged filled square, placed at an offset from the body origin.
 
     The tag hugs, so that the geometry of the square is the geometry of the tag site and the
-    assertions can be written in centimetres from the source.
+    assertions can be written in centis from the source.
     """
     return (
         f"#place(dx: {dx}, dy: {dy}, "
@@ -55,7 +55,7 @@ def timeline(*steps: str) -> str:
 
 
 def color_box(page: np.ndarray, color=RED, tol: int = 8) -> Box | None:
-    """The bounding box of the pixels of approximately this colour.
+    """The bounding box of the pixels of approximately this color.
 
     The tolerance is what makes an antialiased edge count as part of the square,
     so a box asserted from the source has to allow a pixel of rounding either way.
@@ -72,7 +72,7 @@ def color_box(page: np.ndarray, color=RED, tol: int = 8) -> Box | None:
 def assert_close(found: float, expected: float, what: str, tol: float = 1.5):
     """Assert a pixel coordinate against the length the source states.
 
-    A centimetre is 28.3465 points, so an edge lands between two pixels and the
+    A centimeter is 28.3465 points, so an edge lands between two pixels and the
     assertion has to be on the rule rather than on a number read off a run.
     """
     if abs(found - expected) > tol:
@@ -322,18 +322,58 @@ def test_a_per_axis_scale_renders_as_two_factors(paged: PagedRunner):
     assert_close(mixed.y1 - mixed.y0, 6 * CM, "the height at fx: 2")
 
 
-def test_a_moved_and_scaled_element_lands_its_unscaled_corner(paged: PagedRunner):
-    """An anchor is a layout corner and a scale is about a centre, so the two compose.
-
-    The painted corner sits half the growth further out, which is why the manual says that
-    absolute placement of scaled content is approximate by construction.
-    """
+def test_a_placed_and_scaled_element_lands_its_scaled_corner(paged: PagedRunner):
+    """A tag placed with `x` and `y` grows from its anchor, so its painted corner is the target."""
     animation = timeline('sub(move("m", x: 5cm, y: 3cm), scale("m", f: 2))')
     body = f"slide(animation: {animation})[{mark('m', '0cm', '0cm')}]"
     pages = paged.png(deck(body), mode="presentation")
     painted = color_box(pages[1])
-    assert_close(painted.x0, 5 * CM - CM, "the painted left edge, one square-half out")
-    assert_close(painted.y0, 3 * CM - CM, "the painted top edge, one square-half out")
+    assert_close(painted.x0, 5 * CM, "the painted left edge")
+    assert_close(painted.y0, 3 * CM, "the painted top edge")
+    assert_close(painted.x1 - painted.x0, 4 * CM, "the doubled width")
+
+
+def test_a_scale_after_a_placement_keeps_the_corner_on_the_target(paged: PagedRunner):
+    """The placement outlives the step that made it, and so does the point the tag grows from.
+
+    A `dx` after an `x` keeps the anchor that `x` set, so the tag is still placed.
+    """
+    animation = timeline(
+        'sub(move("m", x: 5cm, y: 3cm))',
+        'sub(move("m", dx: 1cm), scale("m", f: 2))',
+    )
+    body = f"slide(animation: {animation})[{mark('m', '0cm', '0cm')}]"
+    pages = paged.png(deck(body), mode="presentation")
+    painted = color_box(pages[2])
+    assert_close(painted.x0, 6 * CM, "the painted left edge")
+    assert_close(painted.y0, 3 * CM, "the painted top edge")
+
+
+def test_an_axis_placed_alone_grows_from_its_edge_and_the_other_about_its_centre(
+    paged: PagedRunner,
+):
+    """Each axis decides on its own whether it was placed.
+
+    The square is 2 cm wide at 4 cm by 2 cm, and only `x` places it, so the doubled square
+    starts at the target horizontally and grows a centimeter up and down about its centre.
+    """
+    animation = timeline('sub(move("m", x: 8cm), scale("m", f: 2))')
+    body = f"slide(animation: {animation})[{mark('m', '4cm', '2cm')}]"
+    pages = paged.png(deck(body), mode="presentation")
+    before, after = color_box(pages[0]), color_box(pages[1])
+    assert_close(after.x0, 8 * CM, "the painted left edge, on the target")
+    assert_close(after.y0, before.y0 - CM, "the painted top edge, half the growth up")
+
+
+def test_a_shifted_element_still_grows_about_its_centre(paged: PagedRunner):
+    """A `dx` or `dy` alone leaves the anchor with the tag, which places nothing."""
+    animation = timeline('sub(move("m", dx: 3cm), scale("m", f: 2))')
+    body = f"slide(animation: {animation})[{mark('m', '4cm', '2cm')}]"
+    pages = paged.png(deck(body), mode="presentation")
+    before, after = color_box(pages[0]), color_box(pages[1])
+    centre = (before.x0 + before.x1) / 2 + 3 * CM
+    assert_close((after.x0 + after.x1) / 2, centre, "the centre, three centis on")
+    assert_close(after.y0, before.y0 - CM, "the painted top edge, half the growth up")
 
 
 def test_the_anchor_is_read_from_the_first_page_that_lays_the_tag_out(paged: PagedRunner):

@@ -1,139 +1,328 @@
 // SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 // SPDX-License-Identifier: Apache-2.0
 
-// Numbering: how a deck tells its audience which part of the talk they are looking at.
-//
-// Animo has no header or footer machinery, so a recurring element is a wrapper around
-// `#slide` that fills one of the two outer layers. This deck writes one, and everything
-// it puts in that layer is ordinary typst content.
-//
-// The overlay is the layer to put a number in, and the reason is the cost model rather than taste.
-// It is one rendering per slide where the body is one rendering per epoch,
-// so a stack of one rendering per subslide is paid for once here and once per epoch there.
-// It also belongs to the viewport, so a `pan` leaves it where it is.
+// Slide numbers, subslide numbers and a progress bar, written into the overlay by a wrapper
+// around `#slide`, because Animo has no header or footer machinery.
+// Each of the three numbering functions has a color on every slide of this deck:
+// the slide number is dark gray, the subslide number is orange and the progress bar is teal.
 
 #import "@preview/animo:0.1.1": *
+// The colors, the title slide, the styles and the slide wrapper that the example decks share.
+#import "_common.typ": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-#show heading: set block(below: 1em)
+#show: example-style
 
-#let accent = rgb("#204080")
-
-// Style inline code
-#let bgrb = rgb("#ddeeff")
-#show raw.where(block: false): it => highlight(
-  fill: bgrb,
-  stroke: bgrb + 0.1cm,
-  radius: 0.1cm,
-  it,
+// A number in the footer, as white text on a colored label.
+#let pill(color, body) = box(
+  fill: color,
+  inset: (x: 4pt, y: 2pt),
+  radius: 2pt,
+  text(fill: white, weight: "bold", body),
 )
 
-// The footer every slide carries, and the whole of the numbering surface in one place.
-//
-// `slide-number()` and `slide-count()` are plain numbers, so anything can be computed from them,
-// and `slide-number()` is `none` on a slide that `numbered: false` leaves out.
-//
-// `per-subslide` is what a number finer than a slide needs.
-// Its callback is laid out once per subslide,
-// and the one belonging to the subslide being shown is what the audience sees:
-// the browser chooses between the renderings,
-// and a page of a paged output carries the rendering of the state on that page.
-// A subslide number is written only where there is more than one subslide to tell apart,
-// which is what keeps it out of the way on an ordinary slide.
+// The footer of every slide, in the bottom right corner of the viewport.
+// `slide-number()` is `none` on a slide with `numbered: false`, so such a slide has no footer.
+// `per-subslide` lays its callback out once per subslide,
+// and the browser shows the rendering of the subslide on screen.
+// The subslide number is written only on a slide with more than one subslide,
+// because a slide with a single subslide has nothing to tell apart.
 #let footer = context {
   let number = slide-number()
   if number != none {
-    place(bottom + right, dx: -0.15cm, dy: -0.25cm, text(
-      size: 0.7em,
-      fill: gray,
-      [
-        slide #number of #slide-count()
-        #per-subslide(it => if it.count > 1 [(sub #it.number of #it.count)])
-      ],
-    ))
+    place(bottom + right, dx: -0.4cm, dy: -0.35cm, text(size: 0.75em, {
+      pill(dark)[slide #number of #slide-count()]
+      per-subslide(it => if it.count > 1 {
+        h(3pt)
+        pill(orange)[sub #it.number of #it.count]
+      })
+    }))
   }
 }
 
-// A progress bar over the whole talk, which is the deck-wide half of the same callback.
-//
-// `step` and `steps` count every state of every slide,
-// so the bar advances once per click rather than once per slide.
-// It says `wrap: block` because a rendering that states a ratio
-// needs a container width to be a ratio of, and only a filling container has one.
-// The `stack` below is block-level, so `auto` chooses the same wrapper here.
-// The argument is needed for a rendering that is inline and states a ratio,
-// such as a bar drawn as a `box` of a ratio width:
-// a stack of inline renderings measures them unbounded, where a `100%` width resolves to zero.
-#let progress = place(bottom, per-subslide(
-  it => stack(
-    dir: ltr,
-    rect(
-      width: 100% * (it.step - 1) / (it.steps - 1),
-      height: 4pt,
-      fill: accent,
-      stroke: none,
-    ),
-    rect(
-      width: 100% * (it.steps - it.step) / (it.steps - 1),
-      height: 4pt,
-      fill: gray.lighten(70%),
-      stroke: none,
-    ),
-  ),
-  wrap: block,
-))
+// The fraction of the talk that lies behind the subslide on screen.
+// `step` and `steps` count every subslide of every slide, so the bar advances once per step.
+#let done(it) = if it.steps > 1 { (it.step - 1) / (it.steps - 1) } else { 1 }
 
-// The wrapper the deck writes its slides with, which is the recurring-element pattern:
-// no templating features, one function, two placements in a layer.
-#let numbered-slide(body, ..arguments) = slide(
+// A progress bar as wide as its container, drawn for one subslide.
+#let bar(it, height) = stack(
+  dir: ltr,
+  rect(width: 100% * done(it), height: height, fill: teal, stroke: none),
+  rect(
+    width: 100% * (1 - done(it)),
+    height: height,
+    fill: teal.lighten(80%),
+    stroke: none,
+  ),
+)
+
+// The stack of renderings says `wrap: block`, because a width given as a ratio
+// needs a container width to be a ratio of.
+#let progress = place(bottom, per-subslide(it => bar(it, 3pt), wrap: block))
+
+// The wrapper that this deck writes its slides with.
+// It puts the footer, the note for the subslide on screen and the progress bar in the overlay.
+// The overlay is laid out once per slide, where the body is laid out once per epoch,
+// so a `per-subslide` in the overlay costs its renderings only once.
+// The overlay also belongs to the viewport, so a `pan` leaves the numbers where they are.
+#let numbered-slide(body, notes: none, ..arguments) = slide(
   overlay: {
     footer
+    if notes != none {
+      place(bottom + left, dx: 1cm, dy: -0.35cm, block(
+        width: 9cm,
+        state-note(notes),
+      ))
+    }
     progress
   },
   ..arguments,
   body,
 )
 
-#numbered-slide(numbered: false)[
+// A function name in the color that the deck gives it, for the legend on the title slide.
+#let chip(color, body) = box(
+  fill: color.lighten(85%),
+  stroke: 0.8pt + color,
+  inset: 5pt,
+  radius: 3pt,
+  text(fill: color, weight: "bold", body),
+)
+
+#title-slide("numbering.typ")
+
+#numbered-slide(
+  numbered: false,
+  // The push lifts the curtain of the title slide.
+  animation: anim.init(anim.push(direction: btt)),
+  background: rect(width: 100%, height: 100%, fill: gradient.linear(
+    white,
+    pale,
+    angle: 90deg,
+  )),
+  notes: (
+    [`numbered: false` leaves this slide out of the count, so it has no footer.],
+  ),
+)[
   #set align(center + horizon)
-  #text(size: 2em)[*Numbering*]
+  #text(size: 2.4em, fill: dark)[*Numbering*]
 
-  A title slide is `numbered: false`, \
-  so it carries no number and the counter passes it by.
+  #explain[Slide numbers, subslide numbers and a progress bar]
+
+  #v(0.6cm)
+
+  #chip(dark)[`slide-number()`]
+  #h(0.3cm)
+  #chip(orange)[`per-subslide`: `number` and `count`]
+  #h(0.3cm)
+  #chip(teal)[`per-subslide`: `step` and `steps`]
 ]
 
-#numbered-slide(animation: {
-  import anim: *
-  sub(reveal("second"))
-  sub(reveal("third"))
-})[
-  = A slide that animates
+#numbered-slide(
+  notes: (
+    [This slide has a single subslide, so the footer writes the slide number alone.],
+  ),
+)[
+  = The Slide Number
 
-  #tag("first")[This is the first subslide, and the footer says so.]
+  #explain[`slide-number()` and `slide-count()` are context functions that return integers.]
 
-  #tag("second")[The number beside the slide number counts these.]
+  #v(1fr)
 
-  #tag(
-    "third",
-  )[Ask about "slide 1 (sub 3 of 3)" and the speaker can find it.]
+  #align(center, text(size: 2.4em, fill: dark)[
+    *slide #context slide-number() of #context slide-count()*
+  ])
+
+  #align(center)[`#context [slide #slide-number() of #slide-count()]`]
+
+  #v(1fr)
+
+  #explain[
+    The title slide and the slide after it have `numbered: false`, so the counter skips both,
+    and the third slide of the deck is slide 1.
+    The footer in the corner shows the same number.
+  ]
 ]
 
-#numbered-slide[
-  = A static slide
+// One box per subslide of the slide, with the box of the subslide on screen filled.
+#let subslide-diagram(it) = stack(
+  spacing: 8pt,
+  stack(
+    dir: ltr,
+    spacing: 6pt,
+    ..range(1, it.count + 1).map(i => box(
+      inset: 6pt,
+      radius: 3pt,
+      stroke: 0.8pt + orange,
+      fill: if i == it.number { orange } else { white },
+      text(fill: if i == it.number { white } else { orange })[*sub #i*],
+    )),
+  ),
+  explain[`it.number` is #it.number and `it.count` is #it.count],
+)
 
-  Due to lack of subslides, the footer writes the slide number alone.
-]
+#numbered-slide(
+  notes: (
+    [The orange label in the footer counts the subslides of this slide.],
+    [`it.number` grows by one with every step, and `it.count` stays the same.],
+    [A question about "slide 2, sub 3" points at one subslide.],
+    [A page of the static presentation shows the number of its subslide.],
+  ),
+  animation: {
+    import anim: *
+    sub(reveal("count"))
+    sub(reveal("rule"))
+    sub(reveal("pages"))
+  },
+)[
+  = The Subslide Number
 
-#numbered-slide(animation: {
-  import anim: *
-  sub(replace("claim")[The bar underneath counts clicks, not slides.])
-})[
-  = The bar spans the talk
+  #[
+    #set text(fill: orange, weight: "bold")
+    `it.number` is the position of the subslide on screen, counting from one.
 
-  #region[
-    #tag("claim")[Every state of every slide is one step of the whole deck.]
+    #tag("count")[`it.count` is how many subslides the slide has.]
+
+    #tag("rule")[The footer writes both only when `it.count > 1`.]
+
+    #tag("pages")[Every output type shows the same number on the same subslide.]
   ]
 
-  So the bar moves by the same amount on a slide that animates as on one that does not.
+  #v(1fr)
+
+  // The diagram is a second `per-subslide`, which costs no rendering of the body.
+  #align(center, per-subslide(subslide-diagram))
+
+  #v(1fr)
+
+  #explain[
+    `per-subslide(it => ..)` calls its callback once per subslide,
+    and the browser shows the rendering of the subslide on screen.
+  ]
+]
+
+#numbered-slide(
+  notes: (
+    [`it.step` counts the subslides of every slide, including the title slide.],
+    [Each step advances the bar by the same amount.],
+    [The bar on the slide and the thin one at the bottom edge are drawn by one function.],
+  ),
+  animation: {
+    import anim: *
+    sub(reveal("same"))
+    sub(reveal("thin"))
+  },
+)[
+  = A Progress Bar
+
+  #align(center, per-subslide(it => text(size: 2em, fill: teal)[
+    *step #it.step of #it.steps*
+  ]))
+
+  #per-subslide(it => bar(it, 0.5cm), wrap: block)
+
+  #align(center, per-subslide(it => explain[
+    The bar is `100% * (it.step - 1) / (it.steps - 1)` wide,
+    which is #calc.round(100 * done(it))% here.
+  ]))
+
+  #v(1fr)
+
+  #[
+    #set text(fill: teal, weight: "bold")
+    #tag(
+      "same",
+    )[A slide that animates and a slide that does not move the bar alike.]
+
+    #tag(
+      "thin",
+    )[The same bar runs along the bottom edge of every slide, 3pt thin.]
+  ]
+
+  #v(1fr)
+]
+
+// A bar drawn inline, whose width is a ratio of the container that holds it.
+#let inline-bar(it) = box(width: 100% * done(it), height: 0.4cm, fill: teal)
+
+// A frame of the full width around a stack of renderings,
+// which stays visible when the stack is empty.
+#let frame(body) = block(
+  width: 100%,
+  height: 0.6cm,
+  inset: 0.1cm,
+  stroke: guide,
+  body,
+)
+
+#numbered-slide(
+  notes: (
+    [The two frames hold the same inline bar, and only the upper one shows it.],
+  ),
+)[
+  = The `wrap:` Argument
+
+  #explain[Both frames hold `per-subslide(it => box(width: 100% * .., ..))`.]
+
+  #v(1fr)
+
+  #grid(
+    columns: (auto, 1fr),
+    align: (right + horizon, left + horizon),
+    column-gutter: 0.4cm,
+    row-gutter: 0.6cm,
+    [`wrap: block`], frame(per-subslide(inline-bar, wrap: block)),
+    [`wrap: auto`], frame(per-subslide(inline-bar)),
+  )
+
+  #v(1fr)
+
+  #explain[
+    `wrap: auto` chooses a box for inline content, and a box is only as wide as what it holds.
+    A `100%` width inside such a box resolves to zero, so the lower bar is invisible.
+    `wrap: block` gives the stack a block that fills the width of the slide.
+  ]
+]
+
+#numbered-slide(
+  notes: (
+    [The footer is in the overlay, and the dashed label is a copy in the body.],
+    [`pan(dx: 10cm)` moves the canvas with the copy, and the footer stays in its corner.],
+    [`pan(x: 0cm)` returns to the origin of the canvas, and the copy returns with it.],
+  ),
+  animation: {
+    import anim: *
+    sub(pan(dx: 10cm))
+    sub(pan(x: 0cm))
+  },
+)[
+  = Where a Number Goes
+
+  #explain[
+    Typst lays out the overlay once per slide and the body once per epoch.
+    A `per-subslide` in the overlay therefore costs its renderings only once,
+    and the overlay stays in place when a `pan` moves the canvas.
+  ]
+
+  // The copy is placed in the body, so it travels with the canvas.
+  #place(bottom + right, box(
+    stroke: (paint: dark, dash: "dashed"),
+    inset: (x: 4pt, y: 2pt),
+    radius: 2pt,
+    text(size: 0.75em, fill: dark, weight: "bold")[
+      slide #context slide-number() in the body
+    ],
+  ))
+
+  // A placed card makes the canvas wider than the viewport, which gives the pan room.
+  #place(dx: 15cm, dy: 1.5cm, block(
+    width: 9cm,
+    inset: 0.5cm,
+    radius: 0.2cm,
+    fill: pale,
+  )[
+    The canvas has moved 10cm to the left, and the copy in the body has moved with it.
+    The footer is still in its corner.
+  ])
 ]

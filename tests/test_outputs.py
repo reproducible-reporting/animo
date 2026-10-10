@@ -12,7 +12,7 @@ import numpy as np
 from decks import deck
 from harness import PagedRunner, assert_identical
 
-# The deck is 16 by 9 centimetres, which is 453.54 by 255.12 points,
+# The deck is 16 by 9 centis, which is 453.54 by 255.12 points,
 # and `PagedRunner.png` renders one pixel per point by default.
 VIEWPORT = (255, 454)
 
@@ -20,12 +20,12 @@ RED = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLUE = (0, 0, 255)
 
-# One centimetre in points, which is one pixel at the default raster resolution.
+# One centimeter in points, which is one pixel at the default raster resolution.
 CM = 28.3465
 
 
 def has_color(page: np.ndarray, color: tuple[int, int, int]) -> bool:
-    """Whether a raster holds at least one pixel of exactly this colour."""
+    """Whether a raster holds at least one pixel of exactly this color."""
     return bool((page == np.array(color, dtype=np.uint8)).all(axis=2).any())
 
 
@@ -55,7 +55,7 @@ def test_the_presentation_and_the_handout_are_identical_for_a_static_deck(paged:
         assert_identical(first, second, what=f"the two modes on page {index + 1}")
 
 
-def test_a_colour_background_fills_the_page(paged: PagedRunner):
+def test_a_color_background_fills_the_page(paged: PagedRunner):
     """The background is the page fill on paper, so it reaches the corners."""
     pages = paged.png(deck('slide(background: rgb("#ff0000"))[body]'))
     assert tuple(pages[0][0, 0]) == RED
@@ -96,7 +96,7 @@ def test_the_margin_insets_the_body_and_not_the_viewport(paged: PagedRunner):
     with_margin = paged.png(deck(f"slide[{mark('0cm', '0cm')}]", margin="1cm"))[0]
     assert tuple(without[1, 1]) == RED
     assert tuple(with_margin[1, 1]) != RED
-    # One centimetre is 28.35 points, and one point is one pixel here.
+    # One centimeter is 28.35 points, and one point is one pixel here.
     assert tuple(with_margin[30, 30]) == RED
 
 
@@ -104,7 +104,7 @@ def test_the_margin_insets_the_body_and_not_the_viewport(paged: PagedRunner):
 
 
 def at(page: np.ndarray, x: float, y: float) -> tuple[int, int, int]:
-    """The colour of the pixel at a position on the page, in centimetres from its corner."""
+    """The color of the pixel at a position on the page, in centis from its corner."""
     return tuple(int(value) for value in page[round(y * CM), round(x * CM)])
 
 
@@ -133,13 +133,13 @@ def test_the_overlay_is_drawn_over_the_body_and_the_background_under_it(paged: P
     assert at(page, 4, 4) == BLUE, "the overlay is not in front of the body"
 
 
-def test_a_colour_overlay_is_ink_over_the_slide_and_not_a_page_fill(paged: PagedRunner):
+def test_a_color_overlay_is_ink_over_the_slide_and_not_a_page_fill(paged: PagedRunner):
     """This is where the two arguments stop being symmetric.
 
-    A background colour is the `fill` of the page, which is behind everything;
-    an overlay colour is a separate layer, so an opaque one covers the body.
-    The second raster is the control: the same colour as a background leaves the body
-    visible, so the first assertion is about the layer and not about the colour.
+    A background color is the `fill` of the page, which is behind everything;
+    an overlay color is a separate layer, so an opaque one covers the body.
+    The second raster is the control: the same color as a background leaves the body
+    visible, so the first assertion is about the layer and not about the color.
     """
     body = f"[{mark('2cm', '2cm')}]"
     over = paged.png(deck(f'slide(overlay: rgb("#0000ff")){body}'))[0]

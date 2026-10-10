@@ -183,6 +183,24 @@ def travelled(typst: TypstRunner):
     return typst.html(TRAVELLED, name="travelled.html")
 
 
+# A gap the presenter owns, a short gap and a long one, and a second gap the presenter owns.
+# The two timed gaps differ in length, so a test can tell which of them times a backward step.
+UNEVEN = deck(
+    "slide(animation: { import anim: *\n"
+    '  sub(reveal("a"))\n'
+    "  sub(wait: 1)\n"
+    "  sub(wait: 3)\n"
+    "  sub()\n"
+    f"}})[\n  {LINE}\n]",
+)
+
+
+@pytest.fixture
+def uneven(typst: TypstRunner):
+    """One slide whose two timed gaps lie between two gaps that wait for the presenter."""
+    return typst.html(UNEVEN, name="uneven.html")
+
+
 # A whole slide the deck runs through, which is the join that spans more than one boundary.
 FLASHED = deck("slide[= First]", "slide(animation: anim.init(hold: 0))[= Second]", "slide[= Third]")
 
@@ -279,9 +297,8 @@ def test_a_hold_on_the_last_step_of_a_slide_enters_the_next(timed_deck_at, held)
 def test_backward_travel_carries_on_over_an_automatic_gap(timed_deck_at, travelled):
     """The clock that carries a deck forward over a gap carries it back over the same gap.
 
-    The state a backward step lands on is one the deck leaves on its own going forward, so
-    it leaves it on its own coming back, and after the same wait. A state inside a run is
-    shown for as long in both directions.
+    The state a backward step lands on is one the deck entered on its own going forward, so
+    it leaves it on its own coming back, after the wait of the gap it entered it over.
     """
     presentation: Deck = timed_deck_at(travelled).goto(1, 3)
     presentation.press("ArrowLeft")
@@ -296,17 +313,38 @@ def test_backward_travel_carries_on_over_an_automatic_gap(timed_deck_at, travell
 def test_backward_travel_stops_where_the_deck_waits_for_the_presenter(timed_deck_at, playing):
     """A gap the presenter owns is one the clock never crosses, in either direction.
 
-    This is the shape of a build that runs into the next slide on a timer. The boundary is
-    crossed back on the clock, and the travel ends on the state the presenter last pressed a
-    key at, rather than on a state the audience saw for the length of one gap.
+    This is the shape of a build that runs into the next slide on a timer. The press back
+    crosses the timed boundary ahead of its clock, and the deck rests on the state that the
+    presenter's forward press brought up, because the gap before that state waits for the
+    presenter. The gap after it is timed and stays unarmed, so the deck does not play on.
     """
     presentation: Deck = timed_deck_at(playing).goto(2, 0)
     presentation.press("ArrowLeft")
     assert presentation.position == (1, 2)
-    presentation.run_for(SECOND)
+    presentation.run_for(10 * SECOND)
+    assert presentation.position == (1, 2), "the clock crossed a gap the presenter owns"
+    assert not presentation.paused
+
+
+def test_a_backward_step_is_timed_by_the_gap_it_crosses(timed_deck_at, uneven):
+    """Each gap takes as long coming back as going forward, so the run plays mirrored in time.
+
+    The gap after a state is not the gap that a backward step from it crosses, and the two
+    differ in length here. The travel ends on the state that the forward press brought up.
+    """
+    presentation: Deck = timed_deck_at(uneven).goto(1, 4)
+    presentation.press("ArrowLeft")
+    assert presentation.position == (1, 3)
+    presentation.run_for(3 * SECOND - 1)
+    assert presentation.position == (1, 3), "the step back came before its gap ran out"
+    presentation.run_for(1)
+    assert presentation.position == (1, 2)
+    presentation.run_for(SECOND - 1)
+    assert presentation.position == (1, 2), "the step back came before its gap ran out"
+    presentation.run_for(1)
     assert presentation.position == (1, 1)
     presentation.run_for(10 * SECOND)
-    assert presentation.position == (1, 1), "the travel crossed a gap the presenter owns"
+    assert presentation.position == (1, 1), "the clock crossed a gap the presenter owns"
     assert not presentation.paused
 
 
@@ -359,18 +397,22 @@ def test_space_puts_back_the_clock_backward_travel_stopped(timed_deck_at, chaine
     assert presentation.position == (1, 1)
 
 
-def test_a_backward_step_over_a_manual_gap_leaves_the_clock_alone(timed_deck_at, playing):
+def test_a_backward_step_over_a_manual_gap_leaves_the_clock_alone(
+    timed_deck_at, typst: TypstRunner
+):
     """Only a gap on the clock can defeat backward travel, so only that one stops it.
 
     A deck with no number in it therefore keeps the forward key every presentation remote
-    sends, `Space` included, however its presenter walks through it.
+    sends, `Space` included, however its presenter walks through it, also at its first state.
     """
-    presentation: Deck = timed_deck_at(playing).goto(1, 2)
+    presentation: Deck = timed_deck_at(
+        animated(typst, LINE, 'sub(reveal("a"))', "sub()", name="manual.html")
+    ).goto(1, 1)
     presentation.press("ArrowLeft")
-    assert presentation.position == (1, 1)
+    assert presentation.position == (1, 0)
     assert not presentation.paused
     presentation.press(" ")
-    assert presentation.position == (1, 2), "Space paused a deck with no clock to pause"
+    assert presentation.position == (1, 1), "Space paused a deck with no clock to pause"
 
 
 def test_a_backward_step_gets_over_a_gap_of_zero(timed_deck_at, joined):

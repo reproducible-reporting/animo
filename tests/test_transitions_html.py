@@ -11,7 +11,7 @@ walking in.
 
 The crossfade itself is measured rather than raced, by pausing what is in flight and
 stating the moment, exactly as the epoch crossfade is in `test_epochs_html.py`.
-The two slides carry different background colours, because that is the case a plain
+The two slides carry different background colors, because that is the case a plain
 opacity crossfade gets wrong.
 Two opaque grounds dip to something darker than either at the midpoint,
 while `plus-lighter` sums them to the average.
@@ -232,7 +232,7 @@ def test_the_midpoint_of_a_boundary_is_the_sum_of_the_two_slides(
 ):
     """Nothing dips halfway through, which is what `plus-lighter` is there for.
 
-    The two slides carry opaque grounds of different colours, so a plain opacity
+    The two slides carry opaque grounds of different colors, so a plain opacity
     crossfade would put the black surround of the deck through the half-transparent pair
     and land the midpoint far below the average of the two. The assertion is on the whole
     slide rather than on a band of it, because a slide boundary scopes nothing.
@@ -310,7 +310,7 @@ def test_the_slide_being_entered_is_shown_in_the_state_it_comes_up_on(
 # length. Slide 3 pushes, slide 4 cuts, slide 5 wipes and slide 6 covers, and slides 1 and 2
 # take the default crossfade of the deck.
 # The grounds are opaque and differ, because two of them that overlapped under the
-# `plus-lighter` of a crossfade would add to a third colour where a push, a cover or a wipe
+# `plus-lighter` of a crossfade would add to a third color where a push, a cover or a wipe
 # has to show one of the two.
 
 MIXED_GROUNDS = ("#204080", "#a06020", "#207040", "#802060", "#606020", "#205060")

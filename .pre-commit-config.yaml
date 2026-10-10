@@ -36,6 +36,9 @@ repos:
     - id: detect-private-key
     - id: destroyed-symlinks
     - id: end-of-file-fixer
+      # Typst writes this SVG without a final newline,
+      # and the test suite compares the committed file with a fresh compilation.
+      exclude: ^logo/social-card\.svg$
     - id: fix-byte-order-marker
     - id: mixed-line-ending
     - id: pretty-format-json
