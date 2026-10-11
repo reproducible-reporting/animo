@@ -164,12 +164,13 @@ and can be written compactly without the import and braces:
 
 The `anim` module holds one function per transition:
 
-| Transition              | What happens on a forward step                                          |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `crossfade()`           | the slide fades in while the slide before it fades out                  |
-| `push(direction: rtl)`  | the slide moves in from one edge and moves the slide before it out      |
-| `cover(direction: rtl)` | the slide moves in from one edge over the slide before it               |
-| `wipe(direction: ltr)`  | the slide is revealed over the slide before it behind a travelling edge |
+| Transition                | What happens on a forward step                                          |
+| ------------------------- | ----------------------------------------------------------------------- |
+| `crossfade()`             | the slide fades in while the slide before it fades out                  |
+| `push(direction: rtl)`    | the slide moves in from one edge and moves the slide before it out      |
+| `cover(direction: rtl)`   | the slide moves in from one edge over the slide before it               |
+| `uncover(direction: rtl)` | the slide before it moves out at one edge and shows the slide in place  |
+| `wipe(direction: ltr)`    | the slide is revealed over the slide before it behind a travelling edge |
 
 The `direction` parameter takes a typst direction:
 
@@ -178,8 +179,9 @@ The `direction` parameter takes a typst direction:
 - `ttb` from top to bottom and
 - `btt` from bottom to top.
 
-A push and a cover default to `rtl`, so the slide comes in from the right,
-and a wipe defaults to `ltr`.
+A push, a cover and an uncover default to `rtl`, so the slide comes in from the right
+or the slide before it leaves at the left.
+A wipe defaults to `ltr`.
 
 The `duration:` argument of `init` is how long the transition takes, in seconds.
 It defaults to `auto`, which is the deck's

@@ -28,8 +28,8 @@
   ),
   animation: {
     import anim: *
-    // The push lifts the curtain of the title slide.
-    init(push(direction: btt))
+    // The uncover lifts the curtain of the title slide.
+    init(uncover(direction: btt))
     // Two operations that change one region at one boundary name the same transition.
     sub(
       replace("aside", transition: morph())[#text(

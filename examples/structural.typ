@@ -28,8 +28,8 @@
   ),
   animation: {
     import anim: *
-    // The push lifts the curtain of the title slide.
-    init(push(direction: btt))
+    // The uncover lifts the curtain of the title slide.
+    init(uncover(direction: btt))
     // `apply` takes functions, never named properties: animo does not look inside content,
     // so it cannot know which `set` rule a property would belong to.
     sub(apply("claim", text.with(fill: orange)))

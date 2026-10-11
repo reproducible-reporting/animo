@@ -53,8 +53,8 @@
   ),
   animation: {
     import anim: *
-    // The push lifts the curtain of the title slide.
-    init(push(direction: btt))
+    // The uncover lifts the curtain of the title slide.
+    init(uncover(direction: btt))
     // Each name has a site in both columns, so every primitive changes both columns alike.
     // Outside a region, a tag whose content changes reserves a box for its largest epoch,
     // so the removed caveat leaves a gap there.

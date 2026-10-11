@@ -27,8 +27,8 @@
 // Two `sub` calls give three states: the body as written, and one state per `sub`.
 #explained-slide(animation: {
   import anim: *
-  // The push lifts the curtain of the title slide.
-  init(push(direction: btt))
+  // The uncover lifts the curtain of the title slide.
+  init(uncover(direction: btt))
   sub(reveal("a"))
   sub(hide("a"), move("b", dy: 1cm))
 })[

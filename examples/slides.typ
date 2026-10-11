@@ -30,8 +30,8 @@
 // resolves against the edge of the slide rather than against the margin.
 #slide(
   background: dark,
-  // The push lifts the curtain of the title slide.
-  animation: anim.init(anim.push(direction: btt)),
+  // The uncover lifts the curtain of the title slide.
+  animation: anim.init(anim.uncover(direction: btt)),
   overlay: place(bottom + right, dx: -0.5cm, dy: -0.5cm, text(
     fill: white,
     size: 0.8em,
@@ -156,6 +156,16 @@
 
   `anim.cover(direction: ttb)` moves the slide in over the slide before it,
   which stays where it is.
+]
+
+#slide(
+  background: orange.lighten(60%),
+  animation: anim.init(anim.uncover(direction: ltr)),
+)[
+  = Uncovered to the Right
+
+  `anim.uncover(direction: ltr)` moves the slide before it out at the right edge,
+  over this slide, which stays where it is.
 ]
 
 #slide(

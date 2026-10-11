@@ -33,8 +33,8 @@
 
 #slide(animation: {
   import anim: *
-  // The push lifts the curtain of the title slide.
-  init(push(direction: btt))
+  // The uncover lifts the curtain of the title slide.
+  init(uncover(direction: btt))
   // `relto` shows the tag the way a fresh slide shows its first line,
   // which is at the margin of the deck.
   sub(pan(relto: "right"))

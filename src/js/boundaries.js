@@ -133,6 +133,10 @@ function transitionOf(name) {
  * opaque have to cover rather than add, because two opaque grounds of different colors sum
  * to a third color. A crossfade is the one transition that wants them to add.
  *
+ * `front` is the role of the slide that is in front, which is the owner unless an entry
+ * says otherwise. The owner comes later in the document, so it is in front without a
+ * `z-index`, and only an entry that wants the other slide in front needs one.
+ *
  * A `direction` is the direction of travel on a forward step, which typst writes as `ltr`,
  * `rtl`, `ttb` or `btt`. Typst states every parameter, its defaults included, so the
  * runtime holds no defaults.
@@ -166,7 +170,20 @@ const slideTransitions = {
     }),
   },
   /**
-   * Reveal the owner over the other slide behind an edge that travels across the stage.
+   * Move the other slide out at one edge over the owner, which stays where it is.
+   *
+   * This is a cover played with the two slides swapped, so the other slide is in front.
+   */
+  uncover: {
+    blend: "normal",
+    front: "other",
+    at: (p, { direction }) => ({
+      owner: { opacity: "1" },
+      other: { opacity: "1", translate: travelled(direction, p) },
+    }),
+  },
+  /**
+   * Show the owner over the other slide behind an edge that travels across the stage.
    *
    * The clip is an `inset` whose one side shrinks from the whole stage to nothing, and the
    * other three sides stay at zero, so the two ends of the boundary interpolate.
@@ -293,17 +310,20 @@ function boundaryTiming(transition) {
  * Such a slide starts at the far end of the transition instead, which for a push is outside
  * the stage.
  *
- * The transition's blend stays on the two slides after the boundary has been crossed, for as
- * long as the slide being left keeps its layout. A slide that a cover or a wipe has covered
- * is still laid out under the owner, and under `plus-lighter` the two would add.
+ * The transition's blend and `front` stay on the two slides after the boundary has been
+ * crossed, for as long as the slide being left keeps its layout. A slide that a cover or a
+ * wipe has covered is still laid out under the owner, and under `plus-lighter` the two would
+ * add. An owner that a backward uncover has covered is laid out under the other slide, and
+ * without the `z-index` it would be in front again.
  */
 function planSlides(effects, shown, leaving, options, transition, fresh) {
   for (const [number, slide] of deck) {
     const rest = { opacity: number === shown ? "1" : "0", translate: "", "clip-path": "" };
     const crossing = options !== null && (number === shown || number === leaving);
     plan(effects, slide.element, rest, crossing ? timed(rest, options) : null);
-    // A blend is not animated, because no value between two of them exists.
-    plan(effects, slide.element, { "mix-blend-mode": "" });
+    // A blend and a stacking order are not animated, because no value between two of them
+    // exists.
+    plan(effects, slide.element, { "mix-blend-mode": "", "z-index": "" });
   }
   if (options === null || leaving === null) {
     return;
@@ -322,7 +342,10 @@ function planSlides(effects, shown, leaving, options, transition, fresh) {
     plan(effects, element, end[role], timed(end[role], options), {
       start: fresh.has(number) ? start[role] : null,
     });
-    plan(effects, element, { "mix-blend-mode": entry.blend });
+    plan(effects, element, {
+      "mix-blend-mode": entry.blend,
+      "z-index": role === "other" && entry.front === "other" ? "1" : "",
+    });
   }
 }
 

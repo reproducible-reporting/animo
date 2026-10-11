@@ -79,7 +79,19 @@
   (direction: check-direction("cover", direction)),
 )
 
-/// Uncover the incoming slide behind an edge that travels across the outgoing one.
+/// Move the outgoing slide out at one edge, which shows the incoming slide in place beneath it.
+///
+/// Usable in `init` and as the `transition:` of the deck.
+///
+/// - direction (direction): The direction of travel on a forward step, one of `ltr`, `rtl`,
+///   `ttb` and `btt`. A backward step travels the other way.
+/// -> array
+#let uncover(direction: rtl) = transition-value(
+  "uncover",
+  (direction: check-direction("uncover", direction)),
+)
+
+/// Show the incoming slide behind an edge that travels across the outgoing one.
 ///
 /// Usable in `init` and as the `transition:` of the deck.
 ///
@@ -95,7 +107,7 @@
 #let region-transitions = ("crossfade", "morph")
 
 // The transitions a slide can take, which are the ones that need no region to carry.
-#let slide-transitions = ("crossfade", "push", "cover", "wipe")
+#let slide-transitions = ("crossfade", "push", "cover", "uncover", "wipe")
 
 // Whether a value is what a transition function returned.
 #let is-transition(value) = (

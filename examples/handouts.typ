@@ -28,8 +28,8 @@
   ),
   animation: {
     import anim: *
-    // The push lifts the curtain of the title slide.
-    init(push(direction: btt))
+    // The uncover lifts the curtain of the title slide.
+    init(uncover(direction: btt))
     sub(reveal("second"))
     sub(reveal("third"))
   },

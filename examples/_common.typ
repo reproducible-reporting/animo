@@ -215,8 +215,8 @@
 }
 
 // The title slide of a deck, with the name of its source file on a curtain.
-// The slide after it enters with `anim.push(direction: btt)`,
-// which lifts the curtain out of view.
+// The slide after it enters with `anim.uncover(direction: btt)`,
+// which lifts the curtain out of view and shows that slide in place behind it.
 // The stage floor below the curtain is dark, as in a theatre.
 // Each cord is a darker shade of the fabric it runs along.
 #let title-slide(name) = slide(numbered: false, background: {

@@ -14,6 +14,8 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 ### Added
 
+- Add the `uncover(direction:)` slide transition, which moves the slide being left out at one
+  edge over the slide being entered.
 - Announce the position of the HTML presentation as events on the root element:
   `animo:position`, `animo:leave`, `animo:enter` and `animo:mode`.
   They are sent after the page, the URL fragment and the clock have been updated.

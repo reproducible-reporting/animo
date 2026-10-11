@@ -417,13 +417,15 @@ def test_a_cut_beside_a_push_cuts_in_both_directions(page, deck_at, mixed):
     ("direction", "travel"),
     [("ltr", (1, 0)), ("rtl", (-1, 0)), ("ttb", (0, 1)), ("btt", (0, -1))],
 )
-@pytest.mark.parametrize("name", ["push", "cover"])
+@pytest.mark.parametrize("name", ["push", "cover", "uncover"])
 @pytest.mark.parametrize("key", ["ArrowRight", "ArrowLeft"])
 def test_the_midpoint_of_a_moving_transition(
     page, deck_at, typst: TypstRunner, name, direction, travel, key
 ):
-    """The owner is half way in from the edge it travels from, and the other slide is half
-    way out at the opposite edge for a push and in place for a cover.
+    """The owner is half way in from the edge it travels from for a push and a cover, and in
+    place for an uncover.
+    The other slide is half way out at the opposite edge for a push and an uncover, and in
+    place for a cover.
     """
     source = deck(
         'slide(background: rgb("#204080"))[= One]',
@@ -437,9 +439,11 @@ def test_the_midpoint_of_a_moving_transition(
     presentation.press(key)
     presentation.scrub(MIDPOINT)
     owner, other = offsets(presentation, 2, 1)
-    assert owner == pytest.approx((-travel[0] / 2, -travel[1] / 2), abs=1e-3)
-    moved = (travel[0] / 2, travel[1] / 2) if name == "push" else (0, 0)
-    assert other == pytest.approx(moved, abs=1e-3)
+    halfway = (travel[0] / 2, travel[1] / 2)
+    arriving = (-halfway[0], -halfway[1]) if name != "uncover" else (0, 0)
+    assert owner == pytest.approx(arriving, abs=1e-3)
+    leaving = halfway if name != "cover" else (0, 0)
+    assert other == pytest.approx(leaving, abs=1e-3)
     assert blends(presentation, 1, 2) == ["normal", "normal"]
 
 
@@ -505,6 +509,56 @@ def test_a_cover_covers_rather_than_adds(page, deck_at, typst: TypstRunner):
     assert abs(halfway[:, half:] - first[:, half:]).max() <= ROUNDING
 
 
+UNCOVER = deck(
+    'slide(background: rgb("#204080"))[]',
+    'slide(animation: anim.init(anim.uncover(direction: ltr)), background: rgb("#a06020"))[]',
+)
+
+
+@pytest.mark.parametrize("key", ["ArrowRight", "ArrowLeft"])
+def test_an_uncover_moves_the_slide_being_left_in_front(page, deck_at, typst: TypstRunner, key):
+    """The other slide of an uncover is in front of the owner, in both directions.
+
+    The other slide of a rightward uncover is half way out at the midpoint, so the right half
+    of the stage shows the left half of the other slide, and the left half shows the owner in
+    place beneath it.
+    The owner comes later in the document, so without the `z-index` of the uncover the owner
+    would hide the other slide.
+    """
+    path = typst.html(UNCOVER, name="uncover-front.html")
+    first = screenshot(stage(deck_at(path).goto(1))).astype(int)
+    second = screenshot(stage(deck_at(path).goto(2))).astype(int)
+    presentation: Deck = deck_at(path).goto(2 if key == "ArrowLeft" else 1)
+    page.add_style_tag(content=SLOW)
+    presentation.press(key)
+    presentation.scrub(MIDPOINT)
+    halfway = screenshot(stage(presentation), animations="allow").astype(int)
+    half = halfway.shape[1] // 2
+    assert abs(halfway[:, half:] - first[:, :half]).max() <= ROUNDING
+    assert abs(halfway[:, :half] - second[:, :half]).max() <= ROUNDING
+
+
+def test_both_ends_of_an_uncover_are_the_slides_at_rest(page, deck_at, typst: TypstRunner):
+    """A backward uncover ends with the slide it entered in front of the owner.
+
+    The owner is still laid out beneath the slide that a backward uncover entered, until the
+    deck moves again, so the `z-index` has to stay on the entered slide when the boundary ends.
+    """
+    path = typst.html(UNCOVER, name="uncover-ends.html")
+    entered = screenshot(stage(deck_at(path).goto(2)))
+    left = screenshot(stage(deck_at(path).goto(1)))
+    presentation: Deck = deck_at(path).goto(1)
+    page.add_style_tag(content=SLOW)
+    presentation.press("ArrowRight")
+    assert presentation.animating == [{"translate"}]
+    presentation.scrub(DURATION).settle()
+    assert_identical(entered, screenshot(stage(presentation)), what="the end of a step forward")
+    presentation.press("ArrowLeft")
+    assert presentation.animating == [{"translate"}]
+    presentation.scrub(DURATION).settle()
+    assert_identical(left, screenshot(stage(presentation)), what="the end of a step backward")
+
+
 @pytest.mark.parametrize("slide", [3, 5, 6])
 def test_both_ends_of_a_transition_are_the_slides_at_rest(page, deck_at, mixed, slide):
     """A boundary that has been crossed shows the slide it arrived at and nothing else.
@@ -543,9 +597,10 @@ def test_a_slide_off_a_boundary_is_at_rest(page, deck_at, mixed):
     presentation.goto(1)
     inline = presentation.page.evaluate(
         """() => [...document.querySelectorAll(".animo-slide")].map((slide) => [
-            slide.style.translate, slide.style.clipPath, slide.style.mixBlendMode])"""
+            slide.style.translate, slide.style.clipPath, slide.style.mixBlendMode,
+            slide.style.zIndex])"""
     )
-    assert inline == [["", "", ""]] * len(MIXED_GROUNDS)
+    assert inline == [["", "", "", ""]] * len(MIXED_GROUNDS)
 
 
 def test_an_interrupted_push_turns_round_where_it_is(page, deck_at, mixed):

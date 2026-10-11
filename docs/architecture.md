@@ -390,6 +390,8 @@ so the backward step is the forward one played from the other end and needs no d
 A slide that had no layout before the step starts at the far end instead,
 which for a push is outside the stage.
 The owner comes later in the document, so it is in front in both directions.
+An uncover moves the other slide out over the owner,
+so the runtime gives the other slide `z-index: 1` for that boundary.
 
 The crossfade animates `opacity` on the two containers,
 through the `mix-blend-mode: plus-lighter` the stylesheet puts on every slide,
@@ -398,13 +400,15 @@ The background of the element that isolates a blend is inside the group it isola
 A surround written on the stage would therefore be summed into both slides,
 so the surround sits on `body` instead.
 
-A push and a cover animate `translate` and a wipe animates an `inset` as `clip-path`.
-These three overlap two opaque slides, which would add to a third color under
+A push, a cover and an uncover animate `translate` and a wipe animates an `inset` as `clip-path`.
+These four overlap two opaque slides, which would add to a third color under
 `plus-lighter`, so they set `mix-blend-mode: normal` on both containers for the boundary.
 The blend stays until the deck moves again,
 because the slide being left is still laid out under the owner when a cover or a wipe ends.
+The `z-index` of an uncover stays as long as the blend,
+because the owner is still laid out under the other slide when a backward uncover ends.
 A single slide renders the same under either blend.
-The stage clips a slide that a push moved out of it.
+The stage clips a slide that a push or an uncover moved out of it.
 
 **Two slides are laid out at a time and no more**:
 the one being shown, and the one a boundary is crossing from.

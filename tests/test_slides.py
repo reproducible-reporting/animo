@@ -266,7 +266,9 @@ TRANSITIONS = [
     "anim.crossfade()",
     "anim.push()",
     "anim.cover()",
+    "anim.uncover()",
     "anim.wipe()",
+    "anim.uncover(direction: ttb), duration: 0.8",
     "anim.crossfade(), duration: 1",
     "anim.push(direction: ltr), duration: 0.6",
     "anim.cover(direction: btt)",
@@ -295,10 +297,11 @@ REFUSED_TRANSITIONS = [
     (
         "anim.morph()",
         "init cannot enter a slide with morph(), because a slide takes crossfade(), push(), "
-        "cover() or wipe() and a morph carries a region across an epoch boundary",
+        "cover(), uncover() or wipe() and a morph carries a region across an epoch boundary",
     ),
     ("anim.morph(direction: ltr)", "unexpected argument: direction"),
     ('anim.wipe(direction: "ltr")', "wipe takes direction as one of ltr, rtl, ttb and btt"),
+    ("anim.uncover(direction: 1)", "uncover takes direction as one of ltr, rtl, ttb and btt"),
     ('anim.cover(), easing: "linear"', "init takes no named argument besides duration, wait"),
     ("anim.push(), duration: -1", "init takes duration as a number of seconds that is not"),
     ('anim.push(), duration: "1s"', "init takes duration as a number of seconds"),

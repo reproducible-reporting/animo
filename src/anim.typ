@@ -13,7 +13,7 @@
 #import "site.typ": describe
 #import "transition.typ": (
   check-region-transition, check-slide-transition, cover, crossfade,
-  is-transition, morph, push, wipe,
+  is-transition, morph, push, uncover, wipe,
 )
 
 // The operations that change only how already-rendered content is displayed,

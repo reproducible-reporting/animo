@@ -108,8 +108,8 @@ body {
   rasterises the same whether or not it is in a transition. A single slide added to the
   transparent backdrop of the isolated stage is that slide, so this changes nothing outside
   a boundary.
-  A push, a cover and a wipe overlap two opaque slides, which have to cover rather than add,
-  so the runtime writes `mix-blend-mode: normal` on the two slides they cross, and a single
+  A push, a cover, an uncover and a wipe overlap two opaque slides,
+  which have to cover rather than add, so the runtime writes `mix-blend-mode: normal` on the two slides they cross, and a single
   slide renders the same under that blend as well. See *Findings*.
 */
 .animo-slide {

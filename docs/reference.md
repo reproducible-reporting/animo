@@ -47,6 +47,7 @@ where shadowing typst's own `hide`, `move` and `scale` is harmless.
 | [`anim.morph`](#animmorph)         | transition         | `transition:`         |
 | [`anim.push`](#animpush)           | transition         | `init`, `transition:` |
 | [`anim.cover`](#animcover)         | transition         | `init`, `transition:` |
+| [`anim.uncover`](#animuncover)     | transition         | `init`, `transition:` |
 | [`anim.wipe`](#animwipe)           | transition         | `init`, `transition:` |
 
 ## The Document
@@ -537,6 +538,7 @@ A backward step travels the other way.
 | `anim.morph`     | no    | yes    |
 | `anim.push`      | yes   | no     |
 | `anim.cover`     | yes   | no     |
+| `anim.uncover`   | yes   | no     |
 | `anim.wipe`      | yes   | no     |
 
 ### `anim.crossfade`
@@ -582,13 +584,21 @@ cover(direction: rtl)
 
 The incoming slide moves in from one edge over the outgoing slide, which stays where it is.
 
+### `anim.uncover`
+
+```typst
+uncover(direction: rtl)
+```
+
+The outgoing slide moves out at one edge over the incoming slide, which stays where it is.
+
 ### `anim.wipe`
 
 ```typst
 wipe(direction: ltr)
 ```
 
-The incoming slide is uncovered behind an edge that travels across the outgoing slide.
+The incoming slide is shown behind an edge that travels across the outgoing slide.
 
 Taught in [Slides](slides.md#slide-transitions).
 

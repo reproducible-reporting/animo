@@ -76,8 +76,8 @@ The initial version has the following (non)features:
   and a subslide number, which is content laid out once per subslide with `per-subslide`.
   The browser shows the rendering of the current subslide,
   so the subslide number is not a value baked into a frame.
-- A **transition between slides**, which is a crossfade, a push, a cover or a wipe, or a hard
-  cut when it takes no time
+- A **transition between slides**, which is a crossfade, a push, a cover, an uncover or a wipe,
+  or a hard cut when it takes no time
 - Zero templating or styling features
 - Zero HTML and CSS in a deck's source.
   Every setting the runtime reads is an argument of the deck's show rule,
@@ -1014,13 +1014,14 @@ A **transition** is the way a boundary is crossed, and it is named by a function
 module, so that it is written where the timeline is written and an editor can show the
 parameters each one takes.
 
-| Transition              | What it does                                         | Slide | Region |
-| ----------------------- | ---------------------------------------------------- | ----- | ------ |
-| `crossfade()`           | fades the outgoing content out and the incoming in   | yes   | yes    |
-| `morph()`               | moves the shared content and fades the rest          | no    | yes    |
-| `push(direction: rtl)`  | moves the incoming slide in and the outgoing one out | yes   | no     |
-| `cover(direction: rtl)` | moves the incoming slide in over the outgoing one    | yes   | no     |
-| `wipe(direction: ltr)`  | uncovers the incoming slide behind a moving edge     | yes   | no     |
+| Transition                | What it does                                         | Slide | Region |
+| ------------------------- | ---------------------------------------------------- | ----- | ------ |
+| `crossfade()`             | fades the outgoing content out and the incoming in   | yes   | yes    |
+| `morph()`                 | moves the shared content and fades the rest          | no    | yes    |
+| `push(direction: rtl)`    | moves the incoming slide in and the outgoing one out | yes   | no     |
+| `cover(direction: rtl)`   | moves the incoming slide in over the outgoing one    | yes   | no     |
+| `uncover(direction: rtl)` | moves the outgoing slide out over the incoming one   | yes   | no     |
+| `wipe(direction: ltr)`    | shows the incoming slide behind a moving edge        | yes   | no     |
 
 A transition is written in three places:
 
@@ -1522,8 +1523,8 @@ Animations are then performed in the browser:
   because the stage isolates the blend,
   and the background of the stage would otherwise be added into both slides
   (see *Findings* for both)
-- a slide boundary that pushes, covers or wipes animates `translate` or a `clip-path` inset on
-  the two containers instead.
+- a slide boundary that pushes, covers, uncovers or wipes animates `translate` or a `clip-path`
+  inset on the two containers instead.
   A transition is a function of the boundary's owner, which is the slide with the higher number,
   and of a progress `p` that runs from 0, where the owner has not arrived, to 1, where it has.
   A forward step animates each container from what it shows to the state at 1,
@@ -1533,6 +1534,10 @@ Animations are then performed in the browser:
   These transitions overlap two opaque slides, which `plus-lighter` would add together.
   Both containers therefore take `mix-blend-mode: normal` until the deck moves again,
   which is as long as the slide being left keeps its layout.
+  An uncover moves the other slide out over the owner,
+  so Animo gives the other slide `z-index: 1`, which puts it in front of the owner.
+  The `z-index` stays as long as the blend does,
+  because the owner is still laid out beneath the other slide after a backward uncover.
   A single slide renders the same under either blend (see *Findings*).
   The stage clips a slide that is pushed out of it
 
@@ -2749,7 +2754,7 @@ They are settled, and the evidence is in *Findings*.
   The crossfade uses the mechanism that the epoch crossfade already proved,
   which is `plus-lighter` on the two containers inside an isolated stacking context.
   That keeps two opaque backgrounds from dipping halfway through.
-  A push, a cover and a wipe move or clip the containers instead,
+  A push, a cover, an uncover and a wipe move or clip the containers instead,
   and blend them normally while they overlap.
   Two slides are laid out only while they cross,
   because laying out every slide of a long deck for the whole session costs seconds of first

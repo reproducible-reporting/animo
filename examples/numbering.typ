@@ -94,8 +94,8 @@
 
 #numbered-slide(
   numbered: false,
-  // The push lifts the curtain of the title slide.
-  animation: anim.init(anim.push(direction: btt)),
+  // The uncover lifts the curtain of the title slide.
+  animation: anim.init(anim.uncover(direction: btt)),
   background: rect(width: 100%, height: 100%, fill: gradient.linear(
     white,
     pale,
