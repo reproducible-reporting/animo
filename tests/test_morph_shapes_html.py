@@ -4,15 +4,16 @@
 
 The primary assertion is the geometric one of `test_morph_html.py`, extended to every path
 and image a region draws. At the midpoint of a step, each one the morph moves in the outgoing
-region is displayed where an element of the same key in the incoming region is displayed,
-halfway between the places the two are laid out at. The place of a path is the origin of its
-`M 0 0`, and that of an image its top left corner, both through `getScreenCTM()`.
+region is drawn halfway between its place and the place of an element of the same key in the
+incoming region, which is hidden or drawn at the same point. The place of a path is the
+origin of its `M 0 0`, and that of an image its top left corner, both through
+`getScreenCTM()`.
 """
 
 import math
 
 import pytest
-from harness import UNDER, Deck, TypstRunner
+from harness import DRAWN, UNDER, Deck, TypstRunner
 from PIL import Image
 from test_morph_html import CLOSE, MIDPOINT, SLOW, STILL, animated, resting
 
@@ -65,10 +66,14 @@ def shapes(typst: TypstRunner):
 
 
 # Where every path and image of a region is displayed, per epoch rendering of the slide shown,
-# as `[kind, key, x, y]` in CSS pixels. The key is what a morph compares, without the color.
+# as `[kind, key, x, y, drawn]` with the place in CSS pixels. The key is what a morph compares,
+# without the color.
 INK = (
     """label => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
+    const drawn = """
+    + DRAWN
+    + """;
     const key = (element) => element.localName === "image"
         ? `${element.href.baseVal} ${element.getAttribute("width")}`
         : `${element.getAttribute("d")} ${element.getAttribute("stroke-width")}`;
@@ -80,7 +85,7 @@ INK = (
         )).filter((element) => element.closest("defs, clipPath, symbol") === null).map(
             (element) => {
                 const point = new DOMPoint(0, 0).matrixTransform(element.getScreenCTM());
-                return [element.localName, key(element), point.x, point.y];
+                return [element.localName, key(element), point.x, point.y, drawn(element)];
             },
         ),
     );
@@ -88,8 +93,8 @@ INK = (
 )
 
 
-def ink(presentation: Deck, label: str) -> list[list[tuple[str, str, float, float]]]:
-    """Where each path and image of a region is displayed, per epoch rendering."""
+def ink(presentation: Deck, label: str) -> list[list[tuple[str, str, float, float, bool]]]:
+    """Where each path and image of a region is displayed and whether it is drawn."""
     return [
         [tuple(element) for element in rendering]
         for rendering in presentation.page.evaluate(INK, label)
@@ -101,10 +106,11 @@ def apart(a, b) -> float:
     return math.hypot(a[2] - b[2], a[3] - b[3])
 
 
-def test_every_moving_shape_has_a_partner_halfway_along_its_route(page, deck_at, shapes):
+def test_every_carried_shape_is_drawn_once_halfway_along_its_route(page, deck_at, shapes):
     """The claim the morph rests on, for the box, the image, the fraction bar and the clip.
 
     The fraction of `r` keeps its numerator, so its bar is matched like the box beside it.
+    Every pair in `r` is identical, so each partner in the incoming rendering is hidden.
     The count is what says the assertion is not vacuous.
     """
     presentation: Deck = deck_at(shapes)
@@ -121,20 +127,20 @@ def test_every_moving_shape_has_a_partner_halfway_along_its_route(page, deck_at,
     assert kinds == {"path", "image"}, f"only {kinds} moved"
     assert len(moving) >= 3
     for index, element in moving:
+        assert element[4], f"the carried {element[0]} {index} is not drawn"
+        start = rest[0][index]
+        end = (2 * element[2] - start[2], 2 * element[3] - start[3])
         partner = next(
             (
                 other
-                for other, candidate in enumerate(halfway[1])
-                if candidate[:2] == element[:2] and apart(candidate, element) < CLOSE
+                for other, place in enumerate(rest[1])
+                if place[:2] == element[:2]
+                and math.hypot(place[2] - end[0], place[3] - end[1]) < CLOSE
             ),
             None,
         )
         assert partner is not None, f"outgoing {element[0]} {index} has no partner"
-        start, end = rest[0][index], rest[1][partner]
-        middle = ((start[2] + end[2]) / 2, (start[3] + end[3]) / 2)
-        assert math.hypot(element[2] - middle[0], element[3] - middle[1]) < CLOSE, (
-            f"outgoing {element[0]} {index} is off its route"
-        )
+        assert not halfway[1][partner][4], f"the partner of {element[0]} {index} is drawn"
 
 
 # Which paths, images and glyphs below a group of a label are moving, per epoch rendering, as
@@ -174,7 +180,10 @@ def midway(page, deck_at, shapes) -> Deck:
 
 
 def test_a_recolored_rectangle_is_a_match(midway):
-    """The color is not part of the key, and the pair sums to the interpolated color."""
+    """The color is not part of the key, and both copies move.
+
+    The red copy above fades in over the blue one below, which shows the interpolated color.
+    """
     assert moving(midway, "c", "path")[:2] == [[True], [True]]
 
 
@@ -186,11 +195,12 @@ def resizing(presentation: Deck) -> bool:
 def test_a_rectangle_whose_stroke_changes_width_is_a_resize(midway):
     """A route does not scale a stroke, so the pair is a resize rather than an exact match.
 
+    The two copies have one geometry all the way, so the one below moves and the one above is
+    hidden where it is.
     In an engine without `d` there is no resize, and the two rectangles fade where they are.
     `test_morph_resize_html.py` asserts what a resize shows.
     """
-    expected = resizing(midway)
-    assert moving(midway, "s", "path")[:2] == [[expected], [expected]]
+    assert moving(midway, "s", "path")[:2] == [[resizing(midway)], [False]]
 
 
 def test_a_fraction_whose_numerator_grows_resizes_its_bar(midway):
@@ -199,16 +209,18 @@ def test_a_fraction_whose_numerator_grows_resizes_its_bar(midway):
     The denominator is matched and moves to the middle of the longer bar.
     In an engine without `d` the bar fades instead.
     """
-    expected = resizing(midway)
-    assert moving(midway, "f", "path")[:2] == [[expected], [expected]]
+    assert moving(midway, "f", "path")[:2] == [[resizing(midway)], [False]]
     assert any(moving(midway, "f", "use")[0])
 
 
 def test_a_match_inside_a_clip_that_stays_is_allowed(midway):
-    """Both copies of `Inside the clip` move under the same clip at the same place."""
+    """`Inside the clip` moves under the same clip at the same place in both renderings.
+
+    The copy below moves, and the identical copy above is hidden where it is.
+    """
     region = moving(midway, "q", "g[clip-path] use")
     assert any(region[0])
-    assert any(region[1])
+    assert not any(region[1])
 
 
 def test_a_match_under_a_clip_that_moves_is_not(midway):
@@ -225,8 +237,11 @@ def test_a_match_under_a_clip_that_moves_is_not(midway):
 
 
 def test_a_tag_carries_a_clipped_box_as_one(midway):
-    """A `translate` on the tag's outer slot carries the clip below it, as the probe shows."""
-    assert moving(midway, "boxed", "g[clip-path] use")[:2] == [[True] * 11, [True] * 11]
+    """A `translate` on the tag's group carries the clip below it, as the probe shows.
+
+    The copy of the tag above is identical, so it is hidden and stays where it is.
+    """
+    assert moving(midway, "boxed", "g[clip-path] use")[:2] == [[True] * 11, [False] * 11]
 
 
 def test_a_shape_morph_ends_at_rest(deck_at, shapes):

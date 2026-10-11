@@ -154,6 +154,11 @@ const slide = {
         { changed: { a: { transition: 'probe', args: { side: 'left' } }, b: {} }, regions: {} },
     ],
     morphed: new Map(),
+    handed: new Set(),
+    handing: new Set(),
+    standIns: new Map(),
+    shownBy: new Map(),
+    slotted: new Set(),
 };
 """
 

@@ -149,6 +149,15 @@ on a 360 pt wide page body.
 
 ## Crossfading Two Renderings
 
+**Animo no longer sums epoch renderings with `plus-lighter`.**
+An epoch boundary hands a region over with opacity alone,
+because a blend or an isolation on a stack made every frame of a transition several times
+as expensive in firefox 155 (see *How does an epoch boundary hand a region over?* in
+*Resolved Design Decisions*).
+The slide crossfade still sums two slide containers with it.
+The plain opacity crossfade of the first table is why a transition draws the ink that two
+renderings share once rather than fading both copies.
+
 A slide held one frame per epoch (an *epoch frame*) when this was measured, in September 2026.
 Two epoch frames were stacked in one grid cell
 (`display: grid`, both children in `grid-row: 1 / grid-column: 1`,
@@ -272,6 +281,13 @@ by the failing isolation of the ancestor rather than by webkit's arithmetic.
 so one that changes its mind says so by failing rather than by rendering differently.
 
 ## Isolating the Container of a Nested Stack
+
+**Animo no longer isolates the container of a stack.**
+An epoch boundary hands a region over with opacity alone,
+because a blend or an isolation on a stack made every frame of a transition several times
+as expensive in firefox 155 (see *How does an epoch boundary hand a region over?* in
+*Resolved Design Decisions*).
+The measurements stay, because they say what a blend on a nested group reaches.
 
 Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11,
 on the structure a slide has now.
@@ -435,6 +451,13 @@ This has consequences for the measurement of a transition, and for the obvious r
   which lasts 400 ms and changes ten pixels.
 
 ## A Blended or Isolated Group at Rest
+
+**Animo no longer blends or isolates a stack, during a transition or at rest.**
+An epoch boundary hands a region over with opacity alone,
+because a blend or an isolation on a stack made every frame of a transition several times
+as expensive in firefox 155 (see *How does an epoch boundary hand a region over?* in
+*Resolved Design Decisions*).
+The rows on the sibling and on the opacity of a sibling still describe a stack.
 
 Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11.
 While a crossfade runs, Animo writes `mix-blend-mode: plus-lighter` on the renderings of an
@@ -822,7 +845,7 @@ which is the scope of typst's deduplicator.
   The blend sums these groups because they are siblings in one `<svg>`,
   which the groups of a region in two frames are not (see *Crossfading Two Renderings*).
   Animo places the renderings of an epoch stack this way, at one point of the region's
-  footprint, in a container that isolates (see *Isolating the Container of a Nested Stack*).
+  footprint, and hands a region over without the blend.
 
 ## CSS Animation of Typst SVG Groups
 
@@ -1006,10 +1029,17 @@ Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11
 with a recorded video of a black mark in an inline SVG that isolates.
 A fade beside a `mix-blend-mode: plus-lighter` or an `isolation: isolate` equal at both ends
 was drawn in as many frames as a plain fade, in all three engines.
-That is what lets a crossfade hold its blend in the same effect as the fade of a rendering
+A crossfade once held its blend in the same effect as the fade of a rendering on this ground
 (see the entry below).
 
 ## A Discrete Keyframe Equal at Both Ends Holds Its Value for the Whole Effect
+
+**Animo no longer holds a blend or an isolation.**
+An epoch boundary hands a region over with opacity alone,
+because a blend or an isolation on a stack made every frame of a transition several times
+as expensive in firefox 155 (see *How does an epoch boundary hand a region over?* in
+*Resolved Design Decisions*).
+A transition holds an opacity instead, which interpolates and needs no discrete keyframe.
 
 Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11,
 while moving the blend and the isolation of an epoch stack into the crossfade.
@@ -1196,6 +1226,15 @@ property in both frames before it can write a FLIP transform,
 which is state the stacked-frame design otherwise never has to keep.
 
 ## A Morph Keeps the `plus-lighter` Sum
+
+**Animo no longer sums the two copies of a match with `plus-lighter`.**
+An epoch boundary hands a region over with opacity alone,
+because a blend or an isolation on a stack made every frame of a transition several times
+as expensive in firefox 155 (see *How does an epoch boundary hand a region over?* in
+*Resolved Design Decisions*).
+A match whose copies are identical is drawn once, and the copy above a match whose colors
+differ fades over the opaque copy below.
+The paragraphs on `getScreenCTM()` and on the raster of a translated letter still hold.
 
 Measured on two renderings of one frame summed under `plus-lighter`, as a crossfade sums them:
 `Hello world` and `Oh, Hello world` at 30 pt, whose ten shared letters are 51.3 pt apart.
@@ -1903,8 +1942,8 @@ Measured on typst 0.15.0.
   and can be simulated without reordering.
   The renderings of an epoch stack are groups inside one SVG, so they paint in document order
   as well.
-  That order does not matter, because at rest only one rendering is visible,
-  and during a crossfade `plus-lighter` adds the renderings, which gives the same sum in any
-  order.
+  At rest only one rendering is visible.
+  During a transition, the order decides which rendering is drawn below the other and stays
+  opaque, and either order shows the interpolation of the two.
   The slide containers and the layers of a slide are *HTML* elements,
   which are positioned with no `z-index` and therefore also paint in document order.

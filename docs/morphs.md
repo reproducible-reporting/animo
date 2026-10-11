@@ -148,7 +148,7 @@ When the letters of the two versions of a region differ in more than 400 places,
 the morph matches none of these letters and fades all of them out and in,
 because the matching would take too long.
 A morph of a few hundred letters adds a few tens of milliseconds to the start of a step.
-See [Performance](performance.md#what-a-morph-costs) for the numbers.
+See [Performance](performance.md#what-a-transition-costs-in-the-browser) for the numbers.
 
 Only a structural primitive accepts `morph()`.
 The `init` call and the `transition:` argument of the deck refuse `morph()`,

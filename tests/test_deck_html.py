@@ -404,13 +404,9 @@ def test_the_layers_are_siblings_of_the_canvas_in_painting_order(page, deck_at, 
     """*Architecture* rule 5: beside the canvas, never among its frames.
 
     The order is the painting order, because all three are positioned elements without a
-    z-index. Being outside the canvas is also what keeps them out of the
-    `plus-lighter` blend that a crossfade holds on the epoch renderings it carries,
-    which is asserted here halfway through a crossfade rather than left to the structure that
-    happens to express it.
-    The frame of neither layer carries the blend either, and neither does the canvas's frame,
-    which says the blend reaches the renderings and not every frame of the slide.
-    At rest, nothing on the slide blends.
+    z-index.
+    Nothing on the slide blends, at rest or halfway through a crossfade, because a crossfade
+    hands a region over with opacity alone.
     """
     presentation = deck_at(layered)
     at_rest = page.evaluate(BLENDS)
@@ -423,7 +419,7 @@ def test_the_layers_are_siblings_of_the_canvas_in_painting_order(page, deck_at, 
     crossing = page.evaluate(BLENDS)
     assert crossing["layers"] == ["normal", "normal"]
     assert crossing["frame"] == "normal"
-    assert crossing["renderings"] == ["plus-lighter", "plus-lighter", "normal"]
+    assert crossing["renderings"] == ["normal"] * 3
 
 
 # A paint server is drawn on every slide, however the slide was reached.

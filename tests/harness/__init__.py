@@ -16,6 +16,7 @@ so that a probe and a feature test share every fixture.
 """
 
 from .browser import (
+    DRAWN,
     EPOCH_GROUPS,
     MEASURE,
     UNDER,
@@ -52,6 +53,7 @@ from .typst import (
 
 __all__ = (
     "CETZ",
+    "DRAWN",
     "EPOCH_GROUPS",
     "FLETCHER",
     "MEASURE",

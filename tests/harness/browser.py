@@ -21,7 +21,7 @@ from playwright.sync_api import Locator, Page
 
 from .raster import decode
 
-__all__ = ("MEASURE", "Deck", "Rect", "open_local", "screenshot", "state_hash")
+__all__ = ("DRAWN", "MEASURE", "Deck", "Rect", "open_local", "screenshot", "state_hash")
 
 
 EPOCH_GROUPS = '.animo-canvas [data-typst-label^="animo-epoch-"]'
@@ -63,6 +63,19 @@ It takes the slide container and a label, and returns one list of groups per ren
 involves the label, in document order: the rendering itself when the label holds the stack,
 which a region and a tag whose content changes do, and otherwise the groups of that label
 inside the rendering. A rendering that involves the label in neither way is left out.
+"""
+
+DRAWN = """(element) => {
+    let opacity = 1;
+    for (let node = element; !node.matches('.animo-canvas'); node = node.parentElement) {
+        opacity *= Number(getComputedStyle(node).opacity);
+    }
+    return opacity > 0 && getComputedStyle(element).visibility === 'visible';
+}"""
+"""Whether an element of a slide's canvas shows any ink, as a function expression.
+
+An element shows none when it is hidden, or when it or a group above it inside the canvas is
+at opacity 0, which is how a hand-over hides the copy of a pair that it draws once.
 """
 
 # How the geometry of an SVG group is read, as a `playwright` argument expression.

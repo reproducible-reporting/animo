@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Measure what a morph costs in the browser, which is where its cost is paid.
+"""Measure what a morph and a crossfade cost in the browser, which is where their cost is paid.
 
 The following is measured in every engine `setup.sh` installs.
 
@@ -9,9 +9,14 @@ The following is measured in every engine `setup.sh` installs.
   reflows when a clause is inserted at its start, so that nearly every letter moves,
   and on a slide whose cetz plot of 1000 marks changes its axis range,
   so that every mark moves.
+  The paragraph of about 3000 letters is also crossfaded, once with the clause at its start,
+  so that every line changes, and once with the clause at its end, so that only the last line
+  changes and the rest is ink the two renderings share.
   The time is that of the key press, which plans and applies the whole step in one task,
   and the frames that follow say whether the browser keeps up with the animations it was
   given.
+  Each step is measured once more under a stylesheet that blends the renderings of the
+  stack, which says what a blend on a stack would cost.
 - The diff is `commonSubsequence` from `src/js/morph.js`, run on two lists of 3000 glyph
   names that differ in a growing number of places.
   The bound `MORPH_DIFFERENCES` is read from this measurement.
@@ -43,23 +48,43 @@ from playwright.sync_api import sync_playwright  # noqa: E402
 WORK = ROOT / "tmp" / "benchmarks"
 
 # The slide, with a paragraph of `words` words of the `lorem` placeholder text of typst,
-# which is the same on every machine, and a clause inserted at its start by a morph.
+# which is the same on every machine, and a clause inserted into it with a `transition`.
+# The `body` places the empty tag that the clause replaces.
 DECK = """\
 #import "@preview/animo:0.2.0": *
 #show: animo
 #slide(animation: {{
   import anim: *
-  sub(replace("ins", transition: morph())[An inserted clause shifts all that follows.])
+  sub(replace("ins", transition: {transition})[An inserted clause shifts all that follows.])
 }})[
   #set text(size: {size}pt)
   #set par(justify: true)
-  #region[#tag("ins", wrap: none)[] #lorem({words})]
+  #region[{body}]
 ]
 """
 
-# The paragraphs measured, as a name, a number of words and a text size that keeps the
-# paragraph on the slide.
-PARAGRAPHS = {"500 letters": (80, 11), "3000 letters": (480, 4.5)}
+# Where the clause goes: at the start of the paragraph, which moves every letter after it, or
+# at its end, which changes the last line only.
+START = '#tag("ins", wrap: none)[] #lorem({words})'
+END = '#lorem({words}) #tag("ins", wrap: none)[]'
+
+# The paragraphs measured, as a name, a file name, a number of words, a text size that keeps
+# the paragraph on the slide, the transition and where the clause goes.
+PARAGRAPHS = {
+    "500 letters": ("morph-80", 80, 11, "morph()", START),
+    "3000 letters": ("morph-480", 480, 4.5, "morph()", START),
+    "3000 letters, crossfade": ("crossfade-480", 480, 4.5, "crossfade()", START),
+    "3000 letters, crossfade of the last line": ("crossfade-end-480", 480, 4.5, "crossfade()", END),
+}
+
+# A stylesheet that blends the renderings of every epoch stack with `plus-lighter` and isolates
+# their container, which is how the two renderings of a region could be summed instead.
+# A step measured under it says what such a blend costs while the content of the stack changes,
+# which is why the runtime hands a region over with opacity alone.
+BLEND = """
+.animo-canvas [data-typst-label^="animo-epoch-"] { mix-blend-mode: plus-lighter; }
+.animo-canvas g:has(> [data-typst-label^="animo-epoch-"]) { isolation: isolate; }
+"""
 
 # The slide with a plot of 1000 equal marks at places spread by two modular sequences, whose
 # axis range grows by a quarter, which moves every mark towards the origin.
@@ -171,8 +196,11 @@ def main() -> None:
     args = parser.parse_args()
     WORK.mkdir(parents=True, exist_ok=True)
     sources = {
-        name: (f"morph-{words}", DECK.format(words=words, size=size))
-        for name, (words, size) in PARAGRAPHS.items()
+        name: (
+            stem,
+            DECK.format(transition=transition, size=size, body=body.format(words=words)),
+        )
+        for name, (stem, words, size, transition, body) in PARAGRAPHS.items()
     }
     sources["1000 marks"] = ("morph-plot", PLOT)
     decks = {}
@@ -193,25 +221,35 @@ def main() -> None:
             except Exception as exc:  # noqa: BLE001
                 print(f"{engine}: cannot be launched here ({type(exc).__name__})")
                 continue
-            own = {"version": browser.version, "steps": {}, "diff": {}, "align": {}}
+            own = {"version": browser.version, "steps": {}, "blended": {}, "diff": {}, "align": {}}
             for name, deck in decks.items():
-                runs = []
-                for _ in range(args.repeat):
-                    page = browser.new_page(viewport={"width": 1280, "height": 720})
-                    page.goto(deck.resolve().as_uri())
-                    page.wait_for_function("() => document.documentElement.dataset.animo")
-                    runs.append(page.evaluate(STEP))
-                    page.close()
-                frames = [frame for run in runs for frame in run["frames"][1:]]
-                own["steps"][name] = {
-                    "glyphs": runs[0]["glyphs"],
-                    "paths": runs[0]["paths"],
-                    "animations": runs[0]["animations"],
-                    "step_ms": statistics.median(run["took"] for run in runs),
-                    "frame_ms_median": statistics.median(frames),
-                    "frame_ms_max": max(frames),
-                }
-                print(engine, name, own["steps"][name])
+                for blended in (False, True):
+                    runs = []
+                    for _ in range(args.repeat):
+                        page = browser.new_page(viewport={"width": 1280, "height": 720})
+                        page.goto(deck.resolve().as_uri())
+                        page.wait_for_function("() => document.documentElement.dataset.animo")
+                        if blended:
+                            page.add_style_tag(content=BLEND)
+                        runs.append(page.evaluate(STEP))
+                        page.close()
+                    frames = [frame for run in runs for frame in run["frames"][1:]]
+                    found = {
+                        "frame_ms_median": statistics.median(frames),
+                        "frame_ms_max": max(frames),
+                    }
+                    if blended:
+                        own["blended"][name] = found
+                        print(engine, name, "with a blend on the stack", found)
+                        continue
+                    own["steps"][name] = {
+                        "glyphs": runs[0]["glyphs"],
+                        "paths": runs[0]["paths"],
+                        "animations": runs[0]["animations"],
+                        "step_ms": statistics.median(run["took"] for run in runs),
+                        **found,
+                    }
+                    print(engine, name, own["steps"][name])
             page = browser.new_page()
             for changes in CHANGES:
                 found = page.evaluate(DIFF, [script, 3000, changes, args.repeat])

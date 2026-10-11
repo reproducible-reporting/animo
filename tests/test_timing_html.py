@@ -1014,7 +1014,9 @@ def test_a_structural_duration_holds_its_regions_crossfade_open(page, deck_at, t
     """A long `replace` keeps two renderings painting the region while it runs.
 
     The moment sampled is past the end of the default duration, so a crossfade that had not
-    taken the operation's duration would be over by then and the outgoing rendering dark.
+    taken the operation's duration would be over by then and the outgoing rendering hidden.
+    The outgoing rendering is below the incoming one, so it stays opaque while the incoming
+    one fades in over it.
     """
     presentation: Deck = deck_at(
         animated(
@@ -1026,14 +1028,15 @@ def test_a_structural_duration_holds_its_regions_crossfade_open(page, deck_at, t
     )
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
-    # One effect per rendering, where the outgoing one fades out and the incoming one fades
-    # in, and one that holds the isolation of their container.
-    # All three take the duration the operation stated.
-    assert timings(page, "duration") == [STATED] * 3
+    # One effect per rendering, where the outgoing one stays opaque and the incoming one fades
+    # in, and one per group that the crossfade fades or hides.
+    # All of them take the duration the operation stated.
+    durations = timings(page, "duration")
+    assert len(durations) >= 2
+    assert set(durations) == {STATED}
     presentation.scrub(DURATION + MIDPOINT)
     outgoing, incoming = region_paint(presentation, "claim")
-    assert outgoing["visibility"] == "visible", "the outgoing rendering stopped painting early"
-    assert 0.4 < outgoing["opacity"] < 0.6, outgoing
+    assert outgoing == {"visibility": "visible", "opacity": 1}, "the outgoing rendering left early"
     assert 0.4 < incoming["opacity"] < 0.6, incoming
     presentation.scrub(STATED)
     assert region_paint(presentation, "claim") == [
@@ -1049,9 +1052,10 @@ def test_a_boundary_overtaken_mid_crossfade_keeps_its_region_opaque(
 
     A long `replace` that is still running when the next boundary is crossed leaves two
     renderings painting the region at once, which is a state the epoch model has never had to
-    represent. Every rendering that is not the one being entered hands the region over on the
-    new boundary's clock, so all of them fade out under one easing while the incoming one
-    fades in and the region's ink stays at exactly one throughout.
+    represent. The new boundary hands the region over from the rendering the first one entered,
+    which becomes opaque on the way, to the rendering it enters, which fades in over it.
+    The rendering the first boundary left fades out on the new boundary's clock.
+    No rendering jumps when the second boundary is crossed.
     The overlap is not particular to a duration, because a `wait:` shorter than a step,
     or a presenter clicking twice, reaches it as well.
     """
@@ -1068,14 +1072,19 @@ def test_a_boundary_overtaken_mid_crossfade_keeps_its_region_opaque(
     presentation.press("ArrowRight")
     presentation.scrub(MIDPOINT)
 
-    def ink():
-        return sum(rendering["opacity"] for rendering in region_paint(presentation, "claim"))
+    def opacities():
+        return [rendering["opacity"] for rendering in region_paint(presentation, "claim")]
 
-    assert ink() == pytest.approx(1, abs=0.01), "the first crossfade did not add to one"
-    presentation.press("ArrowRight")
-    assert ink() == pytest.approx(1, abs=0.01), "the region dipped when it was overtaken"
+    first, entered, _ = opacities()
+    assert first == 1, "the rendering below did not stay opaque"
+    assert 0 < entered < 0.5, entered
+    presentation.press("ArrowRight").scrub(0)
+    assert opacities() == pytest.approx([first, entered, 0], abs=0.01), "a rendering jumped"
     presentation.scrub(MIDPOINT)
-    assert ink() == pytest.approx(1, abs=0.01), "the region dipped halfway through"
+    left, below, above = opacities()
+    assert 0.4 < left < 0.6, "the rendering the first boundary left did not fade out"
+    assert entered < below < 1, "the rendering below did not become opaque on the way"
+    assert 0.4 < above < 0.6, "the rendering entered did not fade in"
     presentation.scrub(DURATION)
     assert region_paint(presentation, "claim") == [
         {"visibility": "visible", "opacity": 0},
@@ -1089,10 +1098,11 @@ def test_a_step_that_walks_back_over_a_join_hands_over_every_boundary_it_crosses
 ):
     """A backward step that walked over a join runs between epochs that are not neighbours.
 
-    Each of the boundaries it crosses changes the region, so the step hands it over once
-    and the rendering being entered fades in against all the others at once, which is
-    what the crossfade already does for a boundary crossed while an earlier one is running.
-    Handing over only the nearest one would cut the rest, and the region would jump.
+    Each of the boundaries it crosses changes the region, so the step hands it over once,
+    from the rendering it leaves to the rendering it enters.
+    The rendering it enters is below the one it leaves, so it is opaque at once, and the one
+    it leaves fades out over it.
+    Handing over only the nearest boundary would cut the rest, and the region would jump.
     """
     presentation: Deck = deck_at(
         animated(
@@ -1108,13 +1118,11 @@ def test_a_step_that_walks_back_over_a_join_hands_over_every_boundary_it_crosses
     assert presentation.position == (1, 0), "the step did not walk back over the join"
     presentation.scrub(MIDPOINT)
     incoming, skipped, outgoing = region_paint(presentation, "claim")
-    assert 0.4 < incoming["opacity"] < 0.6, "the rendering being entered cut instead"
+    assert incoming == {"visibility": "visible", "opacity": 1}, incoming
     assert 0.4 < outgoing["opacity"] < 0.6, "the rendering being left cut instead"
     # The rendering in the middle was already dark, since the step that walked over it had
     # handed it over on the way through, so it has nothing to fade and paints nothing.
     assert skipped["opacity"] == 0, skipped
-    ink = incoming["opacity"] + skipped["opacity"] + outgoing["opacity"]
-    assert ink == pytest.approx(1, abs=0.01), "the region dipped while it was handed over"
 
 
 # A join that runs out of a slide, which is the one backward step that moves two things.

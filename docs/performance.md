@@ -262,40 +262,65 @@ Put the number in the **overlay** and not in the body.
 An overlay is one rendering per slide where a region is one rendering per epoch,
 so the same stack in a region is its epoch count times the numbers above.
 
-## What a Morph Costs
+## What a Transition Costs in the Browser
 
 A [morph](morphs.md) costs nothing at compile time,
-because the browser matches the two versions of a region when the step runs.
-Its cost is in the browser, at the key press and in the frames of the motion,
-and it grows with the number of letters and shapes that move.
+because the browser matches the two versions of a region when the step runs,
+and a crossfade costs nothing there either.
+Their cost is in the browser, at the key press and in the frames of the motion,
+and it grows with the number of letters and shapes that move or fade.
 
 Measured with `benchmarks/morph.py` on a slide whose paragraph reflows behind a clause
 inserted at its start, so that nearly every letter moves,
+on the same paragraph crossfaded with the clause at its start and at its end,
 and on a slide whose cetz plot of 1000 equal marks changes its axis range,
 so that every mark moves,
-in chromium 151 and firefox 153 at a window of 1280 by 720 pixels,
+in chromium 153 and firefox 155 at a window of 1280 by 720 pixels,
 on an Intel Core i7-4790 in October 2026:
 
-| What moves   | Animations | Key press, chromium and firefox | Frame, chromium and firefox |
-| ------------ | ---------- | ------------------------------- | --------------------------- |
-| 464 letters  | 930        | 44 ms and 66 ms                 | 17 ms and 17 ms             |
-| 2827 letters | 5656       | 243 ms and 306 ms               | 99 ms and 25 ms             |
-| 1000 marks   | 2006       | 93 ms and 134 ms                | 51 ms and 16 ms             |
+| Step                                             | Animations | Key press, chromium and firefox | Frame, chromium and firefox |
+| ------------------------------------------------ | ---------- | ------------------------------- | --------------------------- |
+| morph of 464 letters                             | 473        | 43 ms and 55 ms                 | 17 ms and 17 ms             |
+| morph of 2827 letters                            | 2845       | 183 ms and 238 ms               | 59 ms and 18 ms             |
+| crossfade of 2827 letters, every line changes    | 198        | 53 ms and 83 ms                 | 17 ms and 17 ms             |
+| crossfade of 2827 letters, the last line changes | 18         | 52 ms and 86 ms                 | 17 ms and 17 ms             |
+| morph of 1000 marks                              | 1005       | 81 ms and 127 ms                | 31 ms and 17 ms             |
 
 The frame is the median interval between two frames during the motion,
 so 17 ms is the full rate of the display.
 A paragraph of a few hundred letters therefore morphs smoothly in both engines,
-and a slide of several thousand moving letters moves at about ten frames a second in chromium.
+and a slide of several thousand moving letters moves at about 17 frames a second in chromium.
+
+A transition draws the ink that both versions of a region share once:
+a morph moves one copy of each letter it matches,
+and a crossfade shows the unchanged letters of the region once, where they are.
+A crossfade therefore starts one animation per line it fades rather than one per letter,
+and its key press is spent mostly on finding the letters that did not change.
+
+**A blend on a region is slow in firefox.**
+Two versions of a region could also be summed with `mix-blend-mode: plus-lighter`,
+which slide crossfades use.
+`benchmarks/morph.py` measures every step above a second time under a stylesheet that blends
+the region's renderings and isolates their container.
+In firefox 155, that stylesheet takes the frame of the morph of 2827 letters from 18 ms to
+about 85 ms, the frame of either crossfade from 17 ms to between 35 and 50 ms,
+and the frame of the plot from 17 ms to 24 ms, while chromium 153 draws the same frames
+either way.
+A browser test cannot hold an engine to such a number reliably,
+so this measurement lives here rather than among the probes of *Findings*.
+Animo therefore hands a region over with opacity alone.
+The version of the region drawn below the other stays opaque, the one above fades in or out,
+and the ink the two share is drawn once.
 
 Matching the letters is the smaller part.
 The diff of two lists of 3000 letters takes about 10 ms at 400 differences,
 which is the bound above which a region's letters are crossfaded instead,
-and about 60 ms at 1600.
+and about 50 to 60 ms at 1600.
 
 A shape morph adds the alignment of its two outlines to the key press,
 which `benchmarks/morph.py` measures on two closed outlines that share no vertex.
-The alignment takes 3 ms in chromium and 4 ms in firefox for 100 segments each,
-and 8 ms and 11 ms for 1000 segments each.
+The alignment takes 6 ms in chromium and 4 ms in firefox for 100 segments each,
+and 13 ms and 11 ms for 1000 segments each.
 A tag holds one shape morph, so a step pays this once per tag that changes its shape.
 
 ## Page Weight

@@ -168,12 +168,15 @@ The main points for an upgrade are:
   The browser used to scale about the centre of the ink,
   so a scaled tag whose ink does not fill its box landed elsewhere than in the handout.
   Firefox placed that centre outside the ink when a path in the tag carried a `translate`.
-- Remove the blend and the isolation of a crossfade from a region at rest
-  in the HTML presentation.
-  Both used to stay on a region whose content changes, also between crossfades,
-  so the browser drew the region through a layer, which moved some glyph edges.
-  In chromium and firefox, such a region at rest is now drawn exactly as the same content
+- Crossfade a region without a blend in the HTML presentation.
+  A region whose content changes used to carry `mix-blend-mode: plus-lighter`, also at rest,
+  so the browser drew the region through a layer, which moved some glyph edges,
+  and firefox drew every frame of a crossfade several times more slowly.
+  The ink that both versions of a region share is now drawn once and stays as it is,
+  and in chromium and firefox a region at rest is drawn exactly as the same content
   without a region.
+  Where two different texts overlap, a crossfade now dissolves them as two layers
+  rather than adding them.
 
 ## [0.1.1] - 2026-09-18
 

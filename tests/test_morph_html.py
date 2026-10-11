@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 """Tier 3: the morph, which carries what two epochs of a region share to its new place.
 
-The primary assertion is geometric. At the midpoint of a step, every glyph the morph moves in
-the outgoing region sits where a glyph of the same shape in the incoming region sits, and
-both are halfway between the places the two are laid out at. That is what makes the pair sum
-to one opaque glyph under the crossfade's `plus-lighter`, which the probe for *A Morph Keeps
-the `plus-lighter` Sum* measures on rasters.
+The primary assertion is geometric. At the midpoint of a step, every glyph the morph carries
+is drawn once, halfway between the places the two copies of the glyph are laid out at.
+The copy in the rendering below is the one that moves.
+The copy in the rendering above is hidden where it is laid out, or, when the two copies
+differ in color, drawn at the same point as the one below, fading over it.
 
 The motion is measured rather than raced, by pausing what is in flight and stating the
 moment, as `test_epochs_html.py` does for the crossfade.
@@ -16,7 +16,7 @@ import math
 
 import pytest
 from decks import deck
-from harness import UNDER, Box, Deck, TypstRunner, assert_identical_outside, screenshot
+from harness import DRAWN, UNDER, Box, Deck, TypstRunner, assert_identical_outside, screenshot
 
 # How long a step takes in these tests, in milliseconds, and the moment sampled in it.
 # Slowed down from the default 400 ms of animo so that a paused animation cannot already have ended,
@@ -79,11 +79,14 @@ def reflowing(typst: TypstRunner):
 
 
 # Where every glyph below a label is displayed, per epoch rendering of the slide shown, as
-# `[href, x, y]` in CSS pixels. `getScreenCTM()` includes a running `translate`, so this is
-# what the page shows. See *Findings*.
+# `[href, x, y, drawn]` with the place in CSS pixels. `getScreenCTM()` includes a running
+# `translate`, so this is what the page shows. See *Findings*.
 GLYPHS = (
     """label => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
+    const drawn = """
+    + DRAWN
+    + """;
     return ("""
     + UNDER
     + """)(slide, label).map(
@@ -92,48 +95,74 @@ GLYPHS = (
             (use) => {
                 const point = new DOMPoint(use.x.baseVal.value, use.y.baseVal.value)
                     .matrixTransform(use.getScreenCTM());
-                return [use.href.baseVal, point.x, point.y];
+                return [use.href.baseVal, point.x, point.y, drawn(use)];
             },
         )),
     );
 }"""
 )
 
+Glyph = tuple[str, float, float, bool]
 
-def glyphs(presentation: Deck, label: str = "r") -> list[list[tuple[str, float, float]]]:
-    """Where each glyph of a region is displayed, per epoch rendering."""
+
+def glyphs(presentation: Deck, label: str = "r") -> list[list[Glyph]]:
+    """Where each glyph of a region is displayed and whether it is drawn, per epoch rendering."""
     return [
-        [(href, x, y) for href, x, y in rendering]
+        [(href, x, y, drawn) for href, x, y, drawn in rendering]
         for rendering in presentation.page.evaluate(GLYPHS, label)
     ]
 
 
-def distance(a: tuple[str, float, float], b: tuple[str, float, float]) -> float:
+def distance(a: Glyph, b: Glyph) -> float:
     """How far apart two displayed glyphs are, in CSS pixels."""
     return math.hypot(a[1] - b[1], a[2] - b[2])
 
 
-def partners(outgoing, incoming, moved):
-    """Every glyph of `outgoing` that moved, with the glyph of `incoming` displayed with it.
+def routes(moving: list[Glyph], other: list[Glyph], laid: list[Glyph], other_laid: list[Glyph]):
+    """Every glyph of `moving` that is carried, with its partner in `other`, at the midpoint.
 
-    `moved` is where the outgoing glyphs were laid out, so a glyph that sits elsewhere now is
-    one the morph is carrying. Its partner is the glyph of the same shape at the same point,
-    and a glyph with none is reported as `None`.
+    `laid` and `other_laid` are where the glyphs of the two renderings are laid out.
+    A glyph displayed away from its place is one the morph is carrying, along a straight route
+    between its place and the place of its partner.
+    At the midpoint, the partner is therefore the glyph of the same shape whose place is as far
+    beyond the moving glyph as the moving glyph's place is behind it.
+    A glyph without one is reported with `None`.
     """
     found = []
-    for index, glyph in enumerate(outgoing):
-        if distance(glyph, moved[index]) < STILL:
+    for index, glyph in enumerate(moving):
+        start = laid[index]
+        if distance(glyph, start) < STILL:
             continue
+        end = (2 * glyph[1] - start[1], 2 * glyph[2] - start[2])
         partner = next(
             (
-                other
-                for other, candidate in enumerate(incoming)
-                if candidate[0] == glyph[0] and distance(candidate, glyph) < CLOSE
+                other_index
+                for other_index, place in enumerate(other_laid)
+                if place[0] == glyph[0] and math.hypot(place[1] - end[0], place[2] - end[1]) < CLOSE
             ),
             None,
         )
         found.append((index, partner))
     return found
+
+
+def assert_carried_once(moving, other, found, recolored: int = 0) -> None:
+    """Assert that each carried glyph is drawn, with its partner hidden or drawn beside it.
+
+    `recolored` is how many pairs differ in color, whose upper copy is drawn at the same point
+    as the moving one rather than hidden.
+    """
+    assert len(found) >= 40, f"only {len(found)} glyphs moved"
+    twice = 0
+    for index, partner in found:
+        assert partner is not None, f"glyph {index} has no partner at the end of its route"
+        assert moving[index][3], f"the carried glyph {index} is not drawn"
+        if other[partner][3]:
+            twice += 1
+            assert distance(other[partner], moving[index]) < CLOSE, (
+                f"the partner of glyph {index} is drawn elsewhere"
+            )
+    assert twice == recolored, f"{twice} carried glyphs are drawn twice"
 
 
 def test_a_boundary_that_morphs_names_the_tags_it_changes(deck_at, reflowing):
@@ -144,12 +173,14 @@ def test_a_boundary_that_morphs_names_the_tags_it_changes(deck_at, reflowing):
     assert changed == {"eq": morph, "ins": morph, "w": morph}
 
 
-def test_every_moving_glyph_has_a_partner_halfway_along_its_route(page, deck_at, reflowing):
+def test_every_carried_glyph_is_drawn_once_halfway_along_its_route(page, deck_at, reflowing):
     """The claim the morph rests on, at the midpoint of the step.
 
-    Every glyph that the outgoing region moves is displayed where a glyph of the same shape in
-    the incoming region is displayed, and that point is halfway between where the two are
-    laid out, which is where a linear route puts it.
+    The outgoing rendering is below the incoming one, so its glyphs are the ones that move.
+    Every glyph it carries is drawn halfway between its place and the place of a glyph of the
+    same shape in the incoming rendering, which is where a linear route puts it.
+    That partner is hidden, apart from the four letters of `lazy`, which turn red and whose
+    red copies fade in at the same point.
     The count says that the assertion is not vacuous, because the inserted clause moves
     every glyph after it, and the replacement moves `Hello world`.
     """
@@ -158,28 +189,45 @@ def test_every_moving_glyph_has_a_partner_halfway_along_its_route(page, deck_at,
     rest = glyphs(presentation)
     presentation.press("ArrowRight").scrub(MIDPOINT)
     halfway = glyphs(presentation)
-    found = partners(halfway[0], halfway[1], rest[0])
-    assert len(found) >= 40, f"only {len(found)} glyphs moved"
-    for index, partner in found:
-        assert partner is not None, f"outgoing glyph {index} has no partner at its position"
-        start, end = rest[0][index], rest[1][partner]
-        middle = ((start[1] + end[1]) / 2, (start[2] + end[2]) / 2)
-        glyph = halfway[0][index]
-        assert math.hypot(glyph[1] - middle[0], glyph[2] - middle[1]) < CLOSE, (
-            f"outgoing glyph {index} is off its route"
-        )
+    found = routes(halfway[0], halfway[1], rest[0], rest[1])
+    assert_carried_once(halfway[0], halfway[1], found, recolored=len("lazy"))
 
 
-def test_every_moving_incoming_glyph_has_a_partner_too(page, deck_at, reflowing):
-    """The same from the other side, so neither half of a pair travels alone."""
+def test_an_incoming_glyph_is_hidden_or_travels_with_its_partner(page, deck_at, reflowing):
+    """The same from the other side, so no copy above travels alone.
+
+    An incoming glyph that is drawn away from its place is a recolored one, at the point of
+    its outgoing partner. Every hidden incoming glyph stays where it is laid out, because the
+    copy below carries what it shows.
+    """
     presentation: Deck = deck_at(reflowing)
     page.add_style_tag(content=SLOW)
     rest = glyphs(presentation)
     presentation.press("ArrowRight").scrub(MIDPOINT)
-    halfway = glyphs(presentation)
-    found = partners(halfway[1], halfway[0], rest[1])
-    assert len(found) >= 40
-    assert all(partner is not None for _, partner in found)
+    outgoing, incoming = glyphs(presentation)[:2]
+    hidden = [glyph for glyph in incoming if not glyph[3]]
+    assert len(hidden) >= 40, f"only {len(hidden)} incoming glyphs are hidden"
+    for index, glyph in enumerate(incoming):
+        if distance(glyph, rest[1][index]) < STILL:
+            continue
+        assert glyph[3], f"the hidden incoming glyph {index} moves"
+        assert any(
+            other[3] and other[0] == glyph[0] and distance(other, glyph) < CLOSE
+            for other in outgoing
+        ), f"the incoming glyph {index} travels alone"
+
+
+def drawn(presentation: Deck, label: str) -> list[bool]:
+    """Whether each group of a label, in document order, is drawn."""
+    return presentation.page.evaluate(
+        f"""label => Array.from(
+            document.querySelectorAll(
+                `.animo-slide[data-animo-current] [data-typst-label="${{label}}"]`
+            ),
+            {DRAWN},
+        )""",
+        label,
+    )
 
 
 def translating(presentation: Deck, label: str) -> list[bool]:
@@ -199,15 +247,18 @@ def translating(presentation: Deck, label: str) -> list[bool]:
 def test_a_tag_the_boundary_leaves_alone_moves_as_one(page, deck_at, reflowing):
     """The box of `mark` has no glyph to match, and its tag carries it along the reflow.
 
-    Its outer slot in each rendering is what moves, and the two copies are at one place at
-    the midpoint.
+    The two copies of the tag are identical, so the group of the tag in the rendering below is
+    what moves, and the one above is hidden where it is laid out.
     """
     presentation: Deck = deck_at(reflowing)
     page.add_style_tag(content=SLOW)
+    rest = [presentation.rects("mark", frame=frame)[0] for frame in (0, 1)]
     presentation.press("ArrowRight").scrub(MIDPOINT)
-    assert translating(presentation, "mark") == [True, True, False]
-    outgoing, incoming = (presentation.rects("mark", frame=frame)[0] for frame in (0, 1))
-    assert math.hypot(outgoing.x - incoming.x, outgoing.y - incoming.y) < CLOSE
+    assert translating(presentation, "mark") == [True, False, False]
+    assert drawn(presentation, "mark") == [True, False, False]
+    outgoing = presentation.rects("mark", frame=0)[0]
+    middle = ((rest[0].x + rest[1].x) / 2, (rest[0].y + rest[1].y) / 2)
+    assert math.hypot(outgoing.x - middle[0], outgoing.y - middle[1]) < CLOSE
 
 
 def test_a_tag_the_boundary_changes_is_matched_by_its_glyphs(page, deck_at, reflowing):
@@ -223,9 +274,9 @@ def test_a_tag_the_boundary_changes_is_matched_by_its_glyphs(page, deck_at, refl
     presentation.press("ArrowRight").scrub(MIDPOINT)
     assert translating(presentation, "eq") == [False, False, False]
     halfway = glyphs(presentation, "eq")
-    found = partners(halfway[0], halfway[1], rest[0])
+    found = routes(halfway[0], halfway[1], rest[0], rest[1])
     assert len(found) == len("Helloworld")
-    assert all(partner is not None for _, partner in found)
+    assert all(partner is not None and not halfway[1][partner][3] for _, partner in found)
 
 
 def band(presentation: Deck) -> Box:
@@ -292,37 +343,50 @@ def test_a_hard_cut_morphs_nothing(deck_at, typst: TypstRunner):
 
 
 def test_a_backward_step_morphs_back(page, deck_at, reflowing):
-    """Stepping back plays the morph from the other end, with the same pairs."""
+    """Stepping back plays the morph from the other end, with the same pairs.
+
+    The incoming rendering is below the outgoing one now, so its glyphs are the ones that move,
+    from the places of the outgoing glyphs back to their own.
+    """
     presentation: Deck = deck_at(reflowing).goto(1, 1)
     page.add_style_tag(content=SLOW)
     rest = glyphs(presentation)
     presentation.press("ArrowLeft").scrub(MIDPOINT)
     halfway = glyphs(presentation)
-    found = partners(halfway[1], halfway[0], rest[1])
-    assert len(found) >= 40
-    assert all(partner is not None for _, partner in found)
+    found = routes(halfway[0], halfway[1], rest[0], rest[1])
+    assert_carried_once(halfway[0], halfway[1], found, recolored=len("lazy"))
     presentation.scrub(DURATION).settle()
     assert presentation.position == (1, 0)
     assert resting(presentation)
 
 
+def assert_continuous(before: list[list[Glyph]], after: list[list[Glyph]], what: str) -> None:
+    """Assert that every glyph drawn just after a press is drawn where one was just before it.
+
+    A copy that a hand-over hid is not drawn, so where it is laid out is not what the audience
+    sees. A copy that the next step shows starts from where its partner was drawn instead.
+    """
+    shown = [glyph for rendering in before for glyph in rendering if glyph[3]]
+    for rendering, glyphs_after in enumerate(after):
+        for index, glyph in enumerate(glyphs_after):
+            if glyph[3]:
+                assert any(
+                    other[0] == glyph[0] and distance(other, glyph) < CLOSE for other in shown
+                ), f"glyph {index} of rendering {rendering} jumped {what}"
+
+
 def test_an_interrupted_morph_turns_back_from_where_it_is(page, deck_at, reflowing):
     """A backward step halfway through starts from what the page shows, so nothing jumps.
 
-    The glyphs are displayed in the same place just after the second press as just before
-    it, in both renderings, and the step back ends with the slide at rest.
+    Every glyph drawn just after the second press is drawn where a glyph of the same shape was
+    drawn just before it, and the step back ends with the slide at rest.
     """
     presentation: Deck = deck_at(reflowing)
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight").scrub(MIDPOINT)
     before = glyphs(presentation)
     presentation.press("ArrowLeft").scrub(0)
-    after = glyphs(presentation)
-    for rendering in (0, 1):
-        for index, glyph in enumerate(before[rendering]):
-            assert distance(glyph, after[rendering][index]) < CLOSE, (
-                f"glyph {index} of rendering {rendering} jumped when the step turned back"
-            )
+    assert_continuous(before, glyphs(presentation), "when the step turned back")
     presentation.scrub(DURATION).settle()
     assert presentation.position == (1, 0)
     assert resting(presentation)
@@ -332,20 +396,16 @@ def test_two_quick_steps_across_two_boundaries_move_nothing_abruptly(page, deck_
     """A second boundary of the region crossed while the first one's morph is still moving.
 
     The rendering the first step left is still fading out, and its glyphs go on to where
-    they were going on the new clock. The rendering it entered is left in turn and starts
-    from where it is displayed. Nothing jumps, and the slide ends at rest.
+    they were going on the new clock. The rendering it entered is left in turn, and its glyphs
+    that the first step hid start from where their partners are drawn. Nothing jumps, and the
+    slide ends at rest.
     """
     presentation: Deck = deck_at(reflowing)
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight").scrub(MIDPOINT)
     before = glyphs(presentation)
     presentation.press("ArrowRight").scrub(0)
-    after = glyphs(presentation)
-    for rendering in (0, 1):
-        for index, glyph in enumerate(before[rendering]):
-            assert distance(glyph, after[rendering][index]) < CLOSE, (
-                f"glyph {index} of rendering {rendering} jumped at the second boundary"
-            )
+    assert_continuous(before, glyphs(presentation), "at the second boundary")
     presentation.scrub(DURATION).settle()
     assert presentation.position == (1, 2)
     assert resting(presentation)
@@ -371,9 +431,13 @@ def test_a_move_in_the_same_step_composes_with_the_morph(page, deck_at, typst: T
     rest = glyphs(presentation, "t")
     presentation.press("ArrowRight").scrub(MIDPOINT)
     halfway = glyphs(presentation, "t")
-    found = partners(halfway[0], halfway[1], rest[0])
+    # The `move` carries both renderings alike, so the route of each glyph is measured from
+    # where the move has taken its place by now.
+    shift = 2 / 2.54 * 72 * presentation.unit / 2
+    moved = [[(h, x + shift, y, d) for h, x, y, d in rendering] for rendering in rest]
+    found = routes(halfway[0], halfway[1], moved[0], moved[1])
     assert len(found) == len("Helloworld")
-    assert all(partner is not None for _, partner in found)
+    assert all(partner is not None and not halfway[1][partner][3] for _, partner in found)
     presentation.scrub(DURATION).settle()
     shift = 2 / 2.54 * 72 * presentation.unit
     final = glyphs(presentation, "t")

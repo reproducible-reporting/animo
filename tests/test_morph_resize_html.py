@@ -3,17 +3,18 @@
 """Tier 3: the resize, which carries a shape whose geometry changes while its structure stays.
 
 The primary assertion is geometric. At the midpoint of a step, the box of each path a resize
-carries in the outgoing region, read with `getBBox()` through the screen matrix, is the box of
-its partner in the incoming region, and lies halfway between the two boxes at rest.
-That is what makes the pair sum to one opaque shape under the crossfade's `plus-lighter`,
-which `probes/test_path_interpolation.py` measures on rasters.
+carries in the outgoing region, read with `getBBox()` through the screen matrix, lies halfway
+between the boxes of the two paths at rest.
+The two copies of such a pair are identical apart from their geometry, which the resize
+animates, so the copy in the incoming region above is hidden where it is laid out.
+`probes/test_path_interpolation.py` measures on rasters how the engines interpolate `d`.
 
 Webkit does not animate `d`, so it crossfades the shapes a resize would carry, and the tests
 that need a resize assert that instead.
 """
 
 import pytest
-from harness import UNDER, Deck, TypstRunner
+from harness import DRAWN, UNDER, Deck, TypstRunner
 from test_morph_html import CLOSE, DURATION, MIDPOINT, SLOW, animated
 from test_morph_shapes_html import moving
 
@@ -59,10 +60,14 @@ def resizing(presentation: Deck) -> bool:
 
 
 # Every path below a label, per epoch rendering of the slide shown, as its box on the screen,
-# which properties of a resize it animates, and the `d` and stroke width it shows.
+# which properties of a resize it animates, the `d` and stroke width it shows, and whether it
+# is drawn.
 PATHS = (
     """label => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
+    const drawn = """
+    + DRAWN
+    + """;
     const box = (path) => {
         const own = path.getBBox();
         const matrix = path.getScreenCTM();
@@ -88,6 +93,7 @@ PATHS = (
                     shown: shown.d ?? null,
                     stroke: shown.strokeWidth,
                     inline: path.style.d || path.style.strokeWidth || "",
+                    drawn: drawn(path),
                 };
             }),
     );
@@ -129,36 +135,31 @@ def test_a_resized_shape_has_its_partner_halfway_between_the_two_boxes(
     carried = [index for index, path in enumerate(halfway[0]) if path["d"]]
     assert len(carried) == 1, f"{len(carried)} paths of {label} are resized"
     [index] = carried
-    partner = next(
-        (other for other, path in enumerate(halfway[1]) if path["d"]),
-        None,
-    )
-    assert partner is not None
-    assert close(halfway[0][index]["box"], halfway[1][partner]["box"]), "the copies differ"
-    start, end = rest[0][index]["box"], rest[1][partner]["box"]
+    assert halfway[0][index]["drawn"]
+    # Each of these tags holds one path in each rendering, so the partner is the only one.
+    [partner] = halfway[1]
+    assert not partner["drawn"], "the copy above is drawn as well"
+    assert not partner["d"], "the hidden copy above is resized"
+    start, end = rest[0][index]["box"], rest[1][0]["box"]
     assert start != pytest.approx(end, abs=1), "the shape does not change"
     middle = [(a + b) / 2 for a, b in zip(start, end, strict=True)]
     assert close(halfway[0][index]["box"], middle), "the shape is off its route"
 
 
-def test_both_copies_show_one_geometry(midway):
-    """The two copies of the rounded rectangle compute the same `d`, corners included."""
-    if not resizing(midway):
-        pytest.skip("the engine does not animate d")
-    outgoing, incoming = paths(midway, "rr")[:2]
-    assert outgoing[0]["shown"] == incoming[0]["shown"]
-
-
 def test_a_stroke_that_changes_width_is_resized(midway):
-    """The `d` stays and the stroke width is halfway, on both copies."""
+    """The `d` stays and the stroke width of the copy below is halfway.
+
+    The copy above is hidden, and it keeps the stroke width of its attribute.
+    """
     outgoing, incoming = paths(midway, "s")[:2]
     if not resizing(midway):
         assert not outgoing[0]["width"]
         return
-    for path in (outgoing[0], incoming[0]):
-        assert path["width"]
-        assert not path["d"]
-        assert float(path["stroke"].removesuffix("px")) == pytest.approx(2, abs=1e-3)
+    assert outgoing[0]["width"]
+    assert not outgoing[0]["d"]
+    assert float(outgoing[0]["stroke"].removesuffix("px")) == pytest.approx(2, abs=1e-3)
+    assert not incoming[0]["drawn"]
+    assert not incoming[0]["width"]
 
 
 def test_a_step_at_rest_writes_no_geometry(page, deck_at, shapes):
@@ -172,19 +173,21 @@ def test_a_step_at_rest_writes_no_geometry(page, deck_at, shapes):
     assert all(path["inline"] == "" for rendering in paths(presentation, "r") for path in rendering)
 
 
-def boxes(presentation: Deck) -> list[list[list[float]]]:
-    """The box of every path of the region `r`, per epoch rendering."""
-    return [[path["box"] for path in rendering] for rendering in paths(presentation, "r")]
+def boxes(presentation: Deck) -> list[list[float]]:
+    """The box of every path of the region `r` that is drawn, in any epoch rendering."""
+    return [
+        path["box"] for rendering in paths(presentation, "r") for path in rendering if path["drawn"]
+    ]
 
 
 def unmoved(before, after) -> None:
-    """Assert that no path of the two renderings shown is displayed elsewhere than it was.
+    """Assert that every path drawn after a press is drawn where a path was before it.
 
-    The third rendering is not shown before a second step enters it.
+    A copy that a hand-over hid is not drawn, so where it is laid out is not what the audience
+    sees, and a copy that the next step shows starts from where its partner was drawn.
     """
-    for rendering in (0, 1):
-        for index, (a, b) in enumerate(zip(before[rendering], after[rendering], strict=True)):
-            assert close(a, b), f"path {index} of rendering {rendering} jumped"
+    for index, box in enumerate(after):
+        assert any(close(box, other) for other in before), f"drawn path {index} jumped"
 
 
 def test_an_interrupted_resize_turns_back_from_where_it_is(page, deck_at, shapes):

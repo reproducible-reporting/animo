@@ -1,15 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 // SPDX-License-Identifier: Apache-2.0
 
-// The morph, which crosses an epoch boundary the way the crossfade does and also carries what
-// the outgoing and the incoming region share from its old place to its new one.
+// The morph, which carries what the outgoing and the incoming region share from its old place
+// to its new one, and hands the region over as the crossfade does.
 //
 // A match is a pair of elements, one in each region, that show the same ink.
 // The outgoing element is translated from its place to the place of the incoming one, and
 // the incoming element from the place of the outgoing one to its place, so the two are at one
-// position at every moment. The crossfade puts them at `1 - t` and `t`, and the
-// `plus-lighter` on the renderings adds the two to one opaque element on the path, so the
-// morph needs no additional opacity and clones nothing. See *Findings*.
+// position at every moment. `handOver` in `boundaries.js` then draws a pair whose two elements
+// are identical once, by hiding the element of the upper rendering, and lets the upper element
+// of any other pair fade over the opaque lower one, which shows the interpolation of the two.
+// The morph therefore clones nothing.
 // A resize is a match of two paths of one structure whose geometry differs, and both paths
 // also animate their `d` and stroke width from the outgoing geometry to the incoming one, so
 // the two have one geometry at every moment as well. A shape morph is a match of two paths of
@@ -22,6 +23,8 @@
 // and the geometry a later step reads is the geometry of the layout once they are over.
 // Until then, `slide.morphed` holds every element a morph is still moving, which is what a
 // later step needs to know to read the layout under them and to settle them.
+// A hidden element takes no route, and `slide.standIns` holds the element that is shown in its
+// place, which is where a later step reads what the hidden element shows (see `displayed`).
 
 /**
  * The largest number of differences between the glyphs of two regions for which the glyphs
@@ -62,8 +65,8 @@ const NOT_INK = new Set([
  * The attributes of a `<path>` that shape its ink, apart from its `d`.
  *
  * The stroke width is among them because a route does not scale a stroke, and the fill rule
- * because two copies under two rules cover two areas. The colors are not, because two copies
- * of different colors sum to their interpolation (see *Findings*).
+ * because two copies under two rules cover two areas. The colors are not, because the copy of
+ * one color fading over the opaque copy of the other shows the interpolation of the two.
  */
 const PATH_SHAPE = [
   "fill-rule",
@@ -96,28 +99,97 @@ const NUMBER = /[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g;
 const SAME_FRAME = 1e-6;
 
 /**
- * Plan the translations of the matches in an epoch stack a morph carries.
+ * The attributes of an element that color its ink, which two identical copies share.
  *
- * The crossfade of the same stack is planned beside this, and nothing here touches an
- * opacity. The two renderings of the stack are the outgoing and the incoming region.
+ * The match leaves them out of its key, so a pair may differ in them, and such a pair is drawn
+ * as two copies rather than one.
  */
-function morphStack(effects, slide, { stack, from, to, record, options, mirror }) {
+const PAINT = ["fill", "fill-opacity", "stroke", "stroke-opacity", "opacity"];
+
+/**
+ * Plan the translations of the matches in an epoch stack a morph carries, on `timing`, and
+ * return the matches, each with whether its two elements are identical copies.
+ *
+ * Nothing here touches an opacity, which `handOver` plans after this.
+ * The two renderings of the stack are the outgoing and the incoming region.
+ */
+function morphStack(effects, slide, { stack, from, to, record }, timing) {
   const outgoing = stack.renderings[from];
   const incoming = stack.renderings[to];
-  const timing = scheduled(options, record.timing, mirror);
-  if (outgoing === undefined || incoming === undefined || timing === null) {
-    return;
+  if (outgoing === undefined || incoming === undefined) {
+    return [];
   }
   // The screen matrix of every parent read so far, because the glyphs of a run share one.
   const screen = new Map();
-  const pairs = matches(slide, outgoing, incoming, new Set(record.names), screen);
-  const routes = rigid(
-    pairs.map((pair) => measured(slide, pair, screen)),
-    slide.morphed,
+  const labels = new Map();
+  const pairs = matches(slide, outgoing, incoming, new Set(record.names), screen).map((pair) =>
+    measured(slide, pair, screen),
   );
-  for (const match of routes) {
+  for (const pair of pairs) {
+    pair.same = identical(pair, { outgoing, incoming, labels, screen });
+  }
+  for (const match of rigid(pairs, slide.morphed)) {
     carry(effects, slide, match, timing, { stack, from, to, screen });
   }
+  return pairs;
+}
+
+/**
+ * Whether the two elements of a match draw exactly the same ink at every moment of its route.
+ *
+ * The two copies of such a match are at one place and have one geometry all the way, so
+ * drawing one of them shows the same pixels as drawing both.
+ * That needs the same paint, the same user space up to a translation, and the same tags above
+ * both, because the display state of a tag goes on its slot and two tags may be shown
+ * differently.
+ * A tag match also needs the same content, and an ink match of two paths needs the same
+ * shape, unless its route animates every attribute in which the two shapes differ.
+ */
+function identical({ outgoing, incoming, shape }, regions) {
+  if (
+    outgoing.localName !== incoming.localName ||
+    labelsAbove(outgoing, regions.outgoing, regions.labels) !==
+      labelsAbove(incoming, regions.incoming, regions.labels) ||
+    !sameFrame(outgoing, incoming, regions.screen)
+  ) {
+    return false;
+  }
+  if (!INK.has(outgoing.localName)) {
+    const before = outgoing.children;
+    const after = incoming.children;
+    return (
+      before.length === after.length &&
+      Array.from(before).every((child, index) => child.isEqualNode(after[index]))
+    );
+  }
+  const same = (name) => outgoing.getAttribute(name) === incoming.getAttribute(name);
+  if (!PAINT.every(same)) {
+    return false;
+  }
+  if (inkKey(outgoing) === inkKey(incoming)) {
+    return true;
+  }
+  return (
+    shape !== null &&
+    PATH_SHAPE.every((name) => same(name) || Object.hasOwn(shape.end, name)) &&
+    RESHAPED.every((name) => same(name) || Object.hasOwn(shape.end, name))
+  );
+}
+
+/**
+ * The element that shows an element in its place, which is the element itself unless a
+ * hand-over that is still running hid it behind a partner.
+ *
+ * A hidden element takes no route, so what it shows is what its partner shows, which is
+ * where a step that interrupts the hand-over starts from.
+ * `slide.shownBy` holds the partners of the hand-overs before this step.
+ */
+function displayed(slide, element) {
+  const found = slide.shownBy.get(element);
+  if (found === undefined || !found.holder.getAnimations().some(ours)) {
+    return element;
+  }
+  return found.partner;
 }
 
 /**
@@ -590,16 +662,25 @@ function walkBack(trace, offset, n, m) {
  * from where the other one had got to. An incoming element is laid out where it is displayed
  * less the morph translations still running on it and above it, which the step is about to
  * end.
+ * An outgoing element that a hand-over hid is displayed where its partner is, and `standing`
+ * is how far that is from its place, which its route starts from. It is `null` otherwise.
  */
 function measured(slide, [outgoing, incoming, resize], screen) {
-  const start = origin(slide, outgoing, screen);
+  const shown = displayed(slide, outgoing);
+  const start = origin(slide, shown, screen);
   const end = origin(slide, incoming, screen);
   const shift = running(slide, incoming, screen);
+  let standing = null;
+  if (shown !== outgoing) {
+    const place = origin(slide, outgoing, screen);
+    standing = { x: start.x - place.x, y: start.y - place.y };
+  }
   return {
     outgoing,
     incoming,
     delta: { x: end.x - shift.x - start.x, y: end.y - shift.y - start.y },
-    shape: reshaped(slide, outgoing, incoming, resize),
+    shape: reshaped(slide, shown, outgoing, incoming, resize),
+    standing,
   };
 }
 
@@ -607,7 +688,8 @@ function measured(slide, [outgoing, incoming, resize], screen) {
  * How a match changes its geometry on the way, as the `start` and `end` of the properties a
  * resize animates, or `null` for a match that keeps its geometry.
  *
- * Both paths start at what the outgoing one shows and end at the `d` of the incoming one.
+ * Both paths start at what the outgoing one shows, which `shown` shows in its place, and end at
+ * the `d` of the incoming one.
  * Each path states its `d` in its user space from a local origin, and `sameFrame` holds,
  * so the two have one geometry at every moment, and the route's `translate` puts them at one
  * place. An exact match whose outgoing path an earlier resize is still changing goes on from
@@ -622,8 +704,8 @@ function measured(slide, [outgoing, incoming, resize], screen) {
  * *Findings*), and `d` is equal at both ends in another spelling when only the stroke width
  * changes.
  */
-function reshaped(slide, outgoing, incoming, resize) {
-  const changing = slide.morphed.get(outgoing)?.shape !== undefined;
+function reshaped(slide, shown, outgoing, incoming, resize) {
+  const changing = slide.morphed.get(shown)?.shape !== undefined;
   if (!resize && !changing) {
     return null;
   }
@@ -636,7 +718,7 @@ function reshaped(slide, outgoing, incoming, resize) {
     const after = incoming.getAttribute(name).trim();
     return name === "d" ? `path("${after}")` : `${after}px`;
   };
-  const start = showing(outgoing, names);
+  const start = showing(shown, names);
   const end = Object.fromEntries(names.map((name) => [name, value(name)]));
   if (names.includes("d") && pathCommands(start.d) !== pathCommands(end.d)) {
     const filled = (path) => path.getAttribute("fill") !== "none";
@@ -754,6 +836,8 @@ function px({ x, y }) {
  * matched to every glyph of one other run, at one distance, can be carried with one
  * animation instead of one per glyph. A run with a glyph a morph is still moving keeps its
  * matches, because the translation of the glyph would be added to the translation of the run.
+ * So does a run with a glyph that starts from where its partner is shown, because each such
+ * glyph starts from a different distance.
  */
 function rigid(measuredPairs, morphed) {
   const result = [];
@@ -780,6 +864,7 @@ function rigid(measuredPairs, morphed) {
         (pair) =>
           pair.outgoing.localName === "use" &&
           Math.hypot(pair.delta.x - first.delta.x, pair.delta.y - first.delta.y) < MORPH_STILL &&
+          pair.standing === null &&
           !morphed.has(pair.outgoing) &&
           !morphed.has(pair.incoming),
       );
@@ -809,15 +894,20 @@ function isSlot(group) {
  * The `d` and the stroke width of a resize take both paths from the outgoing geometry to the
  * incoming one, and neither is written as inline style, so a path at rest shows its attribute.
  *
+ * An outgoing element that a hand-over hid starts from where its partner is shown, which
+ * `standing` gives.
+ *
  * A match that has not moved, does not change its geometry and that no morph is moving needs
  * no animation.
  */
-function carry(effects, slide, { outgoing, incoming, delta, shape = null }, timing, where) {
+function carry(effects, slide, match, timing, where) {
+  const { outgoing, incoming, delta, shape = null, standing = null } = match;
   const { stack, from, to, screen } = where;
   const { morphed } = slide;
   if (
     Math.hypot(delta.x, delta.y) < MORPH_STILL &&
     shape === null &&
+    standing === null &&
     !morphed.has(outgoing) &&
     !morphed.has(incoming)
   ) {
@@ -831,7 +921,12 @@ function carry(effects, slide, { outgoing, incoming, delta, shape = null }, timi
     travel.x += now.x - then.x;
     travel.y += now.y - then.y;
   }
-  const own = morphed.has(outgoing) ? translation(outgoing) : { x: 0, y: 0 };
+  let own = { x: 0, y: 0 };
+  if (morphed.has(outgoing)) {
+    own = translation(outgoing);
+  } else if (standing !== null) {
+    own = inParent(outgoing, standing, screen);
+  }
   const step = inParent(outgoing, travel, screen);
   const end = px({ x: own.x + step.x, y: own.y + step.y });
   const names = ["translate", ...Object.keys(shape?.end ?? {})];

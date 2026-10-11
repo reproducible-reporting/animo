@@ -95,13 +95,24 @@ A release build is compiled once, while a deck being written is recompiled
 after every edit that lands, and typst memoises across recompiles inside one `watch`
 process, so the cold compile time does not describe what writing a deck feels like.
 
-## What a Morph Costs
+## What a Transition Costs in the Browser
 
-[`morph.py`](morph.py) measures the one cost that is paid in the browser rather than in the
-compiler, which is the morph of a region at a key press.
+[`morph.py`](morph.py) measures the cost that is paid in the browser rather than in the
+compiler, which is the transition of a region at a key press.
 It compiles a slide whose paragraph of about 500 or about 3000 letters reflows behind an
-inserted clause, presses the key in every engine that can be launched, and records how long
-the press took, how many animations it started and the intervals of the frames that follow.
+inserted clause with a morph, the paragraph of about 3000 letters crossfaded with the clause at
+its start and at its end, and a plot whose 1000 marks morph.
+It presses the key in every engine that can be launched, and records how long the press took,
+how many animations it started and the intervals of the frames that follow.
+
+Each step is measured a second time under a stylesheet that blends the renderings of the
+region with `plus-lighter` and isolates their container.
+The difference between the two is what such a blend costs, which in firefox is several times
+the frame without it.
+That is why the runtime hands a region over with opacity alone,
+and the measurement lives here because a browser test cannot hold an engine to a frame time
+reliably.
+
 It also times the diff that matches the letters on its own, at a growing number of
 differences, which is where the bound in `src/js/morph.js` comes from.
 

@@ -135,7 +135,7 @@ so a page renders to the same pixels on every machine.
 A deck has to work in all three engines, and the engines differ in more than pixels.
 For example, firefox does not implement `calc(<length> / <length>)`
 and silently drops any declaration that contains it,
-while the `plus-lighter` crossfade in webkit is not pixel-exact.
+while webkit draws a group beside a hidden sibling differently from a lone group.
 The engine is a parameter of a fixture, so the name of a failing test includes the engine,
 and `-k firefox` selects the tests that run in firefox.
 

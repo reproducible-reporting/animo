@@ -38,8 +38,6 @@
  * Each transition is handed the effects of the step being planned, the slide, the stack, the
  * epoch a step leaves and the one it enters, the record of the stack, how the step moves and
  * how long it lasts when it is running backwards, and takes what it needs of that.
- * The crossfade below needs no `from`, while the morph reads the outgoing rendering's
- * geometry.
  * It runs in the phase that reads and writes nothing, so any geometry it reads is the
  * geometry of the page before the step.
  *
@@ -49,63 +47,267 @@
  */
 const transitions = {
   /**
-   * Crossfade the renderings of the stack.
-   *
-   * The two halves add to one through `mix-blend-mode: plus-lighter` on the renderings, and
-   * the container of the stack isolates, so the sum stays inside the stack and the outgoing
-   * rendering paints nowhere outside the region.
-   * The blend and the isolation are held for the length of the crossfade and are not part of
-   * the state, because a group that blends or isolates is drawn through a layer, and the
-   * glyphs in that layer come out differently at rest. See *Findings*.
-   *
-   * Every rendering that is showing any ink takes part, and not only the one the step is
-   * leaving. A boundary crossed while an earlier one is still running finds two of them
-   * painting the region, which is what a long `duration:` on a `replace` makes easy to reach
-   * and what a `wait:` shorter than a step or a presenter clicking twice reaches as well.
-   * Fading all of them out on the new boundary's clock keeps the sum at one.
-   * The outgoing renderings leave under one easing while the incoming one arrives under its
-   * complement, whatever they were showing when the boundary began. A rendering that is hidden has
-   * nothing to hand over and stays hidden where it is.
+   * Fade the outgoing rendering of the stack out and the incoming one in, and draw the ink
+   * that the two have in common at one place once, which `handOver` plans.
    *
    * A delayed crossfade starts late and a long one takes long, and either holds the boundary
    * open.
    * An outgoing rendering stays visible for the whole of the delay and the whole of the
    * duration.
    */
-  crossfade(effects, slide, { stack, to, record, options, mirror }) {
-    const timing = scheduled(options, record.timing, mirror);
-    if (timing === null) {
-      return;
+  crossfade(effects, slide, context) {
+    const timing = scheduled(context.options, context.record.timing, context.mirror);
+    if (timing !== null) {
+      handOver(effects, slide, context, timing, inPlace(context));
     }
-    stack.renderings.forEach((rendering, epoch) => {
-      const active = epoch === to;
-      if (active || getComputedStyle(rendering).visibility === "visible") {
-        plan(
-          effects,
-          rendering,
-          { visibility: "visible", opacity: active ? "1" : "0", "mix-blend-mode": "" },
-          { opacity: timing, "mix-blend-mode": timing },
-          { hold: { "mix-blend-mode": "plus-lighter" } },
-        );
-      }
-    });
-    plan(
-      effects,
-      stack.element,
-      { isolation: "" },
-      { isolation: timing },
-      { hold: { isolation: "isolate" } },
-    );
   },
   /**
-   * Crossfade the renderings of the stack, and carry what the two of them share from its old
-   * place to its new one, which `morphStack` plans.
+   * Carry what the two renderings of the stack share from its old place to its new one, which
+   * `morphStack` plans, and hand the rest over as the crossfade does.
    */
   morph(effects, slide, context) {
-    transitions.crossfade(effects, slide, context);
-    morphStack(effects, slide, context);
+    const timing = scheduled(context.options, context.record.timing, context.mirror);
+    if (timing !== null) {
+      handOver(effects, slide, context, timing, morphStack(effects, slide, context, timing));
+    }
   },
 };
+
+/**
+ * Plan how the renderings of a stack hand the region over on `timing`, given the pairs of an
+ * outgoing and an incoming element that a transition puts at one place.
+ *
+ * Of the outgoing and the incoming rendering, the one that comes first in the document is
+ * drawn below the other.
+ * The lower rendering stays opaque for the whole hand-over, and the upper one fades, in on a
+ * forward step and out on a backward one.
+ * Where both renderings have ink, the upper ink at opacity `t` over the opaque lower ink
+ * shows the interpolation of the two, so nothing dips and nothing blends.
+ * A pair whose two elements are identical copies is drawn once.
+ * The upper copy is hidden for the length of the hand-over and takes no route, and the lower
+ * copy is the one the audience sees.
+ * The ink of the lower rendering without a partner fades on its own, out when that rendering
+ * is the outgoing one and in when it is the incoming one.
+ * Where it overlaps different ink of the upper rendering, the two dissolve as any two layers
+ * do.
+ *
+ * Neither rendering blends and the stack does not isolate. In firefox 155, either one made
+ * every frame of a morph of a long paragraph cost several times as much, and every frame of a
+ * crossfade about three times as much. Drawing an identical copy once halves what a morph
+ * moves, which firefox needs as well. See *Performance* for the measurements.
+ *
+ * Every other rendering that is showing any ink fades out on the boundary's clock. A boundary
+ * crossed while an earlier one is still running finds such a rendering, which is what a long
+ * `duration:` on a `replace` makes easy to reach and what a `wait:` shorter than a step or a
+ * presenter clicking twice reaches as well. A rendering that is hidden has nothing to hand
+ * over and stays hidden where it is.
+ */
+function handOver(effects, slide, { stack, from, to }, timing, pairs) {
+  const outgoing = stack.renderings[from];
+  const incoming = stack.renderings[to];
+  let lower = null;
+  if (outgoing !== undefined && incoming !== undefined) {
+    const follows = outgoing.compareDocumentPosition(incoming) & Node.DOCUMENT_POSITION_FOLLOWING;
+    lower = follows ? outgoing : incoming;
+  }
+  stack.renderings.forEach((rendering, epoch) => {
+    const active = epoch === to;
+    const state = { visibility: "visible", opacity: active ? "1" : "0" };
+    const painting = getComputedStyle(rendering).visibility === "visible";
+    if (rendering === lower) {
+      // The rendering below is opaque for the whole hand-over. An incoming one that was not
+      // painting is opaque at once, and one that an interrupted hand-over left partly faded
+      // becomes opaque on the way. An outgoing one stays opaque until the hand-over ends.
+      const opaque = showing(rendering, ["opacity"]).opacity === "1";
+      if (active) {
+        plan(effects, rendering, state, painting ? { opacity: timing } : null);
+      } else {
+        plan(effects, rendering, state, { opacity: timing }, opaque
+          ? { hold: { opacity: "1" } }
+          : { end: { opacity: "1" } });
+      }
+    } else if (active || painting) {
+      plan(effects, rendering, state, { opacity: timing });
+    }
+  });
+  if (lower === null) {
+    return;
+  }
+  const upper = lower === outgoing ? incoming : outgoing;
+  const below = (pair) => (lower === outgoing ? pair.outgoing : pair.incoming);
+  const above = (pair) => (lower === outgoing ? pair.incoming : pair.outgoing);
+  const copies = pairs.filter((pair) => pair.same).map(above);
+  const hidden = gathered(slide, new Set(copies.flatMap((copy) => free(slide, copy))), upper);
+  for (const element of hidden) {
+    plan(effects, element, { opacity: "" }, { opacity: timing }, { hold: { opacity: "0" } });
+    slide.handed.add(element);
+  }
+  for (const pair of pairs) {
+    if (pair.same) {
+      const element = above(pair);
+      let holder = element;
+      while (holder !== null && !hidden.has(holder)) {
+        holder = holder.parentElement;
+      }
+      slide.standIns.set(element, { partner: below(pair), holder: holder ?? element });
+    }
+  }
+  // A hidden element takes no route, because the copy below it carries what it shows.
+  for (const [element, record] of slide.morphed) {
+    if (record.stack === stack && within(element, hidden)) {
+      const names = ["translate", ...Object.keys(record.shape ?? {})];
+      plan(effects, element, Object.fromEntries(names.map((name) => [name, ""])));
+      slide.morphed.delete(element);
+    }
+  }
+  const [start, end] = lower === outgoing ? ["1", "0"] : ["0", "1"];
+  for (const element of gathered(slide, new Set(ink(lower, new Set(pairs.map(below)))), lower)) {
+    // An element that an interrupted hand-over was fading goes on from what it shows.
+    const fresh = !slide.handing.has(element);
+    plan(effects, element, { opacity: "" }, { opacity: timing }, {
+      start: fresh ? { opacity: start } : null,
+      end: { opacity: end },
+    });
+    slide.handed.add(element);
+  }
+}
+
+/**
+ * The pairs of an outgoing and an incoming element that draw the same ink at the same place,
+ * which is what a crossfade draws once.
+ *
+ * Typst writes the same layout as the same attributes, so the place of an element is the
+ * chain of its ancestors' `transform` and `clip-path` up to the rendering, with its own `x`,
+ * `y` and `transform`, and no geometry is read from the page.
+ * The labels on that chain belong to the place as well, because the display state of a tag
+ * goes on its slot, and two copies under two tags may be shown differently.
+ * A pair of the same place and shape whose paint differs is not identical, and the copy of
+ * the upper rendering fades over the other one.
+ */
+function inPlace({ stack, from, to }) {
+  const outgoing = stack.renderings[from];
+  const incoming = stack.renderings[to];
+  if (outgoing === undefined || incoming === undefined) {
+    return [];
+  }
+  const chains = new Map();
+  const chain = (node, rendering) => {
+    if (node === rendering) {
+      return "";
+    }
+    let found = chains.get(node);
+    if (found === undefined) {
+      const own = ["transform", "clip-path", "data-typst-label"].map(
+        (name) => node.getAttribute(name) ?? "",
+      );
+      found = `${chain(node.parentElement, rendering)}/${own.join(" ")}`;
+      chains.set(node, found);
+    }
+    return found;
+  };
+  const place = (element, rendering) => {
+    const own = ["x", "y", "transform"].map((name) => element.getAttribute(name) ?? "");
+    return `${chain(element.parentElement, rendering)}|${inkKey(element)}|${own.join(" ")}`;
+  };
+  const waiting = new Map();
+  for (const element of ink(incoming, new Set())) {
+    const key = place(element, incoming);
+    waiting.set(key, [...(waiting.get(key) ?? []), element]);
+  }
+  const pairs = [];
+  for (const element of ink(outgoing, new Set())) {
+    const partner = waiting.get(place(element, outgoing))?.shift();
+    if (partner !== undefined) {
+      const same = PAINT.every((name) => element.getAttribute(name) === partner.getAttribute(name));
+      pairs.push({ outgoing: element, incoming: partner, same });
+    }
+  }
+  return pairs;
+}
+
+/**
+ * Whether a hand-over may write the opacity of an element, which is when nothing else writes
+ * it.
+ *
+ * The display state of a tag goes on its slot, and a subslide stack shows its renderings with
+ * their opacity, so neither is free.
+ */
+function isFree(slide, element) {
+  return !slide.slotted.has(element) && stackLabel(element.dataset.typstLabel) === null;
+}
+
+/** An element whose opacity a hand-over may write, or else the children that stand for it. */
+function free(slide, element) {
+  if (isFree(slide, element)) {
+    return [element];
+  }
+  return Array.from(element.children)
+    .filter((child) => !NOT_INK.has(child.localName))
+    .flatMap((child) => free(slide, child));
+}
+
+/**
+ * The elements of a set, with each group whose children are all in it standing in for them.
+ *
+ * One animation on a group costs less than one on each of its children, and typst draws a line
+ * of text as a group of glyphs, so a paragraph is a few groups rather than a few thousand
+ * glyphs.
+ * Only a group that `isFree` stands in for its children.
+ * `rendering` is where the walk up stops.
+ */
+function gathered(slide, elements, rendering) {
+  const found = new Set(elements);
+  let parents = new Set(Array.from(found, (element) => element.parentElement));
+  while (parents.size > 0) {
+    const next = new Set();
+    for (const parent of parents) {
+      if (
+        parent === null ||
+        parent === rendering ||
+        found.has(parent) ||
+        !isFree(slide, parent)
+      ) {
+        continue;
+      }
+      const children = Array.from(parent.children).filter(
+        (child) => !NOT_INK.has(child.localName),
+      );
+      if (children.every((child) => found.has(child))) {
+        for (const child of children) {
+          found.delete(child);
+        }
+        found.add(parent);
+        next.add(parent.parentElement);
+      }
+    }
+    parents = next;
+  }
+  return found;
+}
+
+/**
+ * Plan every element that an earlier hand-over still hides or fades back to rest, before a
+ * step.
+ *
+ * A hand-over this step plans again replaces what is planned here, so an element it hides
+ * again is never shown in between.
+ * `slide.handing` keeps those elements for the length of the step, because a fade that goes on
+ * starts from what its element shows.
+ * `slide.shownBy` keeps the partners that showed the hidden elements, which a morph of this
+ * step starts from, while `slide.standIns` collects the partners of this step.
+ */
+function settleHandOvers(effects, slide) {
+  slide.handing = new Set();
+  for (const element of slide.handed) {
+    if (element.getAnimations().some(ours)) {
+      plan(effects, element, { opacity: "" });
+      slide.handing.add(element);
+    }
+  }
+  slide.handed = new Set();
+  slide.shownBy = slide.standIns;
+  slide.standIns = new Map();
+}
 
 /** The transition a stack takes when its record names none, which is every ordinary one. */
 const defaultTransition = "crossfade";
@@ -416,7 +618,7 @@ function differs(stack, epoch) {
 
 /**
  * The epoch stacks a step carries across the boundaries it crosses, each with its record, as
- * a map, and every morph an earlier step left running planned for this one.
+ * a map, and every hand-over and morph an earlier step left running planned for this one.
  *
  * A stack is carried when a boundary changes a tag it holds, which is a tag whose group is
  * in the stack or a tag without a group that the plan places in the stack's region. It is
@@ -468,9 +670,10 @@ function planBoundary(effects, slide, { index, from, options, mirror }) {
       }
     }
   }
-  // The earlier morphs are settled before the transitions, so that a morph of this step that
-  // matches an element again plans its route in place of where an earlier morph was taking
-  // it.
+  // The earlier hand-overs and morphs are settled before the transitions, so that a transition
+  // of this step that hides, fades or matches an element again plans it in place of what an
+  // earlier one was doing to it.
+  settleHandOvers(effects, slide);
   settleMorphs(effects, slide, to, carried, options, mirror);
   return carried;
 }
@@ -482,16 +685,14 @@ function planBoundary(effects, slide, { index, from, options, mirror }) {
  * Which rendering is shown is decided here, for every transition alike.
  * The rendering of the epoch the state belongs to is shown and opaque,
  * and every other one is hidden and transparent.
- * No rendering blends and the container does not isolate, which is what the stylesheet says
- * as well.
  * That is the state at rest, and a stack that the step carries across a boundary is then
  * planned by the transition its record names, in place of its state at rest. One boundary
  * may therefore carry one stack with one transition and another stack with another.
  *
  * A step that stays inside one epoch still plans this, because the rendering it is showing
  * is already the right one and writing the state it is in changes nothing.
- * Such a step that interrupts a crossfade takes the stack to rest at once, its container
- * included, so that the container does not go on isolating to the end of the crossfade.
+ * Such a step that interrupts a hand-over takes the stack to rest at once, together with
+ * every element the hand-over hid or faded, which `settleHandOvers` plans.
  */
 function planEpoch(effects, slide, stack, { index, from, options, mirror }, carried) {
   const to = slide.states[index]?.epoch ?? 0;
@@ -500,10 +701,8 @@ function planEpoch(effects, slide, stack, { index, from, options, mirror }, carr
     plan(effects, rendering, {
       visibility: active ? "visible" : "hidden",
       opacity: active ? "1" : "0",
-      "mix-blend-mode": "",
     });
   });
-  plan(effects, stack.element, { isolation: "" });
   const record = carried.get(stack);
   if (record !== undefined) {
     transitionOf(record.transition)(effects, slide, { stack, from, to, record, options, mirror });

@@ -113,6 +113,18 @@ Each part of the design is implemented in one place, as listed below.
   `planEpoch` then plans every epoch stack.
   It hands each carried stack to the entry of `transitions` that the record of the stack names,
   or to `crossfade` when the record names no transition.
+- **The hand-over.**
+  `handOver` plans how every transition hands a region from one rendering to the other.
+  The rendering that comes first in the document is drawn below the other and stays opaque,
+  and the rendering above fades in or out.
+  A transition gives `handOver` the pairs of elements that draw the same ink at one place:
+  `inPlace` finds them for a crossfade, by comparing attributes, and the morph has its matches.
+  `handOver` hides the copy above of every identical pair, so the shared ink is drawn once,
+  and fades the ink of the rendering below that has no partner.
+  `gathered` hides or fades a group as one when all its children are hidden or faded.
+  `settleHandOvers` takes what an earlier hand-over hid or faded back to rest at every step.
+  No rendering blends and no stack isolates, because firefox draws every frame of a
+  transition several times more slowly then (see [Performance](performance.md)).
 - **Slide boundaries.**
   `slideTransitions` holds one entry per slide transition.
   Each entry gives the display state of the slide that owns the transition
@@ -120,7 +132,8 @@ Each part of the design is implemented in one place, as listed below.
   `slideTransitions` is a separate table from `transitions`,
   because a slide transition receives two slide containers rather than the renderings of a region.
 - **The morph.**
-  `morphStack` in `morph.js` adds the matches of a morph to the crossfade of a stack.
+  `morphStack` in `morph.js` plans the routes of the matches of a morph, and hands them to
+  `handOver`.
   `commonSubsequence` pairs the drawn elements (the ink) of the two renderings,
   using the keys that `inkKey` and `clipsAbove` compute.
   `commonSubsequence` gives up when the renderings have more than `MORPH_DIFFERENCES` differences.
@@ -131,6 +144,8 @@ Each part of the design is implemented in one place, as listed below.
   `alignPaths` in `paths.js` reads nothing from the DOM, so its tests work on numbers only.
   `slide.morphed` holds every element that a morph is still moving.
   At every step, `settleMorphs` reads `slide.morphed` before any transition is planned.
+  A copy that `handOver` hides takes no route, and `slide.standIns` records the copy below
+  that shows it, which `displayed` reads when a later step starts a route from it.
 - **Shared definitions.**
   `hoistPaintServers` in `boot.js` copies the SVG definitions that several slides share,
   such as gradients and patterns, into one `<svg>` before the first slide is read.

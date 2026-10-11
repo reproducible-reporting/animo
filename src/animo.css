@@ -139,8 +139,6 @@ body {
   The runtime writes a pan as its `translate`, and nothing writes its `scale`.
   The canvas holds one frame, and that frame holds the body of the slide with an epoch stack
   in every region that sits in no other region, once the slide has two epochs.
-  The blend that crossfades two renderings of a stack is confined inside the frame rather
-  than by this element. See the rules on the frame and on the stacks below.
 */
 .animo-canvas {
   position: absolute;
@@ -153,7 +151,7 @@ body {
   Each is the size of the viewport and belongs to it rather than to the canvas, so a pan
   moves the canvas between them and leaves both where they are.
   Both are frames of the slide rather than renderings inside the canvas's frame, which keeps
-  them out of the `plus-lighter` blend below and independent of the number of epochs.
+  them out of every epoch stack and independent of the number of epochs.
   A slide with four epochs still carries one of each.
   The three are positioned elements without a z-index, so they paint in document
   order, which is the order the slide emits them in.
@@ -184,23 +182,11 @@ body {
   of the document rather than against the font size of the page, so a plain rule loses to
   it and the frame comes out a few percent too large. Overriding an inline style that
   animo does not control is what `!important` is for.
-
-  The frame isolates, because the blend that crossfades two renderings of a stack sits on
-  groups inside it, and how far such a blend reaches differs between engines.
-  Firefox 153 stops it at the root of the inline SVG. Chromium 151 sums the ground under the
-  SVG into it and stops at an ancestor that isolates. Playwright's webkit 26.5 stops at
-  neither, and a blend on a group reaches the page behind an isolating ancestor, which makes
-  black ink vanish under `plus-lighter` because black adds nothing.
-  An isolating ancestor written in HTML therefore does not state the containment in every
-  engine, while the inline SVG that holds the groups does. See *Findings*.
-  The container of a stack isolates as well while a crossfade carries the stack, which keeps
-  the blend off the rest of the slide inside the frame. See the rules on the stacks below.
 */
 .animo-canvas > svg {
   display: block;
   width: 100% !important;
   height: 100% !important;
-  isolation: isolate;
 }
 
 /*
@@ -217,18 +203,13 @@ body {
   the ink without taking the layout away, so a group in a rendering that is not shown still
   reports the geometry a morph reads.
 
-  At rest, no rendering blends and the container of the renderings does not isolate.
-  A crossfade holds `mix-blend-mode: plus-lighter` on the renderings it carries and
-  `isolation: isolate` on their container for as long as it runs, which the runtime writes
-  as keyframes of its effects rather than as rules here.
-  `plus-lighter` sums the renderings in the isolated container, so the outgoing rendering at
-  `1 - t` and the incoming one at `t` come to exactly one opaque region and nothing dips.
-  Without the isolation, chromium 153 and webkit 26.6 add the two halves to the ink under the
-  region as well. See *Isolating the Container of a Nested Stack* in *Findings*.
-  A group that blends or isolates is drawn through a layer, which changes some glyph edges.
-  Without either at rest, chromium 153 and firefox 155 draw a stack as the same content
-  without a stack. Webkit 26.6 draws a group beside a hidden sibling differently from a lone
-  group at some positions. See *A Blended or Isolated Group at Rest* in *Findings*.
+  No rendering blends and no container of renderings isolates, also while a transition runs.
+  The runtime hands a region over with opacity alone, as `handOver` in `boundaries.js`
+  describes, because a blend or an isolation on a stack made firefox 155 several times slower
+  on every frame of a transition. See *Performance*.
+  Chromium 153 and firefox 155 therefore draw a stack as the same content without a stack.
+  Webkit 26.6 draws a group beside a hidden sibling differently from a lone group at some
+  positions. See *A Blended or Isolated Group at Rest* in *Findings*.
 */
 .animo-canvas [data-typst-label^="animo-epoch-"] {
   visibility: hidden;

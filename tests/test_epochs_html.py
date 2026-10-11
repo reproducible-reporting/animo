@@ -17,7 +17,8 @@ one page load, so neither needs a stored image:
 The second one is asserted at a stated moment rather than at whatever point a transition
 happened to have reached, by pausing what is in flight, which is also how the crossfade's
 own arithmetic is measured.
-The midpoint of an exact crossfade is the average of the two renderings it runs between.
+At the midpoint of the crossfade, the ink that the two renderings share is drawn once and
+unchanged, and ink that only one of them has is at half its strength.
 """
 
 import numpy as np
@@ -52,19 +53,8 @@ SLOW = f":root {{ --animo-primitive-duration: {DURATION}ms; --animo-easing: line
 # Those three terms come to 1.5/255, and the allowance is a step above them.
 ROUNDING = 3
 
-# How far the blended midpoint of a crossfade may sit from the sum of the two renderings,
-# per engine, as a deviation out of 255 and a number of pixels allowed to exceed the rounding
-# above.
-#
-# Exact is the claim, and chromium 151 and firefox 153 meet it to within that rounding.
-# Two half-opacity layers add back to one opaque layer through `plus-lighter`.
-# The exactness of the blend itself is measured by the probe for *Crossfading Two Renderings*,
-# on rasters with no animation running in them.
-# Playwright's webkit 26.5 does not meet it, and its allowance is the one that probe
-# measured: a few dozen pixels on antialiased glyph edges drift by up to 42 out of 255.
-# This is about the inside of the region only. Outside it, no allowance is given in any
-# engine, because the outgoing rendering paints nothing there at all.
-BLEND = {"chromium": (ROUNDING, 0), "firefox": (ROUNDING, 0), "webkit": (48, 512)}
+# The color of the ground the slide is painted on, which shows where a rendering has no ink.
+GROUND = (255, 255, 255)
 
 
 def timeline(*steps: str) -> str:
@@ -99,6 +89,19 @@ LONGER = (
     "Actually the opposite holds, and this replacement is long enough to wrap onto a "
     "second line, which pushes the rest of the region down."
 )
+
+
+# A region with a line that stays where it is above the tag that changes, so that a crossfade
+# has ink the two renderings share at one place, and nothing that changes overlaps it.
+STAYING = """
+  #region(name: "r")[
+    #tag("stay", wrap: block)[A line that stays where it is.]
+
+    #tag("claim", wrap: block)[A short claim.]
+  ]
+
+  #tag("foot", wrap: block)[A line below the region.]
+"""
 
 
 @pytest.fixture
@@ -149,14 +152,13 @@ def band(presentation: Deck) -> Box:
 # How many renderings a slide has, and how many frames they sit in.
 
 # What every epoch stack of the slide being shown is: the label of the region or the tag that
-# holds it, the labels of its renderings, and whether its container isolates.
+# holds it, and the labels of its renderings.
 STACKS = """() => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
     const renderings = Array.from(slide.querySelectorAll('[data-typst-label^="animo-epoch-"]'));
     const containers = Array.from(new Set(renderings.map((rendering) => rendering.parentNode)));
     return containers.map((container) => ({
         region: container.closest('[data-typst-label]')?.dataset.typstLabel ?? null,
-        isolation: getComputedStyle(container).isolation,
         renderings: renderings
             .filter((rendering) => rendering.parentNode === container)
             .map((rendering) => rendering.dataset.typstLabel),
@@ -180,7 +182,6 @@ def test_a_slide_has_one_rendering_per_epoch_in_its_region(deck_at, reflowing):
     assert stacks(presentation) == [
         {
             "region": "r",
-            "isolation": "auto",
             "renderings": ["animo-epoch-0", "animo-epoch-1", "animo-epoch-2"],
         }
     ]
@@ -314,34 +315,63 @@ def test_it_is_still_identical_outside_the_region_mid_crossfade(page, deck_at, r
     assert_identical_outside(opening, closing, region, what="the step and its end")
 
 
-def test_the_crossfade_midpoint_is_the_sum_of_the_two_renderings(
-    page, deck_at, reflowing, browser_name
-):
-    """Inside the region, nothing dips: the midpoint is the average of the two epochs.
+def assert_halved(shots: list[np.ndarray], region: Box) -> None:
+    """Assert that ink only one of two renderings has is at half its strength at the midpoint.
 
-    This is the arithmetic `mix-blend-mode: plus-lighter` is there for. A plain opacity
-    crossfade would wash the region out to about a quarter grey at this moment, which is
-    62 out of 255 away from the average. See *Findings*.
+    The three rasters are taken at the start, the middle and the end of a crossfade.
+    Where one endpoint has ink and the other shows the ground, the midpoint is the average of
+    the two.
+    Where both endpoints have ink that differs, the two dissolve as any two layers do, and
+    nothing is asserted, because a pixel of one glyph over a pixel of another can come out the
+    same at both ends and lighter in the middle.
     """
+    before, halfway, after = (shot.astype(int)[region.y0 : region.y1] for shot in shots)
+    assert (before != after).any(), (
+        "the region showed the same thing at both ends of the step, so a cut would pass "
+        "the comparison below as well"
+    )
+    ground = np.array(GROUND)
+    single = (before != after).any(axis=2) & (
+        (before == ground).all(axis=2) | (after == ground).all(axis=2)
+    )
+    assert single.sum() > 100, "too little ink differs between the renderings to measure"
+    difference = abs((before + after) / 2 - halfway).max(axis=2)[single]
+    assert difference.max() <= ROUNDING, (
+        f"the midpoint is {difference.max()}/255 from the average where one rendering has ink"
+    )
+
+
+def test_the_crossfade_halves_the_ink_that_changes(page, deck_at, reflowing):
+    """Inside the region, ink that only one rendering has is at half its strength halfway."""
     presentation: Deck = deck_at(reflowing)
     page.add_style_tag(content=SLOW)
     region = band(presentation)
     presentation.press("ArrowRight")
+    assert_halved(crossing(presentation, 1, MIDPOINT, DURATION - 1), region)
+
+
+def test_the_crossfade_draws_the_ink_it_shares_once(page, deck_at, typst: TypstRunner):
+    """The line both renderings hold at one place shows the same pixels all the way through.
+
+    The copy in the rendering above is hidden, so the line is drawn once, by the rendering
+    below. A plain opacity crossfade of the whole rendering would wash the line out to about a
+    quarter grey at the midpoint, which is 62 out of 255 away from what it shows at rest.
+    """
+    presentation: Deck = deck_at(
+        animated(typst, STAYING, f'sub(replace("claim")[{LONGER}])', name="staying.html")
+    )
+    page.add_style_tag(content=SLOW)
+    box = presentation.current.bounding_box()
+    [line] = presentation.rects("stay", frame=0)
+    rows = slice(int(line.y - box["y"]) - 1, int(line.y + line.height - box["y"]) + 2)
+    presentation.press("ArrowRight")
     shots = crossing(presentation, 1, MIDPOINT, DURATION - 1)
-    before, halfway, after = (shot.astype(int) for shot in shots)
-    rows = slice(region.y0, region.y1)
-    assert (before[rows] != after[rows]).any(), (
-        "the region showed the same thing at both ends of the step, so a cut would pass "
-        "the comparison below as well"
-    )
-    difference = abs((before[rows] + after[rows]) / 2 - halfway[rows])
-    deviation, pixels = BLEND[browser_name]
-    assert difference.max() <= deviation, (
-        f"the midpoint of the crossfade is {difference.max()}/255 from the exact sum"
-    )
-    assert int((difference > ROUNDING).any(axis=2).sum()) <= pixels, (
-        "more of the region dipped than this engine was measured to"
-    )
+    before, halfway, after = (shot.astype(int)[rows] for shot in shots)
+    assert (before != np.array(GROUND)).any(axis=2).sum() > 100, "the line drew no ink"
+    for what, shot in (("the midpoint", halfway), ("the end", after)):
+        difference = abs(shot - before).max()
+        assert difference <= ROUNDING, f"{what} is {difference}/255 from the shared line"
+    assert_halved(shots, band(presentation))
 
 
 def test_a_region_that_names_the_crossfade_crosses_as_one_that_names_nothing(
@@ -377,13 +407,13 @@ def test_a_region_that_names_the_crossfade_crosses_as_one_that_names_nothing(
 
 
 def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
-    page, deck_at, reflowing_layered, browser_name
+    page, deck_at, reflowing_layered
 ):
-    """The two layers are siblings of the canvas, so neither joins the blend inside it.
+    """The two layers are siblings of the canvas, so neither takes part in the crossfade.
 
     Both halves of the region invariant are asserted again with them present.
-    Nothing outside the region moves while the step is in flight, and inside it the midpoint is
-    still the exact sum of the two renderings rather than a washed-out quarter grey.
+    Nothing outside the region moves while the step is in flight, and inside it the ink that
+    changes is at half its strength at the midpoint.
     The ink of the overlay is checked first, so that neither claim can hold because the
     layers are not there.
     """
@@ -399,20 +429,13 @@ def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
     before, halfway, after = shots
     assert_identical_outside(before, halfway, region, what="the step and its midpoint")
     assert_identical_outside(before, after, region, what="the step and its end")
-    rows = slice(region.y0, region.y1)
-    first, middle, last = (shot.astype(int)[rows] for shot in shots)
-    difference = abs((first + last) / 2 - middle)
-    deviation, pixels = BLEND[browser_name]
-    assert difference.max() <= deviation, (
-        f"the midpoint of the crossfade is {difference.max()}/255 from the exact sum"
-    )
-    assert int((difference > ROUNDING).any(axis=2).sum()) <= pixels
+    assert_halved(shots, region)
 
 
 # How far a rendering of an epoch stack at rest may sit from the same content outside any
 # stack, as a deviation out of 255 and a number of pixels allowed to exceed one.
 #
-# A stack at rest neither blends nor isolates, so its rendering is drawn as a lone group in
+# A stack neither blends nor isolates, so its rendering is drawn as a lone group in
 # chromium 153 and firefox 155. Webkit 26.6 draws a group beside a sibling differently from a
 # lone one at some positions, and drew this slide the same at device scales 1 and 2.
 # See *A Blended or Isolated Group at Rest* in *Findings*.
@@ -427,7 +450,7 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
     That is harmless only because typst's def ids are content hashes, so equal ids mean equal
     content.
     The stack at rest also has to draw its rendering as a lone group, which it does because
-    the blend and the isolation of a crossfade are held only while the crossfade runs.
+    no rendering blends and no stack isolates.
     Both are asserted against a control deck of one epoch with the same body, which has no
     epoch stack.
     """
@@ -449,81 +472,55 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
         assert int((difference > 1).sum()) <= pixels, report
 
 
-# How the one epoch stack of the slide being shown blends: the `isolation` of its container,
-# the `mix-blend-mode` of each rendering, and how many animations the container runs.
-BLENDING = """() => {
+# How the one epoch stack of the slide being shown is drawn: whether its container isolates,
+# the `mix-blend-mode` of each rendering, how many elements inside its renderings are hidden by
+# their opacity, and how many animations run inside the stack.
+HANDING = """() => {
     const slide = document.querySelector('.animo-slide[data-animo-current]');
     const renderings = Array.from(slide.querySelectorAll('[data-typst-label^="animo-epoch-"]'));
     const container = renderings[0].parentNode;
+    const inside = renderings.flatMap((rendering) => Array.from(rendering.querySelectorAll('*')));
     return {
         isolation: getComputedStyle(container).isolation,
         blends: renderings.map((rendering) => getComputedStyle(rendering).mixBlendMode),
-        animations: container.getAnimations().length,
+        hidden: inside.filter((element) => getComputedStyle(element).opacity === '0').length,
+        animations: [container, ...renderings, ...inside]
+            .reduce((count, element) => count + element.getAnimations().length, 0),
     };
 }"""
 
 
-def test_a_stack_blends_and_isolates_only_while_it_crosses(page, deck_at, typst: TypstRunner):
-    """The blend and the isolation belong to the route of a crossfade and not to its state.
+def test_a_stack_hides_the_ink_it_shares_only_while_it_crosses(page, deck_at, typst: TypstRunner):
+    """The hiding belongs to the route of a crossfade and not to its state.
 
-    At rest, the container does not isolate and no rendering blends, so the stack is drawn as
-    the same content without a stack.
-    A crossfade holds both for its length, and a step that interrupts it inside the epoch it
-    entered takes the stack to rest at once, its container included.
+    No rendering blends and the container does not isolate, at rest or during the crossfade.
+    During the crossfade, the copy of the shared line in the rendering above is hidden.
+    A step that interrupts the crossfade inside the epoch it entered takes the stack to rest
+    at once, with nothing hidden.
     """
     presentation: Deck = deck_at(
         animated(
             typst,
-            REFLOWING,
+            STAYING,
             f'sub(replace("claim")[{LONGER}])',
             'sub(move("foot", x: 1cm))',
             name="interrupted.html",
         )
     )
-    rest = {"isolation": "auto", "blends": ["normal", "normal"], "animations": 0}
-    assert presentation.page.evaluate(BLENDING) == rest
+    rest = {"isolation": "auto", "blends": ["normal", "normal"], "hidden": 0, "animations": 0}
+    assert presentation.page.evaluate(HANDING) == rest
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight").scrub(MIDPOINT)
-    assert presentation.page.evaluate(BLENDING) == {
-        "isolation": "isolate",
-        "blends": ["plus-lighter", "plus-lighter"],
-        "animations": 1,
-    }
+    crossing = presentation.page.evaluate(HANDING)
+    assert crossing["isolation"] == "auto"
+    assert crossing["blends"] == ["normal", "normal"]
+    assert crossing["hidden"] > 0, "the shared line is drawn twice"
+    assert crossing["animations"] > 0
     presentation.press("ArrowRight")
     assert presentation.position == (1, 2)
-    assert presentation.page.evaluate(BLENDING) == rest
+    assert presentation.page.evaluate(HANDING) == rest
     presentation.goto(1, 0).press("ArrowRight").scrub(DURATION)
-    assert presentation.page.evaluate(BLENDING) == rest
-
-
-# A mark of an exact color on the canvas, at the top left of the body, which is one deck
-# margin in from the corner of the viewport. A blend that reached the white
-# ground of the slide would sum the two and take the mark to white.
-GROUND = '#place(top + left, rect(width: 2cm, height: 2cm, fill: rgb("#ff0000")))\n\n  ' + REFLOWING
-
-
-def test_the_blend_does_not_reach_the_ground_the_slide_is_painted_on(deck_at, typst: TypstRunner):
-    """The containment the canvas is isolated for, now that the blend is on a group.
-
-    `plus-lighter` on the epoch renderings adds them to their backdrop, and the opaque
-    white of the slide container must not be in it, because an opaque mark on the canvas
-    would then be summed with white and come out white, which is what this reads.
-    The ink around the region must not be in it either, which the containment tests of the
-    region read.
-    How far a group's blend reaches without the isolation differs between the engines,
-    which is why animo states the containment rather than inheriting it. See *Findings*.
-    """
-    presentation: Deck = deck_at(
-        animated(typst, GROUND, 'sub(replace("claim")[Another claim.])', name="ground.html")
-    )
-    assert presentation.frames.count() == 2
-    shot = screenshot(presentation.current)
-    # The deck is 16 by 9 cm with a 1 cm margin, so the mark spans 1 cm to 3 cm on both
-    # axes, and the point read here is inside it whatever the window the screenshot was
-    # taken at.
-    rows, columns = shot.shape[:2]
-    mark = tuple(int(value) for value in shot[int(0.22 * rows), int(0.12 * columns)])
-    assert mark == (255, 0, 0), f"the blend summed the slide ground into the canvas: {mark}"
+    assert presentation.page.evaluate(HANDING) == rest
 
 
 # How a boundary composes with the continuous primitives, and with stepping.
@@ -663,8 +660,9 @@ def test_a_tag_without_a_group_crosses_the_region_the_plan_names(page, deck_at, 
     presentation.press("ArrowRight").scrub(MIDPOINT)
     assert presentation.page.evaluate(ANIMATING) == [False, False, True]
     assert presentation.painting == [False, True, False, True, True, True]
-    # One effect on each rendering and one that holds the isolation of their container.
+    # One effect on each rendering, and one on each group the crossfade fades or hides.
     durations = presentation.page.evaluate(
         "() => document.getAnimations().map((a) => a.effect.getTiming().duration)"
     )
-    assert durations == [2 * DURATION] * 3, "the region took the default timing of the deck"
+    assert len(durations) >= 2
+    assert set(durations) == {2 * DURATION}, "the region took the default timing of the deck"

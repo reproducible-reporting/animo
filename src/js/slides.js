@@ -48,6 +48,13 @@ function readSlide(element) {
     element,
     canvas: element.querySelector(":scope > .animo-canvas"),
     slots,
+    // Every slot whose opacity a display state owns, which is a slot of a tag that a state
+    // of the plan addresses.
+    slotted: new Set(
+      (plan.states ?? []).flatMap((state) =>
+        Object.keys(state.tags ?? {}).flatMap((name) => slots.get(name) ?? []),
+      ),
+    ),
     // Every stack of the slide: an epoch stack in every region whose content changes, and a
     // stack for every `per-subslide` in every rendering and layer that lays it out.
     // A stack is looked up once here rather than per step, as the tag slots above are.
@@ -78,6 +85,14 @@ function readSlide(element) {
     // that holds it, where its route ends and where the geometry of a resize ends, which
     // `morph.js` keeps.
     morphed: new Map(),
+    // The elements a hand-over hides or fades, for the step being planned and for the step
+    // before it, which `boundaries.js` keeps.
+    handed: new Set(),
+    handing: new Set(),
+    // The partner that shows each element a hand-over hid, by the hidden element, for the
+    // step being planned and for the step before it, which `morph.js` reads.
+    standIns: new Map(),
+    shownBy: new Map(),
     // Which state this slide is showing, or `null` while it has never been rendered.
     // This is the state of the slide rather than the position of the deck, because a backward step
     // that walks back over a join leaves one slide and rewinds another, and the state it

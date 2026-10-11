@@ -215,10 +215,10 @@ function keyframeName(name) {
  * which is when the crossfade has made it transparent.
  *
  * `hold` states a value that a property keeps for the whole effect, in place of the state
- * written, for a discrete property that belongs to the route and not to the state.
+ * written, for a value that belongs to the route and not to the state.
+ * A hand-over holds the outgoing rendering below the incoming one at opacity 1 until it ends,
+ * and an element it draws once at opacity 0.
  * A held property is animated although it is equal at both ends.
- * In chromium 153, a `mix-blend-mode` or an `isolation` equal at both ends leaves the
- * `opacity` beside it drawn, where a `translate` equal at both ends does not. See *Findings*.
  */
 function plan(
   effects,

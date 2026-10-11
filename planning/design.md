@@ -1481,32 +1481,49 @@ so a rendering that did so would paint out of an epoch that the slide is not sho
 while a rendering at `opacity: 1` inside a hidden epoch stays hidden (see *Findings*).
 
 **An epoch boundary** carries each changed region across with the transition its operations
-name.
-The crossfade fades the outgoing rendering of the region's epoch stack out
-and the incoming one in.
-While it runs, the renderings carry `mix-blend-mode: plus-lighter`
-and the container of the stack carries `isolation: isolate`.
+name, and every transition hands the region over in the same way.
+Of the outgoing and the incoming rendering of the region's epoch stack,
+the one that comes first in the document is drawn below the other.
+The lower rendering stays at opacity 1 for the whole hand-over,
+and the upper one fades, in on a forward step and out on a backward one.
+Where both renderings have ink, the upper ink at opacity `t` over the opaque lower ink
+shows the interpolation of the two.
+Two elements that draw the same ink at the same place, which the transition pairs,
+are drawn once: the upper one is hidden with `opacity: 0` for the length of the hand-over.
+The ink of the lower rendering without a partner fades on its own,
+out when the lower rendering is the outgoing one and in when it is the incoming one.
+Where it overlaps different ink of the upper rendering, the two dissolve as any two layers do.
+No rendering blends and no stack isolates
+(see *How does an epoch boundary hand a region over?* in *Resolved Design Decisions*).
 Every other stack shows the rendering of the epoch being entered without animating.
 
-The morph crossfades the region in the same way,
-and also animates `translate` on the matches inside it.
+The crossfade pairs the glyphs, shapes and images that the two renderings draw identically
+at the same place, which is everything a change leaves where it was.
+Typst writes the same layout as the same attributes,
+so the crossfade compares the attributes of an element and of its ancestors up to the
+rendering, and reads no geometry.
+
+The morph also animates `translate` on the matches inside the region.
 The outgoing element of a match travels from its place to the place of the incoming one,
 and the incoming element travels from the place of the outgoing one to its place,
 so the two are at one position at every moment.
-Their opacities are those of the crossfade, `1 - t` and `t`,
-which `plus-lighter` adds to one.
-The pair therefore reads as one opaque element on the path,
-and a pair whose colors differ reads as the interpolation of the two colors.
-Nothing is cloned, and no opacity is touched other than the one the crossfade animates.
+A match whose two elements are identical copies is drawn once, by the lower element,
+and the hidden upper element takes no route.
+A match whose colors differ is drawn twice,
+and the upper copy fading over the lower one reads as the interpolation of the two colors.
+Nothing is cloned.
 Unmatched content fades out or in where it is.
 The translations are animation effects and never inline style,
 so a slide at rest carries no morph translation.
 The outgoing element jumps back to its place when its animation ends,
-at which point its opacity is zero.
+at which point its rendering is hidden or transparent.
+A step that interrupts a morph reads where a hidden element is shown from the lower element
+that stood in for it, so the next route starts from what the audience saw.
 *Resolved Design Decisions* says what counts as a match.
 
-**A slide boundary** crossfades the two slide containers by the same means.
+**A slide boundary** crossfades the two slide containers with a blend.
 The containers inside the stage, which isolates, carry `plus-lighter`,
+so the outgoing container at `1 - t` and the incoming one at `t` add up to one opaque slide,
 and the outgoing container stays laid out until the two have crossed.
 The crossfade lasts for the duration of the slide's `init`,
 which is `--animo-transition-duration` unless the `init` states one.
@@ -1514,7 +1531,7 @@ The crossfade is not scoped to regions, because two slides share nothing that ha
 still, so the whole container is the unit.
 A duration of zero is a hard cut, whatever the transition,
 and shows one container in place of the other without any animation.
-The slide crossfade differs from the transition of an epoch boundary in two ways.
+The slide crossfade also differs from the transition of an epoch boundary in two other ways.
 
 - A slide that takes no part in a boundary is hidden with `display`,
   while a rendering of an epoch stack is hidden with `visibility`.
@@ -1582,34 +1599,34 @@ The stage clips a slide that is pushed out of it.
      not only the one the step is leaving.
      A boundary crossed while an earlier boundary is still running
      finds more than one rendering painting the region.
-     Those renderings then all leave on the new boundary's clock, under one easing,
-     while the incoming rendering arrives under the complement of that easing.
-     Their opacities therefore still add up to one,
-     whatever each rendering was showing when the boundary began.
+     The new boundary hands the region over from the rendering it leaves to the one it enters,
+     and the rendering that leaves becomes opaque on the way when it was partly faded.
+     Every other rendering that is painting fades out on the new boundary's clock.
+     Every element that the earlier hand-over hid or faded goes back to rest at the start of
+     the step, unless the new hand-over hides or fades it again.
      A step may also cross more than one boundary at once, as a backward step over a join does.
      Such a step carries the stacks of all the boundaries it crosses, each stack once,
      on the clock of the step itself,
      and the timings that the operations of the crossed steps stated are dropped.
      The boundaries that such a step crosses lie in the slide it stands on,
      or in the slide it enters when the join it walks back over ran out of a slide.
-   - **`plus-lighter` on the renderings makes the two halves add, inside a container that
-     isolates.** The renderings of a stack are siblings in one group.
-     While a transition runs, the renderings it carries take `mix-blend-mode: plus-lighter`
-     and that group takes `isolation: isolate`,
-     so the outgoing rendering at `1 - t` and the incoming one at `t` add up to
-     exactly one opaque region, and nothing dips.
-     Without the isolation, chromium and webkit also add the two halves to the ink
-     under the region (see *Findings*).
-     The SVG of the slide's frame isolates at all times,
-     which keeps the blend off the page behind the slide.
-     The effects of the transition hold the blend and the isolation as keyframes
-     with the same value at both ends, so neither is part of the state at rest,
-     because a blended or isolated group is drawn through a layer that changes some glyph edges
+   - **The rendering below stays opaque, and the ink the two renderings share is drawn
+     once.** The renderings of a stack are siblings in one group, so the one that comes first
+     in the document is drawn below the other.
+     While a transition runs, the lower rendering stays at opacity 1 and the upper one fades,
+     so where both have ink the upper ink over the lower shows the interpolation of the two.
+     The upper copy of every pair of identical elements is hidden for the length of the
+     transition, so the shared ink is the lower copy alone and is drawn as at rest.
+     Ink that only one rendering has is at half its strength halfway through,
+     and nothing dips.
+     The effects of the transition hold these opacities as keyframes with the same value at
+     both ends, so none of them is part of the state at rest.
+     No rendering blends and no stack isolates, also while a transition runs,
+     so a stack is drawn as the same content without a stack in chromium and firefox
      (see *Resolved Design Decisions*).
 
-   The measured cost is a rounding error of 1/255 inside the region,
-   against 62/255 for a plain opacity crossfade, and nothing at all outside the region
-   (see *Findings*).
+   Where different ink of the two renderings overlaps, the two dissolve as any two layers do,
+   which is the one place where a pixel halfway through is lighter than at either end.
 
 1. **Animo emits only the individual transform properties** (`translate`, `scale`) and
    never the `transform` shorthand, which would clobber typst's own positioning (see
@@ -2677,9 +2694,9 @@ with the reasons for the answer and the alternatives that were rejected.
   A step writes the display state as inline style and animates from what the element was
   showing to that state, so the inline style is the state
   and the animation is only how the element gets there.
-  A property that only the way there needs, such as the blend and the isolation of a
-  transition, is held by the animation as a keyframe with the same value at both ends,
-  and is never written as inline style.
+  A value that only the way there needs, such as the opacity at which a transition keeps the
+  outgoing rendering opaque or hides a copy it draws once, is held by the animation as a
+  keyframe with the same value at both ends, and is never written as inline style.
   Reversible stepping, an interrupted step that continues from where it is,
   and a deep link that needs no transition to suppress all follow without extra code,
   and CSS transitions handle none of the three well.
@@ -2704,23 +2721,64 @@ with the reasons for the answer and the alternatives that were rejected.
 
 ### The HTML Presentation
 
-- **Where do the blend and the isolation of a transition go?** On the renderings of an epoch
-  stack and on the group that holds them, and only while a transition runs.
+- **How does an epoch boundary hand a region over?** With opacity alone.
+  The rendering below stays opaque, the rendering above fades,
+  and ink that the two renderings draw identically at one place is drawn once,
+  by hiding the copy above (see *What the Browser Animates*).
   A stack holds nothing but its region, so the outgoing rendering paints nowhere outside the
   region, and nothing has to scope it there.
-  The isolation keeps the sum of the two halves off the ink under the region
-  (see *Findings*).
-  It is written as `isolation`, because forming the group is all that property declares.
-  `opacity: 0.999` forms the group too, by letting a thousandth of the backdrop through,
-  which rounds to the same pixels.
-  `filter: opacity(1)` forms no group in webkit and breaks the sum in firefox.
-  Both apply only while a transition runs,
-  because a group that blends or isolates is drawn through a layer that changes glyph edges
-  (see *Findings*).
-  A difference on every still slide weighs more than one that lasts a frame at either end of
-  a transition, and in chromium every frame of a transition is drawn differently anyway.
-  The slides make the opposite choice and keep `plus-lighter` at rest,
-  so that a slide rasterises the same whether or not it is in a transition.
+
+  The first design summed the two renderings with `mix-blend-mode: plus-lighter`,
+  inside a container with `isolation: isolate`,
+  and held both only while a transition ran, because a group that blends or isolates is
+  drawn through a layer that changes glyph edges (see *Findings*).
+  The sum is exact in chromium and firefox.
+  In firefox 155, either the blend or the isolation on a stack made every frame of a
+  transition several times as expensive while the content of the stack changed.
+  A morph of a paragraph of about 3000 letters drew a frame about every 155 ms instead of
+  every 17 ms, and a crossfade of the same paragraph about every 50 ms instead of every 17 ms.
+  Where the blend sat in the frame and how it was written made no difference.
+  `benchmarks/morph.py` measures these steps, and `docs/performance.md` has the numbers.
+
+  Three alternatives were measured in firefox 155, chromium 153 and webkit 26.6.
+  A plain opacity crossfade of the two renderings is fast, and washes the ink they share out by
+  about a fifth at the midpoint.
+  Keeping the rendering below opaque removes that dip, because the copy above at opacity `t`
+  over an identical opaque copy shows that copy.
+  Two copies at one place still make antialiased edges heavier until the end of the step,
+  by up to 93/255 in firefox, and a morph that moves both copies of every letter of the long
+  paragraph still drew a frame only every 190 ms in about a third of the runs in firefox.
+  Drawing an identical copy once removes the heavier edges and halves what a morph moves, and
+  it was the only variant that drew every step in about 17 ms in firefox.
+  It matched the frames of the blend to within 0.6 % of the ink in all three engines, apart
+  from glyph edges that each engine rasterises differently while they move.
+
+  Drawing a copy once needs the pairs of identical copies.
+  The morph has them in its matches.
+  The crossfade pairs the elements whose attributes and whose ancestors' `transform`,
+  `clip-path` and labels are the same, because typst writes the same layout as the same
+  attributes, and it reads no geometry.
+  That costs a crossfade of 3000 letters about 25 ms more at the key press.
+  A pair is identical when its paint, its user space up to a translation and the tags above
+  it are the same, because the display state of a tag goes on its slot.
+  A pair whose colors differ is drawn twice, and the copy above fading over the copy below
+  shows the interpolation of the two colors.
+  A group whose children are all hidden is hidden as one, which makes the paragraph about 16
+  lines rather than 2800 glyphs. A slot and a rendering of a stack are never hidden as a group,
+  because their opacity belongs to a display state or to the stack.
+  A copy that the hand-over hides takes no route, because the copy below shows it.
+  A step that interrupts the hand-over reads where a hidden copy is shown from the copy below,
+  so a morph that is overtaken goes on from what the audience saw.
+
+  What remains different from the sum is where two different inks overlap, which dissolve as
+  any two layers do and are lighter halfway through than at either end.
+  Most slide software crossfades in the same way.
+  No rendering blends and no stack isolates, so in chromium and firefox a stack is drawn as the
+  same content without a stack, during a transition as well as at rest.
+  The slides keep `plus-lighter`, which adds two slides that share nothing,
+  so that two opaque backgrounds of different colors do not dip.
+  A slide keeps the blend at rest as well, so that it rasterises the same whether or not it is
+  in a transition.
   One slide blended against the transparent backdrop of the stage is that slide to within
   rounding (see *Findings*).
 
@@ -2777,9 +2835,9 @@ with the reasons for the answer and the alternatives that were rejected.
   so stepping back over a boundary undoes exactly what stepping forward over it did,
   and the setting is written on the slide it is about,
   rather than on the slide that happens to precede it in the file.
-  The crossfade uses the mechanism that the epoch transition already proved,
-  which is `plus-lighter` on the two containers inside an isolated stacking context,
-  and which keeps two opaque backgrounds from dipping halfway through.
+  The crossfade adds the two containers with `plus-lighter` inside an isolated stacking
+  context, which keeps two opaque backgrounds from dipping halfway through.
+  Two slides share no ink, so there is nothing to draw once, as an epoch boundary does.
   Two slides are laid out only while they cross.
   Laying every slide out for the whole session doubled the first paint of a deck of sixty
   slides in chromium, and the first paint is paid again at every reload by `typst watch`.
@@ -2842,9 +2900,10 @@ with the reasons for the answer and the alternatives that were rejected.
        with the `width` and the `height`.
 
      The colors stay out of every key, `fill` and `stroke` alike, and so does a gradient.
-     Two copies whose colors differ sum to the interpolation of the two colors under the
-     crossfade's `plus-lighter`, for a stroke and an image as for a glyph, and a gradient moves
-     with the shape that uses it (see *Findings*).
+     Two copies whose colors differ are both drawn, and the copy above fading over the opaque
+     copy below shows the interpolation of the two colors,
+     for a stroke and an image as for a glyph. A gradient moves with the shape that uses it
+     (see *Findings*).
      Each distinct key is numbered before the diff, so the diff compares numbers rather than
      the long strings of a path's `d` or an image's data.
 
@@ -2956,7 +3015,7 @@ with the reasons for the answer and the alternatives that were rejected.
   A CSS `translate` carries the clip of the element it moves, but not the clip of an ancestor,
   which stays where the ancestor is laid out (see *Findings*).
   A copy that travels under a clip at another place than its partner's is cut off at an edge
-  its partner does not have, and the two no longer sum to one opaque element.
+  its partner does not have, and the two no longer show one element.
   The clips between an element and its region group, each named by its `clip-path` and
   placed by its matrix on the screen, are therefore part of the key of an ink match,
   and a tag match needs them equal as well.

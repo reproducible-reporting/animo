@@ -4,8 +4,10 @@
 
 A tag the boundary changes that holds one shape left over on each side pairs the two, and
 both paths animate their `d` through one structure that `src/js/paths.js` aligns them to.
-The primary assertion is that the two copies compute the same `d` at the midpoint of a step,
-which is the coincidence the `plus-lighter` sum of the crossfade rests on.
+The primary assertion is that the copy below computes the `d` halfway between the two shapes
+at the midpoint of a step.
+The copy above is hidden when the two shapes have the same paint, and otherwise it computes the
+same `d`, so that it fades over the copy below in one outline.
 
 Webkit does not animate `d`, so it crossfades the shapes, and the tests that need a shape
 morph assert that instead.
@@ -72,18 +74,23 @@ def same_geometry(a: str, b: str) -> bool:
     return numbers(a) == pytest.approx(numbers(b), abs=1e-3)
 
 
-@pytest.mark.parametrize("label", ["one", "fill", "own"])
-def test_both_copies_of_a_shape_morph_show_one_geometry(midway, label):
+@pytest.mark.parametrize(("label", "identical"), [("one", True), ("fill", False), ("own", True)])
+def test_both_copies_of_a_shape_morph_show_one_geometry(midway, label, identical):
     """A square into a circle, a filled square into a stroked circle, and one in an implicit region.
 
-    The two copies compute the same `d`, which the plus-lighter sum needs, and their box lies
-    halfway between the boxes of the two shapes at rest.
+    The copy below is morphed. The blue square and circle have one paint, so the copy above
+    is hidden and keeps its outline. The filled square and the stroked circle do not, so the
+    copy above computes the same `d` and fades over the copy below in one outline.
     """
     outgoing, incoming = paths(midway, label)[:2]
     if not resizing(midway):
         assert not any(path["d"] for path in (*outgoing, *incoming))
         return
     assert [path["d"] for path in outgoing] == [True]
+    assert outgoing[0]["drawn"]
+    if identical:
+        assert [(path["d"], path["drawn"]) for path in incoming] == [(False, False)]
+        return
     assert [path["d"] for path in incoming] == [True]
     assert same_geometry(outgoing[0]["shown"], incoming[0]["shown"])
     assert close(outgoing[0]["box"], incoming[0]["box"])
@@ -136,10 +143,12 @@ def test_a_shape_morph_writes_no_geometry(page, deck_at, shapes):
 
 @pytest.mark.parametrize("key", ["ArrowLeft", "ArrowRight"])
 def test_an_interrupted_shape_morph_goes_on_from_the_outline_it_shows(page, deck_at, shapes, key):
-    """A step back or on halfway starts both copies from the `d` the page shows.
+    """A step back or on halfway starts every copy it morphs from the `d` the page shows.
 
     A step on carries the circle into the third epoch's square, which the circle's copy is
     halfway to, so it starts from the outline halfway between the two as well.
+    That copy was hidden while the copy below showed its outline, and it starts from the
+    outline its partner shows.
     """
     presentation: Deck = deck_at(shapes)
     page.add_style_tag(content=SLOW)
