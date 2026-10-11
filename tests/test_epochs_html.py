@@ -58,7 +58,7 @@ ROUNDING = 3
 #
 # Exact is the claim, and chromium 151 and firefox 153 meet it to within that rounding.
 # Two half-opacity layers add back to one opaque layer through `plus-lighter`.
-# The exactness of the blend itself is measured by the probe for *Crossfading epoch frames*,
+# The exactness of the blend itself is measured by the probe for *Crossfading two renderings*,
 # on rasters with no animation running in them.
 # Playwright's webkit 26.5 does not meet it, and its allowance is the one that probe
 # measured: a few dozen pixels on antialiased glyph edges drift by up to 42 out of 255.
@@ -412,10 +412,12 @@ def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
 # How far a rendering of an epoch stack at rest may sit from the same content outside any
 # stack, per engine, as a deviation out of 255 and a number of pixels allowed to exceed one.
 #
-# Chromium 151 and firefox 153 draw the two the same. Playwright's webkit 26.5 draws the
-# glyphs of a group that blends or isolates through a separate layer, and the antialiased
-# edges of a few of them land differently from the same glyphs drawn without one: 5 pixels by
-# up to 20/255 on this slide, with either the blend or the isolation alone.
+# Chromium 151 and firefox 153 draw the two the same on this slide. Playwright's webkit 26.5
+# draws the glyphs of a group that blends or isolates through a separate layer, and the
+# antialiased edges of a few of them land differently from the same glyphs drawn without one:
+# 5 pixels by up to 20/255 on this slide, with either the blend or the isolation alone.
+# See *A blended or isolated group at rest* in *Findings*, which also finds the blend changing
+# glyph edges in chromium and firefox on other text and at a device scale of 2.
 REST = {"chromium": (1, 0), "firefox": (1, 0), "webkit": (24, 16)}
 
 
@@ -442,7 +444,7 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
     assert single.frames.count() == 0
     control = screenshot(single.current)
     # One rendering added to a transparent backdrop is that rendering, to within the
-    # rounding the finding on *Crossfading epoch frames* allows `plus-lighter`.
+    # rounding the finding on *Crossfading two renderings* allows `plus-lighter`.
     # Firefox 153 lands a single pixel of an antialiased glyph edge one step off.
     deviation, pixels = REST[browser_name]
     for which, shot in (("first", first), ("second", second)):

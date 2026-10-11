@@ -189,6 +189,19 @@ def page(browser):
     context.close()
 
 
+@pytest.fixture(params=(1, 2), ids=("scale-1", "scale-2"))
+def scaled_context(browser, request):
+    """A fresh browser context at a device scale of 1, and in a second run of 2, for one test.
+
+    An antialiased edge and the bounds of a layer land on different device pixels at the
+    two scales, so a claim about rasterisation is measured at both.
+    It is a context rather than a page, so that a test can open each document in a new page.
+    """
+    context = browser.new_context(device_scale_factor=request.param)
+    yield context
+    context.close()
+
+
 @pytest.fixture
 def open_page(page):
     """Open a file from the working tree in the browser page."""

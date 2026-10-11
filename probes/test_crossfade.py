@@ -1,15 +1,18 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Crossfading epoch frames*.
+"""Probes for *Crossfading two renderings* and *Isolating the container of a nested stack*.
 
-Two epoch frames stacked in one grid cell, at the midpoint of a transition,
-compared against the single frame at full opacity.
+The first entry was measured when a slide held one frame per epoch.
+Two such epoch frames are stacked in one grid cell and compared, at the midpoint of a
+transition, against the single frame at full opacity.
 A plain opacity crossfade washes the whole slide out, and `mix-blend-mode: plus-lighter` does
 not.
+The probes that follow measure where such a blend reaches, which decided where animo puts it.
 
-What is probed here is the *whole-frame* crossfade, which is what the finding measured.
-The region-scoped variant that *Architecture* prescribes is still an open question,
-and this is its verified fallback.
+The second entry is about the structure a slide has now.
+The renderings of an epoch stack are sibling groups a few groups deep in the frame,
+and the probes at the end of the module measure what their container has to declare
+so that the blend sums the renderings and nothing else.
 """
 
 import pytest
@@ -23,7 +26,7 @@ from harness import (
     screenshot,
 )
 from htmldoc import stacked
-from measuring import rects
+from measuring import rects, settled_screenshot
 
 # Two epochs whose content differs only inside a region of fixed footprint,
 # so that everything outside it is pixel-identical between the frames by construction.
@@ -479,7 +482,7 @@ def test_isolating_the_frame_confines_a_groups_blend_in_every_engine(typst: Typs
     The probe above measures a blend on a group escaping to the page in webkit 26.5, past an
     ancestor that isolates. The inline SVG that holds the group is the one element that
     confines it in chromium 151, firefox 153 and webkit 26.5 alike, which is why animo writes
-    `isolation: isolate` on the epoch frame and why `STACK_CSS` carries the same rule.
+    `isolation: isolate` on the frame of a slide and why `STACK_CSS` carries the same rule.
     The green is on the page, which the probe above reaches in webkit without this rule.
     Measured on 2026-09-17.
     """
@@ -489,3 +492,197 @@ def test_isolating_the_frame_confines_a_groups_blend_in_every_engine(typst: Typs
         for value in screenshot(open_page(typst.html(source, name="reach-frame.html")))[10, 10]
     )
     assert pixel == CONTAINED, f"the blend escaped the frame that isolates it: {pixel}"
+
+
+# A stack nested in the frame, and the container that has to isolate it.
+#
+# The renderings of an epoch stack are two sibling groups inside the frame, a few groups deep,
+# and the frame holds other ink around and under them.
+# Here that ink is a panel of a light color behind the stack, and a heading and a footer of
+# black text beside it.
+# Black text at half opacity in each of the two groups has to add up to black text, and a
+# blend that reaches the panel adds the panel to it, which leaves the panel and no text.
+#
+# The container is the parent group of the two groups, which typst writes for the box or the
+# `place` that holds them, so it is found by `:has` rather than labelled.
+
+PANEL = "#a0c0f0"
+NESTED_TEXT = "Black text in the stack."
+
+
+def nested(depth: int) -> str:
+    """One frame with static ink, a panel and a stack of two identical groups.
+
+    `depth` counts the plain groups between the frame's content and the container.
+    A `move` inside a `box` keeps its group in the output, where a bare `move` is merged into
+    the translation of its parent.
+    """
+    groups = "".join(
+        f'#place(top + left)[#box[{NESTED_TEXT}]#label("{name}")]' for name in ("first", "second")
+    )
+    container = f"#box(width: 200pt, height: 20pt)[{groups}]"
+    for _ in range(depth):
+        container = f"#box[#move(dx: 1pt)[{container}]]"
+    return f"""
+  #box(width: 240pt, height: 120pt)[
+    #place(top + left, dx: 10pt, dy: 6pt)[Static heading.]
+    #place(top + left, dx: 10pt, dy: 30pt, rect(width: 220pt, height: 70pt, fill: rgb("{PANEL}")))
+    #place(top + left, dx: 20pt, dy: 40pt)[{container}]
+    #place(top + left, dx: 10pt, dy: 104pt)[Static footer.]
+  ]
+"""
+
+
+CONTAINER = 'g:has(> [data-typst-label="first"])'
+GROUPS = '[data-typst-label="first"], [data-typst-label="second"]'
+
+# The midpoint of a crossfade: both groups at half opacity under `plus-lighter`.
+HALVES = f"{GROUPS} {{ opacity: 0.5; mix-blend-mode: plus-lighter; }}\n"
+
+# One copy drawn through the same layers as the midpoint: the container isolates, both groups
+# blend, and the second is at opacity 0.
+# It is the reference rather than a plain copy, because a blended or isolated group is drawn
+# through a layer at rest in chromium and webkit, and its glyph edges differ from a plain
+# copy. See *Findings*.
+ONE_COPY = (
+    f"{CONTAINER} {{ isolation: isolate; }}\n"
+    f"{GROUPS} {{ mix-blend-mode: plus-lighter; }}\n"
+    '[data-typst-label="second"] { opacity: 0; }\n'
+)
+
+# What the ink of the stack looks like when the blend reaches the panel.
+# Black adds nothing, so the text takes the color of the panel and no pixel of the stack is
+# darker than the panel.
+INTO_THE_PANEL = "summed into the panel"
+# Neither summed into the panel nor within the allowance of one copy.
+OFF = "off the sum by more than rounding"
+
+# What each engine does with each property on the container, measured in chromium 153,
+# firefox 155 and webkit 26.6 on 2026-10-11, at depths 0 and 3 and device scales 1 and 2.
+# A pair is the allowance of a midpoint that sums, as a deviation from one copy out of 255
+# and a count of pixels over one.
+CONTAINER_RULES = {
+    "nothing": ("", {"chromium": INTO_THE_PANEL, "firefox": (1, 0), "webkit": INTO_THE_PANEL}),
+    "isolation: isolate": (
+        "isolation: isolate;",
+        {"chromium": (1, 0), "firefox": (1, 0), "webkit": (1, 0)},
+    ),
+    "opacity: 0.999": (
+        "opacity: 0.999;",
+        {"chromium": (1, 0), "firefox": (1, 0), "webkit": (1, 0)},
+    ),
+    "filter: opacity(1)": (
+        "filter: opacity(1);",
+        {"chromium": (1, 0), "firefox": OFF, "webkit": INTO_THE_PANEL},
+    ),
+}
+
+
+def nested_shot(typst: TypstRunner, context, depth: int, css: str, name: str):
+    """Render the nested stack under the given rules, and return its pixels and its band."""
+    path = typst.html(stacked([nested(depth)], css), name=name)
+    return settled_screenshot(context, path, inspect=stack_band)
+
+
+def stack_band(page) -> Box:
+    """The device pixels the first group of the stack covers."""
+    scale = page.evaluate("window.devicePixelRatio")
+    found = rects(page, '[data-typst-label="first"]')
+    assert len(found) == 1, f"expected one first group, found {len(found)}"
+    box = found[0]
+    return Box(
+        int(box.x * scale),
+        int(box.y * scale),
+        int((box.x + box.width) * scale) + 1,
+        int((box.y + box.height) * scale) + 1,
+    )
+
+
+@pytest.mark.parametrize("depth", [0, 3])
+@pytest.mark.parametrize("rule", list(CONTAINER_RULES))
+def test_a_nested_stack_sums_inside_its_container_only_if_the_container_isolates(
+    typst: TypstRunner, scaled_context, browser_name, rule, depth
+):
+    """Why animo writes `isolation: isolate` on the container of every epoch stack.
+
+    Without it, chromium and webkit add the two halves of the stack to the panel under
+    them, and black text takes the color of the panel.
+    Firefox keeps the sum inside the container without being told, because the container is
+    translated, for the reason the probe below gives.
+    With the container isolating, the midpoint is one copy to within rounding in all three
+    engines.
+    `opacity: 0.999` and `filter: opacity(1)` are asserted as well, because they are the
+    alternatives that the design does not take.
+    """
+    declarations, outcomes = CONTAINER_RULES[rule]
+    expected = outcomes[browser_name]
+    reference, band = nested_shot(typst, scaled_context, depth, ONE_COPY, "one-copy.html")
+    css = HALVES + (f"{CONTAINER} {{ {declarations} }}\n" if declarations else "")
+    midpoint, _ = nested_shot(typst, scaled_context, depth, css, "midpoint.html")
+    measured, pixels = deviation(reference, midpoint)
+    rows, columns = slice(band.y0, band.y1), slice(band.x0, band.x1)
+    darkest = midpoint[rows, columns].min(axis=(0, 1)).astype(int)
+    panel = [int(PANEL[i : i + 2], 16) for i in (1, 3, 5)]
+    summed_in = all(value >= ground - 2 for value, ground in zip(darkest, panel, strict=True))
+    report = (
+        f"{browser_name} with {rule} on the container: {measured}/255 from one copy on "
+        f"{pixels} pixels, darkest pixel of the stack {tuple(darkest)}"
+    )
+    if expected == INTO_THE_PANEL:
+        assert summed_in, f"the stack did not take the color of the panel. {report}"
+    elif expected == OFF:
+        assert not summed_in, f"the stack took the color of the panel. {report}"
+        assert measured > 32, f"the sum is no longer broken. {report}"
+    else:
+        allowed_deviation, allowed_pixels = expected
+        assert measured <= allowed_deviation, report
+        assert pixels <= allowed_pixels, report
+
+
+# Whether a blend reaches the panel at all, which is what makes the firefox row above more
+# than a stack with nothing in reach under it.
+# The mark is dark red over a dark green panel, as in the reach probes above, so a blend
+# that reaches the panel comes back with green in it.
+# The mark one group deeper than the panel, in a parent group that typst writes with and
+# without a `transform` attribute.
+# A `move` inside a `box` keeps its group in the output, and the label lands on the group of
+# the `place` inside it.
+PLAIN_PARENT = f"#box(width: 120pt, height: 60pt)[#place(top + left)[{MARK}]]"
+TRANSLATED_PARENT = f"#box[#move(dx: 1pt)[{PLAIN_PARENT}]]"
+PANEL_REACH = {
+    "beside the panel": (MARK, {"chromium": REACHED, "firefox": REACHED, "webkit": REACHED}),
+    "in a plain group": (
+        PLAIN_PARENT,
+        {"chromium": REACHED, "firefox": REACHED, "webkit": REACHED},
+    ),
+    "in a translated group": (
+        TRANSLATED_PARENT,
+        {"chromium": REACHED, "firefox": CONTAINED, "webkit": REACHED},
+    ),
+}
+
+
+@pytest.mark.parametrize("where", list(PANEL_REACH))
+def test_a_blend_reaches_the_panel_except_past_a_translated_group_in_firefox(
+    typst: TypstRunner, open_page, browser_name, where
+):
+    """The control for the probe above: the panel is in reach of a blend in every engine.
+
+    A group beside the panel, or one plain group deeper, sums the panel into its blend in all
+    three engines.
+    Firefox 155 stops the blend at a parent group that carries a `transform` attribute,
+    and chromium 153 and webkit 26.6 do not.
+    Typst writes such an attribute on the group of every `place` and `move` with an offset,
+    so the container of a stack at a region's corner is one.
+    Firefox therefore keeps the sum of such a stack inside its container whether or not the
+    container isolates, while the other two engines need the isolation.
+    Measured on 2026-10-11.
+    """
+    mark, outcomes = PANEL_REACH[where]
+    ink = f"#place(top + left)[{UNDER}]#place(top + left)[{mark}]"
+    source = stacked([f"#box(width: 120pt, height: 60pt)[{ink}]"], BLEND_ON_MARK)
+    shot = screenshot(open_page(typst.html(source, name="panel-reach.html")))
+    pixel = tuple(int(value) for value in shot[10, 10])
+    assert pixel == outcomes[browser_name], (
+        f"{browser_name} changed whether a blend {where} reaches the panel: {pixel}"
+    )

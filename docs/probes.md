@@ -145,9 +145,11 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | Regions: fixed footprints across epochs                                      | `test_regions.py`                              |
 | Regions: an inline footprint has to pin its baseline                         | `test_baselines.py`                            |
 | Regions: what a region learns from its container                             | `test_region_containers.py`                    |
-| Crossfading epoch frames                                                     | `test_crossfade.py`                            |
+| Crossfading two renderings                                                   | `test_crossfade.py`                            |
+| Isolating the container of a nested stack                                    | `test_crossfade.py`                            |
 | Crossfading two slide containers                                             | `test_slide_crossfade.py`                      |
 | Rasterising a frame while an opacity animation runs in it                    | `test_slide_crossfade.py`                      |
+| A blended or isolated group at rest                                          | `test_layers_at_rest.py`                       |
 | Choosing between stacked renderings: opacity, not visibility                 | `test_stacked_renderings.py`                   |
 | Automatic canvas sizing: `#place` and `show place:`                          | `test_canvas.py`                               |
 | Recording placements: what a `show place:` rule may do                       | `test_place_rule.py`                           |

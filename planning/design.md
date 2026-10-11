@@ -1586,9 +1586,10 @@ The HTML presentation rests on the following rules:
      Without the isolation, chromium 151 and webkit 26.5 also add the two halves to the ink
      under the region, as measured with the stack a few groups deep,
      while firefox 153 needs no isolation.
-     A single visible
-     rendering added to a transparent backdrop is that rendering, so the blend changes nothing
-     outside a transition.
+     A single visible rendering added to a transparent backdrop is that rendering,
+     except that a browser draws a blended or isolated group through a layer.
+     At rest, the blend changes some glyph edges in all three engines,
+     and the isolation changes some in webkit (see *Findings*).
 
    The measured cost is a rounding error of 1/255 inside the region,
    against 62/255 for a plain opacity crossfade, and nothing at all outside the region
@@ -2089,6 +2090,9 @@ They are settled, and the evidence is in *Findings*.
   whole rendering to fade. Keeping one for this case would take a second structure chosen from
   the layout reports, and a structure that depends on the reports it produces did not converge
   when it was tried.
+  Typst gave up after five attempts, and the query saw 0, 0, 1, 0 and 0 reports in them.
+  A reduced document with a switch on a `query` of the same shape converged,
+  so the cause inside Animo was not isolated.
 
 - **Which regions hold an epoch stack?** Every region that sits in no other region, and no
   other. A region inside the rendering of a stack is laid out once per rendering already, so a
@@ -2103,9 +2107,11 @@ They are settled, and the evidence is in *Findings*.
   needed for the containment.
   The isolation keeps the sum of the two halves off the ink under the region
   in chromium 151 and webkit 26.5, as measured.
-  It is written as `isolation` because it changes nothing at rest,
-  while `opacity: 0.999` changes pixel values and `filter: opacity(1)` does not isolate in
-  webkit.
+  It is written as `isolation` because forming the group is all that property declares.
+  `opacity: 0.999` forms the group too, by letting a thousandth of the backdrop through,
+  which rounded to the same pixels when it was measured.
+  `filter: opacity(1)` forms no group in webkit and breaks the sum in firefox.
+  At rest, the blend and the isolation change some glyph edges (see *Findings*).
   An earlier answer put the blend on whole-slide renderings, which were the outermost groups of
   the slide's one frame, with `visibility` scoping the outgoing one down to the regions it
   handed over.

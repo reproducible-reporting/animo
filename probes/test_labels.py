@@ -54,7 +54,7 @@ def test_duplicate_labels_each_get_their_own_group(typst: TypstRunner):
     """Typst permits duplicate labels, and every occurrence becomes a separate group.
 
     This is what makes "one tag, several elements" work,
-    and what lets one CSS rule reach the same tag in every epoch frame of a slide.
+    and what lets one CSS rule reach the same tag in every rendering of an epoch stack.
     """
     markup = typst.svg(PAGE + '#box[twice]#label("dup") and #box[twice]#label("dup")\n')
     assert labels(markup) == ["dup", "dup"]

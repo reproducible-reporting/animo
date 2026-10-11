@@ -101,7 +101,7 @@ def deviation(reference: np.ndarray, image: np.ndarray) -> tuple[int, int]:
 #
 # Exact is the claim, and chromium 151 and firefox 153 meet it to within rounding.
 # Playwright ships no webkit build for the distribution these were written on, so webkit
-# keeps the allowance *Crossfading epoch frames* measured for it, and continuous
+# keeps the allowance *Crossfading two renderings* measured for it, and continuous
 # integration is what holds it to that.
 EXACT = {"chromium": (1, 0), "firefox": (1, 0), "webkit": (48, 512)}
 

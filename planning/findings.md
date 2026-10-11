@@ -7,8 +7,9 @@ SPDX-License-Identifier: Apache-2.0
 
 This document records the verified behaviour of typst 0.15.0, and of the browsers Animo drives,
 that [the design](design.md) relies on, so that it does not have to be rediscovered.
-The behaviour was checked against the installed `typst 0.15.0` binary,
-with chromium 151, firefox 153 and playwright's webkit 26.5 for the browser measurements.
+The behaviour was checked against the installed `typst 0.15.0` binary.
+Most browser measurements were taken with chromium 151, firefox 153 and playwright's webkit 26.5,
+and an entry that was measured on later releases names them.
 Where the engines differ, the entry says so, because a deck has to work in all of them.
 Webkit is measured in a container, for the reason under [Testing](../docs/testing.md).
 
@@ -39,7 +40,7 @@ This attribute is what the whole design rests on.
 - It works for content inside **math** and inside **cetz** canvases.
 - **Duplicate labels are permitted** and each occurrence gets a separate group, which is what
   makes "one tag, several elements" work
-  and what makes one CSS rule reach the same tag in every epoch frame of a slide.
+  and what makes one CSS rule reach the same tag in every rendering of an epoch stack.
 
 The attribute was added by PR
 [#4822 "Animation-friendly export"](https://github.com/typst/typst/pull/4822) (merged
@@ -92,7 +93,8 @@ whereas an Animo slide is a fixed-size 2D canvas with `#place`.
 
 ## Regions: fixed footprints across epochs
 
-Measured on a region with two epochs, i.e. two content states (a short line and a version long
+Measured in September 2026, when a slide held one frame per epoch (an *epoch frame*),
+on a region with two epochs, i.e. two content states (a short line and a version long
 enough to wrap), with the footprint taken as the per-axis maximum of
 `measure(epoch, width: avail)` inside `layout(size => ..)`:
 
@@ -161,8 +163,9 @@ on a 360 pt wide page body.
 - A counter stepped per region and reset before a rendering numbers nested regions in document
   order, identically in every rendering, in both targets, and a `measure` inside steps nothing.
 
-## Crossfading epoch frames
+## Crossfading two renderings
 
+A slide held one frame per epoch (an *epoch frame*) when this was measured, in September 2026.
 Two epoch frames were stacked in one grid cell
 (`display: grid`, both children in `grid-row: 1 / grid-column: 1`,
 `isolation: isolate` on the parent).
@@ -225,10 +228,12 @@ The region-scoped crossfade of *Architecture* is therefore built,
 and the whole-frame fallback is not needed.
 The merged frame also does more than save on `<defs>`,
 because it is what makes the crossfade add up in webkit at all.
-The epoch renderings are the outermost groups of one frame, so they are ink beside each other,
+In the merged frame measured here, each rendering held the whole body of the slide,
+so the renderings were the outermost groups of one frame and ink beside each other,
 and the first row shows that the blend reaches such ink.
-A region's group is not beside the group of the other rendering,
-which is why the blend stays on the rendering.
+A slide now holds one rendering of its body, with an epoch stack in each region that changes.
+The renderings of a stack are sibling groups a few groups deep in the frame,
+and *Isolating the container of a nested stack* says what their container has to declare.
 
 The stacking, the grid cell and the isolation are common to all of these measurements.
 The isolation is essential, because `plus-lighter` sums inside the isolated group,
@@ -273,7 +278,7 @@ so a slide whose epoch renderings blend against the page renders **blank** in we
 showing the ground instead of the text.
 
 **The element that confines it in every engine is the inline SVG that holds the group.**
-Measured on 2026-09-17. With `isolation: isolate` on the epoch frame, the blend stops there
+Measured on 2026-09-17. With `isolation: isolate` on the frame, the blend stops there
 in chromium 151, firefox 153 and webkit 26.5 alike. Animo therefore writes the rule on the
 frame rather than on the canvas, and the canvas carries no isolation.
 Moving the isolation to the frame also took webkit's whole-frame midpoint
@@ -284,6 +289,61 @@ by the failing isolation of the ancestor rather than by webkit's arithmetic.
 `probes/test_crossfade.py` holds each engine to the answer measured for it,
 so one that changes its mind says so by failing rather than by rendering differently.
 
+## Isolating the container of a nested stack
+
+Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11,
+on the structure a slide has now.
+A frame holds a light blue panel, with a heading and a footer of black text beside it.
+On the panel sits a container with two sibling groups of identical black text,
+directly in the frame's content or three plain groups deeper.
+At the midpoint of a crossfade, both groups are at `opacity: 0.5`
+under `mix-blend-mode: plus-lighter`.
+The reference is one copy drawn through the same layers:
+the container isolates, both groups blend, and the second group is at `opacity: 0`.
+Each row puts one property on the container, at device scales 1 and 2 and at both depths:
+
+| Property on the container | chromium 153          | firefox 155           | webkit 26.6           |
+| ------------------------- | --------------------- | --------------------- | --------------------- |
+| nothing                   | summed into the panel | 1/255 (rounding only) | summed into the panel |
+| `isolation: isolate`      | 1/255 (rounding only) | 1/255 (rounding only) | 1/255 (rounding only) |
+| `opacity: 0.999`          | 1/255 (rounding only) | 1/255 (rounding only) | 1/255 (rounding only) |
+| `filter: opacity(1)`      | 1/255 (rounding only) | up to 135/255 off     | summed into the panel |
+
+"Summed into the panel" means that the two halves were added to the panel as well as to each
+other, and the black text took the color of the panel, because black adds nothing.
+That is 240/255 from the reference, on 750 pixels at scale 1 and 2,300 at scale 2.
+The reference is drawn through the same layers because a blended or isolated group is drawn
+differently from a plain one at rest (see *A blended or isolated group at rest*).
+The same structure was first measured on 2026-10-04,
+in chromium 151, firefox 153 and webkit 26.5, with the same answers in the first two rows.
+
+**Firefox stops the blend of a group at a parent group that carries a `transform`.**
+The control for the firefox row puts a dark red mark over a dark green panel,
+so that a blend that reaches the panel comes back with green in it.
+
+| Where the mark is                    | chromium 153 | firefox 155  | webkit 26.6 |
+| ------------------------------------ | ------------ | ------------ | ----------- |
+| beside the panel                     | summed in    | summed in    | summed in   |
+| one plain group deeper               | summed in    | summed in    | summed in   |
+| one group deeper, with a `transform` | summed in    | out of reach | summed in   |
+
+The panel is therefore in reach of a blend in every engine.
+Typst writes a `transform` attribute on the group of every `place` and `move` with an offset,
+so the container of the stack in this measurement is such a group,
+and firefox keeps the sum inside it whether or not the container isolates.
+
+**`isolation: isolate` is the property Animo writes on the container.**
+It forms the group in all three engines, and forming the group is all it declares.
+`filter: opacity(1)` forms no group in webkit and breaks the sum in firefox.
+`opacity: 0.999` forms the group in all three engines and comes to the same pixels,
+because the thousandth of the panel that it lets through is a quarter of one step of an 8-bit
+pixel here.
+
+In webkit at device scale 2, a screenshot taken right after the load put both `isolation` and
+`opacity: 0.999` up to 6/255 off on some loads and on none of the others.
+The cause is a first raster of a layered group, which the entry on groups at rest describes,
+and the probes take their screenshots two animation frames after the load.
+
 ## Choosing between stacked renderings: `opacity`, not `visibility`
 
 Measured on chromium 151 and firefox 153, while building the subslide numbering.
@@ -291,12 +351,13 @@ Measured on chromium 151 and firefox 153, while building the subslide numbering.
 A value finer than a slide number is rendered once per subslide,
 and one of the renderings is shown.
 The property that shows the rendering cannot be chosen freely, because of the entry above.
-An epoch frame that is not being shown is `visibility: hidden`,
-and a descendant may take that back,
-which is exactly what scopes the outgoing frame of a region crossfade.
+A rendering of an epoch stack that is not being shown is `visibility: hidden`,
+and a descendant may take that back.
+When this was measured, a slide held one frame per epoch,
+and the same property hid the epoch frames that were not shown.
 
 `visibility` therefore cannot also select a rendering.
-With two frames stacked as epoch frames are and
+With two frames stacked as epoch frames were and
 the second hidden, a `visibility: visible` on a group inside that second frame computes to
 `visible` and **paints**: the pixel that should show the front frame's red shows the hidden
 frame's blue. An `opacity: 1` on the same group computes to `opacity: 1` and
@@ -307,8 +368,8 @@ With two groups in the visible frame, one at `opacity: 0`, only the ink of the o
 shows.
 
 A rendering of a stack is therefore chosen with `opacity`, and each property has one job.
-`visibility` says which frame the slide is on, `opacity` says which rendering of a stack the
-position is on, and neither can undo the other.
+`visibility` says which rendering of an epoch stack is shown,
+`opacity` says which rendering of a subslide stack is shown, and neither can undo the other.
 
 ## Crossfading two slide containers
 
@@ -349,6 +410,7 @@ Animo therefore writes its surround on
 
 Measured on chromium 151 through the devtools protocol, on an i7-1260P, while choosing how a
 slide that is not being shown is hidden.
+This was in September 2026, when a slide held one frame per epoch (an *epoch frame*).
 A crossfade needs both containers laid out,
 so `display: none` cannot hide the two slides that a boundary involves.
 The question was whether it has to hide any of the other slides.
@@ -437,6 +499,53 @@ This has consequences for the measurement of a transition, and for the obvious r
   *permanently*, and by more (643 of 3600 ink pixels, 285 of them by over 16/255).
   The remedy is therefore larger and more visible than the problem,
   which lasts 400 ms and changes ten pixels.
+
+## A blended or isolated group at rest
+
+Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11.
+At rest, Animo writes `mix-blend-mode: plus-lighter` on the renderings of an epoch stack
+and `isolation: isolate` on their container.
+The rendering that is shown is visible at opacity 1, and the others are hidden at opacity 0.
+Each of these conditions was put on its own on a group holding a paragraph,
+in a frame that isolates, and compared with the same frame without it.
+A sibling, where there is one, sits beside the group, and only the columns of the group are
+compared.
+The frame was drawn at eight positions an eighth of a device pixel apart,
+at device scales 1 and 2.
+The table gives the largest difference over the eight positions,
+with the number of pixels that differ by more than 1/255, at scale 1 and then at scale 2.
+"The same" means 0/255 at every position.
+
+| Compared with a lone group         | chromium 153            | firefox 155          | webkit 26.6                |
+| ---------------------------------- | ----------------------- | -------------------- | -------------------------- |
+| the container isolates             | the same                | the same             | 253/255 on 273, 128 on 462 |
+| the group blends                   | 4/255 on 17, 176 on 111 | 2/255 on 2, 53 on 66 | as with the isolation      |
+| both, as Animo writes them         | as with the blend       | as with the blend    | as with the isolation      |
+| a visible sibling beside the group | the same                | the same             | 50/255 on 86, 50 on 95     |
+
+- **The blend changes the raster in all three engines, and the isolation only in webkit.**
+  How much depends on the glyphs and on where they fall on the device pixels.
+  From one position to the next, the difference ranged from nothing to the figures in the
+  table.
+  `probes/test_layers_at_rest.py` therefore measures eight positions and asserts only
+  whether there is a difference.
+- **The opacity and the visibility of a sibling change nothing in any of the three engines.**
+  Compared with a visible sibling, a sibling at opacity 0 and hidden and a sibling at opacity
+  0.5 gave the same pixels in all three, at both scales.
+  A static opacity below one on the sibling leaves the raster of the group as it is,
+  while a running opacity animation changes it in chromium (see the entry above).
+- **In webkit, the presence of a sibling changes the raster of the group**,
+  whether the sibling is visible, at opacity 0.5 or hidden.
+- **A screenshot in webkit at scale 2 can catch a first raster.**
+  Taken right after the load, a screenshot of a group drawn through a layer differed by 6/255
+  on 16 pixels in about half of the loads.
+  Two animation frames after the load, every screenshot was the same.
+  The probes in `probes/test_crossfade.py` and `probes/test_layers_at_rest.py` wait for
+  those two frames.
+
+A stack whose renderings blend and isolate only while a boundary runs would therefore be
+drawn at rest as a lone group in chromium and firefox.
+In webkit it would keep the difference that the presence of a sibling makes.
 
 ## Automatic canvas sizing: `#place` is invisible to `auto`, but visible to a show rule
 
@@ -778,9 +887,10 @@ which is the scope of typst's deduplicator.
   labelled group when it is a labelled `box`, so `visibility` scopes one away exactly as a
   frame is scoped away, and `mix-blend-mode: plus-lighter` on two of them at half opacity
   each sums to one opaque rendering.
-  The blend works on these groups because they are the outermost groups of one `<svg>`,
-  which a region's group is not (see *Crossfading epoch frames*).
-  This is what Animo does.
+  The blend sums these groups because they are siblings in one `<svg>`,
+  which the groups of a region in two frames are not (see *Crossfading two renderings*).
+  Animo places the renderings of an epoch stack this way, at one point of the region's
+  footprint, in a container that isolates (see *Isolating the container of a nested stack*).
 
 - **What each scope is worth**, measured on 2026-09-15 on this repository's two decks, the
   second of them at twelve slides of three epochs with an overlay carrying a number:
@@ -1113,9 +1223,11 @@ release.
 
 ## Cross-frame geometry is readable, so morphing is possible
 
-With two epoch frames in the DOM and both laid out, a label that moves because of reflow
-*inside* a region reports both of its geometries to JavaScript: `x=39.49` in the outgoing
-frame and `x=523.87` in the incoming one, at identical size. A FLIP-style morph between epochs
+This was measured in September 2026, when a slide held one frame per epoch.
+With two epoch frames in the DOM and both laid out,
+a label that moves because of reflow *inside* a region reports both of its geometries to
+JavaScript: `x=39.49` in the outgoing frame and `x=523.87` in the incoming one,
+at identical size. A FLIP-style morph between epochs
 is therefore implementable without any help from typst.
 
 Two transform slots are therefore needed, since CSS gives each element only one `translate` and

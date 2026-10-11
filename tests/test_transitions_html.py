@@ -44,7 +44,7 @@ ROUNDING = 3
 # plain opacity crossfade dips by.
 # The probe for *Crossfading two slide containers* is where the exactness of the blend is
 # measured, on rasters with no animation running in them.
-# Webkit's allowance is the one from *Crossfading epoch frames*, which it shares.
+# Webkit's allowance is the one from *Crossfading two renderings*, which it shares.
 BLEND = {"chromium": (ROUNDING, 0), "firefox": (ROUNDING, 0), "webkit": (48, 512)}
 
 # Three slides of three grounds, the middle one cutting and the outer two crossfading.
