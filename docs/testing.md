@@ -348,6 +348,10 @@ because the action expects credentials for a GitHub App, which a personal reposi
 The checker reads the subtree that would be submitted to `typst/packages`,
 which consists of the tracked files minus the `exclude` list of the manifest.
 `tools/build_package.py` writes this subtree first, and the checker reads the copy.
+The checker does not compile anything,
+so the workflow also compiles `demos/hello.typ` to HTML and PDF with the subtree as the package.
+This compilation fails when the subtree is missing a file that the package reads,
+such as a script of the runtime.
 
 The `release` workflow ends with the subtree as an artefact.
 A maintainer copies the subtree into a sparse checkout of `typst/packages`

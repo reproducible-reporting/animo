@@ -97,6 +97,29 @@ jobs:
           -v ${{ github.workspace }}/build/package/${{ steps.manifest.outputs.version }}:/data
           ghcr.io/typst/package-check check
 
+      - uses: typst-community/setup-typst@v5
+        with:
+          typst-version: "0.15.0"
+
+      # The checker does not compile anything,
+      # so a file that the package reads at compile time and that is missing from the subtree
+      # only shows up when a deck is compiled against the subtree.
+      # Typst looks for `@preview/animo` under `--package-path` before it downloads it,
+      # so the copy below is the package that the deck imports.
+      # The copy lives outside `build/package`, because that directory is packed and uploaded.
+      - name: Compile a demo deck against the subtree
+        env:
+          VERSION: ${{ steps.manifest.outputs.version }}
+          PACKAGES: ${{ runner.temp }}/packages
+          OUTPUT: ${{ runner.temp }}/output
+        run: |
+          mkdir -p "$PACKAGES/preview/animo" "$OUTPUT"
+          cp -r "build/package/$VERSION" "$PACKAGES/preview/animo/$VERSION"
+          typst compile --ignore-system-fonts --package-path "$PACKAGES" \
+            --format html --features html demos/hello.typ "$OUTPUT/hello.html"
+          typst compile --ignore-system-fonts --package-path "$PACKAGES" \
+            demos/hello.typ "$OUTPUT/hello.pdf"
+
       # A manifest whose version has no section in the changelog fails here,
       # which is the point at which the notes are still an edit away.
       - name: Extract the release notes
