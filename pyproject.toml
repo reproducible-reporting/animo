@@ -7,7 +7,7 @@
 # and the development environment lives in `[dependency-groups]`.
 [project]
 name = "animo"
-version = "0.1.1"
+version = "0.2.0"
 description = "Build dynamic HTML and static PDF presentations using typst from a single source."
 readme = "README.md"
 license = "Apache-2.0"

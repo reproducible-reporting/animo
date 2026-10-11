@@ -5,7 +5,7 @@
 // The timelines below use a few primitives that later pages of the guide explain,
 // with a comment at each to say which page that is.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 #import "@preview/cetz:0.5.2"

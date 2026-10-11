@@ -4,7 +4,7 @@
 // Regions, which are areas laid out afresh in every epoch inside a footprint that never
 // changes, so that a change of content can push its surroundings around inside them.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 #import "@preview/cetz:0.5.2"

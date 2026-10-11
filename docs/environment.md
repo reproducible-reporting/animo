@@ -83,12 +83,12 @@ The `uv-lock` hook fails a commit in which the two files disagree.
 
 A typst file can import Animo in two ways, and both resolve to the same working tree.
 
-**`@preview/animo:0.1.1`** is the import in every demo deck, documentation snippet and README,
+**`@preview/animo:0.2.0`** is the import in every demo deck, documentation snippet and README,
 so that a reader can copy any of them and compile it unchanged.
 Typst resolves this import to the working tree through a package directory inside the repository:
 
 ```text
-.typst-packages/preview/animo/0.1.1 -> ../../..
+.typst-packages/preview/animo/0.2.0 -> ../../..
 ```
 
 The symlink is committed, and `.envrc` points typst at the directory that contains it:
@@ -227,7 +227,7 @@ because only a new run of the benchmark can update the number beside it.
 See [Performance](performance.md) for those numbers.
 
 The package version also appears in a file name, which Snipwise cannot rewrite.
-The symlink `.typst-packages/preview/animo/0.1.1` carries the version in its name,
+The symlink `.typst-packages/preview/animo/0.2.0` carries the version in its name,
 so rename it with `git mv` in the commit that bumps the version.
 A forgotten rename fails the `package symlink matches the manifest` hook,
 which `pre-commit` runs on that commit,

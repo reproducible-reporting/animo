@@ -4,7 +4,7 @@
 // The shape of a deck, the two layers around the body of a slide,
 // and the transitions by which a slide is entered.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors and the title slide that several demo decks share.
 #import "_common.typ": dark, orange, pale, pink, teal, title-slide
 

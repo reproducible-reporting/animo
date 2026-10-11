@@ -45,7 +45,7 @@ WORK = ROOT / "tmp" / "benchmarks"
 # The slide, with a paragraph of `words` words of the `lorem` placeholder text of typst,
 # which is the same on every machine, and a clause inserted at its start by a morph.
 DECK = """\
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 #show: animo
 #slide(animation: {{
   import anim: *
@@ -64,7 +64,7 @@ PARAGRAPHS = {"500 letters": (80, 11), "3000 letters": (480, 4.5)}
 # The slide with a plot of 1000 equal marks at places spread by two modular sequences, whose
 # axis range grows by a quarter, which moves every mark towards the origin.
 PLOT = """\
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 #import "@preview/cetz:0.5.2"
 #show: animo
 #let marks(range) = cetz.canvas({

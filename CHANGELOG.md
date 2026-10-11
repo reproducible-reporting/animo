@@ -12,117 +12,141 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 ## [Unreleased]
 
+(no changes yet)
+
+## [0.2.0] - 2026-10-11
+
+This release adds slide transitions and morphs.
+It also moves the settings of a slide into its timeline,
+so a deck written for 0.1.1 that passes such settings to `slide` needs small edits
+before it compiles.
+The main points for an upgrade are:
+
+- Slides can enter with `push`, `cover`, `uncover` or `wipe` beside the crossfade.
+  A slide sets its transition with `init(..)`,
+  and the `transition:` argument of the show rule sets it for the whole deck.
+- `transition: morph()` on a structural primitive moves the letters, shapes and images
+  that both versions of a region share to their new places, and fades the rest.
+- The HTML presentation lays out the body of a slide once,
+  so a slide with several epochs is smaller, compiles faster and loads faster.
+- **Breaking:** the `transition:`, `wait:`, `hold:` and `handout:` arguments move from `slide`
+  to `init(..)` in the timeline, and a hard cut is written as `duration: 0`.
+- **Breaking:** four smaller changes can alter an existing deck.
+  They concern a stated `duration:` in a deck whose duration is zero,
+  a structural primitive on a `wrap: none` tag outside a region,
+  two regions that change inside one region, and a tag that is both moved and scaled.
+  Each one is described under *Changes*.
+- Most fixes concern the HTML presentation, such as gradients lost after a deep link,
+  and slides with nested regions that failed to compile cleanly in every output type.
+
 ### Added
 
-- Add `animo-logo(fill:, ..)`, which draws the logo of Animo as an image in any color,
-  and `made-with-animo(fill:, height:)`, which draws a badge that places the logo beside the
-  words "made with Animo".
-  Both take the color of the surrounding text by default.
-  The title slides of the demo decks show the badge.
-- Add the `uncover(direction:)` slide transition, which moves the slide being left out at one
-  edge over the slide being entered.
+- Add `init(..)` to the timeline, which is about the initial state of a slide.
+  It takes the transition into the slide as its first argument, and `duration:`, `wait:`,
+  `hold:` and `handout:` as keywords.
+  It is written at most once, before the first `sub`.
+- Add the `push`, `cover`, `uncover` and `wipe` slide transitions beside the crossfade.
+  Each takes a `direction`, which is `ltr`, `rtl`, `ttb` or `btt`.
+  A step back over a slide boundary plays the transition of that boundary backwards.
+- Add a transition function per transition to the `anim` module:
+  `crossfade()`, `push(direction:)`, `cover(direction:)`, `uncover(direction:)`
+  and `wipe(direction:)`.
+  Typst refuses a misspelt parameter at the call, and an editor shows the parameters.
+- Add a `transition:` argument to the show rule, which is the transition of every slide whose
+  `init` names none, `anim.crossfade()` by default.
+- Add a `transition:` argument to `replace`, `remove`, `apply` and `reset`,
+  which names the transition that carries the changed region across the boundary.
+  It takes `auto`, `crossfade()` or `morph()`.
+- Add the `morph()` transition for a region, written as the `transition:` of a structural
+  primitive.
+  It moves the content that both versions of the region share to its new place
+  and fades the rest.
+  `init` and the show rule refuse it.
+  The demo deck `morph.typ` shows it.
+  The morph pairs the content of the two versions as follows:
+  - Letters are matched by their shape, so a reflowing paragraph needs no tags.
+  - Shapes and images are matched in reading order.
+    A shape is matched when its outline and its stroke width are the same in both versions,
+    whatever its color, and an image when it is the same image at the same size.
+    What sits inside a clipped box is matched only when the box stays where it is.
+  - A shape whose size changes while its kind stays is resized,
+    such as the bar of a fraction that widens, a box that grows around its words
+    or a circle that becomes an ellipse.
+    Its outline and the width of its stroke change on the way, and rounded corners keep their
+    shape.
+    A shape is resized only into one between the same two matched neighbours
+    and inside the same tags.
+    Webkit, which does not animate the outline of a shape, fades it instead.
+  - A shape turns into another of a different outline, such as a square into a circle,
+    a star into a pentagon or an arrow into a line,
+    when a tag that the primitive changes holds exactly one shape that is not matched otherwise
+    before and after the step.
+    The outline, the colors and the width of the stroke change on the way.
+    Webkit fades the two shapes instead.
+  - A tag moves as one piece, unless the primitive changes that tag or a tag inside it.
+    The morph then matches the content inside the tag.
 - Announce the position of the HTML presentation as events on the root element:
   `animo:position`, `animo:leave`, `animo:enter` and `animo:mode`.
   They are sent after the page, the URL fragment and the clock have been updated.
   The root element also carries the active input mode as `data-animo-mode`.
 - Ignore key presses and clicks inside an element with the attribute `data-animo-control`.
-- Add the `push`, `cover` and `wipe` slide transitions beside the crossfade.
-  Each takes a `direction`, which is `ltr`, `rtl`, `ttb` or `btt`.
-- Add a transition function per transition to the `anim` module:
-  `crossfade()`, `push(direction:)`, `cover(direction:)` and `wipe(direction:)`.
-  Typst refuses a misspelt parameter at the call, and an editor shows the parameters.
-- Add `init(..)` to the timeline, which is about the initial state of a slide.
-  It takes the transition into the slide as its first argument, and `duration:`, `wait:`,
-  `hold:` and `handout:` as keywords.
-  It is written at most once, before the first `sub`.
-- Add a `transition:` argument to the show rule, which is the transition of every slide whose
-  `init` names none, `anim.crossfade()` by default.
-- Add a `transition:` argument to `replace`, `remove`, `apply` and `reset`,
-  which names the transition that carries the changed region across the boundary.
-  It takes `auto` or `crossfade()`, and the plan carries the name per changed tag.
-- Add the `morph()` transition for a region, written as the `transition:` of a structural
-  primitive. It moves the content that both versions of the region share to its new place
-  and fades the rest. A tag moves as one unless the primitive changes it, and letters are
-  matched by their shape, so a reflowing paragraph needs no tags.
-  `init` and the show rule refuse it.
-  The demo deck `morph.typ` shows it.
-- Match shapes and images in a morph beside the letters, in reading order.
-  A shape is matched when its outline and its stroke width are the same in both versions,
-  whatever its color, and an image when it is the same image at the same size.
-  What sits inside a clipped box is matched only when the box stays where it is.
-- Resize a shape in a morph when its size changes and its kind stays, such as the bar of a
-  fraction that widens, a box that grows around its words or a circle that becomes an ellipse.
-  Its outline and the width of its stroke change on the way, and rounded corners keep their
-  shape. A shape is resized only into one between the same two matched neighbours and inside
-  the same tags. Webkit, which does not animate the outline of a shape, fades it instead.
-- Turn a shape into another of a different outline in a morph, such as a square into a circle,
-  a star into a pentagon or an arrow into a line, when a tag that the primitive changes holds
-  exactly one shape that is not matched otherwise before and after the step.
-  The outline, the colors and the width of the stroke change on the way.
-  Webkit fades the two shapes instead.
 - Write the `<title>`, the `lang` and the `<meta>` elements of the HTML presentation
   from `set document(..)` and `set text(lang: ..)`.
-- Carry the resolved `handout` flag of every state in the plan of the HTML presentation,
-  and the settings of the deck in a `data-animo-config` attribute on `.animo-deck`.
 - Add a `handout` key to the dictionary a `per-subslide` callback receives,
   which says whether the handout keeps that subslide, in every output type.
 - Add `output-type()`, which returns `"html"`, `"presentation"` or `"handout"`
   and gives the same answer inside a slide as outside one.
+- Add `animo-logo(fill:, ..)`, which draws the logo of Animo as an image in any color,
+  and `made-with-animo(fill:, height:)`, which draws a badge that places the logo beside the
+  words "made with Animo".
+  Both take the color of the surrounding text by default.
+  The title slides of the demo decks show the badge.
 
 ### Changes
 
-- A `scale` grows a tag from its anchor on an axis that a `move` placed with `x`, `y` or
-  `relto`, so a tag that is both moved and scaled lands its scaled corner on the target.
-  An axis that was never placed, or only shifted with `dx`/`dy`, still grows about the centre
-  of the box.
-  A deck that added half the growth as a `dx`/`dy` shift to land a scaled corner no longer
-  needs it.
-- Give every page of the Presentation Author Guide a demo deck that covers it,
-  using only what that page and the pages before it explain.
-  The decks `motion.typ`, `content.typ` and `pan.typ` are renamed to `continuous.typ`,
-  `structural.typ` and `viewport.typ`, and `slides.typ`, `tags.typ` and `regions.typ` are new.
-- Call the decks that demonstrate the features of Animo demo decks,
-  and move them from `examples/` to `demos/`.
-  The site publishes them under `demos/` as well.
-  The title slide of a demo deck links to the page of the guide that the deck accompanies.
-- Move the morph from the page Structural Animations to a separate page Morphs after Regions,
-  because most morphs need a region.
 - **Breaking:** remove the `transition:`, `wait:`, `hold:` and `handout:` arguments of `slide`.
   They are written on `init(..)` in the timeline instead,
   as in `#slide(animation: anim.init(anim.push(), wait: 2))[..]`.
 - **Breaking:** write a hard cut as a duration of zero, as in `init(duration: 0)`,
   rather than as `transition: none`.
   A duration of zero on a structural primitive is a hard cut of its region.
+- **Breaking:** make `primitive-duration:` and `transition-duration:` of the show rule defaults.
+  A primitive or an `init` that states a `duration:` now moves when the deck's
+  duration is zero.
+  In a deck with `transition-duration: 0`, a slide that names a transition has to state its
+  `duration:` as well to be seen moving.
+  A reader who asked for reduced motion still sees every step snap,
+  because Animo signals reduced motion with the custom property `--animo-motion: none`
+  instead of zeroing the two durations of the deck.
 - **Breaking:** refuse a structural primitive on a `wrap: none` tag that no region holds,
   in every output type. The HTML presentation used to crossfade the whole slide for it.
   Give the tag a wrapper, as in `wrap: auto`, `box` or `block`, or put a region around it.
 - **Breaking:** cross an epoch boundary with the outermost region around what changed.
   Two operations of one step that change two regions inside one region now have to agree
   about their timing and their transition, as two operations inside one region do.
-- **Breaking:** make `primitive-duration:` and `transition-duration:` of the show rule defaults.
-  A primitive or an `init` that states a `duration:` now moves when the deck's
-  duration is zero.
-  In a deck with `transition-duration: 0`, a slide that names a transition has to state its
-  `duration:` as well to be seen moving.
-- Signal reduced motion with the custom property `--animo-motion: none` instead of zeroing
-  the two durations of the deck, so that it still stops every duration written in a deck.
-- Place the slides of the HTML presentation in a `.animo-stage` element inside `.animo-deck`.
-  The stage is the visible rectangle, and it clips and isolates the crossfade between slides.
-- Match the content of a tag in its place in a morph when the tag holds a tag that the
-  boundary changes, as for the changed tag itself, rather than carrying it as one.
-- Split the runtime of the HTML presentation into files under `src/js`,
-  which are joined into the one script of the page.
-- Plan every effect of a step before writing any of them, and accept any CSS property in an
-  effect, so that a transition can read the page as it was before the step.
-- Build the epoch renderings of a slide and the renderings of a `per-subslide` as stacks of one
-  kind each, labelled `animo-<kind>-<index>`, with one implementation in typst and one in the
-  runtime, which chooses the rendering of every stack by its kind.
+- **Breaking:** a `scale` grows a tag from its anchor on an axis that a `move` placed with
+  `x`, `y` or `relto`, so a tag that is both moved and scaled lands its scaled corner on the
+  target.
+  An axis that was never placed, or only shifted with `dx`/`dy`, still grows about the centre
+  of the box.
+  A deck that added half the growth as a `dx`/`dy` shift to land a scaled corner no longer
+  needs it.
 - Lay the body of a slide out once in the HTML presentation, and place an epoch stack of one
   rendering per epoch in every region whose content changes, instead of one rendering of the
   whole slide per epoch.
   A slide with several epochs is smaller, compiles faster and loads faster in the browser,
   most of all when little of it changes.
   The paged outputs are unchanged.
+- Place the slides of the HTML presentation in a `.animo-stage` element inside `.animo-deck`.
+  The stage is the visible rectangle, and it clips and isolates the crossfade between slides.
+- Call the decks that demonstrate the features of Animo demo decks,
+  and move them from `examples/` to `demos/`, on the site as well.
+  Every page of the Presentation Author Guide has a demo deck that covers it,
+  using only what that page and the pages before it explain,
+  and the title slide of a demo deck links to that page.
+  The decks `motion.typ`, `content.typ` and `pan.typ` are renamed to `continuous.typ`,
+  `structural.typ` and `viewport.typ`,
+  and `slides.typ`, `tags.typ`, `regions.typ`, `morph.typ` and `handouts.typ` are new.
 
 ### Fixes
 
@@ -135,9 +159,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   and received the clicks meant for it.
 - Pause and resume only the animations that Animo started.
   The pause key used to pause every animation of the page, including the animations of the author.
-- Choose the transition of a slide boundary from the slide that owns it on a backward step too.
-  A step back used to take the transition of the slide it entered.
-- Stop the paged outputs from warning "content labelled multiple times"
+- Stop typst from warning "content labelled multiple times"
   for a tag or a `#place` in a region inside another region,
   on a slide with more than one epoch.
 - Let three regions nest, and two regions inside a tag or with a `move` with `relto` on the slide.
@@ -165,4 +187,6 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 This is the initial release of Animo.
 
 [0.1.0]: https://github.com/reproducible-reporting/animo/releases/tag/v0.1.0
+[0.1.1]: https://github.com/reproducible-reporting/animo/releases/tag/v0.1.1
+[0.2.0]: https://github.com/reproducible-reporting/animo/releases/tag/v0.2.0
 [unreleased]: https://github.com/reproducible-reporting/animo

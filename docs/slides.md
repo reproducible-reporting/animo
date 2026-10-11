@@ -21,7 +21,7 @@ It shows the margin, backgrounds and overlays of each kind, and every slide tran
 A deck is a document with a show rule at the top and a `#slide` call per slide.
 
 ```typst
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
 #slide[

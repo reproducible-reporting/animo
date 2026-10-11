@@ -6,7 +6,7 @@
 // No timeline here changes what typst lays out, so every step is free on paper
 // and smooth in the browser.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 

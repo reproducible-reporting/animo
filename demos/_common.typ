@@ -7,7 +7,7 @@
 // A deck imports it with `#import "_common.typ": *` and applies the styles with
 // `#show: demo-style`.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 
 // The colors of the logo and of the documentation site, and a dark gray for text and rules.
 // The names `teal` and `orange` shadow the colors of the same name that typst predefines.

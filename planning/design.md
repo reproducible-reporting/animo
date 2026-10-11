@@ -86,7 +86,7 @@ Animo deliberately leaves out the following:
 Example usage:
 
 ```typst
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 
 #slide(
   background: blue,

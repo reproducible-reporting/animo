@@ -5,7 +5,7 @@
 // The viewport is what the audience sees and what clips;
 // the canvas is what the body is laid out on, and it may be larger.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors and the title slide that several demo decks share.
 #import "_common.typ": orange, pale, title-slide
 

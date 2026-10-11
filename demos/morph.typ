@@ -5,7 +5,7 @@
 // only what differs. It is a transition of the structural primitive that changes the region.
 // The static output types show one state per page, so the notes say what the browser does.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 

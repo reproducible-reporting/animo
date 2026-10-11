@@ -6,7 +6,7 @@
 // so content that a slide shows earlier and then hides, removes, replaces or pans away from
 // reaches the handout only on a state that asks for a page.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 

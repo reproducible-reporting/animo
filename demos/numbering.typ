@@ -6,7 +6,7 @@
 // Each of the three numbering functions has a color on every slide of this deck:
 // the slide number is dark gray, the subslide number is orange and the progress bar is teal.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 

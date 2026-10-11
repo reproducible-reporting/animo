@@ -36,7 +36,7 @@ and the [Reference](reference.md) instead.
 | `tools/`           | scripts that build the demo decks and the package, and check the package | [Continuous Integration](testing.md#continuous-integration)     |
 | `benchmarks/`      | the benchmark script, its documents and the committed results            | [Benchmarks](environment.md#benchmarks)                         |
 | `logo/`            | the logos, and the source of the social cards                            | [The Documentation Site](environment.md#the-documentation-site) |
-| `.typst-packages/` | the symlink that resolves `@preview/animo:0.1.1` to the working tree     | [The Two Import Paths](environment.md#the-two-import-paths)     |
+| `.typst-packages/` | the symlink that resolves `@preview/animo:0.2.0` to the working tree     | [The Two Import Paths](environment.md#the-two-import-paths)     |
 
 ## Where the Specification Lives
 

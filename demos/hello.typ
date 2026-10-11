@@ -5,7 +5,7 @@
 // This demo deck uses the features that the Presentation Author Guide explains first,
 // at https://reproducible-reporting.github.io/animo/slides/ and in the pages after it.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 
 // The shape of the deck is a document-level show rule, written once.
 // It is also what emits the HTML page, its stylesheet and its runtime,

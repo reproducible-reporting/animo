@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 // SPDX-License-Identifier: Apache-2.0
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 #import "@preview/oxifmt:1.0.0": strfmt
 #import "@preview/cetz:0.5.2"
 #import "_common.typ": dark, orange, pale, progress-bar, teal
@@ -153,7 +153,7 @@
   #v(1fr)
 
   ````typst
-  #import "@preview/animo:0.1.1": *
+  #import "@preview/animo:0.2.0": *
   #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
   #slide[

@@ -34,7 +34,7 @@
 // and the timeline is not built at all. The content itself is written
 // once, as a function of those two, so the two drivers cannot drift apart.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 #import "@preview/cetz:0.5.2"
 
 #let flag(name) = sys.inputs.at(name, default: "off") == "on"

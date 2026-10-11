@@ -4,7 +4,7 @@
 // The structural primitives, which change what typst lays out rather than how it is
 // shown, how they compose, and the epochs they introduce.
 
-#import "@preview/animo:0.1.1": *
+#import "@preview/animo:0.2.0": *
 // The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 
