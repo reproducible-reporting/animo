@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Inline versus block, decided by measurement*.
+"""Probes for *Inline versus Block, Decided by Measurement*.
 
 A tag has to wrap its body, and the wrapper it may use depends on whether the body is
 inline-level or block-level.

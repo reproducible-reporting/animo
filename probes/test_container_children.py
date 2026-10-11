@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *What a container resolves from its direct children*.
+"""Probes for *What a Container Resolves from Its Direct Children*.
 
 This is what decides that a tag or a region around a `grid.cell` or an `item` element is
 refused rather than supported. A site is a `context` block between the container and the

@@ -159,7 +159,7 @@ render = "{{ content | unwrap }}"
 # Every such site writes it as `typst X.Y.Z`, with the word before the number,
 # which is what the expression anchors on.
 # That anchor is also what keeps the release of another tool out of a match,
-# such as cetz 0.5.2 in *A cetz draw command is a value, not content*.
+# such as cetz 0.5.2 in *A Cetz Draw Command Is a Value, Not Content*.
 # `setup.sh` downloads that release and `typst.toml` is quoted in the design document,
 # so those two spellings are matched as well.
 #

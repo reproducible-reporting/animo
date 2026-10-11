@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Fitting the slide to the browser window*.
+"""Probes for *Fitting the Slide to the Browser Window*.
 
 The finding is a negative and a positive.
 A length divided by a length is not arithmetic every engine has, so the fit may not be

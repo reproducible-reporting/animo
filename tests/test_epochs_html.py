@@ -58,7 +58,7 @@ ROUNDING = 3
 #
 # Exact is the claim, and chromium 151 and firefox 153 meet it to within that rounding.
 # Two half-opacity layers add back to one opaque layer through `plus-lighter`.
-# The exactness of the blend itself is measured by the probe for *Crossfading two renderings*,
+# The exactness of the blend itself is measured by the probe for *Crossfading Two Renderings*,
 # on rasters with no animation running in them.
 # Playwright's webkit 26.5 does not meet it, and its allowance is the one that probe
 # measured: a few dozen pixels on antialiased glyph edges drift by up to 42 out of 255.
@@ -415,7 +415,7 @@ def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
 # A stack at rest neither blends nor isolates, so its rendering is drawn as a lone group in
 # chromium 153 and firefox 155. Webkit 26.6 draws a group beside a sibling differently from a
 # lone one at some positions, and drew this slide the same at device scales 1 and 2.
-# See *A blended or isolated group at rest* in *Findings*.
+# See *A Blended or Isolated Group at Rest* in *Findings*.
 REST = (1, 0)
 
 

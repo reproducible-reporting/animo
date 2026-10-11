@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A faked clock drives a timer without touching the document timeline*.
+"""Probes for *A Faked Clock Drives a Timer without Touching the Document Timeline*.
 
 A deck that plays itself is a `setTimeout` in the runtime, and a `setTimeout` is exactly
 what the animation harness cannot scrub.
@@ -77,7 +77,7 @@ FIRED = "() => window.fired"
 
 # How long an animation is left to run in real time, and how far short of that it may
 # report. It measures itself against the document timeline, which is updated once per
-# frame, so it is behind by at most one. See *The document timeline is not a clock*.
+# frame, so it is behind by at most one. See *The Document Timeline Is Not a Clock*.
 FLIGHT = 400
 FRAME = 100
 
@@ -183,8 +183,8 @@ def test_running_the_clock_does_not_run_the_animations(counting):
     real milliseconds.
     A fixed budget instead would measure the machine rather than the engine.
     The animation reported 168 ms on a workstation running the whole suite in parallel,
-    against the 17 ms of *A faked clock drives a timer without touching the document
-    timeline*.
+    against the 17 ms of *A Faked Clock Drives a Timer without Touching the Document
+    Timeline*.
     """
     started = time.monotonic()
     counting.evaluate(START)

@@ -20,7 +20,7 @@
 // slide records only where the canvas can be observed.
 // `pan` is the only thing that reads the canvas.
 // The viewport clips in both targets, so a slide whose timeline never pans is drawn the same
-// whatever canvas it gets, and takes the viewport clamped to its body box.
+// whatever canvas it gets, and takes its body box, enlarged to at least the viewport.
 // A rendering that is measured rather than laid out records nothing either, since a
 // `metadata` element inside a `measure` never reaches `query`.
 

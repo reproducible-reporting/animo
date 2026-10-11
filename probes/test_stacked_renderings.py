@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Choosing between stacked renderings: `opacity`, not `visibility`*.
+"""Probes for *Choosing between Stacked Renderings: `opacity`, Not `visibility`*.
 
 A value finer than a slide number is rendered once per subslide and one of the renderings
 is shown. Which property shows it is not a free choice, because a rendering in the body

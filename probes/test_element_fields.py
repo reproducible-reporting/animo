@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Introspection: the fields of a nested structure, and one occurrence per page*.
+"""Probes for *Introspection: The Fields of a Nested Structure, and One Occurrence per Page*.
 
 A tag site emits two nested wrappers around a `move` around a `scale` around the body.
 Whether that structure can be read back from the label that names it decides how much of

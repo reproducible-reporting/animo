@@ -197,7 +197,7 @@ def test_init_writes_the_wait_of_the_initial_state(typst: TypstRunner):
 
 
 def test_two_waits_in_a_row_are_two_states(typst: TypstRunner):
-    """The degenerate call *Animation primitives* states the reading for.
+    """The degenerate call *Animation Primitives* states the reading for.
 
     A wait is measured from its predecessor's trigger, so `sub(wait: a)` in front of
     `sub(wait: b, ..ops)` holds for `a + b` in total and is one extra state, rather than

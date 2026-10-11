@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A `translate` carries an element's clip and gradient, not an ancestor's clip*.
+"""Probes for *A `translate` Carries an Element's Clip and Gradient, Not an Ancestor's Clip*.
 
 A morph moves a matched element with a CSS `translate`, and whether that is the whole of the
 motion depends on what else draws the element.

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Crossfading two slide containers*
-and for *Chromium rasterises a frame differently while an opacity animation runs in it*.
+"""Probes for *Crossfading Two Slide Containers*
+and for *Chromium Rasterises a Frame Differently While an Opacity Animation Runs in It*.
 
 The epoch crossfade blends two inline SVGs inside the canvas, which is a container without a
 ground. A slide boundary blends two *HTML* elements that each carry an opaque
@@ -16,7 +16,7 @@ at every moment of a crossfade. A black surround hides that completely, because 
 what adding nothing looks like, and a deck that restated it would have found out the hard
 way.
 
-*Chromium rasterises a frame differently while an opacity animation runs in it* is asserted
+*Chromium Rasterises a Frame Differently While an Opacity Animation Runs in It* is asserted
 at the end of the module, on those same two containers. A slide boundary is where animo drives
 an opacity animation, and the rounding that finding measures is what decides how exact a
 mid-flight comparison in a feature test may be.
@@ -101,7 +101,7 @@ def deviation(reference: np.ndarray, image: np.ndarray) -> tuple[int, int]:
 #
 # Exact is the claim, and chromium 151 and firefox 153 meet it to within rounding.
 # Playwright ships no webkit build for the distribution these were written on, so webkit
-# keeps the allowance *Crossfading two renderings* measured for it, and continuous
+# keeps the allowance *Crossfading Two Renderings* measured for it, and continuous
 # integration is what holds it to that.
 EXACT = {"chromium": (1, 0), "firefox": (1, 0), "webkit": (48, 512)}
 
@@ -196,8 +196,8 @@ def test_the_ground_of_the_isolating_element_joins_the_sum(typst: TypstRunner, o
         )
 
 
-# Sampling a crossfade while it runs, for *Chromium rasterises a frame differently while an
-# opacity animation runs in it*.
+# Sampling a crossfade while it runs, for *Chromium Rasterises a Frame Differently While an
+# Opacity Animation Runs in It*.
 #
 # The cases above state an opacity in a stylesheet and rasterise the result.
 # A slide boundary states it in an animation instead,

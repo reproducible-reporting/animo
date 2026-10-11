@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Other verified behaviour*.
+"""Probes for *Other Verified Behaviour*.
 
 The short entries: target detection, the HTML element API, multi-page export,
 and the import rules that decide how animo's names are spelled.
@@ -8,7 +8,6 @@ The import probes go through a stand-in module under `documents/toy/`,
 which is shaped like animo but is not animo, so that a failure names typst's rule.
 """
 
-import pytest
 from harness import TypstRunner, compile_typst
 from PIL import Image
 
@@ -154,15 +153,3 @@ def test_an_unknown_primitive_silently_falls_through_to_the_standard_library(
 #assert.eq(type(footgun), content)
 """
     )
-
-
-def test_the_package_name_is_still_free():
-    """This is recorded as unprobeable rather than faked.
-
-    `packages/preview/animo` returned 404 on Typst Universe when the design was written,
-    which is why the name was chosen.
-    Asserting it would make the test suite depend on the network and on a third party's
-    repository, and the answer only matters once, at submission time,
-    where the release path checks it anyway.
-    """
-    pytest.skip("checking Typst Universe would make the suite depend on the network")

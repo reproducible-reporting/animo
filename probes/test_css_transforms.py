@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *CSS animation of typst SVG groups*.
+"""Probes for *CSS Animation of Typst SVG Groups*.
 
 Every continuous primitive is one row of the table in that finding.
 The rows that matter most are negative.

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Hoisting shared `<defs>`: sound in the browser, out of reach in typst*.
+"""Probes for *Hoisting Shared `<defs>`: Sound in the Browser, Out of Reach in Typst*.
 
 Every epoch frame carries a separate copy of its glyph definitions,
 and the repeats are the larger half of an animo page.

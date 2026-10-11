@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A panic that depends on `query` can be swallowed*.
+"""Probes for *A Panic That Depends on `query` Can Be Swallowed*.
 
 Animo reads the document back with `query` in several places, and a value read that way is
 read once per introspection pass.

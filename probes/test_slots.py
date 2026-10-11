@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Cross-frame geometry is readable, so morphing is possible*.
+"""Probes for *Cross-Frame Geometry Is Readable, so Morphing Is Possible*.
 
 The heading records that the geometry of a label is readable in both epoch frames,
 which is what makes a FLIP morph implementable without help from typst.

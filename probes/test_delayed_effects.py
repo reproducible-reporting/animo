@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A delayed effect does not hold its first keyframe unless it is told to*.
+"""Probes for *A Delayed Effect Does Not Hold Its First Keyframe Unless It Is Told To*.
 
 An effect with a delay has a phase before it runs, and what the element shows during that
 phase is decided by the fill mode alone. With `fill: none` the element shows whatever the

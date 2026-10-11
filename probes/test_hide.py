@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *`hide()` cannot be undone in the browser*.
+"""Probes for *`hide()` Cannot Be Undone in the Browser*.
 
 Typst's `hide()` lays content out but paints nothing,
 so the labelled group is there and empty.

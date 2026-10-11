@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Live preview: typst serves and reloads the HTML itself*.
+"""Probes for *Live Preview: Typst Serves and Reloads the HTML Itself*.
 
 Animo ships nothing for live preview because typst already does it.
 What it owes in return is that the deck's state survives a reload,

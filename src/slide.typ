@@ -17,7 +17,7 @@
 // A slide with S `sub` calls has S+1 states.
 // The presentation renders one page per state, the handout renders the states that asked for a
 // page, and the HTML target renders the body once, in one frame that covers every state,
-// with an epoch stack in every region whose content changes.
+// with an epoch stack in every region that sits in no other region.
 
 #import "canvas.typ": (
   anchors-of, auto-extent, body-box, body-extent, canvas-label, explicit-extent,
@@ -508,8 +508,9 @@
             ),
             // One frame for the whole slide, holding one rendering of the body.
             // Everything outside the regions is the same in every epoch, so it is laid out
-            // once, and every region that changes holds an epoch stack in its footprint,
-            // one rendering per epoch. Stepping inside an epoch needs no rendering at all,
+            // once, and every region that sits in no other region holds an epoch stack in
+            // its footprint, one rendering per epoch.
+            // Stepping inside an epoch needs no rendering at all,
             // and at a boundary the runtime crossfades the stacks that hold what changed.
             //
             // One frame rather than one per stack, because the scope of typst's

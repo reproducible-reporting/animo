@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *The centre a scale is about*.
+"""Probes for *The Centre a Scale Is About*.
 
 A `scale` on paper and a `scale` in the browser have to grow the same box about the same point.
 Typst's `scale` grows its body about the centre of the box typst laid out.

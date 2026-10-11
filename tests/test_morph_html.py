@@ -5,8 +5,8 @@
 The primary assertion is geometric. At the midpoint of a step, every glyph the morph moves in
 the outgoing region sits where a glyph of the same shape in the incoming region sits, and
 both are halfway between the places the two are laid out at. That is what makes the pair sum
-to one opaque glyph under the crossfade's `plus-lighter`, which the probe for *A morph keeps
-the `plus-lighter` sum* measures on rasters.
+to one opaque glyph under the crossfade's `plus-lighter`, which the probe for *A Morph Keeps
+the `plus-lighter` Sum* measures on rasters.
 
 The motion is measured rather than raced, by pausing what is in flight and stating the
 moment, as `test_epochs_html.py` does for the crossfade.

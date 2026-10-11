@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Crossfading two renderings* and *Isolating the container of a nested stack*.
+"""Probes for *Crossfading Two Renderings* and *Isolating the Container of a Nested Stack*.
 
 The first entry was measured when a slide held one frame per epoch.
 Two such epoch frames are stacked in one grid cell and compared, at the midpoint of a

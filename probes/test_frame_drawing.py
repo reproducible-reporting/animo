@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A keyframe property that does not change suppresses the ones that do*.
+"""Probes for *A Keyframe Property That Does Not Change Suppresses the Ones That Do*.
 
 An effect that animates `opacity` alongside a `translate` or a `scale` holding the same
 value at both ends is not drawn while it runs in chromium 151.

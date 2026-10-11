@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Transforms between a tag's slots are layout-neutral*.
+"""Probes for *Transforms between a Tag's Slots Are Layout-Neutral*.
 
 The presentation PDF renders one page per state and applies the display state of that
 state with typst's own `move`, `scale` and `hide`.
@@ -14,7 +14,7 @@ The size a slot takes is not the whole of the claim, though.
 A `move` is laid out as an inline element,
 so a block-level payload inside one is laid out in a paragraph,
 which is what decides where the display state sits relative to the wrapper it applies to.
-That second measurement is made on the centred bodies of *Wrapping a tag site*.
+That second measurement is made on the centred bodies of *Wrapping a Tag Site*.
 A rendering is also measured on its own, by the footprint of a region on a line,
 and the ascent and the descent it reports there are the third measurement.
 """

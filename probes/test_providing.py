@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Providing a value down the tree: a show rule reaches into `measure`*.
+"""Probes for *Providing a Value down the Tree: A Show Rule Reaches into `measure`*.
 
 A slide has to hand its plan to the tags inside its body,
 and a region has to hand a different epoch to the same tags once per epoch while it measures.

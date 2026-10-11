@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A blended or isolated group at rest*.
+"""Probes for *A Blended or Isolated Group at Rest*.
 
 The renderings of an epoch stack carry `mix-blend-mode: plus-lighter`, and their container
 carries `isolation: isolate`, also while no boundary is crossing.

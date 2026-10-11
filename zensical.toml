@@ -36,7 +36,7 @@ nav = [
     { "Developing Animo" = "development.md" },
     { "Development Environment" = "environment.md" },
     { "Testing" = "testing.md" },
-    { "Architecture of the HTML Output" = "architecture.md" },
+    { "The Browser Runtime" = "architecture.md" },
     { "Behaviour Probes" = "probes.md" },
   ] },
 ]

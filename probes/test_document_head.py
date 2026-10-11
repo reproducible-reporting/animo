@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *The head of a page that a package builds itself*.
+"""Probes for *The Head of a Page That a Package Builds Itself*.
 
 A deck builds the `<html>` element itself, because the stylesheet and the runtime go into its
 head, and typst then leaves the head to it.

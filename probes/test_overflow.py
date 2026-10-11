@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A fixed-height container stacks the block-level content that does not fit*.
+"""Probes for *A Fixed-Height Container Stacks the Block-Level Content That Does Not Fit*.
 
 The height of the box a slide body is laid out in is decided by this behaviour.
 A body whose flow is taller than the viewport is what `pan` is for,

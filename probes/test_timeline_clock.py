@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *The document timeline is not a clock*.
+"""Probes for *The Document Timeline Is Not a Clock*.
 
 `document.timeline.currentTime` is the time of the last frame the browser drew, and a
 browser that has nothing to draw draws nothing. A page that has sat still therefore reads

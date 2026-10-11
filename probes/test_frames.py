@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *The frame is the smallest unit of DOM addressability*.
+"""Probes for *The Frame Is the Smallest Unit of DOM Addressability*.
 
 This is the finding that forces the whole epoch model.
 If a sub-area of a frame could be given a separate DOM node, animo would swap regions as DOM

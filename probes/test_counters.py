@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A counter reads the same everywhere a slide lays content out*.
+"""Probes for *A Counter Reads the Same Everywhere a Slide Lays Content Out*.
 
 A slide number is a counter and nothing else, which is only true because a counter read
 gives the same answer inside an `html.frame` as outside one, and because `final()` works in
@@ -63,6 +63,6 @@ def test_a_counter_may_be_read_while_content_is_being_measured(typst: TypstRunne
 
     The value is the enclosing context's, which is what a number constant over a slide
     wants and what a value varying per epoch may not be built on.
-    *Providing a value down the tree* is that other half.
+    *Providing a Value down the Tree* is that other half.
     """
     typst.ok(PAGE + COUNTED + '#context {\n  let _ = measure([#check("a measurement")])\n}\n')

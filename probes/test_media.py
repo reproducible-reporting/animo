@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Media elements in the HTML output*.
+"""Probes for *Media Elements in the HTML Output*.
 
 These belong to narrated audio, which is a candidate for a later release.
 They are probed anyway, because the finding is what makes that feature
@@ -83,21 +83,6 @@ def test_a_data_uri_clip_decodes_and_reports_its_length(typst: TypstRunner, open
     )
     assert state["ready"] == 4
     assert state["duration"] == pytest.approx(DURATION, abs=0.01)
-
-
-def test_autoplay_is_gated_on_a_user_gesture():
-    """This is recorded as unprobeable rather than faked.
-
-    The finding is that `play()` rejects with `NotAllowedError` until the user has
-    interacted with the document, which is why a self-playing deck needs one click.
-    Measured on 2026-09-12 with playwright 1.62 and its bundled headless chromium 151:
-    `play()` resolves regardless, over `file://` and over `http://`,
-    with the `--autoplay-policy=no-user-gesture-required` of playwright removed and the
-    gesture requirement asked for explicitly.
-    The headless shell simply does not apply the gate, so a probe here would assert
-    the opposite of the finding and prove nothing about a real browser.
-    """
-    pytest.skip("playwright's headless chromium does not apply chromium's autoplay gate")
 
 
 def test_typst_exposes_no_base64_to_scripts(typst: TypstRunner):

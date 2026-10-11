@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A discrete keyframe equal at both ends holds its value for the whole effect*.
+"""Probes for *A Discrete Keyframe Equal at Both Ends Holds Its Value for the Whole Effect*.
 
 A crossfade holds `mix-blend-mode: plus-lighter` on the renderings it carries and
 `isolation: isolate` on their container, as keyframes with the same value at both ends,

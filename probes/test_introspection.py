@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Introspection: positions*.
+"""Probes for *Introspection: Positions*.
 
 Positions are available in the paged target and dead in the HTML one.
 That asymmetry is why the HTML output animates with CSS rather than with typst-computed

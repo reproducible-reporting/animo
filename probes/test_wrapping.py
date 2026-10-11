@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Wrapping a tag site: what it changes and what it does not*.
+"""Probes for *Wrapping a Tag Site: What It Changes and What It Does Not*.
 
 A tag has to wrap its body to become an addressable group,
 and the wrapper must not move the slide around it.

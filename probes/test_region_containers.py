@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Regions: what a region learns from its container*.
+"""Probes for *Regions: What a Region Learns from Its Container*.
 
 A region at `width: auto` is as wide as `layout(size => ..)` says its container is,
 and it measures its epochs at that width.

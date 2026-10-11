@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Introspection: the corner of an element, in both targets*.
+"""Probes for *Introspection: The Corner of an Element, in Both Targets*.
 
 `pan(relto:)` needs the top-left corner of a tag's wrapper, and the two targets can only
 read it by different means: typst from a position on paper, the browser from the origin of

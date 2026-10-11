@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Regions: an inline footprint has to pin its baseline*.
+"""Probes for *Regions: An Inline Footprint Has to Pin Its Baseline*.
 
 A tag on a line whose content changes between epochs reserves a fixed box,
 and a fixed box is expected to hold its line still.

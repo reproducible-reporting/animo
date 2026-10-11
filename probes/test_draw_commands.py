@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A cetz draw command is a value, not content*.
+"""Probes for *A Cetz Draw Command Is a Value, Not Content*.
 
 This is what decides that a tag over raw cetz draw commands is refused rather than
 supported. A tag reaches its slide's plan through a marker element and a show rule over

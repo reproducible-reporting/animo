@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Element identity in the output: `data-typst-label`*.
+"""Probes for *Element Identity in the Output: `data-typst-label`*.
 
 The whole design rests on this finding.
 Labelled content appears in SVG output as `<g data-typst-label="name">`,

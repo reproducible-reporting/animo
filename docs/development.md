@@ -14,12 +14,12 @@ This guide is for somebody changing Animo itself.
 Somebody writing a deck with Animo wants the
 [Presentation Author Guide](slides.md) and the [Reference](reference.md) instead.
 
-| Page                                               | Covers                                                            |
-| -------------------------------------------------- | ----------------------------------------------------------------- |
-| [Development Environment](environment.md)          | a clone, the `uv` environment, the two import paths, the commands |
-| [Testing](testing.md)                              | the three test tiers, the engines, the reference images           |
-| [Architecture of the HTML Output](architecture.md) | how a slide reaches the browser and what the runtime does         |
-| [Behaviour Probes](probes.md)                      | what a probe asserts, and what to do when one fails               |
+| Page                                      | Covers                                                            |
+| ----------------------------------------- | ----------------------------------------------------------------- |
+| [Development Environment](environment.md) | a clone, the `uv` environment, the two import paths, the commands |
+| [Testing](testing.md)                     | the three test tiers, the engines, the reference images           |
+| [The Browser Runtime](architecture.md)    | the files, controller, events and page attributes of the runtime  |
+| [Behaviour Probes](probes.md)             | what a probe asserts, and what to do when one fails               |
 
 ## Where the Specification Lives
 

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *SVG `<defs>` ids are content hashes*.
+"""Probes for *SVG `<defs>` Ids Are Content Hashes*.
 
 This is relevant because stacking several epoch frames in one document puts duplicate ids
 in one DOM, and a browser resolves `<use xlink:href="#g..">` to the first match.

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for the second half of *SVG `<defs>` ids are content hashes*.
+"""Probes for the second half of *SVG `<defs>` Ids Are Content Hashes*.
 
 Typst names a gradient, a clip path and a tiling by a hash of its content, so two slides that
 use the same one define the same id twice, in two separate frames.

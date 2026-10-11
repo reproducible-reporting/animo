@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Nested context blocks can cost a pass of layout per level*.
+"""Probes for *Nested Context Blocks Can Cost a Pass of Layout per Level*.
 
 Typst stops after five passes of layout and warns that the document did not converge.
 Two patterns delay every level of a nesting of `context` blocks by one pass,

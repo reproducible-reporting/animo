@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Recording placements: what a `show place:` rule may and may not do*.
+"""Probes for *Recording Placements: What a `show place:` Rule May and May Not Do*.
 
 The finding that `show place:` sees every placement is probed in `test_canvas.py`.
 What is probed here is the step from seeing a placement to having its numbers as data,

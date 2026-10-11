@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Probes for the automatic canvas sizing finding.
 
-*Automatic canvas sizing: `#place` is invisible to `auto`, but visible to a show rule*.
+*Automatic Canvas Sizing: `#place` Is Invisible to `auto`, but Visible to a Show Rule*.
 
 An animo slide is a two-dimensional canvas built with `#place`,
 so how typst sees a placement decides how the canvas can be sized at all.

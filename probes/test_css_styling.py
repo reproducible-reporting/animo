@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Styling from CSS: what is and is not reachable*.
+"""Probes for *Styling from CSS: What Is and Is Not Reachable*.
 
 Typst writes `fill` as a presentation attribute on every glyph.
 A CSS rule on the glyphs outranks it, a rule on their group does not,

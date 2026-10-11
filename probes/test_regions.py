@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *Regions: fixed footprints across epochs*.
+"""Probes for *Regions: Fixed Footprints across Epochs*.
 
 The mechanism is `layout(size => ..)` plus `measure` once per epoch,
 with the footprint taken as the per-axis maximum.

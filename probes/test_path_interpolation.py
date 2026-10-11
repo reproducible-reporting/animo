@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *The `d` of a path interpolates between paths of one structure*.
+"""Probes for *The `d` of a Path Interpolates between Paths of One Structure*.
 
 A resize carries a shape whose geometry changes while its commands stay the same, such as a
 fraction bar that widens or a rounded rectangle that grows, by animating the CSS `d` property

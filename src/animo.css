@@ -95,7 +95,7 @@ body {
   stepping back over the same boundary needs no layout.
   Every other slide is `display: none`, which keeps the layout of a long deck small.
   Laying every slide out for the whole session doubled the first paint of a sixty-slide
-  deck. See *Findings*.
+  deck, as the design document records.
 
   Slides are stacked in document order, so the one being left would be above the one being
   shown and take its pointer events.
@@ -138,7 +138,7 @@ body {
   Sizing rather than scaling leaves both `translate` and `scale` free on this element.
   The runtime writes a pan as its `translate`, and nothing writes its `scale`.
   The canvas holds one frame, and that frame holds the body of the slide with an epoch stack
-  in every region whose content changes.
+  in every region that sits in no other region, once the slide has two epochs.
   The blend that crossfades two renderings of a stack is confined inside the frame rather
   than by this element. See the rules on the frame and on the stacks below.
 */
@@ -224,11 +224,11 @@ body {
   `plus-lighter` sums the renderings in the isolated container, so the outgoing rendering at
   `1 - t` and the incoming one at `t` come to exactly one opaque region and nothing dips.
   Without the isolation, chromium 153 and webkit 26.6 add the two halves to the ink under the
-  region as well. See *Isolating the container of a nested stack* in *Findings*.
+  region as well. See *Isolating the Container of a Nested Stack* in *Findings*.
   A group that blends or isolates is drawn through a layer, which changes some glyph edges.
   Without either at rest, chromium 153 and firefox 155 draw a stack as the same content
   without a stack. Webkit 26.6 draws a group beside a hidden sibling differently from a lone
-  group at some positions. See *A blended or isolated group at rest* in *Findings*.
+  group at some positions. See *A Blended or Isolated Group at Rest* in *Findings*.
 */
 .animo-canvas [data-typst-label^="animo-epoch-"] {
   visibility: hidden;

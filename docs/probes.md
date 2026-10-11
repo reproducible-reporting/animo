@@ -106,87 +106,69 @@ Until that measurement exists, the probe says so in the table and asserts only w
 grounds for. Accepting either of two answers from an engine, and naming the answer for the
 engines that were measured, is a claim; an invented number is not.
 
-## Findings That Cannot Be Probed
+## Observations That Cannot Be Probed
 
-Some entries are not observable behaviour, and they are recorded as such rather than faked.
-
-- **The single `data-typst-label` emission site in `typst-svg`.**
-  This is a fact about the source tree rather than about the binary.
-  Its consequence is probed instead:
-  a label on a `rect` or on a text span emits nothing.
-- **The stability history of the attribute**, its pull request and changelog entry.
-  This is a fact about the project's history.
-- **Autoplay blocked until a user gesture.**
-  Playwright's headless chromium does not apply chromium's gate,
-  over `file://` or over `http://`, with the relaxing flag removed and the gate asked for.
-  A probe here would assert the opposite of the finding.
-  The probe is skipped, with the measurement that shows why.
-- **The base64 encoder's memory and time per megabyte**,
-  and the memoisation of the encoding across recompiles.
-  Both are benchmarks rather than behaviours, and belong in `benchmarks/`.
-- **What keeping every slide laid out costs.**
-  This measurement decided how the runtime hides a slide that it is not using.
-  It is a cost rather than a behaviour, and a probe on it would assert a wall clock.
-- **`animo` being unused on Typst Universe.**
-  It needs the network and a third party's repository,
-  and the answer only matters once, at submission time, where the release path checks it.
-
-The two skips are real skips, reported by `pytest -rs`,
-so they stay visible instead of quietly disappearing.
+An observation that no probe can assert does not belong in *Findings*,
+because nothing would notice when a release of typst or of a browser changes it.
+A measured cost, such as the time a deck takes to compile or to paint,
+belongs in `benchmarks/` and in [Performance](performance.md).
+A fact about the source tree or the history of typst is at most background to an entry,
+and that entry is probed through the behaviour that follows from the fact.
 
 ## The Map
 
-Every entry in *Findings* has a probe module, or a row in the table above.
+Every entry in *Findings* has a probe module.
 
-| Finding                                                                      | Module                                         |
-| ---------------------------------------------------------------------------- | ---------------------------------------------- |
-| Element identity in the output: `data-typst-label`                           | `test_labels.py`                               |
-| The frame is the smallest unit of DOM addressability                         | `test_frames.py`                               |
-| Regions: fixed footprints across epochs                                      | `test_regions.py`                              |
-| Regions: an inline footprint has to pin its baseline                         | `test_baselines.py`                            |
-| Regions: what a region learns from its container                             | `test_region_containers.py`                    |
-| Crossfading two renderings                                                   | `test_crossfade.py`                            |
-| Isolating the container of a nested stack                                    | `test_crossfade.py`                            |
-| Crossfading two slide containers                                             | `test_slide_crossfade.py`                      |
-| Rasterising a frame while an opacity animation runs in it                    | `test_slide_crossfade.py`                      |
-| A blended or isolated group at rest                                          | `test_layers_at_rest.py`                       |
-| Choosing between stacked renderings: opacity, not visibility                 | `test_stacked_renderings.py`                   |
-| Automatic canvas sizing: `#place` and `show place:`                          | `test_canvas.py`                               |
-| Recording placements: what a `show place:` rule may do                       | `test_place_rule.py`                           |
-| A fixed-height container stacks what does not fit                            | `test_overflow.py`                             |
-| Fitting the slide to the browser window                                      | `test_fitting.py`                              |
-| SVG `<defs>` ids are content hashes                                          | `test_defs.py`, `test_hidden_defs.py`          |
-| Hoisting shared `<defs>`: sound in the browser, not in typst                 | `test_hoisting.py`                             |
-| CSS animation of typst SVG groups                                            | `test_css_transforms.py`                       |
-| The centre a scale is about                                                  | `test_scale_origin.py`                         |
-| A keyframe property that does not change suppresses others                   | `test_frame_drawing.py`                        |
-| A discrete keyframe equal at both ends holds its value                       | `test_discrete_keyframes.py`                   |
-| A delayed effect does not hold its first keyframe                            | `test_delayed_effects.py`                      |
-| The document timeline is not a clock                                         | `test_timeline_clock.py`                       |
-| A faked clock drives a timer, not the document timeline                      | `test_fake_clock.py`                           |
-| Styling from CSS: what is and is not reachable                               | `test_css_styling.py`                          |
-| Cross-frame geometry, and the two nested transform slots                     | `test_slots.py`                                |
-| A morph keeps the `plus-lighter` sum                                         | `test_morph_sum.py`, `test_morph_shape_sum.py` |
-| Typst writes a shape from a local origin                                     | `test_shape_output.py`                         |
-| The `d` of a path interpolates between paths of one structure                | `test_path_interpolation.py`                   |
-| A `translate` carries an element's clip and gradient, not an ancestor's clip | `test_translated_paint.py`                     |
-| `hide()` cannot be undone in the browser                                     | `test_hide.py`                                 |
-| A panic that depends on `query` can be swallowed                             | `test_convergence.py`                          |
-| Nested context blocks can cost a pass of layout per level                    | `test_nesting_depth.py`                        |
-| Introspection: positions                                                     | `test_introspection.py`                        |
-| Introspection: the corner of an element, in both targets                     | `test_anchors.py`                              |
-| Introspection: the fields of a nested structure                              | `test_element_fields.py`                       |
-| Media elements in the HTML output                                            | `test_media.py`                                |
-| The head of a page that a package builds itself                              | `test_document_head.py`                        |
-| Live preview: typst serves and reloads the HTML itself                       | `test_watch.py`                                |
-| Wrapping a tag site: what it changes and what it does not                    | `test_wrapping.py`                             |
-| A cetz draw command is a value, not content                                  | `test_draw_commands.py`                        |
-| What a container resolves from its direct children                           | `test_container_children.py`                   |
-| Inline versus block, decided by measurement                                  | `test_levels.py`                               |
-| Providing a value down the tree                                              | `test_providing.py`                            |
-| A counter reads the same everywhere a slide lays out                         | `test_counters.py`                             |
-| Transforms between a tag's slots are layout-neutral                          | `test_paged_transforms.py`                     |
-| Other verified behaviour                                                     | `test_misc.py`                                 |
+| Finding                                                                               | Module                                         |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Element Identity in the Output: `data-typst-label`                                    | `test_labels.py`                               |
+| The Frame Is the Smallest Unit of DOM Addressability                                  | `test_frames.py`                               |
+| Regions: Fixed Footprints across Epochs                                               | `test_regions.py`                              |
+| Regions: An Inline Footprint Has to Pin Its Baseline                                  | `test_baselines.py`                            |
+| Regions: What a Region Learns from Its Container                                      | `test_region_containers.py`                    |
+| Crossfading Two Renderings                                                            | `test_crossfade.py`                            |
+| Isolating the Container of a Nested Stack                                             | `test_crossfade.py`                            |
+| Choosing between Stacked Renderings: `opacity`, Not `visibility`                      | `test_stacked_renderings.py`                   |
+| Crossfading Two Slide Containers                                                      | `test_slide_crossfade.py`                      |
+| Chromium Rasterises a Frame Differently While an Opacity Animation Runs in It         | `test_slide_crossfade.py`                      |
+| A Blended or Isolated Group at Rest                                                   | `test_layers_at_rest.py`                       |
+| Automatic Canvas Sizing: `#place` Is Invisible to `auto`, but Visible to a Show Rule  | `test_canvas.py`                               |
+| Recording Placements: What a `show place:` Rule May and May Not Do                    | `test_place_rule.py`                           |
+| A Fixed-Height Container Stacks the Block-Level Content That Does Not Fit             | `test_overflow.py`                             |
+| `html.frame` Sizes Its SVG in `em`, as an Inline Style                                | `test_place_rule.py`                           |
+| Fitting the Slide to the Browser Window                                               | `test_fitting.py`                              |
+| SVG `<defs>` Ids Are Content Hashes                                                   | `test_defs.py`, `test_hidden_defs.py`          |
+| Hoisting Shared `<defs>`: Sound in the Browser, Out of Reach in Typst                 | `test_hoisting.py`                             |
+| CSS Animation of Typst SVG Groups                                                     | `test_css_transforms.py`                       |
+| The Centre a Scale Is About                                                           | `test_scale_origin.py`                         |
+| A Keyframe Property That Does Not Change Suppresses the Ones That Do                  | `test_frame_drawing.py`                        |
+| A Discrete Keyframe Equal at Both Ends Holds Its Value for the Whole Effect           | `test_discrete_keyframes.py`                   |
+| The Document Timeline Is Not a Clock                                                  | `test_timeline_clock.py`                       |
+| A Delayed Effect Does Not Hold Its First Keyframe Unless It Is Told To                | `test_delayed_effects.py`                      |
+| A Faked Clock Drives a Timer without Touching the Document Timeline                   | `test_fake_clock.py`                           |
+| Styling from CSS: What Is and Is Not Reachable                                        | `test_css_styling.py`                          |
+| Cross-Frame Geometry Is Readable, so Morphing Is Possible                             | `test_slots.py`                                |
+| A Morph Keeps the `plus-lighter` Sum                                                  | `test_morph_sum.py`, `test_morph_shape_sum.py` |
+| Typst Writes a Shape from a Local Origin                                              | `test_shape_output.py`                         |
+| The `d` of a Path Interpolates between Paths of One Structure                         | `test_path_interpolation.py`                   |
+| A `translate` Carries an Element's Clip and Gradient, Not an Ancestor's Clip          | `test_translated_paint.py`                     |
+| `hide()` Cannot Be Undone in the Browser                                              | `test_hide.py`                                 |
+| A Counter Reads the Same Everywhere a Slide Lays Content Out                          | `test_counters.py`                             |
+| A Panic That Depends on `query` Can Be Swallowed                                      | `test_convergence.py`                          |
+| Nested Context Blocks Can Cost a Pass of Layout per Level                             | `test_nesting_depth.py`                        |
+| Introspection: Positions                                                              | `test_introspection.py`                        |
+| Introspection: The Corner of an Element, in Both Targets                              | `test_anchors.py`                              |
+| Media Elements in the HTML Output                                                     | `test_media.py`                                |
+| Live Preview: Typst Serves and Reloads the HTML Itself                                | `test_watch.py`                                |
+| Wrapping a Tag Site: What It Changes and What It Does Not                             | `test_wrapping.py`                             |
+| Inline versus Block, Decided by Measurement                                           | `test_levels.py`                               |
+| Providing a Value down the Tree: A Show Rule Reaches into `measure`, a State Does Not | `test_providing.py`                            |
+| A Cetz Draw Command Is a Value, Not Content                                           | `test_draw_commands.py`                        |
+| What a Container Resolves from Its Direct Children                                    | `test_container_children.py`                   |
+| Transforms between a Tag's Slots Are Layout-Neutral                                   | `test_paged_transforms.py`                     |
+| Introspection: The Fields of a Nested Structure, and One Occurrence per Page          | `test_element_fields.py`                       |
+| The Head of a Page That a Package Builds Itself                                       | `test_document_head.py`                        |
+| Other Verified Behaviour                                                              | `test_misc.py`                                 |
 
 A few probes, and a few feature tests, import a package from Typst Universe:
 the label emission is claimed for a cetz `content()` element and a fletcher node,

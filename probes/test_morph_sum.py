@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A morph keeps the `plus-lighter` sum*.
+"""Probes for *A Morph Keeps the `plus-lighter` Sum*.
 
 Two renderings of one frame stand for two epochs of a region: `Hello world`, and
 `Oh, Hello world`, which shifts the ten letters the two share. They are summed under

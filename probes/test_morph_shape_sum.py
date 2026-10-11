@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Probes for *A morph keeps the `plus-lighter` sum*, for a stroke and for a raster image.
+"""Probes for *A Morph Keeps the `plus-lighter` Sum*, for a stroke and for a raster image.
 
 `test_morph_sum.py` measures the sum on letters, which are filled outlines.
 A stroke is antialiased along both of its edges, and a raster image is resampled when it is
