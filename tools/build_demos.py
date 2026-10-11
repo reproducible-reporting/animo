@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""Compile every example deck to every output type, for the documentation site.
+"""Compile every demo deck to every output type, for the documentation site.
 
-The decks land in `docs/examples/`, which the site build copies to `site/examples/`,
-so that the example table can link to a deck a reader opens in a browser.
+The decks land in `docs/demos/`, which the site build copies to `site/demos/`,
+so that the demo table can link to a deck a reader opens in a browser.
 They are build products in a source tree, which `.gitignore` covers.
 
 Compiling the decks in a script rather than in a task runner keeps the documentation to two
@@ -25,8 +25,8 @@ ROOT = Path(__file__).resolve().parent.parent
 # The SVG pages are not published, because they are one file per page, which is clutter
 # beside the three products a reader follows a link to, and the format is what is being
 # tested.
-PUBLISHED = ROOT / "docs" / "examples"
-SCRATCH = ROOT / "build" / "examples"
+PUBLISHED = ROOT / "docs" / "demos"
+SCRATCH = ROOT / "build" / "demos"
 
 # Rendering has to be reproducible between a contributor's machine and continuous
 # integration, so every compilation uses only the fonts typst embeds.
@@ -93,22 +93,22 @@ def compile_deck(source: Path) -> bool:
 
 
 def main() -> int:
-    """Compile every deck under `examples/` and return a process exit status."""
+    """Compile every deck under `demos/` and return a process exit status."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument(
         "sources",
         nargs="*",
         type=Path,
-        help="the decks to compile, defaulting to every deck under examples/",
+        help="the decks to compile, defaulting to every deck under demos/",
     )
     args = parser.parse_args()
     # A file whose name starts with an underscore holds what several decks import,
-    # such as `examples/_common.typ`, and is not a deck itself.
+    # such as `demos/_common.typ`, and is not a deck itself.
     sources = args.sources or sorted(
-        path for path in (ROOT / "examples").glob("*.typ") if not path.name.startswith("_")
+        path for path in (ROOT / "demos").glob("*.typ") if not path.name.startswith("_")
     )
     if not sources:
-        print("no example decks found", file=sys.stderr)
+        print("no demo decks found", file=sys.stderr)
         return 1
     failed = [source for source in sources if not compile_deck(source)]
     for source in failed:

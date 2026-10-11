@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Numbering
 
-The example deck for this page is
-[`numbering.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/numbering.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/numbering.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/numbering-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/numbering-handouts.pdf)).
+The demo deck for this page is
+[`numbering.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/numbering.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/numbering.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/numbering-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/numbering-handouts.pdf)).
 It illustrates the three numbering functions in one deck.
 
 A number on a slide helps the audience to refer to it,

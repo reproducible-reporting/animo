@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Output Types
 
-The example deck for this page is
-[`tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/tour.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/tour.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/tour-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/tour-handouts.pdf)).
+The demo deck for this page is
+[`tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/tour.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/tour.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/tour-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/tour-handouts.pdf)).
 The commands below compile a deck in `talk.typ` to each output type:
 
 ```bash
@@ -36,7 +36,7 @@ Any other value raises an error, so a typo never produces handouts without a war
 By default, typst also uses the fonts installed on the machine, and these differ between machines.
 Add `--ignore-system-fonts` to make typst use only the fonts it embeds,
 so that every machine renders the deck identically.
-The examples bundled with Animo use only these embedded fonts.
+The demo decks of Animo use only these embedded fonts.
 
 | Output type         | What it shows                                        |
 | ------------------- | ---------------------------------------------------- |

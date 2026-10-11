@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Morphs
 
-The example deck for this page is
-[`morph.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/morph.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/morph.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/morph-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/morph-handouts.pdf)).
+The demo deck for this page is
+[`morph.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/morph.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/morph.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/morph-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/morph-handouts.pdf)).
 It shows a paragraph that reflows, a paragraph whose shapes move with its words,
 a crossfade and a morph of the same change side by side, an equation that grows,
 a box that grows around its words, shapes that change their outline,

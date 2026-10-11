@@ -143,7 +143,7 @@ patterns = [
   "*.md",
   "benchmarks/*.typ",
   "docs/**/*.md",
-  "examples/*.typ",
+  "demos/*.typ",
   "planning/*.md",
   "setup.sh",
   "tests/*.py",

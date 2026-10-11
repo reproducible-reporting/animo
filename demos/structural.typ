@@ -5,14 +5,14 @@
 // shown, how they compose, and the epochs they introduce.
 
 #import "@preview/animo:0.1.1": *
-// The colors, the title slide, the styles and the slide wrapper that the example decks share.
+// The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-#show: example-style
+#show: demo-style
 
-#title-slide("structural.typ")
+#title-slide("structural.typ", "Structural Animations", "structural/")
 
 #explained-slide(
   background: rect(width: 100%, height: 100%, fill: gradient.linear(

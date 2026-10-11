@@ -7,12 +7,12 @@
 // and smooth in the browser.
 
 #import "@preview/animo:0.1.1": *
-// The colors, the title slide, the styles and the slide wrapper that the example decks share.
+// The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-#show: example-style
+#show: demo-style
 
 // A cross centred on the point where it is placed, with a label above it on the right.
 #let cross(label) = {
@@ -22,7 +22,7 @@
   place(dx: 0.15cm, dy: -0.6cm, explain(text(size: 0.8em, label)))
 }
 
-#title-slide("continuous.typ")
+#title-slide("continuous.typ", "Continuous Animations", "continuous/")
 
 // Two `sub` calls give three states: the body as written, and one state per `sub`.
 #explained-slide(animation: {

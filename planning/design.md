@@ -2562,7 +2562,7 @@ They are settled, and the evidence is in *Findings*.
 
 - **What does a realistic deck cost to compile?** About twice a plain typst deck, and the
   live preview loop costs a tenth of a cold compile, so Animo is not slow.
-  Measured on `examples/tour.typ`, 16 slides with 48 states and 20 epoch frames,
+  Measured on `demos/tour.typ`, 16 slides with 48 states and 20 epoch frames,
   on an i7-1260P with typst 0.15.0 linked against musl: 0.47 s for the HTML presentation,
   1.09 s for the static presentation, 0.60 s for the handout, and **51 ms** to
   recompile after an edit to one slide under `typst watch`, which memoises across recompiles.
@@ -2649,8 +2649,8 @@ They are settled, and the evidence is in *Findings*.
   one fact. Nothing can usefully start hidden without a `reveal` somewhere, and nothing can usefully
   start removed without a `reset`, so the timeline already carried the information and the
   argument repeated it, once per site of the name. The repetition was the common case rather
-  than an edge one: of the 55 `tag` calls in `examples/`, 37 carried `hidden: true` and 5
-  carried `removed: true`. The inference was checked against every tag site in `examples/`,
+  than an edge one: of the 55 `tag` calls in `demos/`, 37 carried `hidden: true` and 5
+  carried `removed: true`. The inference was checked against every tag site in `demos/`,
   `docs/`, `tests/documents/` and `probes/documents/`, and it reproduces the state each argument
   declared, with no site needing an escape hatch. A `reset` that undoes an `apply` or a
   `replace` rather than a `remove` is unaffected, because the first content operation on such a
@@ -3303,7 +3303,7 @@ animo/
 ├── src/          the package itself, entrypoint `src/lib.typ`
 ├── tests/        pytest: plan assertions, paged rasters, browser checks
 ├── probes/       one probe per entry in *Findings*
-├── examples/     the decks the documentation embeds
+├── demos/        the demo decks the documentation embeds
 ├── benchmarks/   compile time and page weight
 ├── docs/         the Zensical site
 ├── planning/     design documents, including this one
@@ -3311,9 +3311,9 @@ animo/
 ```
 
 One rule of the Universe submission guidelines shapes the package itself rather than the release
-path: every example, including the ones in the README, imports `@preview/animo:X.Y.Z` rather than
-a relative path, so that a reader can copy any file and compile it. Keeping those strings correct
-is `snipwise`'s job.
+path: every demo deck and every snippet, including the README, imports `@preview/animo:X.Y.Z`
+rather than a relative path, so that a reader can copy any file and compile it.
+Keeping those strings correct is `snipwise`'s job.
 
 A submission cannot be withdrawn: publishing a first version commits to the name and to that version
 number for good. It does not commit to the API. Animo is not API-stable before 1.0, and
@@ -3345,8 +3345,8 @@ Everything is a command a contributor can type, and there is no build tool betwe
 `pytest`, `pre-commit`, `zensical` and `typst watch` are invoked directly,
 and what takes more than one command is a script under `tools/`:
 
-- `tools/build_examples.py` compiles every deck under `examples/` to all three output types and
-  writes them into `docs/examples/`, which the site build publishes. This is where "one compile
+- `tools/build_demos.py` compiles every deck under `demos/` to all three output types and
+  writes them into `docs/demos/`, which the site build publishes. This is where "one compile
   per output type" is expressed rather than asserted: the design requires that the claim be a set
   of commands, and a deck that fails one of them fails the documentation build.
 - `tools/build_package.py` writes the subtree that is submitted to `typst/packages`, which is the

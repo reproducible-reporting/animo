@@ -22,33 +22,35 @@ A star import brings in the body-level names and the `anim` module as a name.
 The timeline vocabulary is imported inside an `animation` block with `import anim: *`,
 where shadowing typst's own `hide`, `move` and `scale` is harmless.
 
-| Name                               | Kind               | Written in            |
-| ---------------------------------- | ------------------ | --------------------- |
-| [`animo`](#animo)                  | document show rule | the top of the file   |
-| [`slide`](#slide)                  | element            | the document          |
-| [`tag`](#tag)                      | element            | a slide body          |
-| [`region`](#region)                | element            | a slide body          |
-| [`per-subslide`](#per-subslide)    | element            | a body or a layer     |
-| [`slide-number`](#slide-number)    | context function   | anywhere              |
-| [`slide-count`](#slide-count)      | context function   | anywhere              |
-| [`output-type`](#output-type)      | context function   | anywhere              |
-| [`anim.init`](#animinit)           | initial state      | an `animation` block  |
-| [`anim.sub`](#animsub)             | subslide           | an `animation` block  |
-| [`anim.reveal`](#animreveal)       | continuous         | a `sub` call          |
-| [`anim.hide`](#animhide)           | continuous         | a `sub` call          |
-| [`anim.move`](#animmove)           | continuous         | a `sub` call          |
-| [`anim.scale`](#animscale)         | continuous         | a `sub` call          |
-| [`anim.pan`](#animpan)             | continuous, slide  | a `sub` call          |
-| [`anim.replace`](#animreplace)     | structural         | a `sub` call          |
-| [`anim.remove`](#animremove)       | structural         | a `sub` call          |
-| [`anim.apply`](#animapply)         | structural         | a `sub` call          |
-| [`anim.reset`](#animreset)         | structural         | a `sub` call          |
-| [`anim.crossfade`](#animcrossfade) | transition         | `init`, `transition:` |
-| [`anim.morph`](#animmorph)         | transition         | `transition:`         |
-| [`anim.push`](#animpush)           | transition         | `init`, `transition:` |
-| [`anim.cover`](#animcover)         | transition         | `init`, `transition:` |
-| [`anim.uncover`](#animuncover)     | transition         | `init`, `transition:` |
-| [`anim.wipe`](#animwipe)           | transition         | `init`, `transition:` |
+| Name                                  | Kind               | Written in            |
+| ------------------------------------- | ------------------ | --------------------- |
+| [`animo`](#animo)                     | document show rule | the top of the file   |
+| [`slide`](#slide)                     | element            | the document          |
+| [`tag`](#tag)                         | element            | a slide body          |
+| [`region`](#region)                   | element            | a slide body          |
+| [`per-subslide`](#per-subslide)       | element            | a body or a layer     |
+| [`slide-number`](#slide-number)       | context function   | anywhere              |
+| [`slide-count`](#slide-count)         | context function   | anywhere              |
+| [`output-type`](#output-type)         | context function   | anywhere              |
+| [`animo-logo`](#animo-logo)           | content            | anywhere              |
+| [`made-with-animo`](#made-with-animo) | content            | anywhere              |
+| [`anim.init`](#animinit)              | initial state      | an `animation` block  |
+| [`anim.sub`](#animsub)                | subslide           | an `animation` block  |
+| [`anim.reveal`](#animreveal)          | continuous         | a `sub` call          |
+| [`anim.hide`](#animhide)              | continuous         | a `sub` call          |
+| [`anim.move`](#animmove)              | continuous         | a `sub` call          |
+| [`anim.scale`](#animscale)            | continuous         | a `sub` call          |
+| [`anim.pan`](#animpan)                | continuous, slide  | a `sub` call          |
+| [`anim.replace`](#animreplace)        | structural         | a `sub` call          |
+| [`anim.remove`](#animremove)          | structural         | a `sub` call          |
+| [`anim.apply`](#animapply)            | structural         | a `sub` call          |
+| [`anim.reset`](#animreset)            | structural         | a `sub` call          |
+| [`anim.crossfade`](#animcrossfade)    | transition         | `init`, `transition:` |
+| [`anim.morph`](#animmorph)            | transition         | `transition:`         |
+| [`anim.push`](#animpush)              | transition         | `init`, `transition:` |
+| [`anim.cover`](#animcover)            | transition         | `init`, `transition:` |
+| [`anim.uncover`](#animuncover)        | transition         | `init`, `transition:` |
+| [`anim.wipe`](#animwipe)              | transition         | `init`, `transition:` |
 
 ## The Document
 
@@ -620,6 +622,49 @@ The paged strings are the values that `--input animo=` takes.
 ```
 
 Taught in [Output Types](outputs.md#content-per-output-type).
+
+## The Logo
+
+### `animo-logo`
+
+```typst
+animo-logo(fill: auto, ..arguments)
+```
+
+The logo of Animo, as an image in any color.
+
+| Argument    | Type            | Default | Meaning                                                  |
+| ----------- | --------------- | ------- | -------------------------------------------------------- |
+| `fill`      | `auto` or color | `auto`  | the color of the logo, the text color when `auto`        |
+| `arguments` | arguments       |         | passed on to `image`, such as `height`, `width` or `alt` |
+
+The fill has to be a single color, because the logo is an SVG image with one fill attribute.
+
+```typst
+#animo-logo(fill: rgb("#008ba8"), height: 2cm)
+```
+
+Taught in [The Animo Logo](index.md#the-animo-logo).
+
+### `made-with-animo`
+
+```typst
+made-with-animo(fill: auto, height: 2em)
+```
+
+A badge with the logo beside the words "made with Animo" on two lines.
+The word "Animo" is set larger, so that it is as wide as "made with" above it.
+
+| Argument | Type            | Default | Meaning                                                         |
+| -------- | --------------- | ------- | --------------------------------------------------------------- |
+| `fill`   | `auto` or color | `auto`  | the color of the logo and the words, the text color when `auto` |
+| `height` | length          | `2em`   | the height of the logo, which is also the height of the badge   |
+
+```typst
+#place(bottom + right, made-with-animo(height: 1cm))
+```
+
+Taught in [The Animo Logo](index.md#the-animo-logo).
 
 ## Command Lines
 

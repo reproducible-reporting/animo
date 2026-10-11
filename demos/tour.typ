@@ -4,7 +4,7 @@
 #import "@preview/animo:0.1.1": *
 #import "@preview/oxifmt:1.0.0": strfmt
 #import "@preview/cetz:0.5.2"
-#import "_common.typ": dark, logo, orange, pale, progress-bar, teal
+#import "_common.typ": dark, orange, pale, progress-bar, teal
 
 // The deck's shape is written once, as a document-level show rule.
 // It is also what emits the HTML page, its stylesheet and its runtime,
@@ -81,7 +81,7 @@
     columns: 2,
     column-gutter: 0.4cm,
     align: horizon + left,
-    logo(teal, height: 1.6cm),
+    animo-logo(fill: teal, height: 1.6cm),
     [
       A short tour of \
       #text(size: 2em, fill: teal)[*Animo*]
@@ -126,7 +126,9 @@
   #tag("disclaimer2")[
     2. Only the smallest examples are explained with source code in the slides.
 
-      The full source code is in `examples/tour.typ` in the Animo Git repository.
+      The full source code is in `demos/tour.typ` in the Animo Git repository. \
+      The documentation explains every feature in this tour: \
+      #link("https://reproducible-reporting.github.io/animo/")
   ]
   #v(0.5cm)
 

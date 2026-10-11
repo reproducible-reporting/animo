@@ -6,15 +6,15 @@
 // with a comment at each to say which page that is.
 
 #import "@preview/animo:0.1.1": *
-// The colors, the title slide, the styles and the slide wrapper that the example decks share.
+// The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 #import "@preview/cetz:0.5.2"
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-#show: example-style
+#show: demo-style
 
-#title-slide("tags.typ")
+#title-slide("tags.typ", "Tags", "tags/")
 
 #slide(
   background: rect(width: 100%, height: 100%, fill: gradient.linear(

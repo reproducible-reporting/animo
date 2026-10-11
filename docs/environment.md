@@ -78,7 +78,7 @@ The `uv-lock` hook fails a commit that leaves the two out of step.
 
 Both of these resolve from a single working tree, at the same time.
 
-**`@preview/animo:0.1.1`** is what every example, documentation snippet and README shows,
+**`@preview/animo:0.1.1`** is what every demo deck, documentation snippet and README shows,
 so that a reader can copy any of them and compile it unchanged.
 It resolves to the working tree through a repository-local package directory:
 
@@ -94,7 +94,7 @@ export TYPST_PACKAGE_PATH="${PWD}/.typst-packages"
 
 Edits to `src/` are picked up immediately, because the target is the working tree itself.
 This is preferred over the two alternatives.
-Rewriting the imports of the examples in continuous integration
+Rewriting the imports of the demo decks in continuous integration
 would mean the file that is tested is not the file that is shipped,
 and installing into the user-wide package directory would shadow
 the published `animo` for every other project on the machine.
@@ -114,7 +114,7 @@ Everything a contributor normally needs is a single command:
 ```bash
 pytest                        # the test suite
 pre-commit run --all          # formatting and hygiene, from ruff to reuse and snipwise
-./tools/build_examples.py     # every example deck, to every output type
+./tools/build_demos.py     # every demo deck, to every output type
 zensical build --strict       # the documentation site, decks included
 zensical serve                # the same site, with live reload
 ```
@@ -141,13 +141,13 @@ typst watch --format html --features html --open talk.typ talk.html
 
 The site is two commands, in this order.
 
-`tools/build_examples.py` compiles every deck under `examples/` to all three output types
-and writes the results into `docs/examples/`, which is a build product in a source tree and
+`tools/build_demos.py` compiles every deck under `demos/` to all three output types
+and writes the results into `docs/demos/`, which is a build product in a source tree and
 is covered by `.gitignore`.
-The script skips a file under `examples/` whose name starts with an underscore,
-such as `examples/_common.typ`, because such a file holds what several decks import
+The script skips a file under `demos/` whose name starts with an underscore,
+such as `demos/_common.typ`, because such a file holds what several decks import
 and is not a deck itself.
-`zensical build --strict` then copies them to `site/examples/`, beside the pages that link
+`zensical build --strict` then copies them to `site/demos/`, beside the pages that link
 to them.
 Compiling the decks in a script rather than in a task runner keeps the site to two commands.
 The script also acts as a test, because a deck that the manual points at has to compile to

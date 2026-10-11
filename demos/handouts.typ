@@ -7,17 +7,17 @@
 // reaches the handout only on a state that asks for a page.
 
 #import "@preview/animo:0.1.1": *
-// The colors, the title slide, the styles and the slide wrapper that the example decks share.
+// The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-#show: example-style
+#show: demo-style
 
 // Every slide of this deck marks the states that the handout keeps.
 #let explained-slide = explained-slide.with(handout-badge: true)
 
-#title-slide("handouts.typ")
+#title-slide("handouts.typ", "Handouts", "handouts/")
 
 // No state of this slide states a flag, so the handout keeps the final state alone.
 #explained-slide(

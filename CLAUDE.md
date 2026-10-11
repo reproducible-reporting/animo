@@ -49,12 +49,12 @@ When a finding contradicts one of them, say so and ask.
   Snipwise copies it into every file that repeats it, as `snipwise.md` spells out,
   so a version number is never edited by hand outside the manifest.
   The same holds for the typst release, which is the manifest's `compiler` field.
-- Every example, snippet and test document imports `@preview/animo:0.1.1`,
+- Every demo deck, documentation snippet and test document imports `@preview/animo:0.1.1`,
   never a relative path, so that a reader can copy any of them and compile it unchanged.
   Only the internal tests import `/src/lib.typ`.
-  An example deck may also import an auxiliary file from `examples/`,
+  A demo deck may also import an auxiliary file from `demos/`,
   such as `_common.typ`, which holds what several decks share.
-  The name of an auxiliary file starts with an underscore, so that `tools/build_examples.py`
+  The name of an auxiliary file starts with an underscore, so that `tools/build_demos.py`
   and the tests do not treat it as a deck.
   An auxiliary file imports the published package as well,
   so that a reader who copies a deck together with its auxiliary files compiles it unchanged.
@@ -78,7 +78,7 @@ The commands that matter:
 ```bash
 pytest                        # the test suite
 pre-commit run --all-files    # formatting and hygiene, including reuse and snipwise
-./tools/build_examples.py     # every example deck, to every output type
+./tools/build_demos.py     # every demo deck, to every output type
 zensical build --strict       # the documentation site, decks included
 ```
 
@@ -310,7 +310,7 @@ A page added to `docs/` has to be added to the `nav` list of `zensical.toml`,
 and a link that leaves `docs/` has to be written as a link to GitHub,
 because the site has no copy of the rest of the repository.
 Such a link points at `main`, as in
-`https://github.com/reproducible-reporting/animo/blob/main/examples/hello.typ`.
+`https://github.com/reproducible-reporting/animo/blob/main/demos/hello.typ`.
 
 The file `README.md`, which `docs/index.md` is a symlink to, is the one exception.
 Its links into the repository point at the tag of the release,

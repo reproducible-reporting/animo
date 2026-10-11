@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // The smallest deck that animates: one slide, one tag, one step.
+// This demo deck uses the features that the Presentation Author Guide explains first,
+// at https://reproducible-reporting.github.io/animo/slides/ and in the pages after it.
 
 #import "@preview/animo:0.1.1": *
 

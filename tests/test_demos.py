@@ -1,42 +1,42 @@
 # SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 # SPDX-License-Identifier: Apache-2.0
-"""What every deck under `examples/` has to have in common.
+"""What every deck under `demos/` has to have in common.
 
 The decks are the unit of documentation, because a page shows one by including the file.
 A reader who copies one deck therefore has to get the same result as the reader who copied
 another.
 That needs a shared shape and nothing but the fonts typst embeds.
-A deck that imports `examples/_common.typ` needs that file beside it,
+A deck that imports `demos/_common.typ` needs that file beside it,
 which is why the shared file imports the published package as well.
-`tools/build_examples.py` already compiles each of them to all three output types,
-so a broken example fails there.
+`tools/build_demos.py` already compiles each of them to all three output types,
+so a broken demo deck fails there.
 These tests are about the agreement between the outputs.
 """
 
 import re
 
 import pytest
-from harness import ROOT, example_decks, manifest
+from harness import ROOT, demo_decks, manifest
 
-# The deck's shape, as `examples/tour.typ` declares it.
+# The deck's shape, as `demos/tour.typ` declares it.
 SHAPE = "animo.with(width: 16cm, height: 9cm, margin: 1cm)"
 
-PATHS = example_decks()
+PATHS = demo_decks()
 
 
-def test_there_are_examples():
+def test_there_are_demos():
     """A glob that silently matches nothing would make every test below vacuous."""
     assert PATHS
 
 
 @pytest.mark.parametrize("path", PATHS, ids=lambda path: path.name)
-def test_example_declares_the_shared_shape(path):
+def test_demo_declares_the_shared_shape(path):
     """One slide size across the decks, so that two of them read as one set."""
     assert f"#show: {SHAPE}" in path.read_text()
 
 
 @pytest.mark.parametrize("path", PATHS, ids=lambda path: path.name)
-def test_example_leaves_the_fonts_alone(path):
+def test_demo_leaves_the_fonts_alone(path):
     """A deck that names a font renders differently for a reader who lacks it.
 
     The fonts typst embeds are the only ones every reader has,
@@ -45,12 +45,12 @@ def test_example_leaves_the_fonts_alone(path):
     assert re.search(r"\bfont\s*:", path.read_text()) is None
 
 
-# Every `.typ` file under `examples/`, which adds the files that several decks import.
-SOURCES = sorted((ROOT / "examples").glob("*.typ"))
+# Every `.typ` file under `demos/`, which adds the files that several decks import.
+SOURCES = sorted((ROOT / "demos").glob("*.typ"))
 
 
 @pytest.mark.parametrize("path", SOURCES, ids=lambda path: path.name)
-def test_example_imports_the_published_package(path):
-    """A reader copies an example and compiles it unchanged, so the import is the real one."""
+def test_demo_imports_the_published_package(path):
+    """A reader copies a demo deck and compiles it unchanged, so the import is the real one."""
     version = manifest()["version"]
     assert f'#import "@preview/animo:{version}"' in path.read_text()

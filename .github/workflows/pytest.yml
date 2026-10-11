@@ -16,7 +16,7 @@ on:
       - tests/**
       - probes/**
       - docs/**
-      - examples/**
+      - demos/**
       - README.md
       - conftest.py
       - typst.toml
@@ -31,7 +31,7 @@ on:
       - tests/**
       - probes/**
       - docs/**
-      - examples/**
+      - demos/**
       - README.md
       - conftest.py
       - typst.toml

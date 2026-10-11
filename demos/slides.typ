@@ -5,7 +5,7 @@
 // and the transitions by which a slide is entered.
 
 #import "@preview/animo:0.1.1": *
-// The colors and the title slide that several example decks share.
+// The colors and the title slide that several demo decks share.
 #import "_common.typ": dark, orange, pale, pink, teal, title-slide
 
 // The show rule is the only place where the shape of the deck is written.
@@ -23,7 +23,7 @@
   it,
 )
 
-#title-slide("slides.typ")
+#title-slide("slides.typ", "Slides", "slides/")
 
 // A color as a background is the page fill on paper and a CSS background in the browser.
 // The overlay is content, laid out in a box the size of the viewport, so its `#place`

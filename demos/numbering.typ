@@ -7,12 +7,12 @@
 // the slide number is dark gray, the subslide number is orange and the progress bar is teal.
 
 #import "@preview/animo:0.1.1": *
-// The colors, the title slide, the styles and the slide wrapper that the example decks share.
+// The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-#show: example-style
+#show: demo-style
 
 // A number in the footer, as white text on a colored label.
 #let pill(color, body) = box(
@@ -90,7 +90,7 @@
   text(fill: color, weight: "bold", body),
 )
 
-#title-slide("numbering.typ")
+#title-slide("numbering.typ", "Numbering", "numbering/")
 
 #numbered-slide(
   numbered: false,

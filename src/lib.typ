@@ -10,6 +10,7 @@
 
 #import "anim.typ"
 #import "deck.typ": animo, output-type
+#import "logo.typ": animo-logo, made-with-animo
 #import "number.typ": per-subslide, slide-count, slide-number
 #import "slide.typ": slide
 #import "region.typ": region

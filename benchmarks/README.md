@@ -36,7 +36,7 @@ While changing the script itself, a shorter run into a scratch file is what to u
 
 Each deck measured here has a separate reason.
 
-[`examples/tour.typ`](../examples/tour.typ) is the **realistic** one.
+[`demos/tour.typ`](../demos/tour.typ) is the **realistic** one.
 It is the deck the manual embeds, so it says what an author of a real deck waits for,
 and it is the only deck here whose content is free to change.
 

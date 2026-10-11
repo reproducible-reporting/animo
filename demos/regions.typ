@@ -5,13 +5,13 @@
 // changes, so that a change of content can push its surroundings around inside them.
 
 #import "@preview/animo:0.1.1": *
-// The colors, the title slide, the styles and the slide wrapper that the example decks share.
+// The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 #import "@preview/cetz:0.5.2"
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-#show: example-style
+#show: demo-style
 
 // A region draws nothing itself, so this tinted frame around it shows the footprint.
 #let footprint(body, color: dark) = block(
@@ -38,7 +38,7 @@
   This paragraph comes after both tags.
 ]
 
-#title-slide("regions.typ")
+#title-slide("regions.typ", "Regions", "regions/")
 
 #explained-slide(
   background: rect(width: 100%, height: 100%, fill: gradient.linear(

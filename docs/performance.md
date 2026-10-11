@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Performance
 
-The example deck for this page is
-[`tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/tour.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/tour.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/tour-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/tour-handouts.pdf)).
+The demo deck for this page is
+[`tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/tour.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/tour.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/tour-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/tour-handouts.pdf)).
 It is the deck on which the numbers below were measured.
 
 The cost of Animo is that it asks typst to lay out a slide more than once.
@@ -54,7 +54,7 @@ Two limits on this count keep the cost affordable:
 
 ## The Measured Numbers
 
-[`examples/tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/tour.typ)
+[`demos/tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/tour.typ)
 is the deck these numbers were measured on.
 When the numbers were taken, the deck had 16 slides, 48 states and 20 epoch renderings.
 They were measured on a 12th Gen Intel Core i7-1260P with typst 0.15.0 in September 2026.

@@ -7,7 +7,7 @@ The site serves two readers and the split between their guides erodes one conven
 pointer at a time, so the rule about which way a link may point is a test.
 The reference is written by hand, because nothing reads a `//` comment, so the test suite
 is what keeps a new primitive from shipping undocumented.
-The example table is also written twice, in `README.md` and on the front page of the site,
+The demo table is also written twice, in `README.md` and on the front page of the site,
 because the version inside it belongs to `snipwise` and a snippet cannot hold a snippet.
 The background of the social cards is committed as an SVG compiled from a typst source,
 because zensical renders the cards without typst, and that SVG can fall behind its source.
@@ -16,7 +16,7 @@ because zensical renders the cards without typst, and that SVG can fall behind i
 import re
 
 import pytest
-from harness import ROOT, compile_typst, example_decks
+from harness import ROOT, compile_typst, demo_decks
 
 DOCS = ROOT / "docs"
 
@@ -162,42 +162,42 @@ def test_reference_entry_points_at_the_guide(name):
 
 
 # --------------------------------------------------------------------------------------
-# The example table
+# The demo table
 # --------------------------------------------------------------------------------------
 
 
 def table_of(path):
-    """The rows of the example table of a Markdown file, in order."""
+    """The rows of the demo table of a Markdown file, in order."""
     rows = []
     inside = False
     for line in path.read_text().split("\n"):
-        if line.startswith("## Examples"):
+        if line.startswith("## Demos"):
             inside = True
         elif inside and line.startswith("## "):
             break
         elif inside and line.startswith("|"):
             rows.append(line)
-    assert rows, f"{path} has no example table"
+    assert rows, f"{path} has no demo table"
     return rows
 
 
-def test_every_example_is_in_the_table():
+def test_every_demo_is_in_the_table():
     """A deck that the build compiles and that nothing points at is a deck nobody reads."""
     rows = "\n".join(table_of(ROOT / "README.md"))
-    for path in example_decks():
-        assert f"`{path.name}`" in rows, f"{path.name} is not in the example table"
+    for path in demo_decks():
+        assert f"`{path.name}`" in rows, f"{path.name} is not in the demo table"
 
 
 @pytest.mark.parametrize("kind", ["source", "deck", "handout"])
 def test_every_row_has_its_three_links(kind):
     """Each row offers the source, the animated deck and the handout."""
     suffix = {
-        "source": "/examples/{stem}.typ",
-        "deck": "/examples/{stem}.html",
-        "handout": "/examples/{stem}-handouts.pdf",
+        "source": "/demos/{stem}.typ",
+        "deck": "/demos/{stem}.html",
+        "handout": "/demos/{stem}-handouts.pdf",
     }[kind]
     rows = table_of(ROOT / "README.md")[2:]
-    stems = sorted(path.stem for path in example_decks())
+    stems = sorted(path.stem for path in demo_decks())
     assert len(rows) == len(stems)
     for row in rows:
         stem = re.search(r"`([a-z]+)\.typ`", row).group(1)
@@ -207,11 +207,11 @@ def test_every_row_has_its_three_links(kind):
 @pytest.mark.parametrize("kind", ["deck", "handout", "presentation"])
 def test_every_link_target_exists_after_a_full_build(kind):
     """The site publishes what the table points at, once the decks have been compiled."""
-    published = DOCS / "examples"
+    published = DOCS / "demos"
     if not published.is_dir():
-        pytest.skip("run tools/build_examples.py first")
+        pytest.skip("run tools/build_demos.py first")
     suffix = {"deck": ".html", "handout": "-handouts.pdf", "presentation": "-presentation.pdf"}
-    for path in example_decks():
+    for path in demo_decks():
         target = published / f"{path.stem}{suffix[kind]}"
         assert target.is_file(), f"{target} is missing"
 

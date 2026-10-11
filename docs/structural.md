@@ -12,11 +12,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Structural Animations
 
-The example deck for this page is
-[`structural.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/structural.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/structural.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/structural-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/structural-handouts.pdf)).
+The demo deck for this page is
+[`structural.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/structural.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/structural.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/structural-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/structural-handouts.pdf)).
 It shows each structural primitive, how the primitives compose on one tag,
 how they divide a slide into epochs, and the box that a tag reserves for changing content.
 

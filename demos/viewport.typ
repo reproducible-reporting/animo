@@ -6,7 +6,7 @@
 // the canvas is what the body is laid out on, and it may be larger.
 
 #import "@preview/animo:0.1.1": *
-// The colors and the title slide that several example decks share.
+// The colors and the title slide that several demo decks share.
 #import "_common.typ": orange, pale, title-slide
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
@@ -29,7 +29,7 @@
   body,
 )
 
-#title-slide("viewport.typ")
+#title-slide("viewport.typ", "The Viewport", "viewport/")
 
 #slide(animation: {
   import anim: *

@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Continuous Animations
 
-The example deck for this page is
-[`continuous.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/continuous.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/continuous.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/continuous-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/continuous-handouts.pdf)).
+The demo deck for this page is
+[`continuous.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/continuous.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/continuous.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/continuous-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/continuous-handouts.pdf)).
 It shows subslides, the block-scoped import, moving and scaling,
 and the four timing keywords.
 

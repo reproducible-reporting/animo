@@ -1,12 +1,11 @@
 // SPDX-FileCopyrightText: 2026 Toon Verstraelen <Toon.Verstraelen@UGent.be>
 // SPDX-License-Identifier: Apache-2.0
 
-// The colors, the logo, the title slide, the styles and the slide wrapper
-// that the example decks share.
-// This file is not a deck, so `tools/build_examples.py` skips it,
-// as it skips every file under `examples/` whose name starts with an underscore.
+// The colors, the title slide, the styles and the slide wrapper that the demo decks share.
+// This file is not a deck, so `tools/build_demos.py` skips it,
+// as it skips every file under `demos/` whose name starts with an underscore.
 // A deck imports it with `#import "_common.typ": *` and applies the styles with
-// `#show: example-style`.
+// `#show: demo-style`.
 
 #import "@preview/animo:0.1.1": *
 
@@ -20,38 +19,10 @@
 // The fill behind inline code, which a few figures reuse as a pale teal.
 #let pale = teal.lighten(88%)
 
-// The path of the logo, in a square of 32 by 32 units.
-// The path has holes for the face, so it needs the even-odd fill rule.
-#let logo-path = (
-  "M20.07 18.53a1 1 0 0 0-.6.47 3.97 3.97 0 0 1-6.93 0 1 1 0 0 0-1.37-.37A1 1 0 0 0 10.8 20"
-    + "a6.03 6.03 0 0 0 10.4 0 1 1 0 0 0-.37-1.37 1 1 0 0 0-.76-.1m-.76-9.46a.6.6 0 0 0-.31.53"
-    + "v4.8a.6.6 0 0 0 .92.5l3.8-2.4a.6.6 0 0 0 0-1l-3.8-2.4a.6.6 0 0 0-.6-.03M12.6 9h.8"
-    + "c.33 0 .6.27.6.6v4.8a.6.6 0 0 1-.6.6h-.8a.6.6 0 0 1-.6-.6V9.6c0-.33.27-.6.6-.6m-4 0h.8"
-    + "c.33 0 .6.27.6.6v4.8a.6.6 0 0 1-.6.6h-.8a.6.6 0 0 1-.6-.6V9.6c0-.33.27-.6.6-.6"
-    + "m14.07 18c0 4-6 4-6 0m-1.34 0c0 4-6 4-6 0M8 27c0 4-6 4-6 0V16a14 14 0 1 1 28 0v11"
-    + "c0 4-6 4-6 0"
-)
-
-// The logo of Animo in any color, as an SVG image that typst builds from the path above.
-// The source of the image lives in this file, so a copy of a deck needs no image file.
-// The remaining arguments go to `image`, as in `logo(white, height: 2cm)`.
-#let logo(fill, ..arguments) = image(
-  bytes(
-    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'>"
-      + "<path fill-rule='evenodd' fill='"
-      + fill.to-hex()
-      + "' d='"
-      + logo-path
-      + "'/></svg>",
-  ),
-  format: "svg",
-  ..arguments,
-)
-
 // The show rules of the decks.
 // They are a template function rather than top-level `show` rules,
 // because a show rule in an imported file does not reach the file that imports it.
-#let example-style(body) = {
+#let demo-style(body) = {
   show heading: set block(below: 1em)
   show heading: set text(fill: dark)
   show raw.where(block: false): it => highlight(
@@ -214,26 +185,38 @@
   }
 }
 
-// The title slide of a deck, with the name of its source file on a curtain.
+// The address of the documentation site, without the scheme that a reader need not type.
+#let site = "reproducible-reporting.github.io/animo/"
+
+// The title slide of a demo deck, with the name of its source file on a curtain.
+// Below the name, the title slide links to the page of the Presentation Author Guide
+// that explains the features the deck demonstrates.
+// `page` is the title of that guide page and `path` is its address relative to `site`.
 // The slide after it enters with `anim.uncover(direction: btt)`,
 // which lifts the curtain out of view and shows that slide in place behind it.
 // The stage floor below the curtain is dark, as in a theatre.
 // Each cord is a darker shade of the fabric it runs along.
-#let title-slide(name) = slide(numbered: false, background: {
+#let title-slide(name, page, path) = slide(numbered: false, background: {
   place(rect(width: 100%, height: 100%, fill: dark))
   curtain(teal, height: 8.5cm, trim: teal.darken(40%))
   // The valance hides the top of the curtain, as in a theatre.
   curtain(orange, height: 1cm, folds: 22, trim: orange.darken(40%))
-  place(center + top, dy: 1.8cm, {
-    set align(center)
-    set text(fill: white)
-    logo(white, height: 2.4cm)
-    v(0.3cm)
-    text(size: 2em, raw(name, block: true))
-    v(0.1cm)
-    text(
-      style: "italic",
-      fill: white.transparentize(20%),
-    )[An example deck of Animo]
-  })
-})[]
+})[
+  // The text sits in the body rather than in the background,
+  // because in the browser the body lies on top of the background and receives the click
+  // on the link.
+  #set align(center)
+  #set text(fill: white)
+  #v(0.5cm)
+  // The badge takes the color of the text, which is white here.
+  #made-with-animo(height: 2cm)
+  #v(0.3cm)
+  #text(size: 2em, raw(name, block: true))
+  #v(0.1cm)
+  #set text(size: 0.85em, fill: white.transparentize(20%))
+  _A demo of the features explained on the page "#page" \
+  of the Presentation Author Guide_
+  #v(0.1cm)
+  // Plain text rather than inline code, because the decks highlight inline code on a pale fill.
+  #link("https://" + site + path, underline(site + path))
+]

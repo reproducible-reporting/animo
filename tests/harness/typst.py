@@ -22,7 +22,7 @@ __all__ = (
     "TypstResult",
     "TypstRunner",
     "compile_typst",
-    "example_decks",
+    "demo_decks",
     "manifest",
     "write_typst",
 )
@@ -70,13 +70,13 @@ class TypstResult:
         return "\n".join(parts)
 
 
-def example_decks() -> list[Path]:
-    """The decks under `examples/`, in the order `tools/build_examples.py` compiles them.
+def demo_decks() -> list[Path]:
+    """The decks under `demos/`, in the order `tools/build_demos.py` compiles them.
 
     A file whose name starts with an underscore holds what several decks import,
-    such as `examples/_common.typ`, and is not a deck itself.
+    such as `demos/_common.typ`, and is not a deck itself.
     """
-    paths = (ROOT / "examples").glob("*.typ")
+    paths = (ROOT / "demos").glob("*.typ")
     return sorted(path for path in paths if not path.name.startswith("_"))
 
 

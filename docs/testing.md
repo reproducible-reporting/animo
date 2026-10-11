@@ -288,7 +288,7 @@ with that command in the message, so a new reference is reviewed before it is tr
 ## Fonts and Reproducibility
 
 Every compilation goes through the same helper and passes `--ignore-system-fonts`,
-so tests and examples use only the fonts typst embeds.
+so tests and demo decks use only the fonts typst embeds.
 No font files are vendored, because they would collide with the 1 MB limit of
 `check-added-large-files` for no gain.
 
@@ -300,16 +300,16 @@ because a failed compilation is worth looking at.
 
 ## Continuous Integration
 
-| Workflow     | Trigger          | Does                                                         |
-| ------------ | ---------------- | ------------------------------------------------------------ |
-| `pytest`     | push to main, PR | the three tiers and the probes, against the pinned typst,    |
-|              |                  | with tier 3 in all three engines                             |
-| `pre-commit` | push to main, PR | every hook, so `reuse` and `snipwise check` gate a merge     |
-| `probes`     | weekly schedule  | the probes against the newest typst release, non-blocking    |
-| `zensical`   | push to main, PR | compiles the example decks, builds the site with `--strict`, |
-|              |                  | and deploys to Pages on main only                            |
-| `release`    | push to main, PR | builds the publishable subtree, checks it with the Universe  |
-|              | tag `v*`         | package checker, and publishes a GitHub release on a tag     |
+| Workflow     | Trigger          | Does                                                        |
+| ------------ | ---------------- | ----------------------------------------------------------- |
+| `pytest`     | push to main, PR | the three tiers and the probes, against the pinned typst,   |
+|              |                  | with tier 3 in all three engines                            |
+| `pre-commit` | push to main, PR | every hook, so `reuse` and `snipwise check` gate a merge    |
+| `probes`     | weekly schedule  | the probes against the newest typst release, non-blocking   |
+| `zensical`   | push to main, PR | compiles the demo decks, builds the site with `--strict`,   |
+|              |                  | and deploys to Pages on main only                           |
+| `release`    | push to main, PR | builds the publishable subtree, checks it with the Universe |
+|              | tag `v*`         | package checker, and publishes a GitHub release on a tag    |
 
 Typst is installed with `typst-community/setup-typst`, pinned to the `compiler` field
 of `typst.toml` by Snipwise, except in the `probes` workflow, which tests the newest

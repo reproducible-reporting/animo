@@ -6,14 +6,14 @@
 // The static output types show one state per page, so the notes say what the browser does.
 
 #import "@preview/animo:0.1.1": *
-// The colors, the title slide, the styles and the slide wrapper that the example decks share.
+// The colors, the title slide, the styles and the slide wrapper that the demo decks share.
 #import "_common.typ": *
 
 #show: animo.with(width: 16cm, height: 9cm, margin: 1cm)
 
-#show: example-style
+#show: demo-style
 
-#title-slide("morph.typ")
+#title-slide("morph.typ", "Morphs", "morphs/")
 
 #explained-slide(
   background: rect(width: 100%, height: 100%, fill: gradient.linear(

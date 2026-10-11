@@ -29,7 +29,7 @@ pytest
 ```bash
 pytest
 pre-commit run --all-files
-./tools/build_examples.py
+./tools/build_demos.py
 zensical build --strict
 ```
 

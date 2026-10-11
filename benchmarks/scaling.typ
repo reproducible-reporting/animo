@@ -7,7 +7,7 @@
 //
 // A number here means something only when the deck it was measured on is the same deck,
 // so this file is meant to stay as it is.
-// Realism is the job of `examples/tour.typ`,
+// Realism is the job of `demos/tour.typ`,
 // and the job of this file is to hold everything constant except one axis at a time.
 //
 // The knobs, as `--input`:

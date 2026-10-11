@@ -19,8 +19,8 @@ __pycache__/
 # Documentation
 .cache/
 site/
-# The example decks the site publishes, compiled by `tools/build_examples.py`.
-docs/examples/
+# The demo decks the site publishes, compiled by `tools/build_demos.py`.
+docs/demos/
 
 # Scratch space, including the directory pytest compiles its documents in,
 # which has to lie inside the repository because typst refuses a source outside its root.

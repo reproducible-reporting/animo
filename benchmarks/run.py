@@ -4,7 +4,7 @@
 """Measure what an animo deck costs to compile and how much of a page it becomes.
 
 Each deck measured here has a separate reason.
-`examples/tour.typ` is the realistic one, which says what an author of a real deck waits for.
+`demos/tour.typ` is the realistic one, which says what an author of a real deck waits for.
 `benchmarks/scaling.typ` is the controlled one.
 It holds everything constant except one axis, so that a term of the cost model is the
 difference between two runs rather than a guess about where the time went.
@@ -43,7 +43,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 from harness.markup import drop_repeated_defs  # noqa: E402
 from harness.typst import compile_typst  # noqa: E402
 
-TOUR = ROOT / "examples" / "tour.typ"
+TOUR = ROOT / "demos" / "tour.typ"
 SCALING = HERE / "scaling.typ"
 PLACEMENTS = HERE / "placements.typ"
 

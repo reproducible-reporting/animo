@@ -12,11 +12,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Handouts
 
-The example deck for this page is
-[`handouts.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/handouts.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/handouts.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/handouts-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/handouts-handouts.pdf)).
+The demo deck for this page is
+[`handouts.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/handouts.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/handouts.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/handouts-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/handouts-handouts.pdf)).
 It shows the default handout page of a slide (its final state),
 slides that need extra handout pages because some content is not visible in their final state,
 and a slide left out of the handout.
@@ -146,4 +146,4 @@ to leave the mark out of the handout:
 
 Put a mark like this in the [overlay](slides.md#backgrounds-and-overlays) of a wrapper
 around `#slide`.
-The example deck does this with a badge beside the state number.
+The demo deck does this with a badge beside the state number.

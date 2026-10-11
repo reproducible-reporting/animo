@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Presenting
 
-The example deck for this page is
-[`tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/tour.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/tour.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/tour-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/tour-handouts.pdf)).
+The demo deck for this page is
+[`tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/tour.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/tour.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/tour-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/tour-handouts.pdf)).
 Its HTML version lets you try the keys on this page,
 and its slide *Timer controls (in HTML)* plays part of itself.
 

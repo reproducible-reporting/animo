@@ -12,11 +12,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # The Viewport
 
-The example deck for this page is
-[`viewport.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/viewport.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/viewport.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/viewport-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/viewport-handouts.pdf)).
+The demo deck for this page is
+[`viewport.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/viewport.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/viewport.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/viewport-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/viewport-handouts.pdf)).
 It shows a canvas two screens wide, a body longer than the viewport,
 a pan past the edge of the canvas, a background and an overlay that stay in place during a pan,
 and a canvas with an explicit size.

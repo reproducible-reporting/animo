@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Regions
 
-The example deck for this page is
-[`regions.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/regions.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/regions.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/regions-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/regions-handouts.pdf)).
+The demo deck for this page is
+[`regions.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/regions.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/regions.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/regions-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/regions-handouts.pdf)).
 It shows a region that reflows when its content changes,
 ways to reduce the empty room that a region reserves,
 nested and named regions, regions inside containers, and a region around a cetz canvas.

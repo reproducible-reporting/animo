@@ -14,6 +14,11 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
 
 ### Added
 
+- Add `animo-logo(fill:, ..)`, which draws the logo of Animo as an image in any color,
+  and `made-with-animo(fill:, height:)`, which draws a badge that places the logo beside the
+  words "made with Animo".
+  Both take the color of the surrounding text by default.
+  The title slides of the demo decks show the badge.
 - Add the `uncover(direction:)` slide transition, which moves the slide being left out at one
   edge over the slide being entered.
 - Announce the position of the HTML presentation as events on the root element:
@@ -40,7 +45,7 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   and fades the rest. A tag moves as one unless the primitive changes it, and letters are
   matched by their shape, so a reflowing paragraph needs no tags.
   `init` and the show rule refuse it.
-  The example deck `morph.typ` shows it.
+  The demo deck `morph.typ` shows it.
 - Match shapes and images in a morph beside the letters, in reading order.
   A shape is matched when its outline and its stroke width are the same in both versions,
   whatever its color, and an image when it is the same image at the same size.
@@ -72,10 +77,14 @@ and this project adheres to [Effort-based Versioning](https://jacobtomlinson.dev
   of the box.
   A deck that added half the growth as a `dx`/`dy` shift to land a scaled corner no longer
   needs it.
-- Give every page of the Presentation Author Guide an example deck that covers it,
+- Give every page of the Presentation Author Guide a demo deck that covers it,
   using only what that page and the pages before it explain.
   The decks `motion.typ`, `content.typ` and `pan.typ` are renamed to `continuous.typ`,
   `structural.typ` and `viewport.typ`, and `slides.typ`, `tags.typ` and `regions.typ` are new.
+- Call the decks that demonstrate the features of Animo demo decks,
+  and move them from `examples/` to `demos/`.
+  The site publishes them under `demos/` as well.
+  The title slide of a demo deck links to the page of the guide that the deck accompanies.
 - Move the morph from the page Structural Animations to a separate page Morphs after Regions,
   because most morphs need a region.
 - **Breaking:** remove the `transition:`, `wait:`, `hold:` and `handout:` arguments of `slide`.

@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Slides
 
-The example deck for this page is
-[`slides.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/slides.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/slides.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/slides-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/slides-handouts.pdf)).
+The demo deck for this page is
+[`slides.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/slides.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/slides.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/slides-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/slides-handouts.pdf)).
 It shows the margin, backgrounds and overlays of each kind, and every slide transition.
 
 A deck is a document with a show rule at the top and a `#slide` call per slide.

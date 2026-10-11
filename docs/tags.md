@@ -11,11 +11,11 @@ SPDX-License-Identifier: Apache-2.0
 
 # Tags
 
-The example deck for this page is
-[`tags.typ`](https://github.com/reproducible-reporting/animo/blob/main/examples/tags.typ)
-([HTML](https://reproducible-reporting.github.io/animo/examples/tags.html){ target="\_blank" rel="noopener" },
-[PDF presentation](https://reproducible-reporting.github.io/animo/examples/tags-presentation.pdf),
-[PDF handouts](https://reproducible-reporting.github.io/animo/examples/tags-handouts.pdf)).
+The demo deck for this page is
+[`tags.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/tags.typ)
+([HTML](https://reproducible-reporting.github.io/animo/demos/tags.html){ target="\_blank" rel="noopener" },
+[PDF presentation](https://reproducible-reporting.github.io/animo/demos/tags-presentation.pdf),
+[PDF handouts](https://reproducible-reporting.github.io/animo/demos/tags-handouts.pdf)).
 It shows the initial states of a tag, one name at several sites, the wrappers that `wrap` chooses,
 and tags inside math, a cetz canvas and a grid cell.
 
