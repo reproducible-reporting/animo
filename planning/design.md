@@ -1369,6 +1369,9 @@ States and epochs form the execution model that ties the two classes of primitiv
   The inner regions of a region have fixed footprints,
   so the measurement of an outer region does not depend on the epochs of its inner regions.
   The cost of a region is therefore linear in the number of epochs.
+  On twelve slides with two regions each,
+  `benchmarks/run.py` measured about 3 ms per measurement of a region
+  at two, four and eight epochs.
 
 **How a region measures one epoch.**
 A region cannot substitute the content of an epoch into its body,
@@ -2170,6 +2173,11 @@ with the reasons for the answer and the alternatives that were rejected.
   Deciding from the membership reports of an earlier pass of layout
   would make the structure depend on the reports it produces,
   which is the shape that did not converge in the previous entry.
+  Epoch stacks replaced a first design that rendered the whole slide once per epoch.
+  Each of those renderings laid out every region, and each region measured every epoch again,
+  so the cost grew faster than linearly.
+  On an i7-4790, a region around the whole body took 0.21, 1.52 and 4.60 s at one, four and
+  eight epochs in that design, and 0.23, 0.84 and 1.51 s with epoch stacks.
 
 - **Is the max-footprint rule tolerable?** Yes, with the authorial remedies,
   and there is no "pin the footprint to epoch *i*" option.
@@ -3098,7 +3106,8 @@ with the reasons for the answer and the alternatives that were rejected.
   Gzip compresses a deck by about a factor of five.
   Gzip does not recover the definitions that typst repeats in every frame,
   because deflate's window is 32 KiB and one frame is larger,
-  so hoisting would be worth a further factor of about two on top of it (see *Findings*).
+  so hoisting would save a further third of the compressed tour,
+  and about half of the compressed controlled deck in `benchmarks/` (see *Findings*).
   Hoisting the shared definitions into one document-level `<svg>` is sound in the browser
   and out of reach from typst 0.15.0, because a package never holds the markup that a frame
   became.

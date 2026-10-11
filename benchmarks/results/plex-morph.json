@@ -7,8 +7,8 @@
     "typst": "typst 0.15.0 (3ae52774)",
     "typst_libc": "musl",
     "animo": "0.2.0",
-    "commit": "668e9ee-dirty",
-    "measured": "2026-10-11 17:31:03+0200"
+    "commit": "302d9ce-dirty",
+    "measured": "2026-10-11 17:53:30+0200"
   },
   "engines": {
     "chromium": {
@@ -18,54 +18,76 @@
           "glyphs": 464,
           "paths": 0,
           "animations": 473,
-          "step_ms": 43.100000001490116,
+          "step_ms": 40.100000001490116,
           "frame_ms_median": 16.69999999552965,
-          "frame_ms_max": 18.099999994039536
+          "frame_ms_max": 17.399999998509884
         },
         "3000 letters": {
           "glyphs": 2827,
           "paths": 0,
           "animations": 2845,
-          "step_ms": 182.5,
-          "frame_ms_median": 59.05000000074506,
-          "frame_ms_max": 74
+          "step_ms": 167.79999999701977,
+          "frame_ms_median": 56.05000000074506,
+          "frame_ms_max": 68
         },
         "3000 letters, crossfade": {
           "glyphs": 2827,
           "paths": 0,
           "animations": 198,
-          "step_ms": 52.5,
+          "step_ms": 47.20000000298023,
           "frame_ms_median": 16.600000001490116,
-          "frame_ms_max": 50.5
+          "frame_ms_max": 42.900000005960464
         },
         "3000 letters, crossfade of the last line": {
           "glyphs": 2827,
           "paths": 0,
           "animations": 18,
-          "step_ms": 51.79999999701977,
+          "step_ms": 47,
           "frame_ms_median": 16.69999999552965,
-          "frame_ms_max": 41.80000000447035
+          "frame_ms_max": 40.100000001490116
         },
         "1000 marks": {
           "glyphs": 0,
           "paths": 1002,
           "animations": 1005,
-          "step_ms": 81,
-          "frame_ms_median": 30.649999998509884,
-          "frame_ms_max": 34.80000000447035
+          "step_ms": 70.29999999701977,
+          "frame_ms_median": 29.799999997019768,
+          "frame_ms_max": 34.600000001490116
+        }
+      },
+      "blended": {
+        "500 letters": {
+          "frame_ms_median": 16.69999999552965,
+          "frame_ms_max": 19
+        },
+        "3000 letters": {
+          "frame_ms_median": 56.44999999925494,
+          "frame_ms_max": 70.5
+        },
+        "3000 letters, crossfade": {
+          "frame_ms_median": 16.600000001490116,
+          "frame_ms_max": 42.899999998509884
+        },
+        "3000 letters, crossfade of the last line": {
+          "frame_ms_median": 16.69999999552965,
+          "frame_ms_max": 28.5
+        },
+        "1000 marks": {
+          "frame_ms_median": 29.5,
+          "frame_ms_max": 36.69999999552965
         }
       },
       "diff": {
-        "25": 2.3000000044703484,
-        "50": 2.899999998509884,
-        "100": 4.600000001490116,
-        "200": 9.699999995529652,
-        "400": 27.5,
-        "800": 59
+        "25": 2.7000000029802322,
+        "50": 4.299999997019768,
+        "100": 4.4000000059604645,
+        "200": 9.100000001490116,
+        "400": 25.700000002980232,
+        "800": 58.5
       },
       "align": {
-        "100": 5.9000000059604645,
-        "1000": 13.299999997019768
+        "100": 3.8000000044703484,
+        "1000": 7.700000002980232
       }
     },
     "firefox": {
@@ -75,7 +97,7 @@
           "glyphs": 464,
           "paths": 0,
           "animations": 473,
-          "step_ms": 55,
+          "step_ms": 53,
           "frame_ms_median": 17,
           "frame_ms_max": 31
         },
@@ -83,42 +105,64 @@
           "glyphs": 2827,
           "paths": 0,
           "animations": 2845,
-          "step_ms": 238,
-          "frame_ms_median": 17.5,
-          "frame_ms_max": 172
+          "step_ms": 231,
+          "frame_ms_median": 16,
+          "frame_ms_max": 153
         },
         "3000 letters, crossfade": {
           "glyphs": 2827,
           "paths": 0,
           "animations": 198,
-          "step_ms": 83,
+          "step_ms": 78,
           "frame_ms_median": 17,
-          "frame_ms_max": 108
+          "frame_ms_max": 102
         },
         "3000 letters, crossfade of the last line": {
           "glyphs": 2827,
           "paths": 0,
           "animations": 18,
-          "step_ms": 86,
+          "step_ms": 80,
           "frame_ms_median": 17,
-          "frame_ms_max": 41
+          "frame_ms_max": 40
         },
         "1000 marks": {
           "glyphs": 0,
           "paths": 1002,
           "animations": 1005,
-          "step_ms": 127,
+          "step_ms": 120,
           "frame_ms_median": 17.0,
-          "frame_ms_max": 53
+          "frame_ms_max": 48
+        }
+      },
+      "blended": {
+        "500 letters": {
+          "frame_ms_median": 17.0,
+          "frame_ms_max": 22
+        },
+        "3000 letters": {
+          "frame_ms_median": 80,
+          "frame_ms_max": 87
+        },
+        "3000 letters, crossfade": {
+          "frame_ms_median": 50.0,
+          "frame_ms_max": 72
+        },
+        "3000 letters, crossfade of the last line": {
+          "frame_ms_median": 33.0,
+          "frame_ms_max": 79
+        },
+        "1000 marks": {
+          "frame_ms_median": 24,
+          "frame_ms_max": 28
         }
       },
       "diff": {
         "25": 2,
-        "50": 2,
+        "50": 3,
         "100": 5,
-        "200": 10,
-        "400": 21,
-        "800": 45
+        "200": 11,
+        "400": 23,
+        "800": 54
       },
       "align": {
         "100": 4,

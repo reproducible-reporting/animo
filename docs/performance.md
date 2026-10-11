@@ -56,8 +56,9 @@ Two limits on this count keep the cost affordable:
 
 [`demos/tour.typ`](https://github.com/reproducible-reporting/animo/blob/main/demos/tour.typ)
 is the deck these numbers were measured on.
-When the numbers were taken, the deck had 16 slides, 48 states and 20 epoch renderings.
-They were measured on a 12th Gen Intel Core i7-1260P with typst 0.15.0 in September 2026.
+When the numbers were taken, the deck had 17 slides, 61 states,
+and 17 renderings of the regions whose content changes.
+They were measured on an Intel Core i7-4790 at 3.6 GHz with typst 0.15.0 in October 2026.
 
 The compiler is the release `setup.sh` installs.
 For linux that is the static musl binary typst publishes,
@@ -71,31 +72,31 @@ because the plain typst deck they divide by is compiled by the same binary.
 
 | What                         | Measured                 |
 | ---------------------------- | ------------------------ |
-| HTML presentation            | 0.47 s                   |
-| Static presentation          | 1.09 s                   |
-| Static handout               | 0.60 s                   |
-| HTML page                    | 1.37 MB, 262 KiB gzipped |
-| One edit under `typst watch` | 51 ms                    |
+| HTML presentation            | 0.83 s                   |
+| Static presentation          | 1.37 s                   |
+| Static handout               | 0.82 s                   |
+| HTML page                    | 1.57 MB, 312 KiB gzipped |
+| One edit under `typst watch` | 88 ms                    |
 
 The terms behind those totals, each measured as the difference between two decks that
 differ in one thing only:
 
-| Term                                    | Cost                              |
-| --------------------------------------- | --------------------------------- |
-| one more epoch on one slide, in HTML    | 6 ms, 35 KiB raw, 3 KiB gzipped   |
-| one region measuring one epoch of prose | 2.1 ms                            |
-| one region measuring one epoch of cetz  | 14.9 ms                           |
-| one content layer on one slide, in HTML | 19 KiB raw, 5 KiB gzipped, 0.8 ms |
+| Term                                    | Cost                                  |
+| --------------------------------------- | ------------------------------------- |
+| one more epoch on one slide, in HTML    | 2.5 ms, 19 KiB raw, 0.5 KiB gzipped   |
+| one region measuring one epoch of prose | 2.6 ms                                |
+| one region measuring one epoch of cetz  | 19.3 ms                               |
+| one content layer on one slide, in HTML | 19 KiB raw, 5 KiB gzipped, under 1 ms |
 
 And the same content laid out by plain typst, one page per slide, as a factor:
 
 | Deck                                                 | Against plain typst |
 | ---------------------------------------------------- | ------------------- |
-| no structural subslides                              | 2.0                 |
-| four continuous subslides per slide                  | 2.7                 |
-| two to eight epochs per slide                        | 2.5 to 3.0          |
+| no structural subslides                              | 2.1                 |
+| four continuous subslides per slide                  | 3.0                 |
+| two to eight epochs per slide                        | 2.5 to 3.3          |
 | two regions, three epochs, four continuous subslides | 6.6                 |
-| two regions of cetz canvas, four epochs              | 15.1                |
+| two regions of cetz canvas, four epochs              | 17.3                |
 
 Your own numbers take one command to measure, and land in
 [`benchmarks/results/`](https://github.com/reproducible-reporting/animo/tree/main/benchmarks):
@@ -111,9 +112,7 @@ Seconds measured while another process is using the processor are not meaningful
 
 Typst memoises across recompiles inside one `typst watch` process,
 so an edit only pays for what it actually changed.
-On the tour, an edit to one slide recompiles in **51 ms** against **0.51 s** cold,
-and on a deck with regions, epochs and continuous subslides throughout,
-in 84 ms against 0.95 s.
+On the tour, an edit to one slide recompiles in **88 ms** against **0.83 s** cold.
 
 This is the number that decides whether a deck is comfortable to write.
 Keep the preview running while you write:
@@ -148,18 +147,18 @@ but it is the product of the two.
 **Give a region a `height` when you know it.**
 A region with an explicit height measures nothing at all.
 On a deck of twelve slides with two regions over four epochs,
-giving the regions a height brought the HTML output from 1.02 s down to 0.53 s.
-The measurements were nearly half the cost of that deck.
+giving the regions a height brought the HTML output from 0.94 s down to 0.56 s.
+The measurements were about two fifths of the cost of that deck.
 The drawback is that a state taller than the height is clipped.
 
 **A cetz canvas inside a region is the expensive case.**
 The region lays the canvas out afresh for every epoch, and cetz layout is not cheap:
-14.9 ms per measurement against 2.1 ms for the same shape holding prose, seven times more.
-A deck of twelve such slides over four epochs took 5.2 s to compile against 0.13 s for the
+19.3 ms per measurement against 2.6 ms for the same shape holding prose, seven times more.
+A deck of twelve such slides over four epochs took 4.9 s to compile against 0.15 s for the
 same drawings as plain typst.
 There are two ways to avoid this cost: leave the canvas outside a region, where a tagged
 `content()` element reserves the room of its widest epoch; or give the region a `height`,
-which skips the measuring and keeps the reflow. The same deck then took 1.4 s rather than 5.2 s.
+which skips the measuring and keeps the reflow. The same deck then took 2.0 s rather than 4.9 s.
 
 **A body full of `#place` calls costs only on a slide that pans.**
 The [automatic canvas](viewport.md#how-large-the-canvas-is) is the union of the body
@@ -178,10 +177,10 @@ as a static presentation, with typst 0.15.0:
 
 | Slide                              |   Time | Peak memory |
 | ---------------------------------- | -----: | ----------: |
-| no `pan` in the timeline           | 2.93 s |      812 MB |
-| a `pan` in the timeline            | 3.59 s |      972 MB |
-| a `pan`, and an explicit `canvas:` | 3.09 s |      811 MB |
-| the same marks as one `image`      | 1.12 s |      113 MB |
+| no `pan` in the timeline           | 3.39 s |      767 MB |
+| a `pan` in the timeline            | 4.26 s |      950 MB |
+| a `pan`, and an explicit `canvas:` | 3.43 s |      766 MB |
+| the same marks as one `image`      | 0.94 s |      113 MB |
 
 **State the `canvas:` of a placement-heavy slide that pans.**
 A stated canvas leaves Animo nothing to compute,
@@ -235,9 +234,9 @@ A color is one CSS declaration, with no measurable cost.
 
 Measured on the controlled deck of twelve slides, with an overlay of one line of 9 pt text
 and a rule, which is typical of a running title or a talk name:
-**19.4 KiB per slide raw and 5.1 KiB compressed, the same at one epoch and at four**,
-and under 2 ms of compile time per slide,
-which is at the limit of what this benchmark resolves.
+**19.4 KiB per slide raw and 5.0 to 5.1 KiB compressed, the same at one epoch and at four**,
+and under 1 ms of compile time per slide,
+which is below what this benchmark resolves.
 
 Unlike a region, a layer costs page weight rather than seconds.
 That weight is the weight of what the layer holds,
@@ -254,9 +253,9 @@ over three epochs, with a slide number and a subslide number in the overlay:
 
 | What         | Without a number | With a number | Growth |
 | ------------ | ---------------- | ------------- | ------ |
-| HTML page    | 2393 KiB         | 2515 KiB      | 5%     |
-| gzipped      | 341 KiB          | 366 KiB       | 7%     |
-| compile time | 0.38 s           | 0.40 s        | 7%     |
+| HTML page    | 1927 KiB         | 2048 KiB      | 6%     |
+| gzipped      | 300 KiB          | 326 KiB       | 8%     |
+| compile time | 0.39 s           | 0.42 s        | 6%     |
 
 Put the number in the **overlay** and not in the body.
 An overlay is one rendering per slide where a region is one rendering per epoch,
@@ -280,16 +279,17 @@ on an Intel Core i7-4790 in October 2026:
 
 | Step                                             | Animations | Key press, chromium and firefox | Frame, chromium and firefox |
 | ------------------------------------------------ | ---------- | ------------------------------- | --------------------------- |
-| morph of 464 letters                             | 473        | 43 ms and 55 ms                 | 17 ms and 17 ms             |
-| morph of 2827 letters                            | 2845       | 183 ms and 238 ms               | 59 ms and 18 ms             |
-| crossfade of 2827 letters, every line changes    | 198        | 53 ms and 83 ms                 | 17 ms and 17 ms             |
-| crossfade of 2827 letters, the last line changes | 18         | 52 ms and 86 ms                 | 17 ms and 17 ms             |
-| morph of 1000 marks                              | 1005       | 81 ms and 127 ms                | 31 ms and 17 ms             |
+| morph of 464 letters                             | 473        | 40 ms and 53 ms                 | 17 ms and 17 ms             |
+| morph of 2827 letters                            | 2845       | 168 ms and 231 ms               | 56 ms and 16 ms             |
+| crossfade of 2827 letters, every line changes    | 198        | 47 ms and 78 ms                 | 17 ms and 17 ms             |
+| crossfade of 2827 letters, the last line changes | 18         | 47 ms and 80 ms                 | 17 ms and 17 ms             |
+| morph of 1000 marks                              | 1005       | 70 ms and 120 ms                | 30 ms and 17 ms             |
 
 The frame is the median interval between two frames during the motion,
-so 17 ms is the full rate of the display.
+so about 17 ms is the full rate of the display.
+Firefox reports whole milliseconds, which is 16 or 17 ms at that rate.
 A paragraph of a few hundred letters therefore morphs smoothly in both engines,
-and a slide of several thousand moving letters moves at about 17 frames a second in chromium.
+and a slide of several thousand moving letters moves at about 18 frames a second in chromium.
 
 A transition draws the ink that both versions of a region share once:
 a morph moves one copy of each letter it matches,
@@ -302,8 +302,9 @@ Two versions of a region could also be summed with `mix-blend-mode: plus-lighter
 which slide crossfades use.
 `benchmarks/morph.py` measures every step above a second time under a stylesheet that blends
 the region's renderings and isolates their container.
-In firefox 155, that stylesheet takes the frame of the morph of 2827 letters from 18 ms to
-about 85 ms, the frame of either crossfade from 17 ms to between 35 and 50 ms,
+In firefox 155, that stylesheet takes the frame of the morph of 2827 letters from 16 ms to
+80 ms, the frame of the crossfade from 17 ms to 50 ms when every line changes
+and to 33 ms when the last line changes,
 and the frame of the plot from 17 ms to 24 ms, while chromium 153 draws the same frames
 either way.
 A browser test cannot hold an engine to such a number reliably,
@@ -319,8 +320,8 @@ and about 50 to 60 ms at 1600.
 
 A shape morph adds the alignment of its two outlines to the key press,
 which `benchmarks/morph.py` measures on two closed outlines that share no vertex.
-The alignment takes 6 ms in chromium and 4 ms in firefox for 100 segments each,
-and 13 ms and 11 ms for 1000 segments each.
+The alignment takes 4 ms in both engines for 100 segments each,
+and 8 ms in chromium and 11 ms in firefox for 1000 segments each.
 A tag holds one shape morph, so a step pays this once per tag that changes its shape.
 
 ## Page Weight
@@ -330,19 +331,18 @@ slide, holding the body once and one rendering per epoch of every region whose c
 changes.
 The file grows with epochs and with the size of the regions that change, and not with states.
 
-The tour is 1.37 MB, which gzip takes to **262 KiB**, a factor of five.
-Every extra epoch on a slide adds about 35 KiB, or 3 KiB once compressed,
-so a deck twice the size of the tour arrives in about half a megabyte.
+The tour is 1.57 MB, which gzip takes to **312 KiB**, a factor of five.
+Every extra epoch on a slide adds about 19 KiB, or half a KiB once compressed,
+so a deck twice the size of the tour arrives in about 0.6 MB.
 
 **Serve the file with compression.**
 Every static host and every HTTP server does this by default,
-and it is the difference between 262 KiB and a megabyte.
+and it is the difference between 312 KiB and one and a half megabytes.
 The uncompressed figure matters only for memory in the browser.
 
-Most of the page is glyph definitions, and Animo lays every rendering of a slide out in one
-frame so that the renderings of a slide share one set of them.
-The saving grows with the epochs a slide has: none at one epoch, 36% of the
-compressed page at two, and 66% at eight.
+About half of the page is glyph definitions,
+and Animo lays every rendering of a slide out in one frame
+so that the renderings of a slide share one set of them.
 
 ## Where These Numbers Come From
 
