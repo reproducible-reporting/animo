@@ -3,86 +3,94 @@
     "host": "plex",
     "cpu": "Intel(R) Core(TM) i7-4790 CPU @ 3.60GHz",
     "cores": 8,
-    "platform": "Linux-7.2.8-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "platform": "Linux-7.2.9-200.fc44.x86_64-x86_64-with-glibc2.43",
     "typst": "typst 0.15.0 (3ae52774)",
     "typst_libc": "musl",
-    "animo": "0.1.1",
-    "commit": "6315c79-dirty",
-    "measured": "2026-10-07 20:03:04+0200"
+    "animo": "0.2.0",
+    "commit": "7d7764f",
+    "measured": "2026-10-11 16:01:18+0200"
   },
   "engines": {
     "chromium": {
-      "version": "151.0.7922.34",
+      "version": "153.0.8010.12",
       "steps": {
         "500 letters": {
           "glyphs": 464,
           "paths": 0,
-          "animations": 930,
-          "step_ms": 44,
-          "frame_ms_median": 16.549999999813735,
-          "frame_ms_max": 39
+          "animations": 931,
+          "step_ms": 42.100000001490116,
+          "frame_ms_median": 16.600000001490116,
+          "frame_ms_max": 35
         },
         "3000 letters": {
           "glyphs": 2827,
           "paths": 0,
-          "animations": 5656,
-          "step_ms": 242.6000000005588,
-          "frame_ms_median": 98.5,
-          "frame_ms_max": 108.79999999981374
+          "animations": 5657,
+          "step_ms": 203.39999999850988,
+          "frame_ms_median": 85.05000000074506,
+          "frame_ms_max": 117.79999999701977
         },
         "1000 marks": {
           "glyphs": 0,
           "paths": 1002,
-          "animations": 2006,
-          "step_ms": 92.90000000037253,
-          "frame_ms_median": 50.59999999962747,
-          "frame_ms_max": 120.79999999981374
+          "animations": 2007,
+          "step_ms": 79.79999999701977,
+          "frame_ms_median": 49.100000001490116,
+          "frame_ms_max": 62.899999998509884
         }
       },
       "diff": {
-        "25": 2.599999999627471,
-        "50": 3.7999999998137355,
-        "100": 5,
-        "200": 11.5,
-        "400": 28.700000000186265,
-        "800": 75.1000000005588
+        "25": 3.600000001490116,
+        "50": 3.399999998509884,
+        "100": 4.4000000059604645,
+        "200": 9.700000002980232,
+        "400": 28,
+        "800": 56.600000001490116
+      },
+      "align": {
+        "100": 3.8000000044703484,
+        "1000": 8.199999995529652
       }
     },
     "firefox": {
-      "version": "153.0",
+      "version": "155.0",
       "steps": {
         "500 letters": {
           "glyphs": 464,
           "paths": 0,
-          "animations": 930,
-          "step_ms": 66,
-          "frame_ms_median": 17,
-          "frame_ms_max": 51
+          "animations": 931,
+          "step_ms": 55,
+          "frame_ms_median": 25.0,
+          "frame_ms_max": 32
         },
         "3000 letters": {
           "glyphs": 2827,
           "paths": 0,
-          "animations": 5656,
-          "step_ms": 306,
-          "frame_ms_median": 25,
-          "frame_ms_max": 341
+          "animations": 5657,
+          "step_ms": 245,
+          "frame_ms_median": 136,
+          "frame_ms_max": 153
         },
         "1000 marks": {
           "glyphs": 0,
           "paths": 1002,
-          "animations": 2006,
-          "step_ms": 134,
-          "frame_ms_median": 16.0,
-          "frame_ms_max": 118
+          "animations": 2007,
+          "step_ms": 128,
+          "frame_ms_median": 40,
+          "frame_ms_max": 48
         }
       },
       "diff": {
         "25": 2,
-        "50": 4,
-        "100": 5,
-        "200": 11,
-        "400": 22,
-        "800": 49
+        "50": 3,
+        "100": 6,
+        "200": 12,
+        "400": 23,
+        "800": 59
+      },
+      "align": {
+        "100": 4,
+        "1000": 11
       }
     }
   }

@@ -1,0 +1,1499 @@
+{
+  "environment": {
+    "host": "plex",
+    "cpu": "Intel(R) Core(TM) i7-4790 CPU @ 3.60GHz",
+    "cores": 8,
+    "platform": "Linux-7.2.9-200.fc44.x86_64-x86_64-with-glibc2.43",
+    "typst": "typst 0.15.0 (3ae52774)",
+    "typst_libc": "musl",
+    "animo": "0.2.0",
+    "commit": "7d7764f",
+    "measured": "2026-10-11 15:54:22+0200"
+  },
+  "settings": {
+    "repeat": 5,
+    "placement_points": 10000,
+    "placement_states": 20
+  },
+  "tour": {
+    "html": {
+      "min": 0.8274,
+      "median": 0.8352,
+      "samples": [
+        0.8421,
+        0.8544,
+        0.8274,
+        0.8352,
+        0.8314
+      ],
+      "bytes": 1561340,
+      "gzip_bytes": 316147,
+      "slides": 17,
+      "states": 61,
+      "renderings": 17,
+      "page_bytes": 1561340,
+      "defs_bytes": 750978,
+      "repeated_defs_bytes": 412289,
+      "distinct_defs": 423,
+      "hoisted_bytes": 1149051,
+      "hoisted_gzip_bytes": 208833,
+      "merged_bytes": 1561340,
+      "merged_gzip_bytes": 316147
+    },
+    "presentation": {
+      "min": 1.363,
+      "median": 1.3823,
+      "samples": [
+        1.373,
+        1.363,
+        1.3823,
+        1.4189,
+        1.3847
+      ],
+      "bytes": 275399
+    },
+    "handout": {
+      "min": 0.7995,
+      "median": 0.8176,
+      "samples": [
+        0.8149,
+        0.7995,
+        0.8296,
+        0.8176,
+        0.8196
+      ],
+      "bytes": 155266
+    },
+    "watch": {
+      "edit": "one-slide",
+      "cold": 0.837,
+      "incremental_min": 0.0936,
+      "incremental_median": 0.1125,
+      "incremental_samples": [
+        0.0936,
+        0.1116,
+        0.1125,
+        0.1254,
+        0.1194
+      ]
+    }
+  },
+  "scaling": {
+    "base": {
+      "html": {
+        "min": 0.2125,
+        "median": 0.2153,
+        "samples": [
+          0.2153,
+          0.2133,
+          0.2161,
+          0.2186,
+          0.2125
+        ],
+        "bytes": 1055520,
+        "gzip_bytes": 216577,
+        "slides": 12,
+        "states": 12,
+        "renderings": 0,
+        "page_bytes": 1055520,
+        "defs_bytes": 460403,
+        "repeated_defs_bytes": 415774,
+        "distinct_defs": 54,
+        "hoisted_bytes": 639746,
+        "hoisted_gzip_bytes": 102419,
+        "merged_bytes": 1055520,
+        "merged_gzip_bytes": 216577
+      },
+      "presentation": {
+        "min": 0.1813,
+        "median": 0.1841,
+        "samples": [
+          0.1844,
+          0.1813,
+          0.1952,
+          0.1841,
+          0.1813
+        ],
+        "bytes": 41801
+      },
+      "handout": {
+        "min": 0.183,
+        "median": 0.1854,
+        "samples": [
+          0.1858,
+          0.1855,
+          0.1842,
+          0.183,
+          0.1854
+        ],
+        "bytes": 41801
+      },
+      "plain": {
+        "min": 0.0835,
+        "median": 0.086,
+        "samples": [
+          0.086,
+          0.0835,
+          0.084,
+          0.0866,
+          0.0872
+        ],
+        "bytes": 40006
+      }
+    },
+    "states-4": {
+      "html": {
+        "min": 0.3013,
+        "median": 0.3044,
+        "samples": [
+          0.3121,
+          0.3131,
+          0.3034,
+          0.3044,
+          0.3013
+        ],
+        "bytes": 1258080,
+        "gzip_bytes": 241080,
+        "slides": 12,
+        "states": 60,
+        "renderings": 0,
+        "page_bytes": 1258080,
+        "defs_bytes": 495743,
+        "repeated_defs_bytes": 448169,
+        "distinct_defs": 58,
+        "hoisted_bytes": 809911,
+        "hoisted_gzip_bytes": 110046,
+        "merged_bytes": 1258080,
+        "merged_gzip_bytes": 241080
+      },
+      "presentation": {
+        "min": 0.4934,
+        "median": 0.4963,
+        "samples": [
+          0.5019,
+          0.5073,
+          0.4934,
+          0.4937,
+          0.4963
+        ],
+        "bytes": 157563
+      },
+      "handout": {
+        "min": 0.2595,
+        "median": 0.2683,
+        "samples": [
+          0.2683,
+          0.2708,
+          0.2662,
+          0.2595,
+          0.28
+        ],
+        "bytes": 43742
+      },
+      "plain": {
+        "min": 0.0852,
+        "median": 0.0874,
+        "samples": [
+          0.087,
+          0.0852,
+          0.0894,
+          0.0874,
+          0.0874
+        ],
+        "bytes": 41321
+      }
+    },
+    "epochs-2": {
+      "html": {
+        "min": 0.2706,
+        "median": 0.2742,
+        "samples": [
+          0.2706,
+          0.2742,
+          0.2735,
+          0.2745,
+          0.2814
+        ],
+        "bytes": 1284624,
+        "gzip_bytes": 223960,
+        "slides": 12,
+        "states": 24,
+        "renderings": 24,
+        "page_bytes": 1284624,
+        "defs_bytes": 469511,
+        "repeated_defs_bytes": 424123,
+        "distinct_defs": 55,
+        "hoisted_bytes": 860501,
+        "hoisted_gzip_bytes": 106761,
+        "merged_bytes": 1284624,
+        "merged_gzip_bytes": 223960
+      },
+      "presentation": {
+        "min": 0.2467,
+        "median": 0.2526,
+        "samples": [
+          0.252,
+          0.2467,
+          0.2534,
+          0.2526,
+          0.2562
+        ],
+        "bytes": 68612
+      },
+      "handout": {
+        "min": 0.2105,
+        "median": 0.2111,
+        "samples": [
+          0.2107,
+          0.2113,
+          0.2117,
+          0.2105,
+          0.2111
+        ],
+        "bytes": 41410
+      },
+      "plain": {
+        "min": 0.0831,
+        "median": 0.0869,
+        "samples": [
+          0.0891,
+          0.0869,
+          0.0856,
+          0.0831,
+          0.0895
+        ],
+        "bytes": 40006
+      }
+    },
+    "epochs-4": {
+      "html": {
+        "min": 0.3292,
+        "median": 0.333,
+        "samples": [
+          0.3333,
+          0.3292,
+          0.3295,
+          0.333,
+          0.3349
+        ],
+        "bytes": 1742160,
+        "gzip_bytes": 235899,
+        "slides": 12,
+        "states": 48,
+        "renderings": 48,
+        "page_bytes": 1742160,
+        "defs_bytes": 486959,
+        "repeated_defs_bytes": 440117,
+        "distinct_defs": 57,
+        "hoisted_bytes": 1302043,
+        "hoisted_gzip_bytes": 112249,
+        "merged_bytes": 1742160,
+        "merged_gzip_bytes": 235899
+      },
+      "presentation": {
+        "min": 0.357,
+        "median": 0.3648,
+        "samples": [
+          0.3648,
+          0.362,
+          0.3667,
+          0.357,
+          0.3865
+        ],
+        "bytes": 123195
+      },
+      "handout": {
+        "min": 0.2326,
+        "median": 0.2335,
+        "samples": [
+          0.2326,
+          0.2335,
+          0.2354,
+          0.233,
+          0.2411
+        ],
+        "bytes": 41387
+      },
+      "plain": {
+        "min": 0.0857,
+        "median": 0.087,
+        "samples": [
+          0.087,
+          0.0886,
+          0.0857,
+          0.0873,
+          0.0862
+        ],
+        "bytes": 40006
+      }
+    },
+    "epochs-8": {
+      "html": {
+        "min": 0.4411,
+        "median": 0.444,
+        "samples": [
+          0.444,
+          0.4538,
+          0.4553,
+          0.4411,
+          0.4424
+        ],
+        "bytes": 2652912,
+        "gzip_bytes": 258849,
+        "slides": 12,
+        "states": 96,
+        "renderings": 96,
+        "page_bytes": 2652912,
+        "defs_bytes": 517535,
+        "repeated_defs_bytes": 468145,
+        "distinct_defs": 61,
+        "hoisted_bytes": 2184767,
+        "hoisted_gzip_bytes": 122423,
+        "merged_bytes": 2652912,
+        "merged_gzip_bytes": 258849
+      },
+      "presentation": {
+        "min": 0.6652,
+        "median": 0.6711,
+        "samples": [
+          0.6652,
+          0.6711,
+          0.6694,
+          0.6908,
+          0.673
+        ],
+        "bytes": 232200
+      },
+      "handout": {
+        "min": 0.272,
+        "median": 0.2739,
+        "samples": [
+          0.2739,
+          0.273,
+          0.2784,
+          0.2757,
+          0.272
+        ],
+        "bytes": 41430
+      },
+      "plain": {
+        "min": 0.0846,
+        "median": 0.0868,
+        "samples": [
+          0.0889,
+          0.0846,
+          0.0892,
+          0.0858,
+          0.0868
+        ],
+        "bytes": 40006
+      }
+    },
+    "regions-2-epochs-1": {
+      "html": {
+        "min": 0.34,
+        "median": 0.3438,
+        "samples": [
+          0.34,
+          0.3442,
+          0.3438,
+          0.3413,
+          0.3457
+        ],
+        "bytes": 1283436,
+        "gzip_bytes": 223124,
+        "slides": 12,
+        "states": 12,
+        "renderings": 0,
+        "page_bytes": 1283436,
+        "defs_bytes": 469511,
+        "repeated_defs_bytes": 424123,
+        "distinct_defs": 55,
+        "hoisted_bytes": 859313,
+        "hoisted_gzip_bytes": 106048,
+        "merged_bytes": 1283436,
+        "merged_gzip_bytes": 223124
+      },
+      "presentation": {
+        "min": 0.2809,
+        "median": 0.2818,
+        "samples": [
+          0.2833,
+          0.2855,
+          0.2809,
+          0.2811,
+          0.2818
+        ],
+        "bytes": 43451
+      },
+      "handout": {
+        "min": 0.2841,
+        "median": 0.2878,
+        "samples": [
+          0.2841,
+          0.2919,
+          0.2943,
+          0.2878,
+          0.2853
+        ],
+        "bytes": 43451
+      },
+      "plain": {
+        "min": 0.0837,
+        "median": 0.0871,
+        "samples": [
+          0.0871,
+          0.0837,
+          0.0838,
+          0.0896,
+          0.0902
+        ],
+        "bytes": 41650
+      }
+    },
+    "regions-2-epochs-2": {
+      "html": {
+        "min": 0.6401,
+        "median": 0.6544,
+        "samples": [
+          0.6892,
+          0.6562,
+          0.6544,
+          0.6401,
+          0.6503
+        ],
+        "bytes": 1723524,
+        "gzip_bytes": 228890,
+        "slides": 12,
+        "states": 24,
+        "renderings": 48,
+        "page_bytes": 1723524,
+        "defs_bytes": 469511,
+        "repeated_defs_bytes": 424123,
+        "distinct_defs": 55,
+        "hoisted_bytes": 1299401,
+        "hoisted_gzip_bytes": 111191,
+        "merged_bytes": 1723524,
+        "merged_gzip_bytes": 228890
+      },
+      "presentation": {
+        "min": 0.5658,
+        "median": 0.5669,
+        "samples": [
+          0.5669,
+          0.6016,
+          0.6045,
+          0.5662,
+          0.5658
+        ],
+        "bytes": 72752
+      },
+      "handout": {
+        "min": 0.4257,
+        "median": 0.4515,
+        "samples": [
+          0.456,
+          0.4851,
+          0.4515,
+          0.4257,
+          0.4449
+        ],
+        "bytes": 43452
+      },
+      "plain": {
+        "min": 0.0867,
+        "median": 0.0881,
+        "samples": [
+          0.0888,
+          0.0867,
+          0.0881,
+          0.0872,
+          0.0903
+        ],
+        "bytes": 41650
+      }
+    },
+    "regions-2-epochs-4": {
+      "html": {
+        "min": 0.984,
+        "median": 0.9898,
+        "samples": [
+          1.0008,
+          0.984,
+          0.9898,
+          0.9849,
+          1.0025
+        ],
+        "bytes": 2619228,
+        "gzip_bytes": 246043,
+        "slides": 12,
+        "states": 48,
+        "renderings": 96,
+        "page_bytes": 2619228,
+        "defs_bytes": 486959,
+        "repeated_defs_bytes": 440117,
+        "distinct_defs": 57,
+        "hoisted_bytes": 2179111,
+        "hoisted_gzip_bytes": 121093,
+        "merged_bytes": 2619228,
+        "merged_gzip_bytes": 246043
+      },
+      "presentation": {
+        "min": 1.1118,
+        "median": 1.1145,
+        "samples": [
+          1.1145,
+          1.1238,
+          1.1145,
+          1.1402,
+          1.1118
+        ],
+        "bytes": 131608
+      },
+      "handout": {
+        "min": 0.5695,
+        "median": 0.584,
+        "samples": [
+          0.6014,
+          0.584,
+          0.5827,
+          0.5695,
+          0.5875
+        ],
+        "bytes": 43561
+      },
+      "plain": {
+        "min": 0.0843,
+        "median": 0.0864,
+        "samples": [
+          0.0887,
+          0.0876,
+          0.0843,
+          0.0846,
+          0.0864
+        ],
+        "bytes": 41650
+      }
+    },
+    "regions-2-epochs-8": {
+      "html": {
+        "min": 1.6193,
+        "median": 1.6382,
+        "samples": [
+          1.6382,
+          1.6336,
+          1.6193,
+          1.6446,
+          1.7067
+        ],
+        "bytes": 4406316,
+        "gzip_bytes": 277821,
+        "slides": 12,
+        "states": 96,
+        "renderings": 192,
+        "page_bytes": 4406316,
+        "defs_bytes": 517535,
+        "repeated_defs_bytes": 468145,
+        "distinct_defs": 61,
+        "hoisted_bytes": 3938171,
+        "hoisted_gzip_bytes": 139181,
+        "merged_bytes": 4406316,
+        "merged_gzip_bytes": 277821
+      },
+      "presentation": {
+        "min": 2.7937,
+        "median": 2.8207,
+        "samples": [
+          2.8841,
+          2.8207,
+          2.805,
+          2.8276,
+          2.7937
+        ],
+        "bytes": 249119
+      },
+      "handout": {
+        "min": 0.8626,
+        "median": 0.876,
+        "samples": [
+          0.882,
+          0.8746,
+          0.8626,
+          0.8851,
+          0.876
+        ],
+        "bytes": 43600
+      },
+      "plain": {
+        "min": 0.0833,
+        "median": 0.0852,
+        "samples": [
+          0.0859,
+          0.093,
+          0.0833,
+          0.0852,
+          0.0838
+        ],
+        "bytes": 41650
+      }
+    },
+    "regions-2-epochs-4-sized": {
+      "html": {
+        "min": 0.5656,
+        "median": 0.5725,
+        "samples": [
+          0.5656,
+          0.5802,
+          0.5773,
+          0.5666,
+          0.5725
+        ],
+        "bytes": 2623812,
+        "gzip_bytes": 248177,
+        "slides": 12,
+        "states": 48,
+        "renderings": 96,
+        "page_bytes": 2623812,
+        "defs_bytes": 489935,
+        "repeated_defs_bytes": 442845,
+        "distinct_defs": 59,
+        "hoisted_bytes": 2180967,
+        "hoisted_gzip_bytes": 122252,
+        "merged_bytes": 2623812,
+        "merged_gzip_bytes": 248177
+      },
+      "presentation": {
+        "min": 0.5007,
+        "median": 0.5036,
+        "samples": [
+          0.5036,
+          0.505,
+          0.5066,
+          0.5007,
+          0.5032
+        ],
+        "bytes": 135168
+      },
+      "handout": {
+        "min": 0.2965,
+        "median": 0.3021,
+        "samples": [
+          0.3043,
+          0.3072,
+          0.2965,
+          0.3021,
+          0.298
+        ],
+        "bytes": 44458
+      },
+      "plain": {
+        "min": 0.0863,
+        "median": 0.0873,
+        "samples": [
+          0.0863,
+          0.0896,
+          0.087,
+          0.0877,
+          0.0873
+        ],
+        "bytes": 52044
+      }
+    },
+    "figure-regions-2-epochs-1": {
+      "html": {
+        "min": 0.8922,
+        "median": 0.9473,
+        "samples": [
+          0.9698,
+          0.8922,
+          0.8993,
+          0.9473,
+          0.9715
+        ],
+        "bytes": 884989,
+        "gzip_bytes": 197055,
+        "slides": 12,
+        "states": 12,
+        "renderings": 0,
+        "page_bytes": 884989,
+        "defs_bytes": 417660,
+        "repeated_defs_bytes": 374568,
+        "distinct_defs": 53,
+        "hoisted_bytes": 510421,
+        "hoisted_gzip_bytes": 69752,
+        "merged_bytes": 884989,
+        "merged_gzip_bytes": 197055
+      },
+      "presentation": {
+        "min": 0.8072,
+        "median": 0.8107,
+        "samples": [
+          0.8101,
+          0.8072,
+          0.8175,
+          0.8107,
+          0.8153
+        ],
+        "bytes": 42380
+      },
+      "handout": {
+        "min": 0.811,
+        "median": 0.8243,
+        "samples": [
+          0.811,
+          0.8212,
+          0.8339,
+          0.8243,
+          0.8246
+        ],
+        "bytes": 42380
+      },
+      "plain": {
+        "min": 0.1539,
+        "median": 0.1566,
+        "samples": [
+          0.1575,
+          0.1539,
+          0.1588,
+          0.1566,
+          0.1559
+        ],
+        "bytes": 50461
+      }
+    },
+    "figure-regions-2-epochs-4": {
+      "html": {
+        "min": 5.1951,
+        "median": 5.21,
+        "samples": [
+          5.21,
+          5.1951,
+          5.21,
+          5.3834,
+          5.5862
+        ],
+        "bytes": 1180813,
+        "gzip_bytes": 210769,
+        "slides": 12,
+        "states": 48,
+        "renderings": 96,
+        "page_bytes": 1180813,
+        "defs_bytes": 435108,
+        "repeated_defs_bytes": 390562,
+        "distinct_defs": 55,
+        "hoisted_bytes": 790251,
+        "hoisted_gzip_bytes": 96570,
+        "merged_bytes": 1180813,
+        "merged_gzip_bytes": 210769
+      },
+      "presentation": {
+        "min": 6.1209,
+        "median": 6.2459,
+        "samples": [
+          6.2459,
+          6.5233,
+          6.1209,
+          6.1721,
+          7.1793
+        ],
+        "bytes": 128133
+      },
+      "handout": {
+        "min": 2.6669,
+        "median": 3.032,
+        "samples": [
+          3.1091,
+          3.1234,
+          2.6669,
+          3.032,
+          2.796
+        ],
+        "bytes": 42499
+      },
+      "plain": {
+        "min": 0.1541,
+        "median": 0.1585,
+        "samples": [
+          0.1541,
+          0.1585,
+          0.1582,
+          0.1636,
+          0.1607
+        ],
+        "bytes": 50461
+      }
+    },
+    "figure-regions-2-epochs-4-sized": {
+      "html": {
+        "min": 2.1836,
+        "median": 2.2055,
+        "samples": [
+          2.1836,
+          2.2055,
+          2.3317,
+          2.2901,
+          2.1913
+        ],
+        "bytes": 1185337,
+        "gzip_bytes": 212448,
+        "slides": 12,
+        "states": 48,
+        "renderings": 96,
+        "page_bytes": 1185337,
+        "defs_bytes": 438084,
+        "repeated_defs_bytes": 393290,
+        "distinct_defs": 57,
+        "hoisted_bytes": 792047,
+        "hoisted_gzip_bytes": 97491,
+        "merged_bytes": 1185337,
+        "merged_gzip_bytes": 212448
+      },
+      "presentation": {
+        "min": 1.492,
+        "median": 1.5296,
+        "samples": [
+          1.492,
+          1.5296,
+          1.5581,
+          1.543,
+          1.5191
+        ],
+        "bytes": 131011
+      },
+      "handout": {
+        "min": 0.7675,
+        "median": 0.7771,
+        "samples": [
+          0.774,
+          0.7675,
+          0.7945,
+          0.7976,
+          0.7771
+        ],
+        "bytes": 43220
+      },
+      "plain": {
+        "min": 0.1563,
+        "median": 0.1592,
+        "samples": [
+          0.1563,
+          0.1573,
+          0.1596,
+          0.1596,
+          0.1592
+        ],
+        "bytes": 49879
+      }
+    },
+    "overlay": {
+      "html": {
+        "min": 0.2216,
+        "median": 0.2252,
+        "samples": [
+          0.2216,
+          0.2266,
+          0.2252,
+          0.2256,
+          0.2251
+        ],
+        "bytes": 1294380,
+        "gzip_bytes": 279635,
+        "slides": 12,
+        "states": 12,
+        "renderings": 0,
+        "page_bytes": 1294380,
+        "defs_bytes": 646583,
+        "repeated_defs_bytes": 586439,
+        "distinct_defs": 73,
+        "hoisted_bytes": 707941,
+        "hoisted_gzip_bytes": 115519,
+        "merged_bytes": 1294380,
+        "merged_gzip_bytes": 279635
+      },
+      "presentation": {
+        "min": 0.188,
+        "median": 0.1899,
+        "samples": [
+          0.1899,
+          0.1906,
+          0.1896,
+          0.1959,
+          0.188
+        ],
+        "bytes": 45197
+      },
+      "handout": {
+        "min": 0.1837,
+        "median": 0.1886,
+        "samples": [
+          0.1899,
+          0.1911,
+          0.1837,
+          0.1886,
+          0.1844
+        ],
+        "bytes": 45197
+      },
+      "plain": {
+        "min": 0.0858,
+        "median": 0.0863,
+        "samples": [
+          0.0875,
+          0.0863,
+          0.0879,
+          0.0858,
+          0.0861
+        ],
+        "bytes": 40006
+      }
+    },
+    "overlay-epochs-4": {
+      "html": {
+        "min": 0.3302,
+        "median": 0.3412,
+        "samples": [
+          0.3302,
+          0.3412,
+          0.3407,
+          0.3415,
+          0.3468
+        ],
+        "bytes": 1981020,
+        "gzip_bytes": 297794,
+        "slides": 12,
+        "states": 48,
+        "renderings": 48,
+        "page_bytes": 1981020,
+        "defs_bytes": 673139,
+        "repeated_defs_bytes": 610782,
+        "distinct_defs": 76,
+        "hoisted_bytes": 1370238,
+        "hoisted_gzip_bytes": 125938,
+        "merged_bytes": 1981020,
+        "merged_gzip_bytes": 297794
+      },
+      "presentation": {
+        "min": 0.3607,
+        "median": 0.3692,
+        "samples": [
+          0.3738,
+          0.3699,
+          0.3692,
+          0.3607,
+          0.3684
+        ],
+        "bytes": 136148
+      },
+      "handout": {
+        "min": 0.2373,
+        "median": 0.2394,
+        "samples": [
+          0.2394,
+          0.2491,
+          0.2373,
+          0.2437,
+          0.2385
+        ],
+        "bytes": 44775
+      },
+      "plain": {
+        "min": 0.0836,
+        "median": 0.0859,
+        "samples": [
+          0.0872,
+          0.0859,
+          0.0886,
+          0.085,
+          0.0836
+        ],
+        "bytes": 40006
+      }
+    },
+    "overlay-states-4-epochs-3": {
+      "html": {
+        "min": 0.4051,
+        "median": 0.4075,
+        "samples": [
+          0.4102,
+          0.4075,
+          0.4051,
+          0.4056,
+          0.4136
+        ],
+        "bytes": 1961892,
+        "gzip_bytes": 304349,
+        "slides": 12,
+        "states": 84,
+        "renderings": 36,
+        "page_bytes": 1961892,
+        "defs_bytes": 681923,
+        "repeated_defs_bytes": 618834,
+        "distinct_defs": 77,
+        "hoisted_bytes": 1343058,
+        "hoisted_gzip_bytes": 130198,
+        "merged_bytes": 1961892,
+        "merged_gzip_bytes": 304349
+      },
+      "presentation": {
+        "min": 0.714,
+        "median": 0.7349,
+        "samples": [
+          0.7363,
+          0.7222,
+          0.714,
+          0.7512,
+          0.7349
+        ],
+        "bytes": 234742
+      },
+      "handout": {
+        "min": 0.3069,
+        "median": 0.3097,
+        "samples": [
+          0.3143,
+          0.3069,
+          0.3084,
+          0.3122,
+          0.3097
+        ],
+        "bytes": 46640
+      },
+      "plain": {
+        "min": 0.0873,
+        "median": 0.0892,
+        "samples": [
+          0.0893,
+          0.0892,
+          0.0873,
+          0.0898,
+          0.0889
+        ],
+        "bytes": 41321
+      }
+    },
+    "number": {
+      "html": {
+        "min": 0.236,
+        "median": 0.2433,
+        "samples": [
+          0.2401,
+          0.236,
+          0.2481,
+          0.2457,
+          0.2433
+        ],
+        "bytes": 1339806,
+        "gzip_bytes": 290877,
+        "slides": 12,
+        "states": 12,
+        "renderings": 0,
+        "page_bytes": 1339806,
+        "defs_bytes": 677187,
+        "repeated_defs_bytes": 609759,
+        "distinct_defs": 86,
+        "hoisted_bytes": 730047,
+        "hoisted_gzip_bytes": 121099,
+        "merged_bytes": 1339806,
+        "merged_gzip_bytes": 290877
+      },
+      "presentation": {
+        "min": 0.1942,
+        "median": 0.1955,
+        "samples": [
+          0.1952,
+          0.1957,
+          0.1942,
+          0.1975,
+          0.1955
+        ],
+        "bytes": 47358
+      },
+      "handout": {
+        "min": 0.1895,
+        "median": 0.1953,
+        "samples": [
+          0.196,
+          0.1903,
+          0.1895,
+          0.1953,
+          0.2517
+        ],
+        "bytes": 47358
+      },
+      "plain": {
+        "min": 0.0871,
+        "median": 0.0886,
+        "samples": [
+          0.0886,
+          0.0909,
+          0.0871,
+          0.0899,
+          0.0879
+        ],
+        "bytes": 40006
+      }
+    },
+    "number-states-4": {
+      "html": {
+        "min": 0.3348,
+        "median": 0.3409,
+        "samples": [
+          0.337,
+          0.3348,
+          0.3409,
+          0.3445,
+          0.3445
+        ],
+        "bytes": 1594995,
+        "gzip_bytes": 318994,
+        "slides": 12,
+        "states": 60,
+        "renderings": 0,
+        "page_bytes": 1594995,
+        "defs_bytes": 735924,
+        "repeated_defs_bytes": 665551,
+        "distinct_defs": 90,
+        "hoisted_bytes": 929444,
+        "hoisted_gzip_bytes": 129930,
+        "merged_bytes": 1594995,
+        "merged_gzip_bytes": 318994
+      },
+      "presentation": {
+        "min": 0.5538,
+        "median": 0.5583,
+        "samples": [
+          0.5583,
+          0.5538,
+          0.5639,
+          0.5646,
+          0.5541
+        ],
+        "bytes": 179927
+      },
+      "handout": {
+        "min": 0.2772,
+        "median": 0.2788,
+        "samples": [
+          0.2862,
+          0.2788,
+          0.2772,
+          0.2835,
+          0.2781
+        ],
+        "bytes": 48966
+      },
+      "plain": {
+        "min": 0.0855,
+        "median": 0.0872,
+        "samples": [
+          0.0855,
+          0.0872,
+          0.089,
+          0.088,
+          0.0872
+        ],
+        "bytes": 41321
+      }
+    },
+    "number-states-4-epochs-3": {
+      "html": {
+        "min": 0.4278,
+        "median": 0.4369,
+        "samples": [
+          0.4333,
+          0.4278,
+          0.4369,
+          0.4382,
+          0.441
+        ],
+        "bytes": 2086256,
+        "gzip_bytes": 330218,
+        "slides": 12,
+        "states": 84,
+        "renderings": 36,
+        "page_bytes": 2086256,
+        "defs_bytes": 747617,
+        "repeated_defs_bytes": 677244,
+        "distinct_defs": 90,
+        "hoisted_bytes": 1409012,
+        "hoisted_gzip_bytes": 139146,
+        "merged_bytes": 2086256,
+        "merged_gzip_bytes": 330218
+      },
+      "presentation": {
+        "min": 0.8041,
+        "median": 0.8356,
+        "samples": [
+          0.8041,
+          0.8356,
+          0.8631,
+          0.8846,
+          0.8043
+        ],
+        "bytes": 242887
+      },
+      "handout": {
+        "min": 0.3159,
+        "median": 0.3236,
+        "samples": [
+          0.3233,
+          0.3662,
+          0.3372,
+          0.3159,
+          0.3236
+        ],
+        "bytes": 48446
+      },
+      "plain": {
+        "min": 0.0856,
+        "median": 0.0892,
+        "samples": [
+          0.0902,
+          0.0892,
+          0.0932,
+          0.0856,
+          0.0881
+        ],
+        "bytes": 41321
+      }
+    },
+    "realistic": {
+      "html": {
+        "min": 0.9139,
+        "median": 0.9197,
+        "samples": [
+          0.9401,
+          0.916,
+          0.9139,
+          0.9197,
+          0.9289
+        ],
+        "bytes": 2381016,
+        "gzip_bytes": 256075,
+        "slides": 12,
+        "states": 84,
+        "renderings": 72,
+        "page_bytes": 2381016,
+        "defs_bytes": 495743,
+        "repeated_defs_bytes": 448169,
+        "distinct_defs": 58,
+        "hoisted_bytes": 1932847,
+        "hoisted_gzip_bytes": 123651,
+        "merged_bytes": 2381016,
+        "merged_gzip_bytes": 256075
+      },
+      "presentation": {
+        "min": 1.6322,
+        "median": 1.6528,
+        "samples": [
+          1.6356,
+          1.6322,
+          1.6528,
+          1.6541,
+          1.6611
+        ],
+        "bytes": 233314
+      },
+      "handout": {
+        "min": 0.5762,
+        "median": 0.5948,
+        "samples": [
+          0.6067,
+          0.5948,
+          0.5762,
+          0.6075,
+          0.5919
+        ],
+        "bytes": 46426
+      },
+      "plain": {
+        "min": 0.085,
+        "median": 0.0891,
+        "samples": [
+          0.0896,
+          0.0891,
+          0.085,
+          0.0868,
+          0.0905
+        ],
+        "bytes": 50473
+      },
+      "watch": {
+        "edit": "one-slide",
+        "cold": 0.9455,
+        "incremental_min": 0.1018,
+        "incremental_median": 0.1379,
+        "incremental_samples": [
+          0.1018,
+          0.1379,
+          0.1117,
+          0.1447,
+          0.1428
+        ]
+      }
+    }
+  },
+  "derived": {
+    "overhead_factor": {
+      "base": 2.19,
+      "states-4": 3.05,
+      "epochs-2": 2.53,
+      "epochs-4": 2.71,
+      "epochs-8": 3.22,
+      "regions-2-epochs-1": 3.39,
+      "regions-2-epochs-2": 4.91,
+      "regions-2-epochs-4": 6.76,
+      "regions-2-epochs-8": 10.36,
+      "regions-2-epochs-4-sized": 3.44,
+      "figure-regions-2-epochs-1": 5.27,
+      "figure-regions-2-epochs-4": 17.31,
+      "figure-regions-2-epochs-4-sized": 4.91,
+      "overlay": 2.14,
+      "overlay-epochs-4": 2.84,
+      "overlay-states-4-epochs-3": 3.52,
+      "number": 2.18,
+      "number-states-4": 3.24,
+      "number-states-4-epochs-3": 3.69,
+      "realistic": 6.78
+    },
+    "seconds_per_epoch_per_slide": 0.0026,
+    "seconds_per_epoch_per_slide_regions_2": 0.0147,
+    "seconds_per_measurement_regions_2": 0.00302,
+    "region_sweep_increments": {
+      "html": {
+        "regions-2-epochs-2": 0.025,
+        "regions-2-epochs-4": 0.0143,
+        "regions-2-epochs-8": 0.0132
+      },
+      "handout": {
+        "regions-2-epochs-2": 0.0118,
+        "regions-2-epochs-4": 0.006,
+        "regions-2-epochs-8": 0.0061
+      }
+    },
+    "seconds_per_region_measurement": 0.00284,
+    "seconds_per_canvas_measurement": 0.01979,
+    "bytes_per_epoch_per_slide": 19013,
+    "gzip_bytes_per_epoch_per_slide": 497,
+    "gzip_ratio": {
+      "base": 4.87,
+      "states-4": 5.22,
+      "epochs-2": 5.74,
+      "epochs-4": 7.39,
+      "epochs-8": 10.25,
+      "regions-2-epochs-1": 5.75,
+      "regions-2-epochs-2": 7.53,
+      "regions-2-epochs-4": 10.65,
+      "regions-2-epochs-8": 15.86,
+      "regions-2-epochs-4-sized": 10.57,
+      "figure-regions-2-epochs-1": 4.49,
+      "figure-regions-2-epochs-4": 5.6,
+      "figure-regions-2-epochs-4-sized": 5.58,
+      "overlay": 4.63,
+      "overlay-epochs-4": 6.65,
+      "overlay-states-4-epochs-3": 6.45,
+      "number": 4.61,
+      "number-states-4": 5.0,
+      "number-states-4-epochs-3": 6.32,
+      "realistic": 9.3
+    },
+    "hoisting_saves_gzipped": {
+      "base": 0.527,
+      "states-4": 0.544,
+      "epochs-2": 0.523,
+      "epochs-4": 0.524,
+      "epochs-8": 0.527,
+      "regions-2-epochs-1": 0.525,
+      "regions-2-epochs-2": 0.514,
+      "regions-2-epochs-4": 0.508,
+      "regions-2-epochs-8": 0.499,
+      "regions-2-epochs-4-sized": 0.507,
+      "figure-regions-2-epochs-1": 0.646,
+      "figure-regions-2-epochs-4": 0.542,
+      "figure-regions-2-epochs-4-sized": 0.541,
+      "overlay": 0.587,
+      "overlay-epochs-4": 0.577,
+      "overlay-states-4-epochs-3": 0.572,
+      "number": 0.584,
+      "number-states-4": 0.593,
+      "number-states-4-epochs-3": 0.579,
+      "realistic": 0.517
+    },
+    "merging_saves_gzipped": {
+      "base": 0.0,
+      "states-4": 0.0,
+      "epochs-2": 0.0,
+      "epochs-4": 0.0,
+      "epochs-8": 0.0,
+      "regions-2-epochs-1": 0.0,
+      "regions-2-epochs-2": 0.0,
+      "regions-2-epochs-4": 0.0,
+      "regions-2-epochs-8": 0.0,
+      "regions-2-epochs-4-sized": 0.0,
+      "figure-regions-2-epochs-1": 0.0,
+      "figure-regions-2-epochs-4": 0.0,
+      "figure-regions-2-epochs-4-sized": 0.0,
+      "overlay": 0.0,
+      "overlay-epochs-4": 0.0,
+      "overlay-states-4-epochs-3": 0.0,
+      "number": 0.0,
+      "number-states-4": 0.0,
+      "number-states-4-epochs-3": 0.0,
+      "realistic": 0.0
+    }
+  },
+  "placements": {
+    "no-pan": {
+      "min": 3.439,
+      "median": 3.4921,
+      "samples": [
+        3.439,
+        3.4896,
+        3.4921,
+        3.5367,
+        3.8858
+      ],
+      "peak_kib": 781944,
+      "bytes": 2632033
+    },
+    "pan": {
+      "min": 4.3572,
+      "median": 4.376,
+      "samples": [
+        4.3736,
+        4.376,
+        4.3572,
+        4.4083,
+        4.4237
+      ],
+      "peak_kib": 972536,
+      "bytes": 2621452
+    },
+    "pan-canvas": {
+      "min": 3.4828,
+      "median": 3.5325,
+      "samples": [
+        3.4828,
+        3.541,
+        3.5325,
+        3.5149,
+        3.6045
+      ],
+      "peak_kib": 786268,
+      "bytes": 2621452
+    },
+    "pan-image": {
+      "min": 0.9861,
+      "median": 0.9907,
+      "samples": [
+        0.9861,
+        0.9907,
+        1.0041,
+        1.0157,
+        0.9882
+      ],
+      "peak_kib": 115648,
+      "bytes": 12442602
+    }
+  }
+}
