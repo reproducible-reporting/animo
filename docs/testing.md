@@ -12,85 +12,92 @@ SPDX-License-Identifier: Apache-2.0
 
 # Testing
 
-Animo has one test runner, `pytest`, and three tiers underneath it.
-The weight is deliberately on the cheapest one.
+Animo has one test runner, `pytest`, and its tests fall into three tiers.
+Tier 1 is the cheapest to run,
+and a test belongs there whenever tier 1 can express its assertion.
 
 ```bash
 pytest                        # everything
 pytest -m plan                # tier 1 only
 pytest -m paged               # tier 2 only
 pytest -m browser             # tier 3 only, in every engine available
-pytest --browser firefox      # tier 3 in firefox only, the rest unchanged
-pytest -k firefox             # only the firefox share of tier 3
+pytest --browser firefox      # every tier, with tier 3 in firefox only
+pytest -k firefox             # only the tier-3 tests that run in firefox
 pytest probes                 # the behaviour probes, in all three tiers
 pytest tests/test_harness.py::test_identical_rasters_compare_identical    # one test
 ```
 
-The tier markers are not written out by hand.
-Each test is marked with the tier of the fixture it asks for,
-so a test cannot claim to be in a tier it is not in.
+The harness marks each test with the tier of the fixture that the test requests,
+so the markers are never written by hand and a test cannot carry the wrong one.
 
 | Tier | Marker    | Fixture | Asserts on                                                   |
 | ---- | --------- | ------- | ------------------------------------------------------------ |
 | 1    | `plan`    | `typst` | whether a document compiles, and what it says with `#assert` |
-| 2    | `paged`   | `paged` | the rasterised presentation and handout outputs              |
-| 3    | `browser` | `page`  | the HTML output, in chromium, firefox and webkit             |
+| 2    | `paged`   | `paged` | the rasterised static presentation and static handouts       |
+| 3    | `browser` | `page`  | the HTML presentation, in chromium, firefox and webkit       |
 
-`tests/` holds the feature tests and the harness itself.
-`probes/` holds one probe per entry in the *Findings* section of the design document;
-[Behaviour Probes](probes.md) explains what a probe is and how to add one.
+`tests/` holds the feature tests and the tests of the harness itself.
+`probes/` holds the probes that assert the entries of *Findings*.
+See [Behaviour Probes](probes.md) for what a probe is and how to add one.
 Both directories use the same fixtures,
-which live in `tests/harness/` and are imported as `harness` from either.
+which live in `tests/harness/` and are imported as `harness` from either directory.
 
-A handful of tests in each directory compile a document that imports cetz or fletcher,
-because the tag sites of those two packages are part of what Animo claims.
-That is the only thing in the suite that reaches the network.
-The releases are pinned in `tests/harness/packages.py`,
-and a test whose package does not resolve skips with the explanation that the compiler gives,
-since a cold package cache is an accident of the machine rather than a failure of Animo.
+A few tests in each directory compile a document that imports cetz or fletcher,
+because Animo supports a tag on a cetz `content()` element and on a fletcher node,
+and the label emission of typst is claimed for both of them.
+These tests are the only part of the suite that uses the network.
+`tests/harness/packages.py` pins the releases of both packages.
+When a package cannot be resolved, the test is skipped with the message of the compiler,
+because an empty package cache on a machine without network access is not a failure of Animo.
 
 ## Tier 1: Plan Resolution
 
-A tier-1 test compiles a document full of `#assert` and exports it nowhere.
-Per-state content and display state, epoch boundaries, epoch counts
-and the footprint chosen for each region are asserted here.
-The documents are compiled for real, so footprints come from real `layout` and `measure` calls,
-but nothing is written out and no raster or PDF is produced.
+A tier-1 test compiles a document that checks its own results with `#assert`,
+and writes no output file.
+Tier 1 asserts the content and the display state of each state, the epoch boundaries,
+the number of epochs, and the footprint that Animo chooses for each region.
+Typst compiles these documents fully, so a footprint comes from real `layout` and `measure` calls,
+but the compilation produces no PNG and no PDF.
 
 ```python
 def test_an_empty_step_changes_nothing(typst):
     typst.ok('#import "/src/lib.typ": *\n#assert.eq(..)\n')
 ```
 
-A failure quotes the diagnostics of the compiler with the numbered document underneath,
-because reading the message without the line it points at is guesswork.
+When such a test fails, the message quotes the diagnostics of the compiler
+above the document with numbered lines,
+so that you can see the line that each diagnostic points at.
 
-The inverse case matters as much.
-A document that *must* fail to compile is asserted on its message,
-which is how the `import *` footgun is tested:
+Some documents have to fail to compile, and a test of such a document asserts the error message.
+One example is `sub(rotate("b", 45deg))`.
+Animo has no `rotate` primitive, so after `import *` the name `rotate` still refers to typst's
+`rotate`, and Animo has to refuse the content that it returns:
 
 ```python
 def test_a_mistyped_primitive_is_refused(typst):
     typst.fails(body, "is not an animo operation")
 ```
 
-`typst.fails` with no message asserts only that the compilation failed,
-which is almost never what a test means,
-because a document may fail for a reason that has nothing to do with the claim.
+Without a message, `typst.fails` asserts only that the compilation failed.
+That is rarely enough,
+because a document can fail for a reason unrelated to the claim of the test.
 
-`typst.warns(body, message)` is the third form, for behaviour the compiler
-merely complains about, and `html=True` on any of the three
-compiles for the HTML target instead of the paged one.
+The third form, `typst.warns(body, message)`, asserts a warning of the compiler.
+Each of the three forms accepts `html=True`,
+which compiles for the HTML target instead of the paged target.
 
-Because `replace` and `apply` carry content and functions,
-tier-1 assertions target the *resolved structure*, the tag names, per-state flags,
-epoch boundaries and counts, rather than the payloads, which do not compare usefully.
+The primitives `replace` and `apply` carry content and functions,
+which cannot be compared in a useful way.
+A tier-1 assertion therefore checks the resolved structure of the timeline instead.
+This structure consists of the tag names, the flags of each state,
+the epoch boundaries and the number of epochs.
 
 ## Tier 2: The Paged Outputs
 
-`typst compile -f png --ppi ..` rasterises the presentation and the handout directly,
-so no PDF has to be rendered for an assertion about layout,
-and the output mode is selected with `--input animo=..` exactly as an ordinary user would.
+A tier-2 test rasterises the static presentation or the static handouts directly,
+with `typst compile -f png --ppi ..`,
+so an assertion about layout needs no PDF renderer.
+The test selects the output type with `--input animo=..`, as an author would.
 
 ```python
 def test_a_structural_step_leaves_the_rest_of_the_slide_alone(paged):
@@ -98,10 +105,10 @@ def test_a_structural_step_leaves_the_rest_of_the_slide_alone(paged):
     assert_identical_outside(pages[0], pages[1], band)
 ```
 
-The default resolution is 72 ppi, which makes one pixel one typst point,
-so a box measured in points is a box of the same numbers in the raster.
+The default resolution is 72 ppi, at which one pixel is one typst point.
+A box measured in points therefore has the same coordinates in pixels.
 
-Every comparison helper reports *where* two rasters differ, not only that they do:
+When a comparison fails, each helper reports where the two rasters differ:
 
 | Helper                                | Says                                                    |
 | ------------------------------------- | ------------------------------------------------------- |
@@ -111,36 +118,30 @@ Every comparison helper reports *where* two rasters differ, not only that they d
 | `difference_box(a, b)`                | the smallest box containing every differing pixel       |
 | `difference_report(a, b)`             | how many pixels, by how much, and within which box      |
 
-The region design is tested with `assert_identical_outside`,
-where a failure that said only `False` would not show where the slide changed.
+Tests of regions use `assert_identical_outside`,
+which shows where the slide changed outside the region when such a test fails.
 
-The few assertions that are about the PDF *writer* rather than about the layout
-render the real PDF with `pdf_pages`, which uses `pypdfium2`,
-the same engine chromium renders PDFs with.
+A few assertions are about the PDF writer of typst rather than about the layout.
+These tests render the real PDF with `pdf_pages`, which uses `pypdfium2`,
+the same PDF engine that chromium uses.
 
 ## Tier 3: The HTML Output
 
-`playwright` drives the browsers it bundles, which keeps the pixels identical
-on every machine. `./setup.sh` downloads them into `.venv/playwright`,
-and a missing browser is an error rather than a skip,
-because a suite that passes while a third of its tests are skipped
-does not show whether those tests would pass.
+Tier 3 uses `playwright` to drive the browsers that the pinned playwright release bundles,
+so a page renders to the same pixels on every machine.
+`./setup.sh` downloads these browsers into `.venv/playwright`.
 
 **Every test of this tier runs in chromium, firefox and webkit.**
-A deck has to work in all three engines, and they disagree on more than pixels.
-For example, firefox does not implement `calc(<length> / <length>)` at all
-and drops the declaration it appears in, silently,
-while webkit's `plus-lighter` crossfade is not pixel-exact.
-The engine is a fixture, so a failure names it and `-k firefox` selects one of them.
-
-```bash
-pytest -m browser             # every engine this machine can run
-pytest --browser firefox      # one of them; repeatable
-```
+A deck has to work in all three engines, and the engines differ in more than pixels.
+For example, firefox does not implement `calc(<length> / <length>)`
+and silently drops any declaration that contains it,
+while the `plus-lighter` crossfade in webkit is not pixel-exact.
+The engine is a parameter of a fixture, so the name of a failing test includes the engine,
+and `-k firefox` selects the tests that run in firefox.
 
 ### Which Engines Run Where
 
-The three are not equally available, so the tier treats them differently.
+The three engines are not available on every machine, so tier 3 treats them differently:
 
 | Engine     | Locally                        | In CI    |
 | ---------- | ------------------------------ | -------- |
@@ -148,38 +149,44 @@ The three are not equally available, so the tier treats them differently.
 | `firefox`  | required                       | required |
 | `webkit`   | where the platform has a build | required |
 
-Chromium and firefox run wherever playwright runs,
-so a launch failure there is a broken bootstrap and an error, never a skip.
+Chromium and firefox run wherever playwright runs.
+A failure to launch either of them means that the setup is broken,
+so the test reports an error rather than a skip,
+because a suite that passes while a third of its tests are skipped
+does not show whether those tests would pass.
 
-Playwright builds one webkit for linux, against the libraries debian and ubuntu carry,
-so on any other distribution it runs only inside a container.
-Requiring a container from every contributor is too demanding,
-and dropping the engine altogether would lose coverage,
-so webkit skips where it cannot run, says so, and is required in CI, which is ubuntu.
+Playwright builds webkit for linux against the system libraries of debian and ubuntu,
+so on any other linux distribution webkit runs only inside a container.
+Requiring a container from every contributor would be too demanding,
+and leaving webkit out would lose coverage.
+The webkit tests are therefore skipped, with a reason, on a machine that cannot run webkit.
+They are required in continuous integration, which runs on ubuntu.
 
-**Where webkit cannot run, `./setup.sh` does not download it at all.**
-The download is 300 MB and the result could not be launched there,
-so the engine list is decided before the download rather than after,
-from `uname` and the `ID` and `ID_LIKE` fields of `/etc/os-release`.
-The script ends by printing which engines run on your machine, and webkit reads as
-`no build for this platform` there rather than as an installed browser that will not start.
+**`./setup.sh` downloads webkit only where webkit can run,** because the download is 300 MB.
+That is macOS and the debian family.
+The script decides this before downloading,
+from `uname` and from the `ID` and `ID_LIKE` fields of `/etc/os-release`.
+The script ends by printing which engines run on your machine.
+Where webkit cannot run, the line for webkit reads `no build for this platform`.
 
-**Naming an engine makes it required.**
-`pytest --browser webkit` turns the skip into an error carrying the diagnosis of
-playwright, and it is how the workflows ask for all three at once:
+**Naming an engine with `--browser` makes it required.**
+`pytest --browser webkit` reports an error with the diagnosis of playwright
+where the suite would otherwise skip webkit.
+The workflows of continuous integration name all three engines in this way:
 
 ```bash
 pytest --browser chromium --browser firefox --browser webkit
 ```
 
-So the engine can never be skipped everywhere at once and leave the suite green.
+As a result, the suite passes in continuous integration only when every engine has run.
 
-What that error says depends on why the engine is unavailable.
-On debian or ubuntu without the system packages, it is playwright's missing-library box,
-and `playwright install-deps webkit` is the fix.
-On a platform `./setup.sh` skipped, it is `Executable doesn't exist`,
+The error depends on why webkit is unavailable.
+On debian or ubuntu without the required system packages,
+playwright prints a box that lists the missing libraries,
+and `playwright install-deps webkit` installs them.
+On a platform where `./setup.sh` skipped webkit, the error is `Executable doesn't exist`,
 because there is no local build to launch.
-Run `playwright install webkit` first to see the launch error itself.
+To see the actual launch error there, run `playwright install webkit` first.
 
 To run webkit by hand where there is no build for it,
 mount the working tree into an ubuntu container at the same absolute path,
@@ -196,15 +203,17 @@ podman run --rm --security-opt label=disable \
     .venv/bin/python -m pytest -m browser --browser webkit'
 ```
 
-The browsers go to a path inside the container, not to `.venv/playwright`,
-so the download leaves with the container and the working tree keeps no build
-that the host cannot launch.
-The cost is that each run downloads webkit again.
-A typst binary has to be on the container's path as well,
-and the one on the host will not do if its glibc is newer than the image's.
+The container installs the browsers under `/tmp/playwright` rather than in `.venv/playwright`.
+The download is then discarded together with the container,
+and the working tree holds no webkit build that the host cannot launch.
+As a consequence, each run downloads webkit again.
+The container also needs a typst binary on its `PATH`.
+The typst binary of the host does not work there if it needs a newer glibc than the image has.
 
-Geometry is preferred over pixels wherever it can say the same thing,
-because a number survives a glyph rasterisation change and a screenshot does not.
+### Geometry Instead of Pixels
+
+A test compares geometry rather than pixels wherever geometry can express the same claim,
+because a change in how glyphs are rasterised moves pixels but leaves coordinates alone.
 
 ```python
 def test_a_tag_outside_a_region_does_not_move_between_epochs(open_page, page):
@@ -213,54 +222,69 @@ def test_a_tag_outside_a_region_does_not_move_between_epochs(open_page, page):
     assert first.approx(second)
 ```
 
-That geometry is read with `getBBox()` and `getScreenCTM()`, never with
-`getBoundingClientRect()`, which is not the same box in every engine.
-On a labelled group chromium reports the tight box,
-and firefox reports a box inflated to roughly the width of the whole frame.
-`harness.MEASURE` is the one expression that reads the geometry, and both `Deck.rects`
-and `measuring.rects` in the probes go through it.
+The harness reads geometry with `getBBox()` and `getScreenCTM()`.
+It avoids `getBoundingClientRect()`, because the engines return different boxes for it.
+On a labelled group, chromium reports the tight box,
+while firefox reports a box about as wide as the whole frame.
+All geometry is read through one JavaScript expression, `harness.MEASURE`,
+which both `Deck.rects` in the tests and `measuring.rects` in the probes use.
 
-Tests deep-link to a state instead of clicking their way to it.
-Deep-linking relies on a contract with the runtime, spelled out in `harness.browser.Deck`:
+### Deep Links
 
-- the current position lives in `location.hash` as `#<slide>.<state>`,
-  is restored on load and followed on `hashchange`,
-  and the restore *snaps* rather than animating into the state;
-- the position actually reached is mirrored in the `data-animo` attribute of the root element,
-  so that a test waits for the snap instead of racing it;
+A test opens a deck directly at a state through a deep link,
+instead of stepping through the deck to reach that state.
+Deep links rely on a contract with the runtime, which `harness.browser.Deck` documents:
+
+- the current position is kept in `location.hash` in the form `#<slide>.<state>`,
+  which the runtime restores on load and follows on `hashchange`,
+  and the runtime *snaps* into the restored state instead of animating into it;
+- the root element mirrors the position that the runtime actually reached
+  in its `data-animo` attribute, so that a test can wait for the snap instead of racing it;
 - every slide container carries `data-animo-slide="<slide>"`,
-  which is what scopes a tag name to one slide.
+  which scopes a tag name to one slide.
 
-`tests/documents/stand_in_deck.html` implements exactly those three lines and nothing else.
-The tests of the harness run against it, so that the fixtures and the contract
-are both exercised without a compiled deck.
+`tests/documents/stand_in_deck.html` implements these three items of the contract
+and nothing else.
+The tests of the harness run against this file,
+so they exercise the fixtures and the contract without compiling a deck.
 
-A deck that plays itself is driven rather than raced.
-A `wait:` or a `hold:` is a `setTimeout` in the runtime,
-and pausing an animation does not reach a `setTimeout`,
-so the `timed_deck_at` fixture stops the page's clock before the deck is loaded
-and `Deck.run_for` states how much time passes.
-Stopping the page's clock leaves the document timeline untouched,
-so the motion that a timed step starts still runs in real time and is read by scrubbing it.
-The runtime therefore needs no test seam.
+### Timed Decks
 
-Two invariants are cheap to check here and worth checking directly,
-because the region design rests on them:
-every label *outside* a region is laid out once while every rendering of a region's epoch
-stack starts at the same corner, and the slide is pixel-identical outside the region between
-epochs, including mid-crossfade.
-Both are comparisons *within* one page load, so they need no stored reference images.
+A deck with a `wait:` or a `hold:` advances by itself,
+and a test of such a deck controls the time instead of waiting for it.
+The runtime implements `wait:` and `hold:` with `setTimeout`,
+which pausing an animation does not affect.
+The `timed_deck_at` fixture therefore installs the fake clock of playwright
+before the deck is loaded, and `Deck.run_for` advances that clock by a given time.
+The fake clock leaves the document timeline untouched,
+so the motion that a timed step starts still runs in real time,
+and the test reads that motion by setting the `currentTime` of the animation.
+The runtime therefore needs no hook for tests.
+
+### Invariants of Regions
+
+The design of regions rests on two invariants, and tier 3 checks both of them directly:
+
+- every labelled element outside a region is laid out once,
+  and every rendering in the epoch stack of a region starts at the same corner;
+- outside a region, the slide is identical pixel for pixel in every epoch,
+  also halfway through a crossfade.
+
+Both checks compare two renderings within one page load, so they need no stored reference images.
 
 ## Stored Reference Images
 
-Stored pixels are the exception, and there are none in this repository yet.
-Almost everything worth asserting about a rendering is a comparison within one run:
-two epochs of the same slide, the same label in two frames,
-a band that may change against a background that may not.
-Those are unaffected by a glyph rasterisation change in a new typst release; a stored image is not.
+A test uses a stored reference image only as an exception,
+and the repository contains none at the moment.
+Almost every useful assertion about a rendering compares two renderings from the same run,
+such as two epochs of the same slide, the same label in two frames,
+or a band that may change against a background that may not.
+A change in glyph rasterisation in a new typst release affects both sides of such a comparison
+equally, but it breaks a comparison against a stored image.
 
-When a picture is the only statement that can be made, the `references` fixture stores one
-beside the module that uses it, and the test has to give the reason:
+When only a picture can express a claim,
+the `references` fixture stores a reference image beside the test module,
+and the test has to give the reason:
 
 ```python
 def test_something_only_a_picture_can_state(references, paged):
@@ -271,64 +295,69 @@ def test_something_only_a_picture_can_state(references, paged):
     )
 ```
 
-The image is captured as PNG, converted with `Pillow` to **lossless** WebP,
-and compared on decoded arrays, so the storage format never enters an assertion.
-WebP defaults to lossy, in `Pillow` as in the `type="webp"` of `playwright`,
-which is why the conversion is explicit.
+The fixture captures the image as PNG, converts it with `Pillow` to **lossless** WebP,
+and compares the decoded pixel arrays, so the file format has no effect on the assertion.
+Both `Pillow` and the `type="webp"` option of `playwright` default to lossy WebP,
+so the fixture requests lossless compression explicitly.
 
-Regenerating the stored references is one command:
+To regenerate the stored reference images, run:
 
 ```bash
 pytest --update-references
 ```
 
-A reference that does not exist yet is written on the first run and the test fails,
-with that command in the message, so a new reference is reviewed before it is trusted.
+When a reference image does not exist yet, the first run writes it and the test fails,
+with this command in the message,
+so that someone reviews a new reference image before a test relies on it.
 
 ## Fonts and Reproducibility
 
-Every compilation goes through the same helper and passes `--ignore-system-fonts`,
-so tests and demo decks use only the fonts typst embeds.
-No font files are vendored, because they would collide with the 1 MB limit of
-`check-added-large-files` for no gain.
+Every compilation goes through one helper, which passes `--ignore-system-fonts`,
+so tests and demo decks use only the fonts that typst embeds.
+The repository contains no font files,
+because the embedded fonts suffice and a font file would exceed the 1 MB limit of the
+`check-added-large-files` hook.
 
 A generated document has to be written inside the repository,
 because typst refuses a source file outside its project root.
-The `scratch` fixture is that directory, under `tmp/pytest/<test name>/`.
-It is emptied when the test starts and left behind when it ends,
-because a failed compilation is worth looking at.
+The `scratch` fixture provides such a directory, `tmp/pytest/<test name>/`.
+The fixture empties the directory when the test starts and keeps it after the test ends,
+so that you can inspect the files of a failed compilation.
 
 ## Continuous Integration
 
-| Workflow     | Trigger          | Does                                                        |
-| ------------ | ---------------- | ----------------------------------------------------------- |
-| `pytest`     | push to main, PR | the three tiers and the probes, against the pinned typst,   |
-|              |                  | with tier 3 in all three engines                            |
-| `pre-commit` | push to main, PR | every hook, so `reuse` and `snipwise check` gate a merge    |
-| `probes`     | weekly schedule  | the probes against the newest typst release, non-blocking   |
-| `zensical`   | push to main, PR | compiles the demo decks, builds the site with `--strict`,   |
-|              |                  | and deploys to Pages on main only                           |
-| `release`    | push to main, PR | builds the publishable subtree, checks it with the Universe |
-|              | tag `v*`         | package checker, and publishes a GitHub release on a tag    |
+| Workflow   | Trigger                    | Does                                                                                      |
+| ---------- | -------------------------- | ----------------------------------------------------------------------------------------- |
+| `pytest`   | push to main, PR           | runs the three tiers and the probes against the pinned typst, tier 3 in all three engines |
+| `probes`   | weekly schedule            | runs the probes against the newest typst release, without blocking anything               |
+| `zensical` | push to main, PR, tag `v*` | compiles the demo decks, builds the site with `--strict`, and deploys it for a tag only   |
+| `release`  | push to main, PR, tag `v*` | builds and checks the publishable subtree, and publishes a GitHub release for a tag       |
 
-Typst is installed with `typst-community/setup-typst`, pinned to the `compiler` field
-of `typst.toml` by Snipwise, except in the `probes` workflow, which tests the newest
-release.
-The package checker runs as a container rather than through the GitHub Action of the checker,
-because that action expects credentials for a GitHub App that a personal repository does not have.
-It reads the subtree that is submitted to `typst/packages`, which is the tracked files minus
-the `exclude` list of the manifest, so `tools/build_package.py` writes that subtree first and
-the checker is pointed at the copy.
+The `pre-commit` hooks run on [pre-commit.ci](https://pre-commit.ci/) rather than in a workflow,
+because that service pushes the fixes that the formatting hooks make
+instead of failing a pull request with a diff.
+Every hook except `typstyle` and `uv-lock` runs there, so `reuse` and `snipwise check` gate a merge.
 
-The `release` workflow stops at the artefact.
-Copying the subtree into a sparse checkout of `typst/packages` and opening the pull request
-stays manual, because a submission cannot be taken back.
-Everything up to the artefact runs on every push to main and every pull request
-that changes a file of the published subtree,
-so that a tag reaches steps that have already run on the same content.
-A push to main and a pull request publish nothing.
-Two steps are specific to a tag.
+The workflows install typst with `typst-community/setup-typst`.
+Snipwise pins the release to the `compiler` field of `typst.toml` in every workflow
+except `probes`, which tests the newest release.
+
+The `release` workflow checks the subtree with the Universe package checker.
+The checker runs as a container rather than through its GitHub Action,
+because the action expects credentials for a GitHub App, which a personal repository does not have.
+The checker reads the subtree that would be submitted to `typst/packages`,
+which consists of the tracked files minus the `exclude` list of the manifest.
+`tools/build_package.py` writes this subtree first, and the checker reads the copy.
+
+The `release` workflow ends with the subtree as an artefact.
+A maintainer copies the subtree into a sparse checkout of `typst/packages`
+and opens the pull request by hand, because a submission cannot be taken back.
+Every step up to the artefact also runs on a push to main
+and on a pull request that changes a file of the published subtree,
+so a tag only runs steps that have already passed on the same content.
+A push to main or a pull request publishes nothing.
+Two steps run only for a tag.
 The first compares the tag with the `version` field of `typst.toml`
-and fails the workflow when the two disagree,
-and the second creates the GitHub release.
-The version is read from the manifest and the tag, so the workflow takes no version input.
+and fails the workflow when the two disagree.
+The second creates the GitHub release.
+The workflow reads the version from the manifest and the tag, so it takes no version as input.

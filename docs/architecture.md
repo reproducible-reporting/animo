@@ -12,65 +12,72 @@ SPDX-License-Identifier: Apache-2.0
 
 # The Browser Runtime
 
-The HTML presentation is one self-contained file,
+The HTML presentation is a single self-contained file,
 and its script is the browser runtime of Animo.
 This page describes how that runtime is built:
 the elements and attributes it finds on the page, the files it is written in,
 and the controller that turns input into steps and announces them as events.
-What the runtime does in a step, and why,
-is specified in the *Architecture* section of the design document,
-which is the reference for any change in behaviour.
-[Developing Animo](development.md) says where the design document lives.
+The *Architecture* section of the design document specifies what the runtime does in a step,
+and why.
+See [Where the Specification Lives](development.md#where-the-specification-lives)
+for where to find the design document.
 
 ## The Page
 
-The slides are the children of one stage element, which is the only child of the deck element,
-so the page is `.animo-deck > .animo-stage > .animo-slide`.
+The page nests three kinds of element, as `.animo-deck > .animo-stage > .animo-slide`.
+The deck element has one child, the stage element,
+and every slide container is a child of the stage element.
 A slide container holds up to three elements in this order:
 `.animo-background`, `.animo-canvas` and `.animo-overlay`.
-The canvas is always there, and holds one `html.frame` with the whole body of the slide.
-A content background or a content overlay is a frame in its own element.
+The canvas is always present, and holds one `html.frame` that contains the whole body of the slide.
+A background or an overlay made of content is a frame inside
+`.animo-background` or `.animo-overlay`.
 A color background is a declaration on the slide container,
 and a color overlay is a declaration on the `.animo-overlay` element.
 
-The runtime reads a few attributes, which can also be read back in a browser's inspector
-to diagnose a step that does not do what the timeline says.
+The runtime reads the attributes below.
+When a step does not do what the timeline says,
+inspect these attributes in the developer tools of the browser.
 
-- Every slide container carries `data-animo-slide` and `data-animo-states`,
-  which are its position in the deck and how many states it has.
+- Every slide container carries `data-animo-slide`, which holds the position of the slide
+  in the deck, and `data-animo-states`, which holds the number of states of the slide.
 - Every slide container also carries `data-animo-plan`,
   which holds the resolved display state of every state of that slide as JSON.
-  This attribute is the whole of what the browser is told about the timeline,
-  so a wrong step is either in this attribute or in the runtime, and the attribute shows
-  which.
-- Every slide container carries `data-animo-transition`, which is how the boundary into it is
-  crossed, and `data-animo-transition-args` with the parameters of that transition
-  when it has any.
-- The deck element carries `data-animo-config`, the settings of the deck as JSON,
-  which the runtime reads once at load.
-  Its one setting is `transition`, the transition of every slide whose `init` names none.
-- The root element carries `lang`, and the head a `<title>`, from `set text(lang: ..)` and
-  `set document(title: ..)`, as typst writes them into a head it builds itself.
+  The browser receives no other information about the timeline.
+  When a step goes wrong, this attribute therefore shows whether typst resolved a wrong plan
+  or the runtime applied a correct plan wrongly.
+- Every slide container carries `data-animo-transition`,
+  which names the transition at the slide boundary that leads into this slide.
+  When that transition has parameters, `data-animo-transition-args` holds them.
+- The deck element carries `data-animo-config`, which holds the settings of the deck as JSON.
+  The runtime reads this attribute once, at load.
+  The setting `transition` is the transition of every slide whose `init` names no transition.
+- The root element carries `lang`, and the head carries a `<title>`.
+  They come from `set text(lang: ..)` and `set document(title: ..)`,
+  in the same way as in a page whose head typst builds.
 
-The runtime writes these attributes while the deck is shown.
+The runtime writes the attributes below while it shows the deck.
 
-- The root element carries `data-animo` with the position the runtime has reached,
-  which is the same value as the fragment,
-  `data-animo-mode` with the name of the active mode,
-  and `data-animo-paused` while the clock of the deck is stopped.
-- The slide that is shown carries `data-animo-current`,
-  and the slide a boundary is crossing from carries `data-animo-leaving` and `inert`.
+- `data-animo` on the root element holds the position that the runtime has reached,
+  in the same form as the fragment of the URL.
+- `data-animo-mode` on the root element holds the name of the active mode.
+- `data-animo-paused` is present on the root element while the clock of the deck is stopped.
+- `data-animo-current` marks the slide that is shown.
+- `data-animo-leaving` and `inert` mark the slide that a slide transition is leaving.
 
 ## The Files of the Runtime
 
-The HTML output is one self-contained file, so its script cannot import its parts.
-The runtime is the files under `src/js`, which `src/deck.typ` reads in a stated order
-and joins into the one `<script type="module">` of the page.
-The files share one module scope.
-Function declarations are hoisted, so a function may call one from any file at any time.
-A top level `const` is initialised when the script reaches its file,
-so a file may use one at load time only if it comes after the file that defines it.
-Only `boot.js` calls into the other files at load time, and it is the last one.
+Because the HTML output is a single self-contained file,
+its script cannot import modules from other files.
+The runtime is written as the files under `src/js`.
+`src/deck.typ` reads these files in a fixed order
+and joins them into the single `<script type="module">` of the page.
+The files therefore share one module scope.
+Function declarations are hoisted,
+so a function in one file can call a function declared in any other file.
+A top-level `const` is initialised only when the script reaches the file that declares it,
+so code that runs at load time can use a `const` only from its own file or from an earlier file.
+`boot.js` is the last file, and the only file that calls into the other files at load time.
 
 | File            | Holds                                                                        |
 | --------------- | ---------------------------------------------------------------------------- |
@@ -85,44 +92,48 @@ Only `boot.js` calls into the other files at load time, and it is the last one.
 | `input.js`      | key, pointer and hash events, turned into intents by the active mode         |
 | `boot.js`       | preparing the page, reading the slides and the first `jump`                  |
 
-Each part of the design has one place in these files.
+Each part of the design is implemented in one place, as listed below.
 
 - **Stacks.**
   `src/stack.typ` builds the epoch stacks and the subslide stacks,
   and `src/region.typ` and `src/tag.typ` place an epoch stack when their view asks for one.
-  In the browser, `readStacks` finds every stack of a slide by the labels of its renderings,
-  and `stackKinds` says how each kind of stack is planned for a state.
+  In the browser, `readStacks` finds every stack of a slide by the labels of its renderings.
+  `stackKinds` defines, for each kind of stack, how the runtime plans that stack for a state.
 - **The two phases of a step.**
-  `plan` in `effects.js` records an effect per element and property and writes nothing,
-  and `apply` writes the styles of the step and creates its animations.
-  `PROPERTIES` lists the properties whose unset value the engine reports as a keyword,
-  such as `none` for `translate`, with the value that keyword stands for.
+  `plan` in `effects.js` records one effect per element and property,
+  and writes nothing to the page.
+  `apply` then writes the styles of the step and creates its animations.
+  `PROPERTIES` lists the properties whose unset value the browser reports as a keyword,
+  such as `none` for `translate`, together with the value that this keyword stands for.
 - **Epoch boundaries.**
-  `planBoundary` finds the stacks that a step carries,
-  and gives each the record of the first tag that the boundary changes in it,
-  together with `names`, which lists every tag that the step changes in the stack.
+  `planBoundary` finds the stacks that a step carries.
+  It gives each of these stacks the record of the first tag that the boundary changes in it,
+  together with `names`, the list of every tag that the step changes in the stack.
   `differs` compares the renderings of a stack on the two sides of a boundary.
-  `planEpoch` then plans every epoch stack,
-  and hands each carried stack to the entry of `transitions` that its record names,
-  which is `crossfade` when the record names none.
+  `planEpoch` then plans every epoch stack.
+  It hands each carried stack to the entry of `transitions` that the record of the stack names,
+  or to `crossfade` when the record names no transition.
 - **Slide boundaries.**
-  `slideTransitions` holds one entry per transition of a slide boundary,
-  which gives the display state of the owner and of the other slide at both ends.
-  It is a separate table from `transitions`,
-  because a slide transition is handed two containers rather than the renderings of a region.
+  `slideTransitions` holds one entry per slide transition.
+  Each entry gives the display state of the slide that owns the transition
+  and of the other slide, at the start and at the end of the transition.
+  `slideTransitions` is a separate table from `transitions`,
+  because a slide transition receives two slide containers rather than the renderings of a region.
 - **The morph.**
-  `morphStack` in `morph.js` adds the matches to the crossfade of a stack.
-  The ink is paired by `commonSubsequence` over the keys that `inkKey` and `clipsAbove` write,
-  and gives up above `MORPH_DIFFERENCES` differences.
-  The resizes, from `resizes` with `pathStructure`, `labelsAbove` and `sameFrame`,
-  and the shape morphs, from `shapeMorphs`, run only where `RESIZES` says the engine animates
-  `d`.
-  `alignPaths` in `paths.js` reads no DOM, so its tests run on numbers.
-  `slide.morphed` holds every element that a morph is still moving,
-  and `settleMorphs` reads it at every step, before any transition plans.
+  `morphStack` in `morph.js` adds the matches of a morph to the crossfade of a stack.
+  `commonSubsequence` pairs the drawn elements (the ink) of the two renderings,
+  using the keys that `inkKey` and `clipsAbove` compute.
+  `commonSubsequence` gives up when the renderings have more than `MORPH_DIFFERENCES` differences.
+  `resizes` finds the paths that a morph resizes, with the help of `pathStructure`,
+  `labelsAbove` and `sameFrame`, and `shapeMorphs` finds the shapes that a morph turns into
+  another shape.
+  Both kinds of morph run only in an engine that animates `d`, which `RESIZES` records.
+  `alignPaths` in `paths.js` reads nothing from the DOM, so its tests work on numbers only.
+  `slide.morphed` holds every element that a morph is still moving.
+  At every step, `settleMorphs` reads `slide.morphed` before any transition is planned.
 - **Shared definitions.**
-  `hoistPaintServers` in `boot.js` copies the definitions that slides share into one `<svg>`
-  before the first slide is read.
+  `hoistPaintServers` in `boot.js` copies the SVG definitions that several slides share,
+  such as gradients and patterns, into one `<svg>` before the first slide is read.
 
 ## The Controller and Its Events
 
@@ -131,47 +142,55 @@ the position, the direction of travel, the pending step, the reasons the clock i
 and the active mode.
 `show` is the only function that writes the position.
 
-The controller announces what happened as events on the root element,
-after the DOM, the fragment, the `data-animo` attribute and the clock have been written.
-A listener therefore finds the page in the state the event describes.
-The events bubble, so a listener on the root element, the document or the window receives them.
+The controller announces each change as an event on the root element.
+It dispatches the event only after it has updated the DOM, the fragment,
+the `data-animo` attribute and the clock,
+so a listener finds the page in the state that the event describes.
+The events bubble, so a listener on the root element, on the document or on the window
+receives them.
 
-| Event            | Detail                 | Sent                                                                               |
-| ---------------- | ---------------------- | ---------------------------------------------------------------------------------- |
-| `animo:leave`    | `{slide}`              | when a position is on another slide than the previous one, with the previous slide |
-| `animo:enter`    | `{slide}`              | in the same case, and for the first position, with the slide entered               |
-| `animo:position` | `{from, to, animated}` | after every position that is shown                                                 |
-| `animo:mode`     | `{from, to}`           | when the active mode changes, with names as values                                 |
+| Event            | Detail                 | Dispatched                                                                 |
+| ---------------- | ---------------------- | -------------------------------------------------------------------------- |
+| `animo:leave`    | `{slide}`              | when the new position is on another slide; `slide` is the previous slide   |
+| `animo:enter`    | `{slide}`              | in the same case, and for the first position; `slide` is the slide entered |
+| `animo:position` | `{from, to, animated}` | after every position that is shown                                         |
+| `animo:mode`     | `{from, to}`           | when the active mode changes; `from` and `to` are the names of the modes   |
 
 A position is `{slide, state}`.
-For a change of slide the events come in the order `leave`, `enter`, `position`.
-The first position of the page enters its slide and leaves none, and its `from` is `null`.
-The mode the page starts in is announced in the same way, with a `from` of `null`.
-`animated` is true when the position was reached by a step and the deck lets motion run.
-It is false for a deep link, `Home` and `End`, for a cut, and for a reader who asked for
-less motion.
-A join, which is a gap of zero, is two steps made by the clock, and each is announced.
+For a change of slide, the events come in the order `leave`, `enter`, `position`.
+For the first position of the page, the controller dispatches `animo:enter` and
+`animo:position` without an `animo:leave`, and `from` is `null`.
+The controller also announces the mode that the page starts in, with a `from` of `null`.
+`animated` is true when a step reached the position and the deck lets its motion run.
+`animated` is false for a deep link, for `Home` and `End`, for a cut,
+and for a viewer who asked for reduced motion.
+A join (a gap of zero) consists of two steps that the clock makes,
+and the controller announces each of them.
 
-Input is read in a **mode**, which is `{name, keymap, pointer}`.
-The keymap maps `event.key` to an intent, and the pointer table maps the type of a pointer
-event to one.
+The runtime reads input according to the active **mode**, an object `{name, keymap, pointer}`.
+`keymap` maps `event.key` to an intent,
+and `pointer` maps the type of a pointer event to an intent.
 The intents are `next`, `previous`, `first`, `last` and `toggle-pause`,
-and the controller offers each of them as one entry of `intents`.
-The one mode is `present`, and `Space` in it is `toggle-pause` while the deck has a clock
-to pause and `next` otherwise.
-The root element carries the name of the active mode as `data-animo-mode`.
+and the controller implements each intent as one entry of its `intents` table.
+The only mode is `present`.
+In `present`, `Space` means `toggle-pause` while the deck has a clock to pause,
+and `next` otherwise.
 
-The clock is stopped while a set of **hold reasons** is not empty.
-The pause key holds `user`.
-Backward travel that runs out of deck holds `travel`, which the next forward step releases.
-The pause key releases both, and it holds `user` when neither is held.
+The clock of the deck is stopped while at least one **hold reason** is held.
+The pause key holds the reason `user`.
+Backward travel that comes to rest at the first state of the deck holds the reason `travel`,
+and the next forward step releases it.
+When either reason is held, the pause key releases both.
+When neither reason is held, the pause key holds `user`.
 
-The runtime acts only on what belongs to the deck, in these places.
+The runtime confines its effects to the deck in the following ways.
 
-- Only the current slide takes pointer events.
-  The slide a boundary is crossing from stays laid out so that stepping back finds it laid out,
-  and it is `inert` for as long as it is the slide being left.
+- Only the current slide receives pointer events.
+  The slide that a slide transition is leaving stays laid out,
+  so that a step back finds it laid out,
+  and that slide is `inert` for as long as the transition leaves it.
 - A key press or a click whose target is inside an element with the attribute
   `data-animo-control` does not step the deck.
-- The pause key pauses and resumes the animations that the runtime created,
-  which carry the id `animo`, and leaves every other animation of the page running.
+- The pause key pauses and resumes only the animations that the runtime created,
+  which carry the id `animo`.
+  Every other animation on the page keeps running.

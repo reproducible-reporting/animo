@@ -117,6 +117,9 @@ MEASURE_ACROSS_TARGETS = """\
 
 #context {
   let m = measure(probe, width: 200pt)
+  // A size that does not depend on the width, such as zero, would agree between the targets too.
+  let line = measure([A], width: 200pt)
+  assert(m.height > line.height, message: "the probe did not wrap, so it is vacuous: " + repr(m))
   let seen = repr((width: m.width, height: m.height))
   let expected = sys.inputs.at("expected", default: none)
   if expected == none [MEASURED #seen] else {
@@ -129,9 +132,10 @@ MEASURE_ACROSS_TARGETS = """\
 def test_a_footprint_measured_in_html_is_the_footprint_paged_produces(typst: TypstRunner):
     """One footprint rule serves both targets, which is what gives one source three output types.
 
-    The number is taken out of the HTML compilation and handed to the paged one through
-    `--input`, so nothing is hardcoded and a change in font metrics cannot make this pass
-    for the wrong reason.
+    The size is taken out of the HTML compilation and handed to the paged one through
+    `--input`, so nothing is hardcoded.
+    A change in font metrics changes the size in both targets alike,
+    so it cannot make this probe fail while the two targets still agree.
     """
     source = typst.source(MEASURE_ACROSS_TARGETS)
     html = typst.html(source).read_text()

@@ -32,8 +32,8 @@ nav = [
   ] },
   { "Reference" = "reference.md" },
   { "Animo Development Guide" = [
-    { "Generative AI Disclaimer" = "genai.md" },
     { "Developing Animo" = "development.md" },
+    { "Generative AI Disclaimer" = "genai.md" },
     { "Development Environment" = "environment.md" },
     { "Testing" = "testing.md" },
     { "The Browser Runtime" = "architecture.md" },

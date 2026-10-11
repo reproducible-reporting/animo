@@ -12,99 +12,111 @@ SPDX-License-Identifier: Apache-2.0
 
 # Behaviour Probes
 
-Animo rests on some twenty verified behaviours of typst 0.15.0 and of the browsers it
-targets.
-These behaviours are recorded in *Findings*,
-which is the document beside the design that [Developing Animo](development.md) points at.
-Any of them could change under the package.
+The design of Animo depends on many behaviours of typst 0.15.0 and of the browsers it targets.
+*Findings* records each of these behaviours, as verified by experiment.
+See [Where the Specification Lives](development.md#where-the-specification-lives)
+for where to find *Findings*.
+A new release of typst or of a browser could change any of these behaviours.
 
 A **probe** asserts such a behaviour itself, rather than a feature that happens to depend on it.
-The difference is what a failure says.
-When typst 0.16 lands and `data-typst-label` stops being emitted for labelled blocks,
-a feature test says that reveal animations are broken;
-a probe says that the emission rule changed.
-The first leads to debugging Animo, the second to the release notes.
+The difference shows when a test fails.
+Suppose that a new typst release stops emitting `data-typst-label` for labelled blocks.
+A feature test then reports that reveal animations are broken,
+while a probe reports that typst no longer emits the attribute.
+The first failure leads to debugging Animo, and the second leads to the release notes of typst.
 
-So a probe:
+A probe therefore has these properties:
 
-- asserts one entry of *Findings*, and names that entry in its module docstring;
-- is **independent of every Animo feature**, and imports nothing from `src/`;
-- states, where the claim is a comparison, why the comparison is not vacuous.
-  That check is often enough a separate probe to be worth the habit.
+- it asserts one entry of *Findings*, and names that entry in its module docstring;
+- it is **independent of every Animo feature**, and imports nothing from `src/`;
+- where its claim is a comparison, it states why the comparison is not vacuous.
+  The check that the comparison is not vacuous is often a separate probe.
 
 Probes live in `probes/` and run in the same three tiers as the feature tests,
-through the same fixtures. See [Testing](testing.md) for the tiers.
+through the same fixtures.
+See [Testing](testing.md) for the tiers.
 
 ```bash
 pytest probes             # all of them, against the pinned typst
 pytest probes -m browser  # the ones that need a browser, in every engine available
 ```
 
-They also run in a separate workflow, weekly, against the **newest** typst release.
-That job is non-blocking for pull requests and reports into the run summary.
+A separate workflow also runs the probes every week against the **newest** typst release.
+This workflow blocks no pull request, and reports its results in the summary of the run.
 
-## When a Probe Fails
+## Failing Probes
 
 A failing probe indicates that a documented behaviour of typst or a browser has changed,
-which is what the weekly job is meant to detect.
-It is never fixed by relaxing the probe.
+and the weekly workflow exists to detect such changes.
+Never fix a failing probe by relaxing its assertion.
+Take these steps instead.
 
 1. Decide whether the finding was wrong when it was written,
-   or whether it has legitimately changed in a newer release.
-1. Edit the entry in *Findings* to say what now holds,
-   and say on which release it was observed.
-   A finding is a point-in-time claim, and it is written as one.
-1. Update the probe in the same commit, or retire it when the behaviour it guarded is gone.
-   A retired probe is deleted together with its finding, not left skipped.
-1. Check what else rested on the finding.
+   or whether a newer release has changed the behaviour.
+1. Edit the entry in *Findings* to say what holds now, and on which release it was observed.
+   A finding is a claim about a point in time, and it is written as one.
+1. Update the probe in the same commit.
+   When the behaviour that the probe guarded is gone,
+   delete the probe together with its finding, rather than leaving the probe skipped.
+1. Check what else depended on the finding.
    Every entry in *Findings* supports some part of the design,
    and the design document says which part.
 
-## Adding a Probe
+## New Findings and Their Probes
 
-A new finding arises whenever work on the design or the implementation
-meets a behaviour of typst or of a browser that *Findings* does not already record.
-Turning one into a probe is the same four steps every time.
+Work on the design or the implementation sometimes depends on a behaviour of typst
+or of a browser that *Findings* does not record yet.
+That behaviour becomes a new finding, and gets a probe in the following steps.
 
 1. Add the finding to *Findings*,
-   with the numbers and the release it was observed on.
+   with the measured numbers and the release on which they were observed.
 1. Write the probe in the module that covers that part of the design,
-   or a new `probes/test_<topic>.py` when it is a new topic.
-   The module docstring names the finding; the test docstring says what would break without it.
+   or in a new `probes/test_<topic>.py` for a new topic.
+   The module docstring names the finding,
+   and the docstring of the test says what would break without the behaviour.
 1. Build the mechanism by hand, without Animo.
-   A probe for the region footprint rule writes `layout` and `measure` itself,
-   so that a failure cannot be an Animo bug.
-1. Add the row to the table below.
+   For example, a probe for the region footprint rule calls `layout` and `measure` itself,
+   so that a failure cannot come from a bug in Animo.
+1. Add a row to the table in [Probe Modules](#probe-modules).
 
-Two rules of thumb are worth stating.
+Two rules of thumb apply.
 Prefer an assertion inside the document (`#assert`) over one in Python,
-because it fails where the behaviour is.
-Also prefer a cross-check within one run over a hardcoded number.
-For example, the probe for `measure` agreeing between the two targets
-takes the number out of the HTML compilation and hands it to the paged one through `--input`,
-so a change in font metrics cannot make it pass for the wrong reason.
+because a failing `#assert` points at the line where the behaviour differs.
+Also prefer comparing two values from the same test
+over comparing one value with a hardcoded number.
+A hardcoded number also records details that the finding is not about,
+such as the metrics of the fonts that typst embeds.
+The probe then fails when such a detail changes, even though the finding still holds.
+For example, the probe that checks whether `measure` gives the same size in both targets
+takes the size from the HTML compilation and passes it to the paged compilation
+through `--input`.
+A typst release with different font metrics changes the size in both targets alike,
+so this probe fails only when the two targets disagree.
 
-## An Engine Answer Comes From That Engine
+## Answers per Engine
 
-Several probes tabulate an answer per engine, because the three do not always agree.
-Every entry of such a table has to come from a run in the engine it names.
-An entry carried over from another table, or from another engine, states an assumption
-in the shape of a measurement, and the probe then passes without asserting anything.
-A per-engine allowance that no run produced is the one way a browser probe can be green
-while the behaviour it guards is absent.
+Several probes hold a table with one expected answer per engine,
+because the three engines do not always agree.
+Every entry of such a table has to come from a run in the engine that the entry names.
+An entry copied from another table or from another engine is an assumption
+that looks like a measurement.
+With such an entry, a browser probe can pass while the behaviour it guards is absent.
 
-Webkit is where this matters. Chromium and firefox run wherever playwright runs, and webkit
-needs a container outside macOS and the debian family, so it is the engine a table is
-tempted to fill in from elsewhere. See [Development Environment](environment.md) for which
-engines run where, and measure in webkit before a table gains a webkit entry:
+The risk is largest for webkit,
+because webkit runs only in a container outside macOS and the debian family.
+See [Which Engines Run Where](testing.md#which-engines-run-where).
+Measure in webkit before adding a webkit entry to a table:
 
 ```bash
 pytest --browser webkit
 ```
 
-Until that measurement exists, the probe says so in the table and asserts only what it has
-grounds for. Accepting either of two answers from an engine, and naming the answer for the
-engines that were measured, is a claim; an invented number is not.
+Until that measurement exists, the table says that the webkit entry is unmeasured,
+and the probe asserts only what was measured.
+For an unmeasured engine, a probe may accept either of two answers,
+as long as it names the answer for each engine that was measured,
+because that is still a claim based on measurements.
+An invented number is not such a claim.
 
 ## Observations That Cannot Be Probed
 
@@ -112,12 +124,12 @@ An observation that no probe can assert does not belong in *Findings*,
 because nothing would notice when a release of typst or of a browser changes it.
 A measured cost, such as the time a deck takes to compile or to paint,
 belongs in `benchmarks/` and in [Performance](performance.md).
-A fact about the source tree or the history of typst is at most background to an entry,
-and that entry is probed through the behaviour that follows from the fact.
+A fact about the source code or the history of typst can appear in an entry only as background.
+The probe of that entry asserts the behaviour that follows from the fact.
 
-## The Map
+## Probe Modules
 
-Every entry in *Findings* has a probe module.
+The table lists the probe module for each entry in *Findings*.
 
 | Finding                                                                               | Module                                         |
 | ------------------------------------------------------------------------------------- | ---------------------------------------------- |
@@ -169,12 +181,3 @@ Every entry in *Findings* has a probe module.
 | Introspection: The Fields of a Nested Structure, and One Occurrence per Page          | `test_element_fields.py`                       |
 | The Head of a Page That a Package Builds Itself                                       | `test_document_head.py`                        |
 | Other Verified Behaviour                                                              | `test_misc.py`                                 |
-
-A few probes, and a few feature tests, import a package from Typst Universe:
-the label emission is claimed for a cetz `content()` element and a fletcher node,
-and so is the tag site of each of them.
-They skip with the explanation that the compiler gives when the package does not resolve,
-since a cold package cache without a network connection is an accident of the machine
-and not a behaviour of typst or of Animo.
-The releases they import are pinned in `tests/harness/packages.py`,
-which both directories reach through the shared harness.
