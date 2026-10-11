@@ -221,6 +221,10 @@ Two things make the containment exact:
   Without the isolation, chromium 151 and webkit 26.5 add the two halves to the ink under the
   region as well, and black text takes the color of what is behind it.
   The frame isolates too, which keeps the blend off the page behind the slide.
+  The effects of the crossfade hold the blend and the isolation as keyframes with the same
+  value at both ends, so a stack at rest neither blends nor isolates.
+  A browser draws a group that blends or isolates through a layer, which changes some glyph
+  edges, and a stack at rest without either is drawn as the same content without a stack.
 
 A stack crosses a boundary when the boundary changes a tag it holds,
 or a tag without a group that the plan places in its region.

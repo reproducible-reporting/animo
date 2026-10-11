@@ -386,34 +386,44 @@ def test_a_slide_carries_one_frame_per_epoch_and_one_per_layer(open_page, layere
         assert slide.locator(f":scope > .{layer} > svg").count() == 1
 
 
-def test_the_layers_are_siblings_of_the_canvas_in_painting_order(open_page, layered):
+# What blends on the slide being shown: each outer layer's frame, the canvas's frame and each
+# epoch rendering, by its `mix-blend-mode`.
+BLENDS = f"""() => {{
+    const slide = document.querySelector('.animo-slide');
+    const blend = (element) => getComputedStyle(element).mixBlendMode;
+    return {{
+        children: Array.from(slide.children, (child) => child.className),
+        layers: Array.from(slide.querySelectorAll(':scope > :not(.animo-canvas) > svg'), blend),
+        frame: blend(slide.querySelector(':scope > .animo-canvas > svg')),
+        renderings: Array.from(slide.querySelectorAll({EPOCH_GROUPS!r}), blend),
+    }};
+}}"""
+
+
+def test_the_layers_are_siblings_of_the_canvas_in_painting_order(page, deck_at, layered):
     """*Architecture* rule 5: beside the canvas, never among its frames.
 
     The order is the painting order, because all three are positioned elements without a
     z-index. Being outside the canvas is also what keeps them out of the
-    `plus-lighter` blend the epoch renderings use, which is asserted here rather than left
-    to the selector that happens to express it. The frame of neither layer carries the
-    blend either, which is what says the selector reaches the renderings and not every
-    frame of the slide.
+    `plus-lighter` blend that a crossfade holds on the epoch renderings it carries,
+    which is asserted here halfway through a crossfade rather than left to the structure that
+    happens to express it.
+    The frame of neither layer carries the blend either, and neither does the canvas's frame,
+    which says the blend reaches the renderings and not every frame of the slide.
+    At rest, nothing on the slide blends.
     """
-    page = open_page(layered)
-    order = page.evaluate(
-        f"""() => {{
-            const slide = document.querySelector('.animo-slide');
-            const blend = (element) => getComputedStyle(element).mixBlendMode;
-            return {{
-                children: Array.from(slide.children, (child) => child.className),
-                layers: Array.from(
-                    slide.querySelectorAll(':scope > :not(.animo-canvas) > svg'), blend),
-                frame: blend(slide.querySelector(':scope > .animo-canvas > svg')),
-                renderings: Array.from(slide.querySelectorAll({EPOCH_GROUPS!r}), blend),
-            }};
-        }}"""
-    )
-    assert order["children"] == ["animo-background", "animo-canvas", "animo-overlay"]
-    assert order["layers"] == ["normal", "normal"]
-    assert order["frame"] == "normal"
-    assert order["renderings"] == ["plus-lighter"] * 3
+    presentation = deck_at(layered)
+    at_rest = page.evaluate(BLENDS)
+    assert at_rest["children"] == ["animo-background", "animo-canvas", "animo-overlay"]
+    assert at_rest["layers"] == ["normal", "normal"]
+    assert at_rest["frame"] == "normal"
+    assert at_rest["renderings"] == ["normal"] * 3
+    page.add_style_tag(content=":root { --animo-primitive-duration: 4000ms }")
+    presentation.press("ArrowRight").scrub(2000)
+    crossing = page.evaluate(BLENDS)
+    assert crossing["layers"] == ["normal", "normal"]
+    assert crossing["frame"] == "normal"
+    assert crossing["renderings"] == ["plus-lighter", "plus-lighter", "normal"]
 
 
 # A paint server is drawn on every slide, however the slide was reached.

@@ -1026,9 +1026,10 @@ def test_a_structural_duration_holds_its_regions_crossfade_open(page, deck_at, t
     )
     page.add_style_tag(content=SLOW)
     presentation.press("ArrowRight")
-    # One effect per rendering: the outgoing one fades out and the incoming one fades in,
-    # and both take the duration the operation stated.
-    assert timings(page, "duration") == [STATED, STATED]
+    # One effect per rendering, where the outgoing one fades out and the incoming one fades
+    # in, and one that holds the isolation of their container.
+    # All three take the duration the operation stated.
+    assert timings(page, "duration") == [STATED] * 3
     presentation.scrub(DURATION + MIDPOINT)
     outgoing, incoming = region_paint(presentation, "claim")
     assert outgoing["visibility"] == "visible", "the outgoing rendering stopped painting early"

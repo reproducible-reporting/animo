@@ -1484,8 +1484,9 @@ Animations are then performed in the browser:
   A rendering at `opacity: 1` inside a hidden epoch stays hidden (see *Findings*)
 - structural steps crossfade the changed **region**: the outgoing rendering of its epoch stack
   fades out and the incoming one fades in, with `mix-blend-mode: plus-lighter` on the
-  renderings and `isolation: isolate` on the container of the stack, and every other stack
-  shows the rendering of the epoch being entered without animating
+  renderings and `isolation: isolate` on the container of the stack for as long as the
+  crossfade runs, and every other stack shows the rendering of the epoch being entered without
+  animating
 - a structural step whose primitive names `morph()` crossfades the region in the same way and
   also animates `translate` on the **matches** inside it.
   A match is a pair of elements, one in the outgoing region and one in the incoming one,
@@ -1580,16 +1581,27 @@ The HTML presentation rests on the following rules:
      or in the slide it enters when the join it walks back over ran out of a slide.
      The handover is the same in both cases.
    - **`plus-lighter` on the renderings makes the two halves add, inside a container that
-     isolates.** The renderings of a stack are siblings in one group, which carries
-     `isolation: isolate`, so the outgoing rendering at `1 - t` and the incoming at `t` come to
+     isolates.** The renderings of a stack are siblings in one group.
+     While a crossfade runs, the renderings it carries take `mix-blend-mode: plus-lighter`
+     and that group takes `isolation: isolate`,
+     so the outgoing rendering at `1 - t` and the incoming at `t` come to
      exactly one opaque region, and nothing dips.
      Without the isolation, chromium 151 and webkit 26.5 also add the two halves to the ink
      under the region, as measured with the stack a few groups deep,
      while firefox 153 needs no isolation.
-     A single visible rendering added to a transparent backdrop is that rendering,
-     except that a browser draws a blended or isolated group through a layer.
-     At rest, the blend changes some glyph edges in all three engines,
+     The effects of the crossfade hold the blend and the isolation as keyframes
+     with the same value at both ends, so neither is part of the state at rest.
+     A browser draws a blended or isolated group through a layer,
+     and at rest the blend changes some glyph edges in all three engines,
      and the isolation changes some in webkit (see *Findings*).
+     A stack at rest therefore draws its rendering as the same content without a stack
+     in chromium and firefox.
+     Webkit draws a group beside a hidden sibling differently from a lone group at some
+     positions, so a stack at rest can still differ there.
+     The layer appears with the first frame of a crossfade and disappears after its last one.
+     Firefox and webkit draw those two frames with the glyph edges of the layer,
+     while chromium draws every frame of a crossfade differently from the slide at rest anyway
+     (see *Findings*).
 
    The measured cost is a rounding error of 1/255 inside the region,
    against 62/255 for a plain opacity crossfade, and nothing at all outside the region
@@ -2111,7 +2123,26 @@ They are settled, and the evidence is in *Findings*.
   `opacity: 0.999` forms the group too, by letting a thousandth of the backdrop through,
   which rounded to the same pixels when it was measured.
   `filter: opacity(1)` forms no group in webkit and breaks the sum in firefox.
-  At rest, the blend and the isolation change some glyph edges (see *Findings*).
+  Both apply only while a crossfade runs, held by its effects as keyframes,
+  because a group that blends or isolates is drawn through a layer that changes glyph edges.
+  This was measured on 2026-10-11 at device scales 1 and 2, on two slides,
+  against the same content without a stack.
+  A stack that blended and isolated at rest differed by up to 5/255 on 21 pixels in chromium
+  153, 53/255 on 35 pixels in firefox 155 and 242/255 on 108 pixels in webkit 26.6.
+  Without the blend and the isolation at rest, the same slides came out the same in all three.
+  The layer now appears for the length of a crossfade only.
+  The first and the last frame of a crossfade then differ from the slide at rest
+  by up to 57/255 on up to 5 pixels in firefox and by up to 64/255 on up to 171 pixels in
+  webkit.
+  In chromium, every frame of a crossfade already differed from the slide at rest by up to
+  158/255 on up to 28 750 pixels, with or without the change,
+  because a running opacity animation changes the raster there (see *Findings*).
+  A difference on every still slide weighs more than one that lasts a frame at either end of
+  a crossfade.
+  The slides make the opposite choice and keep `plus-lighter` at rest,
+  so that a slide rasterises the same whether or not it is in a transition.
+  One slide blended against the transparent backdrop of the stage was measured as that slide
+  to within rounding (see *Crossfading two slide containers* in *Findings*).
   An earlier answer put the blend on whole-slide renderings, which were the outermost groups of
   the slide's one frame, with `visibility` scoping the outgoing one down to the regions it
   handed over.
@@ -2387,6 +2418,9 @@ They are settled, and the evidence is in *Findings*.
   defaults?** Yes, and 400 ms with `ease-in-out`. A step writes the state's display state as
   inline style on the tag's inner group and animates from what the element was showing to that,
   so the inline style is the state and the animation is only how the element gets there.
+  A property that only the route needs, such as the blend and the isolation of a crossfade,
+  is held by the animation as a keyframe with the same value at both ends,
+  and is never written as inline style.
   Reversible stepping, an interrupted step that continues from where it is,
   and a deep link that needs no transition to suppress all follow from that without extra code.
   CSS transitions handle none of the three well.

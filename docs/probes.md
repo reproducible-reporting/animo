@@ -160,6 +160,7 @@ Every entry in *Findings* has a probe module, or a row in the table above.
 | CSS animation of typst SVG groups                                            | `test_css_transforms.py`                       |
 | The centre a scale is about                                                  | `test_scale_origin.py`                         |
 | A keyframe property that does not change suppresses others                   | `test_frame_drawing.py`                        |
+| A discrete keyframe equal at both ends holds its value                       | `test_discrete_keyframes.py`                   |
 | A delayed effect does not hold its first keyframe                            | `test_delayed_effects.py`                      |
 | The document timeline is not a clock                                         | `test_timeline_clock.py`                       |
 | A faked clock drives a timer, not the document timeline                      | `test_fake_clock.py`                           |

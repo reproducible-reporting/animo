@@ -51,9 +51,12 @@ const transitions = {
   /**
    * Crossfade the renderings of the stack.
    *
-   * The two halves add to one through the `plus-lighter` the stylesheet puts on the
-   * renderings, and the container of the stack isolates, so the sum stays inside the stack
-   * and the outgoing rendering paints nowhere outside the region.
+   * The two halves add to one through `mix-blend-mode: plus-lighter` on the renderings, and
+   * the container of the stack isolates, so the sum stays inside the stack and the outgoing
+   * rendering paints nowhere outside the region.
+   * The blend and the isolation are held for the length of the crossfade and are not part of
+   * the state, because a group that blends or isolates is drawn through a layer, and the
+   * glyphs in that layer come out differently at rest. See *Findings*.
    *
    * Every rendering that is showing any ink takes part, and not only the one the step is
    * leaving. A boundary crossed while an earlier one is still running finds two of them
@@ -80,11 +83,19 @@ const transitions = {
         plan(
           effects,
           rendering,
-          { visibility: "visible", opacity: active ? "1" : "0" },
-          { opacity: timing },
+          { visibility: "visible", opacity: active ? "1" : "0", "mix-blend-mode": "" },
+          { opacity: timing, "mix-blend-mode": timing },
+          { hold: { "mix-blend-mode": "plus-lighter" } },
         );
       }
     });
+    plan(
+      effects,
+      stack.element,
+      { isolation: "" },
+      { isolation: timing },
+      { hold: { isolation: "isolate" } },
+    );
   },
   /**
    * Crossfade the renderings of the stack, and carry what the two of them share from its old
@@ -471,12 +482,16 @@ function planBoundary(effects, slide, { index, from, options, mirror }) {
  * Which rendering is shown is decided here, for every transition alike.
  * The rendering of the epoch the state belongs to is shown and opaque,
  * and every other one is hidden and transparent.
+ * No rendering blends and the container does not isolate, which is what the stylesheet says
+ * as well.
  * That is the state at rest, and a stack that the step carries across a boundary is then
  * planned by the transition its record names, in place of its state at rest. One boundary
  * may therefore carry one stack with one transition and another stack with another.
  *
  * A step that stays inside one epoch still plans this, because the rendering it is showing
  * is already the right one and writing the state it is in changes nothing.
+ * Such a step that interrupts a crossfade takes the stack to rest at once, its container
+ * included, so that the container does not go on isolating to the end of the crossfade.
  */
 function planEpoch(effects, slide, stack, { index, from, options, mirror }, carried) {
   const to = slide.states[index]?.epoch ?? 0;
@@ -485,8 +500,10 @@ function planEpoch(effects, slide, stack, { index, from, options, mirror }, carr
     plan(effects, rendering, {
       visibility: active ? "visible" : "hidden",
       opacity: active ? "1" : "0",
+      "mix-blend-mode": "",
     });
   });
+  plan(effects, stack.element, { isolation: "" });
   const record = carried.get(stack);
   if (record !== undefined) {
     transitionOf(record.transition)(effects, slide, { stack, from, to, record, options, mirror });

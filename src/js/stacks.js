@@ -97,7 +97,6 @@ function planStacks(effects, slide, step) {
  * It snaps rather than animating, in a step that animates as much as in one that does not.
  * A number is read rather than watched, and two numbers crossfading into each other are
  * two numbers neither of which can be read.
- * The stylesheet's `plus-lighter` would also make them add rather than cover.
  */
 function planSubslide(effects, slide, stack, { index }) {
   stack.renderings.forEach((rendering, state) => {

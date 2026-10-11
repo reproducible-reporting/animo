@@ -12,6 +12,9 @@ That is also why these probes record a video instead of taking screenshots. A sc
 repaints the page, which is exactly what the failure needs to disappear, so it reports a
 flawless fade in both the affected and the unaffected case. A recorded video is the frames
 the browser drew unprompted.
+
+A crossfade holds a `mix-blend-mode` on the renderings it carries and an `isolation` on their
+container, both equal at both ends, so these two are probed beside the two transforms.
 """
 
 import subprocess
@@ -25,7 +28,7 @@ from PIL import Image
 # A single black square in an SVG group, which is the shape of a tag's continuous slot.
 PAGE = """<!doctype html>
 <style>body { margin: 0; background: #fff }</style>
-<svg width="300" height="120">
+<svg width="300" height="120"ISOLATION>
   <g id="target" style="opacity: 0"><rect x="0" y="0" width="200" height="80"/></g>
 </svg>
 """
@@ -51,11 +54,25 @@ DRAWN = 4
 # A changed value here is a finding that changed, not a probe that needs fixing.
 DRAWS_A_STANDING_PROPERTY = {"chromium": False, "firefox": True, "webkit": True}
 
+# The discrete properties a crossfade holds, by the value it holds them at.
+# Measured in chromium 153, firefox 155 and webkit 26.6 on 2026-10-11, which drew the fade
+# beside either of them in as many frames as a plain fade, in every engine.
+HELD = {"mix-blend-mode": "plus-lighter", "isolation": "isolate"}
 
-def intermediate(browser, folder: Path, keyframes: list[dict[str, str]]) -> int:
-    """Record one animation and count the frames drawn between its two end states."""
+
+def intermediate(
+    browser, folder: Path, keyframes: list[dict[str, str]], isolate: bool = False
+) -> int:
+    """Record one animation and count the frames drawn between its two end states.
+
+    With `isolate`, the SVG isolates, as the frame of a slide does.
+    A black mark under `plus-lighter` adds nothing to the white page behind an SVG that does
+    not isolate, and the fade would leave no trace in the recording.
+    """
     page_path = folder / "page.html"
-    page_path.write_text(PAGE)
+    page_path.write_text(
+        PAGE.replace("ISOLATION", ' style="isolation: isolate"' if isolate else "")
+    )
     context = browser.new_context(
         viewport={"width": 300, "height": 120},
         record_video_dir=str(folder),
@@ -145,3 +162,22 @@ def test_a_property_equal_at_both_ends_suppresses_the_drawing(
             f"{browser_name} now draws a fade beside a standing {standing}, "
             f"in {count} frames, so the runtime may stop filtering its keyframes"
         )
+
+
+@pytest.mark.parametrize("held", list(HELD))
+def test_a_held_discrete_property_leaves_the_fade_drawn(browser, tmp_path, browser_name, held):
+    """A `mix-blend-mode` or an `isolation` equal at both ends suppresses nothing.
+
+    This is what lets a crossfade hold the blend in the same effect as the fade of a rendering.
+    """
+    value = HELD[held]
+    count = intermediate(
+        browser,
+        tmp_path,
+        [{"opacity": "0", held: value}, {"opacity": "1", held: value}],
+        isolate=True,
+    )
+    assert count >= DRAWN, (
+        f"{browser_name} now suppresses a fade beside a held {held}, drawing it in {count} "
+        "frames, so a crossfade can no longer hold it in the effect of the fade"
+    )

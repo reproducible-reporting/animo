@@ -193,8 +193,8 @@ body {
   black ink vanish under `plus-lighter` because black adds nothing.
   An isolating ancestor written in HTML therefore does not state the containment in every
   engine, while the inline SVG that holds the groups does. See *Findings*.
-  The container of each stack isolates as well, which keeps the blend off the rest of the
-  slide inside the frame. See the rule on the stacks below.
+  The container of a stack isolates as well while a crossfade carries the stack, which keeps
+  the blend off the rest of the slide inside the frame. See the rules on the stacks below.
 */
 .animo-canvas > svg {
   display: block;
@@ -216,6 +216,19 @@ body {
   The renderings are hidden with visibility rather than display, because visibility hides
   the ink without taking the layout away, so a group in a rendering that is not shown still
   reports the geometry a morph reads.
+
+  At rest, no rendering blends and the container of the renderings does not isolate.
+  A crossfade holds `mix-blend-mode: plus-lighter` on the renderings it carries and
+  `isolation: isolate` on their container for as long as it runs, which the runtime writes
+  as keyframes of its effects rather than as rules here.
+  `plus-lighter` sums the renderings in the isolated container, so the outgoing rendering at
+  `1 - t` and the incoming one at `t` come to exactly one opaque region and nothing dips.
+  Without the isolation, chromium 153 and webkit 26.6 add the two halves to the ink under the
+  region as well. See *Isolating the container of a nested stack* in *Findings*.
+  A group that blends or isolates is drawn through a layer, which changes some glyph edges.
+  Without either at rest, chromium 153 and firefox 155 draw a stack as the same content
+  without a stack. Webkit 26.6 draws a group beside a hidden sibling differently from a lone
+  group at some positions. See *A blended or isolated group at rest* in *Findings*.
 */
 .animo-canvas [data-typst-label^="animo-epoch-"] {
   visibility: hidden;
@@ -223,32 +236,6 @@ body {
 
 .animo-canvas [data-typst-label="animo-epoch-0"] {
   visibility: visible;
-}
-
-/*
-  What makes the crossfade add rather than cover.
-  The renderings of a stack are siblings in one container, which isolates, and
-  `plus-lighter` sums them there, so the outgoing rendering at `1 - t` and the incoming one
-  at `t` come to exactly one opaque region and nothing dips.
-  Without the isolation, chromium 153 and webkit 26.6 add the two halves to the ink under the
-  region as well, and black text takes the color of what is behind it. Firefox 155 stops
-  the blend at a container that carries a `transform`, which typst writes for any offset.
-  Forming the group is all that `isolation` declares.
-  `opacity: 0.999` forms it by letting a thousandth of the backdrop through,
-  and `filter: opacity(1)` forms none in webkit and breaks the sum in firefox.
-  Measured with the stack a few groups deep in the frame.
-  See *Isolating the container of a nested stack* in *Findings*.
-  A single visible rendering added to a transparent backdrop is that rendering in value, but
-  the blend and the isolation make a browser draw it through a layer, which changes some
-  glyph edges at rest. See *A blended or isolated group at rest* in *Findings*.
-  A stack of one rendering is exempted from the blend.
-*/
-.animo-canvas [data-typst-label^="animo-epoch-"]:not(:only-child) {
-  mix-blend-mode: plus-lighter;
-}
-
-.animo-canvas g:has(> [data-typst-label^="animo-epoch-"]) {
-  isolation: isolate;
 }
 
 /*

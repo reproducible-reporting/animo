@@ -180,7 +180,7 @@ def test_a_slide_has_one_rendering_per_epoch_in_its_region(deck_at, reflowing):
     assert stacks(presentation) == [
         {
             "region": "r",
-            "isolation": "isolate",
+            "isolation": "auto",
             "renderings": ["animo-epoch-0", "animo-epoch-1", "animo-epoch-2"],
         }
     ]
@@ -410,28 +410,26 @@ def test_the_crossfade_is_unchanged_with_a_background_and_an_overlay(
 
 
 # How far a rendering of an epoch stack at rest may sit from the same content outside any
-# stack, per engine, as a deviation out of 255 and a number of pixels allowed to exceed one.
+# stack, as a deviation out of 255 and a number of pixels allowed to exceed one.
 #
-# Chromium 151 and firefox 153 draw the two the same on this slide. Playwright's webkit 26.5
-# draws the glyphs of a group that blends or isolates through a separate layer, and the
-# antialiased edges of a few of them land differently from the same glyphs drawn without one:
-# 5 pixels by up to 20/255 on this slide, with either the blend or the isolation alone.
-# See *A blended or isolated group at rest* in *Findings*, which also finds the blend changing
-# glyph edges in chromium and firefox on other text and at a device scale of 2.
-REST = {"chromium": (1, 0), "firefox": (1, 0), "webkit": (24, 16)}
+# A stack at rest neither blends nor isolates, so its rendering is drawn as a lone group in
+# chromium 153 and firefox 155. Webkit 26.6 draws a group beside a sibling differently from a
+# lone one at some positions, and drew this slide the same at device scales 1 and 2.
+# See *A blended or isolated group at rest* in *Findings*.
+REST = (1, 0)
 
 
-def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRunner, browser_name):
+def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRunner):
     """Two renderings of identical content look like one, which is two claims at once.
 
     Stacking them puts every label of the slide in the DOM twice, and a browser resolves a
     `<use>` to the first matching id.
     That is harmless only because typst's def ids are content hashes, so equal ids mean equal
     content.
-    The `plus-lighter` the stylesheet puts on the renderings also has to be the identity
-    while one of them is showing on its own.
-    Both are asserted against a control deck of one epoch with the same body, which is the
-    deck that carries no blend at all, since it has no epoch stack.
+    The stack at rest also has to draw its rendering as a lone group, which it does because
+    the blend and the isolation of a crossfade are held only while the crossfade runs.
+    Both are asserted against a control deck of one epoch with the same body, which has no
+    epoch stack.
     """
     body = '#tag("claim", wrap: block)[A claim.]\n\n  A paragraph after the claim.'
     stacked: Deck = deck_at(
@@ -443,15 +441,59 @@ def test_stacked_renderings_render_as_a_single_one_does(deck_at, typst: TypstRun
     single: Deck = deck_at(animated(typst, body, "sub()", name="single.html"))
     assert single.frames.count() == 0
     control = screenshot(single.current)
-    # One rendering added to a transparent backdrop is that rendering, to within the
-    # rounding the finding on *Crossfading two renderings* allows `plus-lighter`.
-    # Firefox 153 lands a single pixel of an antialiased glyph edge one step off.
-    deviation, pixels = REST[browser_name]
+    deviation, pixels = REST
     for which, shot in (("first", first), ("second", second)):
         difference = abs(shot.astype(int) - control.astype(int)).max(axis=2)
         report = f"the {which} of two renderings is {difference.max()}/255 from a lone one"
         assert difference.max() <= deviation, report
         assert int((difference > 1).sum()) <= pixels, report
+
+
+# How the one epoch stack of the slide being shown blends: the `isolation` of its container,
+# the `mix-blend-mode` of each rendering, and how many animations the container runs.
+BLENDING = """() => {
+    const slide = document.querySelector('.animo-slide[data-animo-current]');
+    const renderings = Array.from(slide.querySelectorAll('[data-typst-label^="animo-epoch-"]'));
+    const container = renderings[0].parentNode;
+    return {
+        isolation: getComputedStyle(container).isolation,
+        blends: renderings.map((rendering) => getComputedStyle(rendering).mixBlendMode),
+        animations: container.getAnimations().length,
+    };
+}"""
+
+
+def test_a_stack_blends_and_isolates_only_while_it_crosses(page, deck_at, typst: TypstRunner):
+    """The blend and the isolation belong to the route of a crossfade and not to its state.
+
+    At rest, the container does not isolate and no rendering blends, so the stack is drawn as
+    the same content without a stack.
+    A crossfade holds both for its length, and a step that interrupts it inside the epoch it
+    entered takes the stack to rest at once, its container included.
+    """
+    presentation: Deck = deck_at(
+        animated(
+            typst,
+            REFLOWING,
+            f'sub(replace("claim")[{LONGER}])',
+            'sub(move("foot", x: 1cm))',
+            name="interrupted.html",
+        )
+    )
+    rest = {"isolation": "auto", "blends": ["normal", "normal"], "animations": 0}
+    assert presentation.page.evaluate(BLENDING) == rest
+    page.add_style_tag(content=SLOW)
+    presentation.press("ArrowRight").scrub(MIDPOINT)
+    assert presentation.page.evaluate(BLENDING) == {
+        "isolation": "isolate",
+        "blends": ["plus-lighter", "plus-lighter"],
+        "animations": 1,
+    }
+    presentation.press("ArrowRight")
+    assert presentation.position == (1, 2)
+    assert presentation.page.evaluate(BLENDING) == rest
+    presentation.goto(1, 0).press("ArrowRight").scrub(DURATION)
+    assert presentation.page.evaluate(BLENDING) == rest
 
 
 # A mark of an exact color on the canvas, at the top left of the body, which is one deck
@@ -621,9 +663,8 @@ def test_a_tag_without_a_group_crosses_the_region_the_plan_names(page, deck_at, 
     presentation.press("ArrowRight").scrub(MIDPOINT)
     assert presentation.page.evaluate(ANIMATING) == [False, False, True]
     assert presentation.painting == [False, True, False, True, True, True]
+    # One effect on each rendering and one that holds the isolation of their container.
     durations = presentation.page.evaluate(
         "() => document.getAnimations().map((a) => a.effect.getTiming().duration)"
     )
-    assert durations == [2 * DURATION, 2 * DURATION], (
-        "the region took the default timing of the deck"
-    )
+    assert durations == [2 * DURATION] * 3, "the region took the default timing of the deck"

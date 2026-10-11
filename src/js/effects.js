@@ -213,8 +213,20 @@ function keyframeName(name) {
  * A morph carries an outgoing element to the place of the incoming one,
  * and the element is back at rest once the animation is over,
  * which is when the crossfade has made it transparent.
+ *
+ * `hold` states a value that a property keeps for the whole effect, in place of the state
+ * written, for a discrete property that belongs to the route and not to the state.
+ * A held property is animated although it is equal at both ends.
+ * In chromium 153, a `mix-blend-mode` or an `isolation` equal at both ends leaves the
+ * `opacity` beside it drawn, where a `translate` equal at both ends does not. See *Findings*.
  */
-function plan(effects, element, to, options = null, { start = null, end = null } = {}) {
+function plan(
+  effects,
+  element,
+  to,
+  options = null,
+  { start = null, end = null, hold = null } = {},
+) {
   let own = effects.get(element);
   if (own === undefined) {
     own = new Map();
@@ -222,9 +234,12 @@ function plan(effects, element, to, options = null, { start = null, end = null }
   }
   for (const [property, value] of Object.entries(to)) {
     const timing = options?.[property] ?? null;
+    const held = timing === null ? null : (hold?.[property] ?? null);
     const from =
-      timing === null ? null : (start?.[property] ?? showing(element, [property])[property]);
-    own.set(property, { to: value, timing, from, end: end?.[property] ?? null });
+      timing === null
+        ? null
+        : (held ?? start?.[property] ?? showing(element, [property])[property]);
+    own.set(property, { to: value, timing, from, end: held ?? end?.[property] ?? null, held });
   }
 }
 
@@ -267,7 +282,10 @@ function apply(effects) {
     // `translate` or `scale` that is equal at both ends stops the browser from drawing the
     // `opacity` beside it, and the element stays as it was until the step ends and then jumps.
     // Measured; see *Findings*.
-    const changed = names.filter((name) => own.get(name).from !== into[name]);
+    // A held property is the exception, because it is equal at both ends by design.
+    const changed = names.filter(
+      (name) => own.get(name).held !== null || own.get(name).from !== into[name],
+    );
     // There is one effect per group of properties that are timed alike, so that a step whose
     // operations are timed alike, which is every step that says nothing about timing, is
     // still one animation on this element.

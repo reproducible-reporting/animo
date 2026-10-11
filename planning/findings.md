@@ -332,7 +332,7 @@ Typst writes a `transform` attribute on the group of every `place` and `move` wi
 so the container of the stack in this measurement is such a group,
 and firefox keeps the sum inside it whether or not the container isolates.
 
-**`isolation: isolate` is the property Animo writes on the container.**
+**`isolation: isolate` is the property Animo writes on the container while a crossfade runs.**
 It forms the group in all three engines, and forming the group is all it declares.
 `filter: opacity(1)` forms no group in webkit and breaks the sum in firefox.
 `opacity: 0.999` forms the group in all three engines and comes to the same pixels,
@@ -503,10 +503,13 @@ This has consequences for the measurement of a transition, and for the obvious r
 ## A blended or isolated group at rest
 
 Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11.
-At rest, Animo writes `mix-blend-mode: plus-lighter` on the renderings of an epoch stack
-and `isolation: isolate` on their container.
-The rendering that is shown is visible at opacity 1, and the others are hidden at opacity 0.
-Each of these conditions was put on its own on a group holding a paragraph,
+While a crossfade runs, Animo writes `mix-blend-mode: plus-lighter` on the renderings of an
+epoch stack and `isolation: isolate` on their container.
+At rest, the rendering that is shown is visible at opacity 1,
+and the others are hidden at opacity 0.
+This entry asks what each of these conditions does to a group at rest,
+which is what decided that the blend and the isolation apply only during a crossfade.
+Each condition was put on its own on a group holding a paragraph,
 in a frame that isolates, and compared with the same frame without it.
 A sibling, where there is one, sits beside the group, and only the columns of the group are
 compared.
@@ -543,9 +546,31 @@ with the number of pixels that differ by more than 1/255, at scale 1 and then at
   The probes in `probes/test_crossfade.py` and `probes/test_layers_at_rest.py` wait for
   those two frames.
 
-A stack whose renderings blend and isolate only while a boundary runs would therefore be
+A stack whose renderings blend and isolate only while a boundary runs is therefore
 drawn at rest as a lone group in chromium and firefox.
-In webkit it would keep the difference that the presence of a sibling makes.
+In webkit it keeps the difference that the presence of a sibling makes.
+
+**The layer then appears and disappears with the crossfade.**
+Measured on the same day in an Animo deck, on a region whose claim a `replace` makes longer,
+at device scales 1 and 2.
+Each raster of the crossfade was taken with the crossfade paused one millisecond inside it,
+at its start and at its end, and compared with the slide at rest before and after the step.
+
+| First or last frame against the slide at rest | chromium 153              | firefox 155  | webkit 26.6    |
+| --------------------------------------------- | ------------------------- | ------------ | -------------- |
+| blend and isolation at rest                   | 158/255, on 28 750 pixels | 0/255        | 0/255          |
+| blend and isolation during the crossfade only | as at rest                | 57/255, on 5 | 64/255, on 171 |
+
+Each cell is the largest deviation and the largest number of pixels over 1/255,
+over both frames and both scales.
+In firefox and webkit, the first and the last frame show the difference that a stack at rest
+shows when it blends and isolates, on the same glyph edges.
+In chromium, every frame differs from the slide at rest whatever the stack writes,
+because a running opacity animation changes the raster
+(see *Chromium rasterises a frame differently while an opacity animation runs in it*).
+These numbers come from a measurement and have no probe,
+because they compare two versions of Animo.
+The probe of this entry asserts the differences at rest that cause them.
 
 ## Automatic canvas sizing: `#place` is invisible to `auto`, but visible to a show rule
 
@@ -1099,6 +1124,39 @@ while a recorded video can.
 That is also what makes it look like a timing or engine problem rather than a keyframe problem.
 
 Animo therefore animates only the properties that a step changes.
+
+**A discrete property equal at both ends suppresses nothing.**
+Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11,
+with a recorded video of a black mark in an inline SVG that isolates.
+A fade beside a `mix-blend-mode: plus-lighter` or an `isolation: isolate` equal at both ends
+was drawn in as many frames as a plain fade, in all three engines.
+That is what lets a crossfade hold its blend in the same effect as the fade of a rendering
+(see the entry below).
+
+## A discrete keyframe equal at both ends holds its value for the whole effect
+
+Measured in chromium 153, firefox 155 and playwright's webkit 26.6 on 2026-10-11,
+while moving the blend and the isolation of an epoch stack into the crossfade.
+
+`mix-blend-mode` and `isolation` animate discretely, so a keyframe pair with one value at both
+ends is the only way an effect can state either of them.
+An element whose style says `mix-blend-mode: normal` was given an effect with
+`plus-lighter` at both ends, and a group whose style says `isolation: auto` one with
+`isolate` at both ends.
+Paused at its start, at its midpoint and one millisecond before its end,
+each effect computed the held value in all three engines.
+Once finished, each computed the value of the style again.
+A delayed effect that fills backwards held the value through its delay as well.
+
+The held values also paint as the same values written as style.
+A dark red mark at half opacity over a dark green ground took the same pixel from a held blend
+as from a written one, which differs from a plain composite because the blend sums the mark
+into the ground.
+A held isolation on the group around the mark took the ground out of the sum again,
+to the same pixel as a written isolation.
+
+A crossfade therefore holds the blend on the renderings it carries and the isolation on their
+container as keyframes, and the state at rest carries neither.
 
 ## The document timeline is not a clock
 
