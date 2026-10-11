@@ -72,7 +72,9 @@ VARIANTS = {
     "epochs-4": {"epochs": "4"},
     "epochs-8": {"epochs": "8"},
     "regions-2-epochs-1": {"regions": "2"},
+    "regions-2-epochs-2": {"regions": "2", "epochs": "2"},
     "regions-2-epochs-4": {"regions": "2", "epochs": "4"},
+    "regions-2-epochs-8": {"regions": "2", "epochs": "8"},
     "regions-2-epochs-4-sized": {"regions": "2", "epochs": "4", "height": "3cm"},
     "figure-regions-2-epochs-1": {"figure": "on", "regions": "2"},
     "figure-regions-2-epochs-4": {"figure": "on", "regions": "2", "epochs": "4"},
@@ -132,6 +134,15 @@ PLACEMENT_STATES = 20
 # What an epoch sweep is fitted over. These are the variants that differ in `epochs` and in
 # nothing else, which is what makes the difference between them a per-epoch cost.
 EPOCH_SWEEP = ("base", "epochs-2", "epochs-4", "epochs-8")
+
+# The same sweep with two explicit regions on every slide, which tests the claim of the design
+# that the cost of a region is linear in the number of epochs.
+REGION_SWEEP = (
+    "regions-2-epochs-1",
+    "regions-2-epochs-2",
+    "regions-2-epochs-4",
+    "regions-2-epochs-8",
+)
 
 
 def run_timed(once: Callable[[], object], repeat: int) -> dict:
@@ -356,6 +367,8 @@ def measure_watch(
     source
         The deck to watch. It is copied into the scratch tree first, because the edits are
         real edits and must not touch the working tree.
+        The auxiliary files beside it, whose names start with an underscore, are copied too,
+        because a deck may import them by a relative path.
     name
         A name for the copy, which is also what the reported entry is keyed by.
     template
@@ -381,6 +394,8 @@ def measure_watch(
     work.mkdir(parents=True)
     deck = work / "deck.typ"
     deck.write_text(source.read_text())
+    for auxiliary in source.parent.glob("_*.typ"):
+        shutil.copy(auxiliary, work / auxiliary.name)
 
     env = dict(os.environ)
     env["TYPST_PACKAGE_PATH"] = str(ROOT / ".typst-packages")
@@ -497,8 +512,21 @@ def derive(scaling: dict) -> dict:
     """
     slides = scaling["base"]["html"]["slides"]
 
-    def sweep(field: str) -> list[tuple[float, float]]:
-        return [(knob(n, "epochs", "1"), scaling[n]["html"][field]) for n in EPOCH_SWEEP]
+    def sweep(field: str, names=EPOCH_SWEEP, kind="html") -> list[tuple[float, float]]:
+        return [(knob(n, "epochs", "1"), scaling[n][kind][field]) for n in names]
+
+    def increments(kind: str) -> dict[str, float]:
+        """What each epoch added between two neighbours of the region sweep, per slide.
+
+        A cost that is linear in the epochs gives the same increment at every step.
+        """
+        points = sweep("min", REGION_SWEEP, kind)
+        return {
+            name: round((t1 - t0) / (e1 - e0) / slides, 4)
+            for name, (e0, t0), (e1, t1) in zip(
+                REGION_SWEEP[1:], points[:-1], points[1:], strict=True
+            )
+        }
 
     def per_measurement(measuring: str, given: str) -> float:
         """What one region measuring one epoch costs, as the difference the height makes.
@@ -518,6 +546,17 @@ def derive(scaling: dict) -> dict:
         # The sweep holds `regions` at zero, so the changing tag forms an implicit region
         # and one more epoch is one more rendering plus one more measurement of that region.
         "seconds_per_epoch_per_slide": round(slope(sweep("min")) / slides, 4),
+        # The region sweep, as a slope per epoch and as the increment of every step.
+        # The HTML output renders and measures every epoch of both regions,
+        # and the handout renders every slide once, so its slope is the measuring alone.
+        "seconds_per_epoch_per_slide_regions_2": round(
+            slope(sweep("min", REGION_SWEEP)) / slides, 4
+        ),
+        "seconds_per_measurement_regions_2": round(
+            slope([(measurements(n, slides), scaling[n]["handout"]["min"]) for n in REGION_SWEEP]),
+            5,
+        ),
+        "region_sweep_increments": {"html": increments("html"), "handout": increments("handout")},
         "seconds_per_region_measurement": round(
             per_measurement("regions-2-epochs-4", "regions-2-epochs-4-sized"), 5
         ),
@@ -690,6 +729,17 @@ def summary(result: dict) -> str:
         f"({derived['gzip_bytes_per_epoch_per_slide'] / 1024:.0f} KiB gzipped)",
         f"per region measurement: {derived['seconds_per_region_measurement'] * 1000:.1f} ms "
         f"of prose, {derived['seconds_per_canvas_measurement'] * 1000:.1f} ms of cetz canvas",
+        f"two regions, per epoch, per slide: "
+        f"{derived['seconds_per_epoch_per_slide_regions_2'] * 1000:.1f} ms in HTML, "
+        f"{derived['seconds_per_measurement_regions_2'] * 1000:.1f} ms per measurement "
+        f"in the handout",
+        "  increments per epoch, per slide: "
+        + ", ".join(
+            f"{name} {derived['region_sweep_increments']['html'][name] * 1000:.1f} ms"
+            f" / {derived['region_sweep_increments']['handout'][name] * 1000:.1f} ms"
+            for name in REGION_SWEEP[1:]
+        )
+        + " (HTML / handout)",
         f"gzip: {tour['html']['bytes'] / tour['html']['gzip_bytes']:.1f}x on the tour, "
         f"leaving {1 - tour['html']['hoisted_gzip_bytes'] / tour['html']['gzip_bytes']:.0%} "
         "that hoisting the shared defs would still save, "

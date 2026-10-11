@@ -49,6 +49,7 @@ rather than a guess about where the time went:
 | --------------------------------------------------------- | --------------------------------------------- |
 | a variant against the `plain=on` run of that variant      | what Animo's machinery costs over plain typst |
 | the slope over `base`, `epochs-2`, `epochs-4`, `epochs-8` | one epoch, in seconds and in bytes            |
+| the slope over `regions-2-epochs-1`, `-2`, `-4`, `-8`     | one epoch of two regions, and its linearity   |
 | `regions-2-epochs-4` minus the same run `-sized`          | one region measuring one epoch of prose       |
 | `figure-regions-2-epochs-4` minus the same run `-sized`   | one region measuring one epoch of cetz canvas |
 | `number-states-4-epochs-3` minus the same run without it  | a subslide number, where a deck has subslides |
